@@ -39,8 +39,16 @@ namespace ManyDiet
 			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter ());
 			view.additemquick += AddItemQuick;
 			view.additem += Additem;
-			view.SetLineEntries (GetLines (currentDietModel.GetEntries (currentDietInstance)));
+			view.changeday += ChangeDay;
 			conn.TableChanged += HandleTableChanged;
+			ChangeDay (DateTime.UtcNow);
+		}
+		DateTime ds,de;
+		void ChangeDay(DateTime to)
+		{
+			ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
+			de = new DateTime (to.Year, to.Month, to.Day + 1, 0, 0, 0);
+			view.SetEatLines (GetLines (currentDietModel.GetEntries (currentDietInstance, ds, de)));
 		}
 
 		void Additem ()
@@ -66,7 +74,7 @@ namespace ManyDiet
 		void HandleTableChanged (object sender, NotifyTableChangedEventArgs e)
 		{
 			if (typeof(BaseDietEntry).IsAssignableFrom (e.Table.MappedType))
-				view.SetLineEntries (GetLines (currentDietModel.GetEntries (currentDietInstance)));
+				view.SetEatLines (GetLines (currentDietModel.GetEntries (currentDietInstance, ds, de)));
 		}
 		IEnumerable<EatEntryLineVM> GetLines(IEnumerable<BaseDietEntry> ents)
 		{
@@ -98,7 +106,8 @@ namespace ManyDiet
 	/// </summary>
 	public interface IView
 	{
-		void SetLineEntries(IEnumerable<EatEntryLineVM> lineitems);
+		void SetEatLines(IEnumerable<EatEntryLineVM> lineitems);
+		event Action<DateTime> changeday;
 		event Action additem;
 		event Action additemquick;
 		IAddItemView additemview { get; }

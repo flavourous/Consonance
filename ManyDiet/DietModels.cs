@@ -44,7 +44,7 @@ namespace ManyDiet
 		void AddEntry(DietInstance diet, BaseDietEntry ent);
 		void UpdateEntry (BaseDietEntry ent);
 		void RemoveEntry (BaseDietEntry tet);
-		IEnumerable<BaseDietEntry> GetEntries(DietInstance diet);
+		IEnumerable<BaseDietEntry> GetEntries(DietInstance diet, DateTime start, DateTime end);
 		int CountEntries();
 	}
 
@@ -60,9 +60,10 @@ namespace ManyDiet
 		}
 
 		// Get entries
-		public IEnumerable<BaseDietEntry> GetEntries(DietInstance diet)
+		public IEnumerable<BaseDietEntry> GetEntries(DietInstance diet, DateTime start, DateTime end)
 		{
-			return conn.Table<TrackingEntryType> ().Where (d => d.dietinstanceid == diet.id);
+			var bq = conn.Table<TrackingEntryType> ().Where (d => d.dietinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
+			return bq;
 		}
 
 		// Diet instancing

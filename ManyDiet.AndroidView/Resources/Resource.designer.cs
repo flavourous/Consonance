@@ -62,29 +62,29 @@ namespace ManyDiet.AndroidView
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f06000e
-			public const int addBurned = 2131099662;
+			// aapt resource value: 0x7f06000b
+			public const int addBurned = 2131099659;
 			
-			// aapt resource value: 0x7f06000f
-			public const int addEaten = 2131099663;
+			// aapt resource value: 0x7f06000c
+			public const int addEaten = 2131099660;
 			
-			// aapt resource value: 0x7f060010
-			public const int addEatenQuick = 2131099664;
+			// aapt resource value: 0x7f06000d
+			public const int addEatenQuick = 2131099661;
 			
 			// aapt resource value: 0x7f060000
 			public const int burn = 2131099648;
 			
-			// aapt resource value: 0x7f060011
-			public const int changePlan = 2131099665;
+			// aapt resource value: 0x7f06000e
+			public const int changePlan = 2131099662;
 			
 			// aapt resource value: 0x7f060007
 			public const int eatitemdatetime = 2131099655;
 			
-			// aapt resource value: 0x7f060009
-			public const int eatitemname = 2131099657;
+			// aapt resource value: 0x7f060008
+			public const int eatitemname = 2131099656;
 			
-			// aapt resource value: 0x7f06000c
-			public const int eatitemtrack = 2131099660;
+			// aapt resource value: 0x7f060009
+			public const int eatitemtrack = 2131099657;
 			
 			// aapt resource value: 0x7f060006
 			public const int eatlist = 2131099654;
@@ -98,23 +98,14 @@ namespace ManyDiet.AndroidView
 			// aapt resource value: 0x7f060003
 			public const int eatpage = 2131099651;
 			
-			// aapt resource value: 0x7f06000b
-			public const int edititemdatetime = 2131099659;
-			
-			// aapt resource value: 0x7f060008
-			public const int edititemname = 2131099656;
-			
-			// aapt resource value: 0x7f06000a
-			public const int edititemtrack = 2131099658;
-			
 			// aapt resource value: 0x7f060002
 			public const int flb = 2131099650;
 			
 			// aapt resource value: 0x7f060001
 			public const int frameLayout1 = 2131099649;
 			
-			// aapt resource value: 0x7f06000d
-			public const int textView1 = 2131099661;
+			// aapt resource value: 0x7f06000a
+			public const int textView1 = 2131099658;
 			
 			static Id()
 			{

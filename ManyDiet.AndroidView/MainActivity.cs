@@ -44,9 +44,10 @@ namespace ManyDiet.AndroidView
 
 		public event Action additemquick = delegate{};
 		public event Action additem = delegate{};
+		public event Action<DateTime> changeday = delegate{};
 
 		LAdapter items;
-		public void SetLineEntries (IEnumerable<EatEntryLineVM> lineitems)
+		public void SetEatLines (IEnumerable<EatEntryLineVM> lineitems)
 		{
 			var ll = new List<EatEntryLineVM> (lineitems);
 			Dictionary<string,int> test = new Dictionary<string, int> ();

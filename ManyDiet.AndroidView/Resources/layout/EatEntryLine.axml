@@ -1,25 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content">
+<LinearLayout xmlns:dr="http://schemas.android.com/apk/res/android"
+    dr:layout_width="fill_parent"
+    dr:layout_height="wrap_content"
+    dr:orientation="horizontal">
     <TextView
-        android:textColor="?android:attr/textColorHighlightInverse"
-        android:id="@+id/eatitemdatetime"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_toLeftOf="@+id/edititemname" />
+        dr:textColor="?android:attr/textColorHighlightInverse"
+        dr:id="@+id/eatitemdatetime"
+        dr:layout_width="100dp"
+        dr:layout_height="wrap_content" />
     <TextView
-        android:textColor="?android:attr/textColorHighlightInverse"
-        android:id="@+id/eatitemname"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_toLeftOf="@+id/edititemtrack"
-        android:layout_toRightOf="@+id/edititemdatetime" />
+        dr:textColor="?android:attr/textColorHighlightInverse"
+        dr:id="@+id/eatitemname"
+        dr:layout_weight="1"
+        dr:layout_width="wrap_content"
+        dr:layout_height="wrap_content" />
     <TextView
-        android:textColor="?android:attr/textColorHintInverse"
-        android:id="@+id/eatitemtrack"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true" />
-</RelativeLayout>
+        dr:textColor="?android:attr/textColorHintInverse"
+        dr:id="@+id/eatitemtrack"
+        dr:layout_width="wrap_content"
+        dr:layout_height="wrap_content" />
+</LinearLayout>
