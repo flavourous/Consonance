@@ -48,7 +48,7 @@ namespace ManyDiet
 		{
 			ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
 			de = new DateTime (to.Year, to.Month, to.Day + 1, 0, 0, 0);
-			view.SetEatLines (GetLines (currentDietModel.GetEntries (currentDietInstance, ds, de)));
+			view.SetEatLines (GetLines (currentDietModel.GetEats (currentDietInstance, ds, de)));
 		}
 
 		void Additem ()
@@ -57,26 +57,26 @@ namespace ManyDiet
 			var fis = conn.Table<FoodInfo> ().Where (f => currentDietModel.model.MeetsRequirements (f));
 			var food = view.selectfoodview.SelectFood(fis);
 			AddedItemVM mod=view.additemview.GetValues(currentDietModel.model.EntryCalculationFields);
-			BaseDietEntry vm;
-			currentDietModel.model.CalculateEntry (food, mod.values, out vm);
+			BaseEatEntry vm;
+			currentDietModel.model.CalculateEat (food, mod.values, out vm);
 			vm.entryWhen = mod.when;
-			currentDietModel.AddEntry (currentDietInstance, vm);
+			currentDietModel.AddEat (currentDietInstance, vm);
 		}
 		void AddItemQuick()
 		{
 			var mod = view.additemview.GetValues (currentDietModel.model.EntryCreationFields);
-			BaseDietEntry vm;
-			currentDietModel.model.CreateEntry (mod.values, out vm);
+			BaseEatEntry vm;
+			currentDietModel.model.CreateEat (mod.values, out vm);
 			vm.entryWhen = mod.when;
-			currentDietModel.AddEntry (currentDietInstance, vm);
+			currentDietModel.AddEat (currentDietInstance, vm);
 		}
 
 		void HandleTableChanged (object sender, NotifyTableChangedEventArgs e)
 		{
-			if (typeof(BaseDietEntry).IsAssignableFrom (e.Table.MappedType))
-				view.SetEatLines (GetLines (currentDietModel.GetEntries (currentDietInstance, ds, de)));
+			if (typeof(BaseEatEntry).IsAssignableFrom (e.Table.MappedType))
+				view.SetEatLines (GetLines (currentDietModel.GetEats (currentDietInstance, ds, de)));
 		}
-		IEnumerable<EatEntryLineVM> GetLines(IEnumerable<BaseDietEntry> ents)
+		IEnumerable<EatEntryLineVM> GetLines(IEnumerable<BaseEatEntry> ents)
 		{
 			foreach (var e in ents)
 				yield return currentDietPresenter.GetLineRepresentation (e);
@@ -94,7 +94,7 @@ namespace ManyDiet
 
 		IDiet currentDietModel;
 		IDietPresenter currentDietPresenter;
-		void AddDietPair<T>(IDietModel<T> dietModel, IDietPresenter<T> dietPresenter) where T : BaseDietEntry, new()
+		void AddDietPair<T>(IDietModel<T> dietModel, IDietPresenter<T> dietPresenter) where T : BaseEatEntry, new()
 		{
 			currentDietModel = new Diet<T> (conn, dietModel);
 			currentDietPresenter = dietPresenter;

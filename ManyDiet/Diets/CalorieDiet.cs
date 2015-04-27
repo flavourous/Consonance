@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ManyDiet
 {
-	public class CalorieDietEntry : BaseDietEntry
+	public class CalorieDietEntry : BaseEatEntry
 	{
 		public String myname {get;set;}
 		public double kcals { get; set; }
@@ -13,15 +13,15 @@ namespace ManyDiet
 	{
 		#region implemented abstract members of Diet
 
-		public bool CreateEntry (IEnumerable<Object> values, out BaseDietEntry entry)
+		public bool CreateEat (IEnumerable<Object> values, out BaseEatEntry entry)
 		{
 			List<Object> vals = new List<Object> (values);
 			entry = new CalorieDietEntry () { myname = vals[0] as String, kcals = (double)vals [1]};
 			return true;
 		}
 
-		public String[] EntryCreationFields { get { return new String[] { "name", "kcal" }; } }
-		public String[] EntryCalculationFields { get { return new String[] { "name", "kcal" }; } }
+		public String[] EatCreationFields { get { return new String[] { "name", "kcal" }; } }
+		public String[] CalculationFields { get { return new String[] { "name", "kcal" }; } }
 
 		public DietInstance NewDiet ()
 		{
@@ -29,7 +29,7 @@ namespace ManyDiet
 				name = "Simple calorie diet"
 			};
 		}
-		public bool CalculateEntry (FoodInfo info, IEnumerable<Object> values, out BaseDietEntry result)
+		public bool CalculateEntry (FoodInfo info, IEnumerable<Object> values, out BaseEatEntry result)
 		{
 			List<Object> vals = new List<Object> (values);
 			var cde = new CalorieDietEntry ();
@@ -70,7 +70,7 @@ namespace ManyDiet
 	public class CalorieDietPresenter : IDietPresenter<CalorieDietEntry>
 	{
 		#region IDietPresenter implementation
-		public EatEntryLineVM GetLineRepresentation (BaseDietEntry entry)
+		public EatEntryLineVM GetLineRepresentation (BaseEatEntry entry)
 		{
 			var ent = (entry as CalorieDietEntry);
 			var fi = Presenter.Singleton.FindFood (ent.foodinstanceid);

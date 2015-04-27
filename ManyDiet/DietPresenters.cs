@@ -24,11 +24,11 @@ namespace ManyDiet
 			trackedAmounts = t;
 		}
 	}
-	public interface IDietPresenter<T> : IDietPresenter where T : BaseDietEntry { }
+	public interface IDietPresenter<T> : IDietPresenter where T : BaseEatEntry { }
 	public interface IDietPresenter
 	{
 		// other presenters probabbbly call into here to get representations of the model domain...
-		EatEntryLineVM GetLineRepresentation(BaseDietEntry entry);
+		EatEntryLineVM GetLineRepresentation(BaseEatEntry entry);
 		// EntryAggregateVM GetAggregationRepresentation(DateTime start, DateTime end);
 	}
 }
