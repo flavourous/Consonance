@@ -47,13 +47,13 @@ namespace ManyDiet.AndroidView
 		public event Action<DateTime> changeday = delegate{};
 
 		LAdapter items;
-		public void SetEatLines (IEnumerable<EatEntryLineVM> lineitems)
+		public void SetEatLines (IEnumerable<EntryLineVM> lineitems)
 		{
-			var ll = new List<EatEntryLineVM> (lineitems);
+			var ll = new List<EntryLineVM> (lineitems);
 			Dictionary<string,int> test = new Dictionary<string, int> ();
 			foreach (var l in ll)
 			{
-				foreach (var kv in l.trackedAmounts)
+				foreach (var kv in l.displayAmounts)
 					if (!test.ContainsKey (kv.Key))
 						test [kv.Key] = 1;
 					else
@@ -78,12 +78,9 @@ namespace ManyDiet.AndroidView
 
 		public AddedItemVM GetValues (IEnumerable<string> names)
 		{
-			List<Object> vs = new List<Object> ();
-			foreach (var s in names)
-				if (s == "name")
-					vs.Add ("Namey 42");
-				else vs.Add (42.0);
-			return new AddedItemVM (vs, DateTime.Now);
+			List<double> vs = new List<double>();
+			foreach (var s in names) vs.Add (42.0);
+			return new AddedItemVM (vs, DateTime.Now, "Namey 42 omg");
 		}
 
 		#endregion

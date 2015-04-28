@@ -82,12 +82,12 @@ namespace ManyDiet
 	/// <summary>
 	/// Recommend implimenting explicitly - dreaded diamond.
 	/// </summary>
-	public interface IDietModel :
-		IEntryCreation<BaseEatEntry,FoodInfo>, 
-		IEntryCreation<BaseBurnEntry,FireInfo>
+	public interface IDietModel 
 	{
 		// creator for dietinstance
 		DietInstance NewDiet();
+		IEntryCreation<BaseEatEntry,FoodInfo> foodcreator { get; }
+		IEntryCreation<BaseBurnEntry,FireInfo> firecreator { get; }
 	}
 	public interface IEntryCreation<EntryType, InfoType>
 	{
@@ -107,35 +107,38 @@ namespace ManyDiet
 		String[] InfoCreationFields();
 		// ok make me an info please here's that data.
 		InfoType CreateInfo (IEnumerable<double> values);
+		// ok is this info like complete for your diety? yes. ffs.
+		bool IsInfoComplete (InfoType info);
 	}
 	#endregion
 
 	#region DIET_MODELS_PRESENTER_HANDLER
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
-	interface IHandleDietPlanModels<TrackType, InfoType>
+	interface IHandleDietPlanModels
 	{
-		bool Add(InfoType info, IEnumerable<double> values, DietInstance diet);
-		void Add(DietInstance diet, TrackType ent);
-		bool Update(TrackType ent, InfoType fi, IEnumerable<double> values);
-		void Update (TrackType ent);
-		void Remove (TrackType tet);
-		IEnumerable<TrackType> Get(DietInstance diet, DateTime start, DateTime end);
+		bool Add(BaseInfo info, IEnumerable<double> values, DietInstance diet);
+		void Add(DietInstance diet, BaseEntry ent);
+		bool Update(BaseEntry ent, BaseInfo fi, IEnumerable<double> values);
+		void Update (BaseEntry ent);
+		void Remove (BaseEntry tet);
+		IEnumerable<BaseEntry> Get(DietInstance diet, DateTime start, DateTime end);
 		int Count();
 	}
 	interface IDiet
 	{
 		IDietModel model { get; }
 		DietInstance StartNewDiet(DateTime started);
+		IHandleDietPlanModels foodhandler {get;}
+		IHandleDietPlanModels firehandler { get; }
 	}
 
-	// NOTE if you wanna compose the IHandleDietPlanModels for more reuse, figure out the generics in a simple case first! its not simple.
-	class Diet<EatType,BurnType,EatInfoType,BurnInfoType> : IDiet, IHandleDietPlanModels<EatType,EatInfoType>, IHandleDietPlanModels<BurnType, BurnInfoType>
+	class Diet<EatType,EatInfoType,BurnType,BurnInfoType> : IDiet
 		where EatType : BaseEatEntry, new()
+		where EatInfoType : FoodInfo, new()
 		where BurnType : BaseBurnEntry, new()
-		where EatInfoType : BaseEatEntry, new()
-		where BurnInfoType : BaseBurnEntry, new()
+		where BurnInfoType : FireInfo, new()
 	{
-		SQLiteConnection conn;
+		readonly SQLiteConnection conn;
 		public IDietModel model { get; private set; }
 		public DietInstance StartNewDiet(DateTime started)
 		{
@@ -145,131 +148,80 @@ namespace ManyDiet
 			conn.Insert (di);
 			return di;
 		}
-
+		public IHandleDietPlanModels foodhandler { get; private set; }
+		public IHandleDietPlanModels firehandler { get; private set; }
 		public Diet(SQLiteConnection conn, IDietModel<EatType,EatInfoType,BurnType,BurnInfoType> model)
 		{
 			this.conn = conn;
 			this.model = model;
 			conn.CreateTable<EatType> (CreateFlags.None);
+
+			// Bloody diamond...
+			var eatcreator = (IEntryCreation<BaseEntry, BaseInfo>)(model as IEntryCreation<BaseEatEntry, FoodInfo>);
+			var burncreator = (IEntryCreation<BaseEntry, BaseInfo>)(model as IEntryCreation<BaseBurnEntry, FireInfo>);
+
+			foodhandler = new EntryHandler<EatType, EatInfoType> (conn, eatcreator);
+			firehandler = new EntryHandler<BurnType, BurnInfoType> (conn, burncreator);
+		}
+	}
+
+	class EntryHandler<EntryType,EntryInfoType> : IHandleDietPlanModels
+		where EntryType : BaseEntry, new()
+		where EntryInfoType : BaseInfo, new()
+	{
+		readonly SQLiteConnection conn;
+		readonly IEntryCreation<BaseEntry, BaseInfo> creator;
+		public EntryHandler(SQLiteConnection conn, IEntryCreation<BaseEntry, BaseInfo> creator)
+		{
+			this.conn = conn;
+			this.creator = creator;
 		}
 
 		#region IHandleDietPlanModels implementation
 		// eaties
-		bool IHandleDietPlanModels<EatType, EatInfoType>.Add (EatInfoType info, IEnumerable<double> values, DietInstance diet)
+		public bool Add (BaseInfo info, IEnumerable<double> values, DietInstance diet)
 		{
-			EatType ent = new EatType ();
-			if (!((IEntryCreation<EatType, EatInfoType>)model).Calculate (info, values, out ent))
+			EntryType ent = new EntryType ();
+			BaseEntry ent_cast = ent;
+			if (creator.Calculate (info, values, out ent_cast))
 				return false;
 			ent.dietinstanceid = diet.id;
 			conn.Insert (ent);
 			return true;
 		}
-		void IHandleDietPlanModels<EatType, EatInfoType>.Add (DietInstance diet, EatType ent)
+		public void Add (DietInstance diet, BaseEntry ent)
 		{
 			ent.dietinstanceid = diet.id;
 			ent.infoinstanceid = null;
 			conn.Insert (ent);
 		}
-		bool IHandleDietPlanModels<EatType, EatInfoType>.Update (EatType ent, EatInfoType fi, IEnumerable<double> values)
+		public bool Update (BaseEntry ent, BaseInfo fi, IEnumerable<double> values)
 		{
-			if (!((IEntryCreation<EatType, EatInfoType>)model).Calculate (fi, values, out ent))
+			if (creator.Calculate (fi, values, out ent))
 				return false;
 			ent.infoinstanceid = fi.id;
 			conn.Update (ent);
 			return true;
 		}
-		void IHandleDietPlanModels<EatType, EatInfoType>.Update (EatType ent)
+		public void Update (BaseEntry ent)
 		{
 			ent.infoinstanceid = null;
 			conn.Update (ent);
 		}
-		void IHandleDietPlanModels<EatType, EatInfoType>.Remove (EatType tet)
+		public void Remove (BaseEntry tet)
 		{
-			conn.Delete<EatType> (tet.id);
+			conn.Delete<EntryType> (tet.id);
 		}
-		IEnumerable<EatType> IHandleDietPlanModels<EatType, EatInfoType>.Get (DietInstance diet, DateTime start, DateTime end)
+		public IEnumerable<BaseEntry> Get (DietInstance diet, DateTime start, DateTime end)
 		{
-			return conn.Table<EatType> ().Where (d => d.dietinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
+			return conn.Table<EntryType> ().Where (d => d.dietinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
 		}
-		int IHandleDietPlanModels<EatType, EatInfoType>.Count ()
+		public int Count ()
 		{
-			return conn.Table<EatType> ().Count ();
+			return conn.Table<EntryType> ().Count ();
 		}
 
-		// burnies
-		bool IHandleDietPlanModels<BurnType, BurnInfoType>.Add (BurnInfoType info, IEnumerable<double> values, DietInstance diet)
-		{
-			BurnType ent = new BurnType ();
-			if (!((IEntryCreation<BurnType, BurnInfoType>)model).Calculate (info, values, out ent))
-				return false;
-			ent.dietinstanceid = diet.id;
-			conn.Insert (ent);
-			return true;
-		}
-		void IHandleDietPlanModels<BurnType, BurnInfoType>.Add (DietInstance diet, BurnType ent)
-		{
-			ent.dietinstanceid = diet.id;
-			ent.infoinstanceid = null;
-			conn.Insert (ent);
-		}
-		bool IHandleDietPlanModels<BurnType, BurnInfoType>.Update (BurnType ent, BurnInfoType fi, IEnumerable<double> values)
-		{
-			if (!((IEntryCreation<BurnType, BurnInfoType>)model).Calculate (fi, values, out ent))
-				return false;
-			ent.infoinstanceid = fi.id;
-			conn.Update (ent);
-			return true;
-		}
-		void IHandleDietPlanModels<BurnType, BurnInfoType>.Update (BurnType ent)
-		{
-			ent.infoinstanceid = null;
-			conn.Update (ent);
-		}
-		void IHandleDietPlanModels<BurnType, BurnInfoType>.Remove (BurnType tet)
-		{
-			conn.Delete<BurnType> (tet.id);
-		}
-		IEnumerable<BurnType> IHandleDietPlanModels<BurnType, BurnInfoType>.Get (DietInstance diet, DateTime start, DateTime end)
-		{
-			return conn.Table<BurnType> ().Where (d => d.dietinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
-		}
-		int IHandleDietPlanModels<BurnType, BurnInfoType>.Count ()
-		{
-			return conn.Table<BurnType> ().Count ();
-		}
 		#endregion
 	}
-
-	// FIXME is there not a way to get the interface to cast to one with T,I ? hmmm
-	class PlanModelHandler<T, I, Tuse, Iuse> : IHandleDietPlanModels<T, I> 
-	{
-		// helpful wrappers
-		private bool CalculateWrapper(I info, IEnumerable<double> values, out T result)
-		{
-
-			if (!(modelbranch as IEntryCreation<BaseEatEntry,FoodInfo>).Calculate (info, values, out result))
-				return false;
-			result.infoinstanceid = info.id;
-			return true;
-		}
-		public bool IHandleDietPlanModels<EatType,EatInfoType>.Add(FoodInfo info, IEnumerable<double> values, DietInstance diet)
-		{
-			BaseEatEntry ent = new EatType ();
-			if (!CalculateEatWrapper (info, values, out ent))
-				return false;
-			ent.dietinstanceid = diet.id;
-			conn.Insert (ent);
-			return true;
-		}
-		public bool UpdateEat(BaseEatEntry ent, FoodInfo fi, IEnumerable<Object> values)
-		{
-			if (!CalculateEatWrapper (fi, values, out ent))
-				return false;
-			conn.Update (ent);
-			return true;
-		}
-	}
 	#endregion
-
 }
-

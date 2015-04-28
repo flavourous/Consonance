@@ -21,16 +21,6 @@ namespace ManyDiet
 			conn.CreateTable<DietInstance> (CreateFlags.None);
 		}
 
-		public FoodInfo FindFood(int? id)
-		{
-			if (!id.HasValue)
-				return null;
-			var res = new List<FoodInfo> (conn.Table<FoodInfo> ().Where (fi => fi.id == id));
-			if (res.Count == 0)
-				return null;
-			return res [0];
-		}
-
 		// present app logic domain to this view.
 		IView view;
 		public void PresentTo(IView view)
@@ -48,35 +38,35 @@ namespace ManyDiet
 		{
 			ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
 			de = new DateTime (to.Year, to.Month, to.Day + 1, 0, 0, 0);
-			view.SetEatLines (GetLines (currentDietModel.GetEats (currentDietInstance, ds, de)));
+			view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)currentDietModel.foodhandler.Get(currentDietInstance, ds, de)));
 		}
 
 		void Additem ()
 		{
 			// via a fooood
-			var fis = conn.Table<FoodInfo> ().Where (f => currentDietModel.model.MeetsRequirements (f));
+			var fis = conn.Table<FoodInfo> ().Where (f => currentDietModel.model.foodcreator.IsInfoComplete(f));
 			var food = view.selectfoodview.SelectFood(fis);
-			AddedItemVM mod=view.additemview.GetValues(currentDietModel.model.EntryCalculationFields);
+			AddedItemVM mod=view.additemview.GetValues(currentDietModel.model.foodcreator.CalculationFields(food));
 			BaseEatEntry vm;
-			currentDietModel.model.CalculateEat (food, mod.values, out vm);
+			currentDietModel.model.foodcreator.Calculate (food, mod.values, out vm);
 			vm.entryWhen = mod.when;
-			currentDietModel.AddEat (currentDietInstance, vm);
+			currentDietModel.foodhandler.Add (currentDietInstance, vm);
 		}
 		void AddItemQuick()
 		{
-			var mod = view.additemview.GetValues (currentDietModel.model.EntryCreationFields);
+			var mod = view.additemview.GetValues (currentDietModel.model.foodcreator.CreationFields());
 			BaseEatEntry vm;
-			currentDietModel.model.CreateEat (mod.values, out vm);
+			currentDietModel.model.foodcreator.Create (mod.values, out vm);
 			vm.entryWhen = mod.when;
-			currentDietModel.AddEat (currentDietInstance, vm);
+			currentDietModel.foodhandler.Add (currentDietInstance, vm);
 		}
 
 		void HandleTableChanged (object sender, NotifyTableChangedEventArgs e)
 		{
 			if (typeof(BaseEatEntry).IsAssignableFrom (e.Table.MappedType))
-				view.SetEatLines (GetLines (currentDietModel.GetEats (currentDietInstance, ds, de)));
+				view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)currentDietModel.foodhandler.Get (currentDietInstance, ds, de)));
 		}
-		IEnumerable<EatEntryLineVM> GetLines(IEnumerable<BaseEatEntry> ents)
+		IEnumerable<EntryLineVM> GetLines(IEnumerable<BaseEatEntry> ents)
 		{
 			foreach (var e in ents)
 				yield return currentDietPresenter.GetLineRepresentation (e);
@@ -94,9 +84,13 @@ namespace ManyDiet
 
 		IDiet currentDietModel;
 		IDietPresenter currentDietPresenter;
-		void AddDietPair<T>(IDietModel<T> dietModel, IDietPresenter<T> dietPresenter) where T : BaseEatEntry, new()
+		void AddDietPair<E,Ei,B,Bi>(IDietModel<E,Ei,B,Bi> dietModel, DietPresenter<E,Ei,B,Bi> dietPresenter)
+			where E  : BaseEatEntry,new() 
+			where Ei : FoodInfo,new() 
+			where B  : BaseBurnEntry,new() 
+			where Bi : FireInfo,new() 
 		{
-			currentDietModel = new Diet<T> (conn, dietModel);
+			currentDietModel = new Diet<E,Ei,B,Bi> (conn, dietModel);
 			currentDietPresenter = dietPresenter;
 		}
 	}
@@ -106,7 +100,7 @@ namespace ManyDiet
 	/// </summary>
 	public interface IView
 	{
-		void SetEatLines(IEnumerable<EatEntryLineVM> lineitems);
+		void SetEatLines(IEnumerable<EntryLineVM> lineitems);
 		event Action<DateTime> changeday;
 		event Action additem;
 		event Action additemquick;
@@ -115,12 +109,14 @@ namespace ManyDiet
 	}
 	public class AddedItemVM
 	{
+		public readonly String name;
 		public readonly DateTime when;
-		public readonly IEnumerable<Object> values;
-		public AddedItemVM(IEnumerable<Object> values, DateTime when)
+		public readonly IEnumerable<double> values;
+		public AddedItemVM(IEnumerable<double> values, DateTime when, String name)
 		{
 			this.values = values;
 			this.when = when;
+			this.name = name;
 		}
 	}
 	public interface IAddItemView

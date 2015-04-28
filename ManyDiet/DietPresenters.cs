@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SQLite;
 
 namespace ManyDiet
 {
@@ -11,25 +12,46 @@ namespace ManyDiet
 		}
 	}
 	// basic workings of presenter and VMs, to be rehomed.
-	public class EatEntryLineVM
+	public class EntryLineVM
 	{
 		public readonly DateTime when;
 		public readonly String name;
 		public readonly String desc;
-		public readonly KVPList<string,double> trackedAmounts;
+		public readonly KVPList<string,double> displayAmounts;
 
-		public EatEntryLineVM(DateTime w, String n, String d, KVPList<string,double>  t)
+		public EntryLineVM(DateTime w, String n, String d, KVPList<string,double>  t)
 		{
 			when=w; name=n; desc=d;
-			trackedAmounts = t;
+			displayAmounts = t;
 		}
 	}
-	public interface IDietPresenter<T> : IDietPresenter where T : BaseEatEntry { }
+	public abstract class DietPresenter<EatType, EatInfoType, BurnType, BurnInfoType> : IDietPresenter
+	{
+		// injected on registration
+		public SQLiteConnection conn { private get; set; }
+
+		// Helper
+		protected T FindInfo<T> (int? id) where T : BaseInfo, new()
+		{
+			if (!id.HasValue)
+				return null;
+			var res = new List<T> (conn.Table<T> ().Where (fi => fi.id == id));
+			if (res.Count == 0)
+				return null;
+			return res [0];
+		}
+
+		public abstract EntryLineVM GetLineRepresentation (BaseEatEntry entry);
+		public abstract EntryLineVM GetLineRepresentation (BaseBurnEntry entry);
+	}
 	public interface IDietPresenter
 	{
-		// other presenters probabbbly call into here to get representations of the model domain...
-		EatEntryLineVM GetLineRepresentation(BaseEatEntry entry);
-		// EntryAggregateVM GetAggregationRepresentation(DateTime start, DateTime end);
+		// Representing eat and burn items
+		EntryLineVM GetLineRepresentation(BaseEatEntry entry);
+		EntryLineVM GetLineRepresentation(BaseBurnEntry entry);
+
+		// Representing FoodInfo and FireInfo items
+		// ...
 	}
 }
 
