@@ -45,6 +45,15 @@ namespace ManyDiet.AndroidView
 		public event Action additemquick = delegate{};
 		public event Action additem = delegate{};
 		public event Action<DateTime> changeday = delegate{};
+		private DateTime _day;
+		public DateTime day 
+		{ 
+			set
+			{ 
+				_day = value;
+				// FIXME code to set day on view visible somewhere
+			}
+		}
 
 		LAdapter items;
 		public void SetEatLines (IEnumerable<EntryLineVM> lineitems)
@@ -76,11 +85,11 @@ namespace ManyDiet.AndroidView
 
 		#region IAddItemView implementation
 
-		public AddedItemVM GetValues (IEnumerable<string> names)
+		public AddedItemVM GetValues (String title, IEnumerable<string> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When)
 		{
 			List<double> vs = new List<double>();
 			foreach (var s in names) vs.Add (42.0);
-			return new AddedItemVM (vs, DateTime.Now, "Namey 42 omg");
+			return new AddedItemVM (vs.ToArray(), DateTime.Now, "Namey 42 omg");
 		}
 
 		#endregion

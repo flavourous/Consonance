@@ -25,7 +25,7 @@ namespace ManyDiet
 			displayAmounts = t;
 		}
 	}
-	public abstract class DietPresenter<EatType, EatInfoType, BurnType, BurnInfoType> : IDietPresenter
+	public abstract class DietPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType> : IDietPresenter
 	{
 		// injected on registration
 		public SQLiteConnection conn { private get; set; }
@@ -43,12 +43,14 @@ namespace ManyDiet
 
 		public abstract EntryLineVM GetLineRepresentation (BaseEatEntry entry);
 		public abstract EntryLineVM GetLineRepresentation (BaseBurnEntry entry);
+		public abstract EntryLineVM GetLineRepresentation (DietInstance entry);
 	}
 	public interface IDietPresenter
 	{
 		// Representing eat and burn items
 		EntryLineVM GetLineRepresentation(BaseEatEntry entry);
 		EntryLineVM GetLineRepresentation(BaseBurnEntry entry);
+		EntryLineVM GetLineRepresentation (DietInstance entry);
 
 		// Representing FoodInfo and FireInfo items
 		// ...

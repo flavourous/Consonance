@@ -38,6 +38,7 @@ namespace ManyDiet
 		{
 			ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
 			de = new DateTime (to.Year, to.Month, to.Day + 1, 0, 0, 0);
+			view.day = ds;
 			view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)currentDietModel.foodhandler.Get(currentDietInstance, ds, de)));
 		}
 
@@ -46,18 +47,20 @@ namespace ManyDiet
 			// via a fooood
 			var fis = conn.Table<FoodInfo> ().Where (f => currentDietModel.model.foodcreator.IsInfoComplete(f));
 			var food = view.selectfoodview.SelectFood(fis);
-			AddedItemVM mod=view.additemview.GetValues(currentDietModel.model.foodcreator.CalculationFields(food));
+			AddedItemVM mod=view.additemview.GetValues("Eat Entry", currentDietModel.model.foodcreator.CalculationFields(food));
 			BaseEatEntry vm;
 			currentDietModel.model.foodcreator.Calculate (food, mod.values, out vm);
 			vm.entryWhen = mod.when;
+			vm.entryName = mod.name;
 			currentDietModel.foodhandler.Add (currentDietInstance, vm);
 		}
 		void AddItemQuick()
 		{
-			var mod = view.additemview.GetValues (currentDietModel.model.foodcreator.CreationFields());
+			var mod = view.additemview.GetValues ("Quick Eat Entry", currentDietModel.model.foodcreator.CreationFields());
 			BaseEatEntry vm;
 			currentDietModel.model.foodcreator.Create (mod.values, out vm);
 			vm.entryWhen = mod.when;
+			vm.entryName = mod.name;
 			currentDietModel.foodhandler.Add (currentDietInstance, vm);
 		}
 
@@ -76,21 +79,25 @@ namespace ManyDiet
 			get 
 			{
 				var cdis = conn.Table<DietInstance> ().Where (d => d.started <= DateTime.Now && (d.ended == null || d.ended > DateTime.Now));
-				return cdis.Count() == 0 ?
-					currentDietModel.StartNewDiet (DateTime.Now) :
-					cdis.First ();
+				if(cdis.Count() == 0)
+				{
+					var vals = view.additemview.GetValues ("New Diet", currentDietModel.model.DietCreationFields ());
+					currentDietModel.StartNewDiet (DateTime.Now, vals.values);
+				}
+				return	cdis.First ();
 			}
 		}
 
 		IDiet currentDietModel;
 		IDietPresenter currentDietPresenter;
-		void AddDietPair<E,Ei,B,Bi>(IDietModel<E,Ei,B,Bi> dietModel, DietPresenter<E,Ei,B,Bi> dietPresenter)
+		void AddDietPair<D,E,Ei,B,Bi>(IDietModel<D,E,Ei,B,Bi> dietModel, DietPresenter<D,E,Ei,B,Bi> dietPresenter)
+			where D : DietInstance
 			where E  : BaseEatEntry,new() 
 			where Ei : FoodInfo,new() 
 			where B  : BaseBurnEntry,new() 
 			where Bi : FireInfo,new() 
 		{
-			currentDietModel = new Diet<E,Ei,B,Bi> (conn, dietModel);
+			currentDietModel = new Diet<D,E,Ei,B,Bi> (conn, dietModel);
 			currentDietPresenter = dietPresenter;
 		}
 	}
@@ -102,17 +109,19 @@ namespace ManyDiet
 	{
 		void SetEatLines(IEnumerable<EntryLineVM> lineitems);
 		event Action<DateTime> changeday;
+		DateTime day { set; }
 		event Action additem;
 		event Action additemquick;
 		IAddItemView additemview { get; }
 		ISelectFoodView selectfoodview {get;}
 	}
+	public enum AddedItemVMDefaults { Name =1, When = 2 };
 	public class AddedItemVM
 	{
 		public readonly String name;
 		public readonly DateTime when;
-		public readonly IEnumerable<double> values;
-		public AddedItemVM(IEnumerable<double> values, DateTime when, String name)
+		public readonly double[] values;
+		public AddedItemVM(double[] values, DateTime when, String name)
 		{
 			this.values = values;
 			this.when = when;
@@ -121,7 +130,7 @@ namespace ManyDiet
 	}
 	public interface IAddItemView
 	{
-		AddedItemVM GetValues(IEnumerable<String> names);
+		AddedItemVM GetValues (String title, IEnumerable<String> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);
 	}
 	public interface ISelectFoodView
 	{

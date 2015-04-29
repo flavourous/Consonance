@@ -24,6 +24,7 @@ namespace ManyDiet
 		public int dietinstanceid{get;set;}
 		public int? infoinstanceid{get;set;}
 		public DateTime entryWhen {get;set;}
+		public String entryName{ get; set; }
 	}
 	public class BaseEatEntry : BaseEntry {	}
 	public class BaseBurnEntry : BaseEntry { }
@@ -45,7 +46,11 @@ namespace ManyDiet
 		public String name{ get; set; }
 	}
 
-	public class FireInfo : BaseInfo { }
+	public class FireInfo : BaseInfo 
+	{
+		public double per_hour {get;set;}
+		public double? calories {get;set;}
+	}
 	public class FoodInfo : BaseInfo
 	{
 		// Amount Info
@@ -73,7 +78,8 @@ namespace ManyDiet
 	#endregion
 
 	#region DIET_PLAN_INTERFACES
-	public interface IDietModel<Te,Tei,Tb,Tbi> : IDietModel 
+	public interface IDietModel<D,Te,Tei,Tb,Tbi> : IDietModel 
+		where D : DietInstance
 		where Te  : BaseEatEntry
 		where Tei : FoodInfo
 		where Tb  : BaseBurnEntry
@@ -85,7 +91,8 @@ namespace ManyDiet
 	public interface IDietModel 
 	{
 		// creator for dietinstance
-		DietInstance NewDiet();
+		String[] DietCreationFields();
+		DietInstance NewDiet(double[] values);
 		IEntryCreation<BaseEatEntry,FoodInfo> foodcreator { get; }
 		IEntryCreation<BaseBurnEntry,FireInfo> firecreator { get; }
 	}
@@ -94,19 +101,19 @@ namespace ManyDiet
 		// What named fields do I need to fully create an entry (eg eating a banana) - "kcal", "fat"
 		String[] CreationFields (); 
 		// Here's those values, give me the entry (ww points on eating a bananna) - broker wont attempt to remember a "item / info".
-		bool Create (IEnumerable<double> values, out EntryType entry);
+		bool Create (IList<double> values, out EntryType entry);
 
 		// Ok, I've got info on this food (bananna, per 100g, only kcal info) - I still need "fat" and "grams"
 		String[] CalculationFields (InfoType info);
 		// right, heres the fat too, give me entry (broker will update that bananna info also)
-		bool Calculate(InfoType info, IEnumerable<double> values, out EntryType result);
+		bool Calculate(InfoType info, IList<double> values, out EntryType result);
 
 		// Ok what was the change to the foodinfo from that calculate that completes this food for you? - :here I added in those "fat"
-		void CompleteInfo(ref InfoType toComplete, IEnumerable<double> values);
+		void CompleteInfo(ref InfoType toComplete, IList<double> values);
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
 		String[] InfoCreationFields();
 		// ok make me an info please here's that data.
-		InfoType CreateInfo (IEnumerable<double> values);
+		InfoType CreateInfo (IList<double> values);
 		// ok is this info like complete for your diety? yes. ffs.
 		bool IsInfoComplete (InfoType info);
 	}
@@ -116,9 +123,9 @@ namespace ManyDiet
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
 	interface IHandleDietPlanModels
 	{
-		bool Add(BaseInfo info, IEnumerable<double> values, DietInstance diet);
+		bool Add(BaseInfo info, IList<double> values, DietInstance diet);
 		void Add(DietInstance diet, BaseEntry ent);
-		bool Update(BaseEntry ent, BaseInfo fi, IEnumerable<double> values);
+		bool Update(BaseEntry ent, BaseInfo fi, IList<double> values);
 		void Update (BaseEntry ent);
 		void Remove (BaseEntry tet);
 		IEnumerable<BaseEntry> Get(DietInstance diet, DateTime start, DateTime end);
@@ -127,12 +134,13 @@ namespace ManyDiet
 	interface IDiet
 	{
 		IDietModel model { get; }
-		DietInstance StartNewDiet(DateTime started);
+		DietInstance StartNewDiet(DateTime started, double[] values);
 		IHandleDietPlanModels foodhandler {get;}
 		IHandleDietPlanModels firehandler { get; }
 	}
 
-	class Diet<EatType,EatInfoType,BurnType,BurnInfoType> : IDiet
+	class Diet<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IDiet
+		where DietInstType : DietInstance
 		where EatType : BaseEatEntry, new()
 		where EatInfoType : FoodInfo, new()
 		where BurnType : BaseBurnEntry, new()
@@ -140,9 +148,9 @@ namespace ManyDiet
 	{
 		readonly SQLiteConnection conn;
 		public IDietModel model { get; private set; }
-		public DietInstance StartNewDiet(DateTime started)
+		public DietInstance StartNewDiet(DateTime started, double[] values)
 		{
-			var di = model.NewDiet ();
+			var di = model.NewDiet (values);
 			di.started = started;
 			di.ended = null;
 			conn.Insert (di);
@@ -150,7 +158,7 @@ namespace ManyDiet
 		}
 		public IHandleDietPlanModels foodhandler { get; private set; }
 		public IHandleDietPlanModels firehandler { get; private set; }
-		public Diet(SQLiteConnection conn, IDietModel<EatType,EatInfoType,BurnType,BurnInfoType> model)
+		public Diet(SQLiteConnection conn, IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
 		{
 			this.conn = conn;
 			this.model = model;
@@ -179,7 +187,7 @@ namespace ManyDiet
 
 		#region IHandleDietPlanModels implementation
 		// eaties
-		public bool Add (BaseInfo info, IEnumerable<double> values, DietInstance diet)
+		public bool Add (BaseInfo info, IList<double> values, DietInstance diet)
 		{
 			EntryType ent = new EntryType ();
 			BaseEntry ent_cast = ent;
@@ -195,7 +203,7 @@ namespace ManyDiet
 			ent.infoinstanceid = null;
 			conn.Insert (ent);
 		}
-		public bool Update (BaseEntry ent, BaseInfo fi, IEnumerable<double> values)
+		public bool Update (BaseEntry ent, BaseInfo fi, IList<double> values)
 		{
 			if (creator.Calculate (fi, values, out ent))
 				return false;
