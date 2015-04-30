@@ -20,7 +20,7 @@ namespace ManyDiet.AndroidView
 	class TabDesc { public String name; public int layout; public int menu; }
 
 	[Activity (Label = "ManyDiet", MainLauncher=true, Icon = "@drawable/icon")]
-	public class MainActivity : Activity, ActionBar.ITabListener, IView, IAddItemView, ISelectFoodView
+	public class MainActivity : Activity, ActionBar.ITabListener, IView, IAddItemView, ISelectInfoView
 	{
 		TabDescList tabs = new TabDescList () {
 			{ "Eat", Resource.Layout.Eat, Resource.Menu.EatMenu },
@@ -33,17 +33,29 @@ namespace ManyDiet.AndroidView
 		{
 			SetContentView (tabs [ActionBar.SelectedNavigationIndex].layout);
 
-			// FIXME why break pattern :/
-			if(ActionBar.SelectedNavigationIndex == 0)
-				FindViewById<ListView> (Resource.Id.eatlist).Adapter = items;
+			ReloadItemsAdapterForTab ();
 
 			InvalidateOptionsMenu ();
 		}
+		void ReloadItemsAdapterForTab() {
+			// FIXME why break pattern :/
+			if (ActionBar.SelectedNavigationIndex == 0) {
+				FindViewById<ListView> (Resource.Id.eatlist).Adapter = eatitems.apt;
+				FindViewById<TextView> (Resource.Id.eatlisttitletrack).Text = eatitems.name;
+			}
+			if (ActionBar.SelectedNavigationIndex == 1) {
+				FindViewById<ListView> (Resource.Id.burnlist).Adapter = burnitems.apt;
+				FindViewById<TextView> (Resource.Id.burnlisttitletrack).Text = burnitems.name;
+			}
+		}
 
 		#region IView implementation
-
-		public event Action additemquick = delegate{};
-		public event Action additem = delegate{};
+		public event Action addburnitemquick = delegate{};
+		public event Action addburnitem = delegate{};
+		public event Action<EntryLineVM> removeburnitem = delegate{};
+		public event Action addeatitemquick = delegate{};
+		public event Action addeatitem = delegate{};
+		public event Action<EntryLineVM> removeeatitem = delegate{};
 		public event Action<DateTime> changeday = delegate{};
 		private DateTime _day;
 		public DateTime day 
@@ -55,8 +67,23 @@ namespace ManyDiet.AndroidView
 			}
 		}
 
-		LAdapter items;
+		class SetRet {
+			public LAdapter apt;
+			public String name;
+		}
+
+		SetRet eatitems, burnitems;
 		public void SetEatLines (IEnumerable<EntryLineVM> lineitems)
+		{
+			eatitems = SetLines (lineitems);
+			ReloadItemsAdapterForTab ();
+		}
+		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems)
+		{
+			burnitems = SetLines (lineitems);
+			ReloadItemsAdapterForTab ();
+		}
+		SetRet SetLines (IEnumerable<EntryLineVM> lineitems)
 		{
 			var ll = new List<EntryLineVM> (lineitems);
 			Dictionary<string,int> test = new Dictionary<string, int> ();
@@ -74,13 +101,11 @@ namespace ManyDiet.AndroidView
 					num = tkv.Value;
 					use = tkv.Key;
 				}
-			items = new LAdapter (this, ll, use);
-			FindViewById<ListView> (Resource.Id.eatlist).Adapter = items;
-			FindViewById<TextView> (Resource.Id.eatlisttitletrack).Text = use;
+			return new SetRet () { apt = new LAdapter (this, ll, use), name = use };
 		}
 
 		public IAddItemView additemview {get{ return this; }}
-		public ISelectFoodView selectfoodview { get { return this; } }
+		public ISelectInfoView selectinfoview { get { return this; } }
 		#endregion
 
 		#region IAddItemView implementation
@@ -95,19 +120,30 @@ namespace ManyDiet.AndroidView
 		#endregion
 
 		#region ISelectFoodView implementation
-
 		public FoodInfo SelectFood (IEnumerable<FoodInfo> foods)
 		{
 			throw new NotImplementedException ();
 		}
-
+		public FireInfo SelectFire (IEnumerable<FireInfo> fires)
+		{
+			throw new NotImplementedException ();
+		}
 		#endregion
 
 		public override bool OnOptionsItemSelected (IMenuItem item)
 		{
 			switch (item.ItemId) {
+			case Resource.Id.addBurned:
+				addburnitem ();
+				break;
+			case Resource.Id.addBurnedQuick:
+				addburnitemquick ();
+				break;
+			case Resource.Id.addEatenQuick:
+				addeatitemquick ();
+				break;
 			case Resource.Id.addEaten:
-				additemquick ();
+				addeatitem ();
 				break;
 			default:
 				break;
@@ -123,11 +159,14 @@ namespace ManyDiet.AndroidView
 		protected override void OnCreate (Bundle bundle)
 		{
 			base.OnCreate (bundle);
-			// Set our view from the "main" layout resource
 
 			Window.RequestFeature (WindowFeatures.ActionBar);
 			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
 
+			// init with nothing
+			SetEatLines (new EntryLineVM[0]);
+			SetBurnLines (new EntryLineVM[0]);
+			
 			foreach (var tab in tabs) {
 				ActionBar.Tab t = ActionBar.NewTab ();
 				t.SetText (tab.name);
@@ -140,19 +179,6 @@ namespace ManyDiet.AndroidView
 
 
 	}
-//	class Fragmentor : Fragment
-//	{
-//		int layout;
-//		public Fragmentor(int id)
-//		{
-//			layout=id;
-//		}
-//		public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
-//		{
-//			base.OnCreateView (inflater, container, savedInstanceState);
-//			return inflater.Inflate (layout, container, false);
-//		}
-//	}
 }
 
 

@@ -4,20 +4,45 @@
     p1:minHeight="25px"
     p1:layout_width="match_parent"
     p1:layout_height="match_parent"
-    p1:id="@+id/burn">
-    <FrameLayout
+    p1:id="@+id/burnpage">
+    <RelativeLayout
         p1:minWidth="25px"
         p1:minHeight="25px"
         p1:layout_width="match_parent"
         p1:layout_height="wrap_content"
-        p1:id="@+id/frameLayout1"
+        p1:id="@+id/frameLayout1burn"
         p1:layout_alignParentTop="true"
-        p1:layout_above="@+id/flb" />
+        p1:layout_above="@+id/flbBurn">
+        <TextView
+            p1:paddingLeft="100dp"
+            p1:background="?android:attr/textColorLinkInverse"
+            p1:textColor="?android:attr/colorBackground"
+            p1:layout_width="wrap_content"
+            p1:layout_height="wrap_content"
+            p1:layout_toLeftOf="@+id/burnlisttitletrack"
+            p1:layout_alignParentLeft="true"
+            p1:id="@+id/burnlisttitlename"
+            p1:text="Name" />
+        <TextView
+            p1:background="?android:attr/textColorLinkInverse"
+            p1:textColor="?android:attr/colorBackground"
+            p1:layout_width="wrap_content"
+            p1:layout_alignParentRight="true"
+            p1:layout_height="wrap_content"
+            p1:id="@+id/burnlisttitletrack"
+            p1:text="Tracked" />
+        <ListView
+            p1:id="@+id/burnlist"
+            p1:layout_width="match_parent"
+            p1:layout_height="wrap_content"
+            p1:layout_below="@+id/burnlisttitlename"
+            p1:layout_alignParentBottom="true" />
+    </RelativeLayout>
     <FrameLayout
         p1:minWidth="25px"
         p1:minHeight="25px"
         p1:layout_width="match_parent"
         p1:layout_height="150dp"
-        p1:id="@+id/flb"
+        p1:id="@+id/flbBurn"
         p1:layout_alignParentBottom="true" />
 </RelativeLayout>

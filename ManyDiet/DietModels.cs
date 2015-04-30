@@ -183,6 +183,10 @@ namespace ManyDiet
 		{
 			this.conn = conn;
 			this.creator = creator;
+
+			// ensure tables are there.
+			conn.CreateTable<EntryType> ();
+			conn.CreateTable<EntryInfoType> ();
 		}
 
 		#region IHandleDietPlanModels implementation

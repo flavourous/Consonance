@@ -64,6 +64,7 @@ namespace ManyDiet
 		}
 		public bool Calculate (FoodInfo info, IList<double> values, out BaseEatEntry result)
 		{
+			result = null;
 			if (values.Count != CalculationFields (info).Length)
 				return false;
 			result = new CalorieDietEatEntry () { 
@@ -98,6 +99,7 @@ namespace ManyDiet
 		}
 		public bool Create (IList<double> values, out BaseBurnEntry entry)
 		{
+			entry = null;
 			if (values.Count != 1)
 				return false;
 			entry = new CalorieDietBurnEntry () { kcals = values [0] };
@@ -109,9 +111,11 @@ namespace ManyDiet
 			needs.Add ("Duration (h)");
 			if (info.calories.HasValue)
 				needs.Add ("Calories Burned");
+			return needs.ToArray();
 		}
 		public bool Calculate (FireInfo info, IList<double> values, out BaseBurnEntry result)
 		{
+			result = null;
 			if (values.Count != CalculationFields (info).Length)
 				return false;
 			result = new CalorieDietBurnEntry () {
