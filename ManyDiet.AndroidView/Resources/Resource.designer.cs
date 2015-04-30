@@ -62,17 +62,17 @@ namespace ManyDiet.AndroidView
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f060011
-			public const int addBurned = 2131099665;
-			
 			// aapt resource value: 0x7f060012
-			public const int addBurnedQuick = 2131099666;
+			public const int addBurned = 2131099666;
 			
 			// aapt resource value: 0x7f060013
-			public const int addEaten = 2131099667;
+			public const int addBurnedQuick = 2131099667;
 			
-			// aapt resource value: 0x7f060014
-			public const int addEatenQuick = 2131099668;
+			// aapt resource value: 0x7f060015
+			public const int addEaten = 2131099669;
+			
+			// aapt resource value: 0x7f060016
+			public const int addEatenQuick = 2131099670;
 			
 			// aapt resource value: 0x7f06000f
 			public const int burn = 2131099663;
@@ -89,8 +89,8 @@ namespace ManyDiet.AndroidView
 			// aapt resource value: 0x7f060000
 			public const int burnpage = 2131099648;
 			
-			// aapt resource value: 0x7f060015
-			public const int changePlan = 2131099669;
+			// aapt resource value: 0x7f060017
+			public const int changePlan = 2131099671;
 			
 			// aapt resource value: 0x7f06000c
 			public const int eatitemdatetime = 2131099660;
@@ -124,6 +124,12 @@ namespace ManyDiet.AndroidView
 			
 			// aapt resource value: 0x7f060001
 			public const int frameLayout1burn = 2131099649;
+			
+			// aapt resource value: 0x7f060011
+			public const int removeBurnEntry = 2131099665;
+			
+			// aapt resource value: 0x7f060014
+			public const int removeEatEntry = 2131099668;
 			
 			// aapt resource value: 0x7f060010
 			public const int textView1 = 2131099664;
@@ -167,13 +173,19 @@ namespace ManyDiet.AndroidView
 		{
 			
 			// aapt resource value: 0x7f050000
-			public const int BurnMenu = 2131034112;
+			public const int BurnEntryMenu = 2131034112;
 			
 			// aapt resource value: 0x7f050001
-			public const int EatMenu = 2131034113;
+			public const int BurnMenu = 2131034113;
 			
 			// aapt resource value: 0x7f050002
-			public const int PlanMenu = 2131034114;
+			public const int EatEntryMenu = 2131034114;
+			
+			// aapt resource value: 0x7f050003
+			public const int EatMenu = 2131034115;
+			
+			// aapt resource value: 0x7f050004
+			public const int PlanMenu = 2131034116;
 			
 			static Menu()
 			{

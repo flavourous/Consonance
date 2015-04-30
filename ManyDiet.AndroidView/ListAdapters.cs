@@ -39,7 +39,6 @@ namespace ManyDiet.AndroidView
 				return vms.Count;
 			}
 		}
-
 		public override EntryLineVM this [int index] { get { return vms [index]; } }
 		#endregion
 	}

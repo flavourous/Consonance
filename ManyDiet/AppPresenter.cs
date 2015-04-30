@@ -102,7 +102,6 @@ namespace ManyDiet
 			currentDietModel.foodhandler.Add (currentDietInstance, vm);
 		}
 
-
 		void HandleTableChanged (object sender, NotifyTableChangedEventArgs e)
 		{
 			if (typeof(BaseEatEntry).IsAssignableFrom (e.Table.MappedType))

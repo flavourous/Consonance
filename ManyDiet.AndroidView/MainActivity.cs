@@ -37,15 +37,21 @@ namespace ManyDiet.AndroidView
 
 			InvalidateOptionsMenu ();
 		}
+
+		int useContext;
 		void ReloadItemsAdapterForTab() {
 			// FIXME why break pattern :/
 			if (ActionBar.SelectedNavigationIndex == 0) {
 				FindViewById<ListView> (Resource.Id.eatlist).Adapter = eatitems.apt;
 				FindViewById<TextView> (Resource.Id.eatlisttitletrack).Text = eatitems.name;
+				RegisterForContextMenu (FindViewById<ListView> (Resource.Id.eatlist));
+				useContext = Resource.Menu.EatEntryMenu;
 			}
 			if (ActionBar.SelectedNavigationIndex == 1) {
 				FindViewById<ListView> (Resource.Id.burnlist).Adapter = burnitems.apt;
 				FindViewById<TextView> (Resource.Id.burnlisttitletrack).Text = burnitems.name;
+				RegisterForContextMenu (FindViewById<ListView> (Resource.Id.burnlist));
+				useContext = Resource.Menu.BurnEntryMenu;
 			}
 		}
 
@@ -176,7 +182,27 @@ namespace ManyDiet.AndroidView
 
 			Presenter.Singleton.PresentTo (this);
 		}
-
+		ListView slv;
+		public override void OnCreateContextMenu (IContextMenu menu, View v, IContextMenuContextMenuInfo menuInfo)
+		{
+			base.OnCreateContextMenu (menu, v, menuInfo);
+			MenuInflater.Inflate (useContext, menu);
+			slv = v as ListView;
+		}
+		public override bool OnContextItemSelected (IMenuItem item)
+		{
+			var pos = (item.MenuInfo as AdapterView.AdapterContextMenuInfo).Position;
+			var vm = (slv.Adapter as BaseAdapter<EntryLineVM>)[pos];
+			switch (item.ItemId) {
+			case Resource.Id.removeEatEntry:
+				removeeatitem (vm);
+				break;
+			case Resource.Id.removeBurnEntry:
+				removeburnitem (vm);
+				break;
+			}
+			return base.OnContextItemSelected (item);
+		}
 
 	}
 }
