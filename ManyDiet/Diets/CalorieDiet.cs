@@ -178,6 +178,14 @@ namespace ManyDiet
 				new KVPList<string, double> { { "kcal", ent.callim } }
 			);
 		}
+		public override SelectableItemVM GetRepresentation (FoodInfo info)
+		{
+			return new SelectableItemVM () { name = info.name };
+		}
+		public override SelectableItemVM GetRepresentation (FireInfo info)
+		{
+			return new SelectableItemVM () { name = info.name };
+		}
 		#endregion
 	}
 }

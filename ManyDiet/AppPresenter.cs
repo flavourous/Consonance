@@ -62,9 +62,10 @@ namespace ManyDiet
 		void AddEatItem ()
 		{
 			// via a fooood
-			var fis = conn.Table<FoodInfo> ().Where (f => currentDietModel.model.foodcreator.IsInfoComplete(f));
-			var food = view.selectinfoview.SelectFood(fis);
-			AddedItemVM mod=view.additemview.GetValues("Eat Entry", currentDietModel.model.foodcreator.CalculationFields(food));
+			var fis = new List<FoodInfo> (conn.Table<FoodInfo> ().Where (f => currentDietModel.model.foodcreator.IsInfoComplete (f)));
+			var foodidx = view.SelectInfo (new SelectVMListDecorator<FoodInfo> (fis,currentDietPresenter.GetRepresentation));
+			var food = fis [foodidx];
+			AddedItemVM mod=view.GetValues("Eat Entry", currentDietModel.model.foodcreator.CalculationFields(food));
 			BaseEatEntry vm;
 			currentDietModel.model.foodcreator.Calculate (food, mod.values, out vm);
 			vm.entryWhen = mod.when;
@@ -73,7 +74,7 @@ namespace ManyDiet
 		}
 		void AddEatItemQuick()
 		{
-			var mod = view.additemview.GetValues ("Quick Eat Entry", currentDietModel.model.foodcreator.CreationFields());
+			var mod = view.GetValues ("Quick Eat Entry", currentDietModel.model.foodcreator.CreationFields());
 			BaseEatEntry vm;
 			currentDietModel.model.foodcreator.Create (mod.values, out vm);
 			vm.entryWhen = mod.when;
@@ -83,9 +84,10 @@ namespace ManyDiet
 		void AddBurnItem ()
 		{
 			// via a fooood
-			var fis = conn.Table<FireInfo> ().Where (f => currentDietModel.model.firecreator.IsInfoComplete(f));
-			var fire = view.selectinfoview.SelectFire(fis);
-			AddedItemVM mod=view.additemview.GetValues("Burn Entry", currentDietModel.model.firecreator.CalculationFields(fire));
+			var fis = new List<FireInfo> (conn.Table<FireInfo> ().Where (f => currentDietModel.model.firecreator.IsInfoComplete (f)));
+			var idx = view.SelectInfo (new SelectVMListDecorator<FireInfo> (fis, currentDietPresenter.GetRepresentation));
+			var fire = fis [idx];
+			AddedItemVM mod=view.GetValues("Burn Entry", currentDietModel.model.firecreator.CalculationFields(fire));
 			BaseBurnEntry vm;
 			currentDietModel.model.firecreator.Calculate (fire, mod.values, out vm);
 			vm.entryWhen = mod.when;
@@ -94,7 +96,7 @@ namespace ManyDiet
 		}
 		void AddBurnItemQuick()
 		{
-			var mod = view.additemview.GetValues ("Quick Burn Entry", currentDietModel.model.firecreator.CreationFields());
+			var mod = view.GetValues ("Quick Burn Entry", currentDietModel.model.firecreator.CreationFields());
 			BaseBurnEntry vm;
 			currentDietModel.model.firecreator.Create (mod.values, out vm);
 			vm.entryWhen = mod.when;
@@ -137,7 +139,7 @@ namespace ManyDiet
 				var cdis = conn.Table<DietInstance> ().Where (d => d.started <= DateTime.Now && (d.ended == null || d.ended > DateTime.Now));
 				if(cdis.Count() == 0)
 				{
-					var vals = view.additemview.GetValues ("New Diet", currentDietModel.model.DietCreationFields ());
+					var vals = view.GetValues ("New Diet", currentDietModel.model.DietCreationFields ());
 					currentDietModel.StartNewDiet (DateTime.Now, vals.values);
 				}
 				return	cdis.First ();
@@ -178,9 +180,11 @@ namespace ManyDiet
 		event Action addburnitemquick;
 		event Action<EntryLineVM> removeburnitem;
 
-		// subviews
-		IAddItemView additemview { get; }
-		ISelectInfoView selectinfoview {get;}
+		// plan (diet managment)
+
+		// User Input
+		AddedItemVM GetValues (String title, IEnumerable<String> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);
+		int SelectInfo (IReadOnlyList<SelectableItemVM> foods);
 	}
 	public enum AddedItemVMDefaults { Name =1, When = 2 };
 	public class AddedItemVM
@@ -195,14 +199,8 @@ namespace ManyDiet
 			this.name = name;
 		}
 	}
-	public interface IAddItemView
-	{
-		AddedItemVM GetValues (String title, IEnumerable<String> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);
-	}
-	public interface ISelectInfoView
-	{
-		FoodInfo SelectFood (IEnumerable<FoodInfo> foods);
-		FireInfo SelectFire (IEnumerable<FireInfo> foods);
+	public class SelectableItemVM {
+		public String name;
 	}
 }
 

@@ -44,6 +44,9 @@ namespace ManyDiet
 		public abstract EntryLineVM GetLineRepresentation (BaseEatEntry entry);
 		public abstract EntryLineVM GetLineRepresentation (BaseBurnEntry entry);
 		public abstract EntryLineVM GetLineRepresentation (DietInstance entry);
+
+		public abstract SelectableItemVM GetRepresentation (FoodInfo info);
+		public abstract SelectableItemVM GetRepresentation (FireInfo info);
 	}
 	public interface IDietPresenter
 	{
@@ -53,7 +56,70 @@ namespace ManyDiet
 		EntryLineVM GetLineRepresentation (DietInstance entry);
 
 		// Representing FoodInfo and FireInfo items
-		// ...
+		SelectableItemVM GetRepresentation (FoodInfo info);
+		SelectableItemVM GetRepresentation (FireInfo info);
+	}
+
+	class IndexEnumerator<T> : IEnumerator<T>
+	{
+		IReadOnlyList<T> items;
+		int curr = 0;
+		public IndexEnumerator(IReadOnlyList<T> items)
+		{
+			this.items = items;
+		}
+
+		#region IEnumerator implementation
+		public bool MoveNext () { return ++curr < items.Count; }
+		public void Reset () { curr = 0; }
+		object System.Collections.IEnumerator.Current { get { return items [curr]; } }
+		#endregion
+
+		#region IDisposable implementation
+		public void Dispose () { }
+		#endregion
+
+		#region IEnumerator implementation
+		T IEnumerator<T>.Current { get { return items [curr]; } }
+		#endregion
+	}
+	delegate SelectableItemVM CreateSelectableVM<T>(T item);
+	class SelectVMListDecorator<T> : IReadOnlyList<SelectableItemVM> where T : BaseInfo
+	{
+		IList<T> items;
+		CreateSelectableVM<T> creator;
+		public SelectVMListDecorator(IList<T> items, CreateSelectableVM<T> creator)
+		{
+			this.items = items;
+			this.creator = creator;
+		}
+
+		#region IEnumerable implementation
+		public IEnumerator<SelectableItemVM> GetEnumerator ()
+		{
+			return new IndexEnumerator<SelectableItemVM> (this);
+		}
+		#endregion
+		#region IEnumerable implementation
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
+		{
+			return new IndexEnumerator<SelectableItemVM> (this);
+		}
+		#endregion
+		#region IReadOnlyList implementation
+		public SelectableItemVM this [int index] {
+			get {
+				return creator (items [index]);
+			}
+		}
+		#endregion
+		#region IReadOnlyCollection implementation
+		public int Count {
+			get {
+				return items.Count;
+			}
+		}
+		#endregion
 	}
 }
 

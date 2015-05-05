@@ -20,7 +20,7 @@ namespace ManyDiet.AndroidView
 	class TabDesc { public String name; public int layout; public int menu; }
 
 	[Activity (Label = "ManyDiet", MainLauncher=true, Icon = "@drawable/icon")]
-	public class MainActivity : Activity, ActionBar.ITabListener, IView, IAddItemView, ISelectInfoView
+	public class MainActivity : Activity, ActionBar.ITabListener, IView
 	{
 		TabDescList tabs = new TabDescList () {
 			{ "Eat", Resource.Layout.Eat, Resource.Menu.EatMenu },
@@ -109,13 +109,7 @@ namespace ManyDiet.AndroidView
 				}
 			return new SetRet () { apt = new LAdapter (this, ll, use), name = use };
 		}
-
-		public IAddItemView additemview {get{ return this; }}
-		public ISelectInfoView selectinfoview { get { return this; } }
-		#endregion
-
-		#region IAddItemView implementation
-
+			
 		public AddedItemVM GetValues (String title, IEnumerable<string> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When)
 		{
 			List<double> vs = new List<double>();
@@ -123,16 +117,9 @@ namespace ManyDiet.AndroidView
 			return new AddedItemVM (vs.ToArray(), DateTime.Now, "Namey 42 omg");
 		}
 
-		#endregion
-
-		#region ISelectFoodView implementation
-		public FoodInfo SelectFood (IEnumerable<FoodInfo> foods)
+		public int SelectInfo (IReadOnlyList<SelectableItemVM> foods)
 		{
-			throw new NotImplementedException ();
-		}
-		public FireInfo SelectFire (IEnumerable<FireInfo> fires)
-		{
-			throw new NotImplementedException ();
+			return 0;
 		}
 		#endregion
 
