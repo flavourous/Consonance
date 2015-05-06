@@ -11,17 +11,34 @@ namespace ManyDiet
 			Add (new KeyValuePair<T1, T2> (a, b));
 		}
 	}
-	// basic workings of presenter and VMs, to be rehomed.
-	public class EntryLineVM
+	public class DietInstanceVM 
 	{
-		public readonly DateTime when;
+		public readonly DateTime start;
+		public readonly DateTime? end;
 		public readonly String name;
 		public readonly String desc;
 		public readonly KVPList<string,double> displayAmounts;
 
-		public EntryLineVM(DateTime w, String n, String d, KVPList<string,double>  t)
+		public DietInstanceVM(DateTime s, DateTime? e, String n, String d, KVPList<string,double>  t)
 		{
-			when=w; name=n; desc=d;
+			start=s; end = e;
+			name=n; desc=d;
+			displayAmounts = t;
+		}
+	}
+	// basic workings of presenter and VMs, to be rehomed.
+	public class EntryLineVM
+	{
+		public readonly DateTime start;
+		public readonly TimeSpan duration;
+		public readonly String name;
+		public readonly String desc;
+		public readonly KVPList<string,double> displayAmounts;
+
+		public EntryLineVM(DateTime w, TimeSpan l, String n, String d, KVPList<string,double>  t)
+		{
+			duration = l;
+			start=w; name=n; desc=d;
 			displayAmounts = t;
 		}
 	}
@@ -41,23 +58,26 @@ namespace ManyDiet
 			return res [0];
 		}
 
-		public abstract EntryLineVM GetLineRepresentation (BaseEatEntry entry);
-		public abstract EntryLineVM GetLineRepresentation (BaseBurnEntry entry);
-		public abstract EntryLineVM GetLineRepresentation (DietInstance entry);
+		public abstract EntryLineVM GetRepresentation (BaseEatEntry entry);
+		public abstract EntryLineVM GetRepresentation (BaseBurnEntry entry);
 
 		public abstract SelectableItemVM GetRepresentation (FoodInfo info);
 		public abstract SelectableItemVM GetRepresentation (FireInfo info);
+
+		public abstract DietInstanceVM GetRepresentation (DietInstance entry);
 	}
 	public interface IDietPresenter
 	{
 		// Representing eat and burn items
-		EntryLineVM GetLineRepresentation(BaseEatEntry entry);
-		EntryLineVM GetLineRepresentation(BaseBurnEntry entry);
-		EntryLineVM GetLineRepresentation (DietInstance entry);
+		EntryLineVM GetRepresentation(BaseEatEntry entry);
+		EntryLineVM GetRepresentation(BaseBurnEntry entry);
 
 		// Representing FoodInfo and FireInfo items
 		SelectableItemVM GetRepresentation (FoodInfo info);
 		SelectableItemVM GetRepresentation (FireInfo info);
+
+		// Representing the DietInstance
+		DietInstanceVM GetRepresentation (DietInstance entry);
 	}
 
 	class IndexEnumerator<T> : IEnumerator<T>

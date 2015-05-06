@@ -24,6 +24,7 @@ namespace ManyDiet
 		public int dietinstanceid{get;set;}
 		public int? infoinstanceid{get;set;}
 		public DateTime entryWhen {get;set;}
+		public TimeSpan entryDur {get;set;}
 		public String entryName{ get; set; }
 	}
 	public class BaseEatEntry : BaseEntry {	}
@@ -93,6 +94,7 @@ namespace ManyDiet
 		// creator for dietinstance
 		String[] DietCreationFields();
 		DietInstance NewDiet(double[] values);
+		bool IsDietInstance (DietInstance di);
 		IEntryCreation<BaseEatEntry,FoodInfo> foodcreator { get; }
 		IEntryCreation<BaseBurnEntry,FireInfo> firecreator { get; }
 	}
@@ -121,12 +123,11 @@ namespace ManyDiet
 
 	#region DIET_MODELS_PRESENTER_HANDLER
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
+	delegate void EntryCallback(BaseEntry entry);
 	interface IHandleDietPlanModels
 	{
-		bool Add(BaseInfo info, IList<double> values, DietInstance diet);
-		void Add(DietInstance diet, BaseEntry ent);
-		bool Update(BaseEntry ent, BaseInfo fi, IList<double> values);
-		void Update (BaseEntry ent);
+		bool Add(DietInstance diet, BaseInfo info, IList<double> values, EntryCallback beforeInsert);
+		bool Add(DietInstance diet, IList<double> values, EntryCallback beforeInsert);
 		void Remove (BaseEntry tet);
 		IEnumerable<BaseEntry> Get(DietInstance diet, DateTime start, DateTime end);
 		int Count();
@@ -191,34 +192,29 @@ namespace ManyDiet
 
 		#region IHandleDietPlanModels implementation
 		// eaties
-		public bool Add (BaseInfo info, IList<double> values, DietInstance diet)
+		public bool Add (DietInstance diet, BaseInfo info, IList<double> values, EntryCallback beforeInsert)
 		{
 			EntryType ent = new EntryType ();
 			BaseEntry ent_cast = ent;
 			if (creator.Calculate (info, values, out ent_cast))
 				return false;
 			ent.dietinstanceid = diet.id;
+			ent.infoinstanceid = info.id;
+			beforeInsert (ent);
 			conn.Insert (ent);
 			return true;
 		}
-		public void Add (DietInstance diet, BaseEntry ent)
+		public bool Add (DietInstance diet, IList<double> values, EntryCallback beforeInsert )
 		{
+			EntryType ent = new EntryType ();
+			BaseEntry ent_cast = ent;
+			if (!creator.Create (values, out ent_cast))
+				return false;
 			ent.dietinstanceid = diet.id;
 			ent.infoinstanceid = null;
+			beforeInsert (ent);
 			conn.Insert (ent);
-		}
-		public bool Update (BaseEntry ent, BaseInfo fi, IList<double> values)
-		{
-			if (creator.Calculate (fi, values, out ent))
-				return false;
-			ent.infoinstanceid = fi.id;
-			conn.Update (ent);
 			return true;
-		}
-		public void Update (BaseEntry ent)
-		{
-			ent.infoinstanceid = null;
-			conn.Update (ent);
 		}
 		public void Remove (BaseEntry tet)
 		{

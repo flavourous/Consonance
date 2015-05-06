@@ -43,111 +43,122 @@ namespace ManyDiet
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
 		{
+			var dd = GetCurrentDietDomain ();
 			ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
 			de = ds.AddDays (1);
 			view.day = ds;
-			view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)currentDietModel.foodhandler.Get(currentDietInstance, ds, de)));
-			view.SetBurnLines (GetLines ((IEnumerable<BaseBurnEntry>)currentDietModel.firehandler.Get(currentDietInstance, ds, de)));
+			view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get(dd.instance, ds, de),dd.presenter));
+			view.SetBurnLines (GetLines ((IEnumerable<BaseBurnEntry>)dd.broker.firehandler.Get(dd.instance, ds, de),dd.presenter));
 		}
 
 		void RemEatItem(EntryLineVM line)
 		{
-			currentDietModel.foodhandler.Remove (eatRefIndex [line]);
+			var dd = GetCurrentDietDomain ();
+			dd.broker.foodhandler.Remove (eatRefIndex [line]);
 		}
 		void RemBurnItem(EntryLineVM line)
 		{
-			currentDietModel.firehandler.Remove (burnRefIndex [line]);
+			var dd = GetCurrentDietDomain ();
+			dd.broker.firehandler.Remove (burnRefIndex [line]);
 		}
 
 		void AddEatItem ()
 		{
-			// via a fooood
-			var fis = new List<FoodInfo> (conn.Table<FoodInfo> ().Where (f => currentDietModel.model.foodcreator.IsInfoComplete (f)));
-			var foodidx = view.SelectInfo (new SelectVMListDecorator<FoodInfo> (fis,currentDietPresenter.GetRepresentation));
+			var dd = GetCurrentDietDomain ();
+			var fis = new List<FoodInfo> (conn.Table<FoodInfo> ().Where (f => dd.broker.model.foodcreator.IsInfoComplete (f)));
+			var foodidx = view.SelectInfo (new SelectVMListDecorator<FoodInfo> (fis,dd.presenter.GetRepresentation));
 			var food = fis [foodidx];
-			AddedItemVM mod=view.GetValues("Eat Entry", currentDietModel.model.foodcreator.CalculationFields(food));
-			BaseEatEntry vm;
-			currentDietModel.model.foodcreator.Calculate (food, mod.values, out vm);
-			vm.entryWhen = mod.when;
-			vm.entryName = mod.name;
-			currentDietModel.foodhandler.Add (currentDietInstance, vm);
+			AddedItemVM mod=view.GetValues("Eat Entry", dd.broker.model.foodcreator.CalculationFields(food));
+			dd.broker.foodhandler.Add (dd.instance, mod.values, vm => {
+				vm.entryWhen = mod.when;
+				vm.entryName = mod.name;
+			});
 		}
 		void AddEatItemQuick()
 		{
-			var mod = view.GetValues ("Quick Eat Entry", currentDietModel.model.foodcreator.CreationFields());
-			BaseEatEntry vm;
-			currentDietModel.model.foodcreator.Create (mod.values, out vm);
-			vm.entryWhen = mod.when;
-			vm.entryName = mod.name;
-			currentDietModel.foodhandler.Add (currentDietInstance, vm);
+			var dd = GetCurrentDietDomain ();
+			var mod = view.GetValues ("Quick Eat Entry", dd.broker.model.foodcreator.CreationFields());
+			dd.broker.foodhandler.Add (dd.instance, mod.values, vm => {
+				vm.entryWhen = mod.when;
+				vm.entryName = mod.name;
+			});
 		}
 		void AddBurnItem ()
 		{
-			// via a fooood
-			var fis = new List<FireInfo> (conn.Table<FireInfo> ().Where (f => currentDietModel.model.firecreator.IsInfoComplete (f)));
-			var idx = view.SelectInfo (new SelectVMListDecorator<FireInfo> (fis, currentDietPresenter.GetRepresentation));
+			var dd = GetCurrentDietDomain ();
+			var fis = new List<FireInfo> (conn.Table<FireInfo> ().Where (f => dd.broker.model.firecreator.IsInfoComplete (f)));
+			var idx = view.SelectInfo (new SelectVMListDecorator<FireInfo> (fis, dd.presenter.GetRepresentation));
 			var fire = fis [idx];
-			AddedItemVM mod=view.GetValues("Burn Entry", currentDietModel.model.firecreator.CalculationFields(fire));
-			BaseBurnEntry vm;
-			currentDietModel.model.firecreator.Calculate (fire, mod.values, out vm);
-			vm.entryWhen = mod.when;
-			vm.entryName = mod.name;
-			currentDietModel.firehandler.Add (currentDietInstance, vm);
+			AddedItemVM mod=view.GetValues("Burn Entry", dd.broker.model.firecreator.CalculationFields(fire));
+			dd.broker.firehandler.Add (dd.instance, fire, mod.values, vm => {
+				vm.entryWhen = mod.when;
+				vm.entryName = mod.name;
+			});
 		}
 		void AddBurnItemQuick()
 		{
-			var mod = view.GetValues ("Quick Burn Entry", currentDietModel.model.firecreator.CreationFields());
-			BaseBurnEntry vm;
-			currentDietModel.model.firecreator.Create (mod.values, out vm);
-			vm.entryWhen = mod.when;
-			vm.entryName = mod.name;
-			currentDietModel.foodhandler.Add (currentDietInstance, vm);
+			var dd = GetCurrentDietDomain ();
+			var mod = view.GetValues ("Quick Burn Entry", dd.broker.model.firecreator.CreationFields());
+			dd.broker.firehandler.Add (dd.instance, mod.values, vm => {
+				vm.entryWhen = mod.when;
+				vm.entryName = mod.name;
+			});
 		}
 
 		void HandleTableChanged (object sender, NotifyTableChangedEventArgs e)
 		{
+			var dd = GetCurrentDietDomain ();
 			if (typeof(BaseEatEntry).IsAssignableFrom (e.Table.MappedType))
-				view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)currentDietModel.foodhandler.Get (currentDietInstance, ds, de)));
+				view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get (dd.instance, ds, de),dd.presenter));
 			if (typeof(BaseBurnEntry).IsAssignableFrom (e.Table.MappedType))
-				view.SetBurnLines (GetLines ((IEnumerable<BaseBurnEntry>)currentDietModel.firehandler.Get (currentDietInstance, ds, de)));
+				view.SetBurnLines (GetLines ((IEnumerable<BaseBurnEntry>)dd.broker.firehandler.Get (dd.instance, ds, de), dd.presenter));
 		}
 		Dictionary<EntryLineVM, BaseEatEntry> eatRefIndex = new Dictionary<EntryLineVM, BaseEatEntry>();
-		IEnumerable<EntryLineVM> GetLines(IEnumerable<BaseEatEntry> ents)
+		IEnumerable<EntryLineVM> GetLines(IEnumerable<BaseEatEntry> ents, IDietPresenter dp)
 		{
 			eatRefIndex.Clear ();
 			foreach (var e in ents) {
-				var vm = currentDietPresenter.GetLineRepresentation (e);
+				var vm = dp.GetRepresentation (e);
 				eatRefIndex[vm] = e;
 				yield return vm;
 			}
-
 		}
 		Dictionary<EntryLineVM,BaseBurnEntry> burnRefIndex = new Dictionary<EntryLineVM, BaseBurnEntry>();
-		IEnumerable<EntryLineVM> GetLines(IEnumerable<BaseBurnEntry> ents)
+		IEnumerable<EntryLineVM> GetLines(IEnumerable<BaseBurnEntry> ents, IDietPresenter dp)
 		{
 			burnRefIndex.Clear ();
 			foreach (var e in ents) {
-				var vm = currentDietPresenter.GetLineRepresentation (e);
+				var vm = dp.GetRepresentation (e);
 				burnRefIndex[vm] = e;
 				yield return vm;
 			}
 		}
-		DietInstance currentDietInstance
+			
+		// ** helpers for managing active diets ** //
+		class CDIThings 
 		{
-			get 
-			{
-				var cdis = conn.Table<DietInstance> ().Where (d => d.started <= DateTime.Now && (d.ended == null || d.ended > DateTime.Now));
-				if(cdis.Count() == 0)
-				{
-					var vals = view.GetValues ("New Diet", currentDietModel.model.DietCreationFields ());
-					currentDietModel.StartNewDiet (DateTime.Now, vals.values);
-				}
-				return	cdis.First ();
-			}
+			public DietInstance instance;
+			public IDiet broker;
+			public IDietPresenter presenter;
 		}
+		DietInstance GetCurrentDietInstance()
+		{
+			var cdis = conn.Table<DietInstance> ().Where (d => d.started <= DateTime.Now && (d.ended == null || d.ended > DateTime.Now));
+			if(cdis.Count() == 0) return null;
+			return	cdis.First ();
+		}
+		CDIThings GetDietDomain (DietInstance di)
+		{
+			var mods = diets.Find (kv => kv.Key.model.IsDietInstance (di));
+			return new CDIThings () { instance = di, broker = mods.Key, presenter = mods.Value };
+		}
+		CDIThings GetCurrentDietDomain()
+		{
+			return GetDietDomain (GetCurrentDietInstance ());
+		}
+		// ** ********************************* ** //
 
-		IDiet currentDietModel;
-		IDietPresenter currentDietPresenter;
+		KVPList<IDiet,IDietPresenter> diets = new KVPList<IDiet, IDietPresenter>();
 		void AddDietPair<D,E,Ei,B,Bi>(IDietModel<D,E,Ei,B,Bi> dietModel, DietPresenter<D,E,Ei,B,Bi> dietPresenter)
 			where D : DietInstance
 			where E  : BaseEatEntry,new() 
@@ -155,8 +166,7 @@ namespace ManyDiet
 			where B  : BaseBurnEntry,new() 
 			where Bi : FireInfo,new() 
 		{
-			currentDietModel = new Diet<D,E,Ei,B,Bi> (conn, dietModel);
-			currentDietPresenter = dietPresenter;
+			diets.Add (new Diet<D,E,Ei,B,Bi> (conn, dietModel), dietPresenter);
 		}
 	}
 

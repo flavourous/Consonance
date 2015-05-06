@@ -35,6 +35,10 @@ namespace ManyDiet
 		{
 			return new CalorieDietInstance () { name = "Calorie Diet", callim = values[0] };
 		}
+		public bool IsDietInstance(DietInstance di)
+		{
+			return di is CalorieDietInstance;
+		}
 
 		CalorieDietEatCreation cde = new CalorieDietEatCreation();
 		CalorieDietBurnCreation cdb = new CalorieDietBurnCreation();
@@ -146,33 +150,36 @@ namespace ManyDiet
 	public class CalorieDietPresenter : DietPresenter<CalorieDietInstance, CalorieDietEatEntry, CalorieDietEatInfo, CalorieDietBurnEntry, CalorieDietBurnInfo>
 	{
 		#region IDietPresenter implementation
-		public override EntryLineVM GetLineRepresentation (BaseEatEntry entry)
+		public override EntryLineVM GetRepresentation (BaseEatEntry entry)
 		{
 			var ent = (entry as CalorieDietEatEntry);
 			var fi = FindInfo<FoodInfo> (ent.infoinstanceid);
 			return new EntryLineVM (
-				ent.entryWhen, 
+				ent.entryWhen,
+				ent.entryDur,
 				ent.myname, 
 				fi == null ? "" : fi.name, 
 				new KVPList<string, double> { { "kcal", ent.kcals } }
 			);
 		}
-		public override EntryLineVM GetLineRepresentation (BaseBurnEntry entry)
+		public override EntryLineVM GetRepresentation (BaseBurnEntry entry)
 		{
 			var ent = (entry as CalorieDietBurnEntry);
 			var fi = FindInfo<FireInfo> (ent.infoinstanceid);
 			return new EntryLineVM (
 				ent.entryWhen, 
+				ent.entryDur,
 				ent.myname, 
 				fi == null ? "" : fi.name, 
 				new KVPList<string, double> { { "kcal", ent.kcals } }
 			);
 		}
-		public override EntryLineVM GetLineRepresentation (DietInstance entry)
+		public override DietInstanceVM GetRepresentation (DietInstance entry)
 		{
 			var ent = (entry as CalorieDietInstance);
-			return new EntryLineVM (
+			return new DietInstanceVM(
 				ent.started, 
+				ent.ended,
 				ent.name, 
 				"",
 				new KVPList<string, double> { { "kcal", ent.callim } }

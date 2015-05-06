@@ -27,7 +27,7 @@ namespace ManyDiet.AndroidView
 			if (view == null) // otherwise create a new one
 				view = context.LayoutInflater.Inflate (Resource.Layout.EatEntryLine, null);
 			view.FindViewById<TextView> (Resource.Id.eatitemname).Text = vms [position].name;
-			view.FindViewById<TextView> (Resource.Id.eatitemdatetime).Text = vms [position].when.ToString();
+			view.FindViewById<TextView> (Resource.Id.eatitemdatetime).Text = vms [position].start.ToString();
 			var find = vms [position].displayAmounts.FindAll (k => k.Key == useTrack);
 			if(find.Count > 0)
 				view.FindViewById<TextView> (Resource.Id.eatitemtrack).Text = find[0].Value.ToString("F2");
