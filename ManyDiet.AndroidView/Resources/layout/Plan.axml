@@ -13,12 +13,11 @@
         p1:id="@+id/frameLayout1"
         p1:layout_alignParentTop="true"
         p1:layout_above="@+id/flb">
-        <TextView
-            p1:text="This is plan"
-            p1:textAppearance="?android:attr/textAppearanceMedium"
+        <ListView
+            p1:id="@+id/planlist"
             p1:layout_width="match_parent"
             p1:layout_height="match_parent"
-            p1:id="@+id/textView1" />
+            p1:layout_alignParentBottom="true" />
     </FrameLayout>
     <FrameLayout
         p1:minWidth="25px"

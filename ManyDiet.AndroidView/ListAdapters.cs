@@ -26,7 +26,33 @@ namespace ManyDiet.AndroidView
 				view.FindViewById<TextView> (Resource.Id.burnitemtrack).Text = find[0].Value.ToString("F2");
 		}
 	}
-	class DAdapter : BaseAdapter<DietInstanceVM>{}
+	class DAdapter : BaseAdapter<DietInstanceVM>{
+		readonly Activity context;
+		readonly List<DietInstanceVM> vms;
+		public DAdapter(Activity context, List<DietInstanceVM> vms)
+		{
+			this.context = context;
+			this.vms = vms;
+		}
+		public override long GetItemId (int position) { return position; }
+		public override View GetView (int position, View convertView, ViewGroup parent)
+		{
+			View view = convertView; // re-use an existing view, if one is available
+			if (view == null) // otherwise create a new one
+				view = context.LayoutInflater.Inflate (Resource.Layout.DietInstanceLine, null);
+			var vm = vms [position];
+			view.FindViewById<TextView> (Resource.Id.dietitemname).Text = vm.name;
+			view.FindViewById<TextView> (Resource.Id.dietitemdatetime).Text = vm.start.ToShortDateString ();
+			view.FindViewById<TextView> (Resource.Id.dietitemmetric).Text = vm.displayAmounts [0].Key + ": " + vm.displayAmounts [0].Value.ToString ("F2");
+			return view;
+		}
+		public override int Count {
+			get {
+				return vms.Count;
+			}
+		}
+		public override DietInstanceVM this [int index] { get { return vms [index]; } }
+	}
 	class LAdapter : BaseAdapter<EntryLineVM>
 	{
 		readonly Activity context;

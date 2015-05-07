@@ -54,6 +54,10 @@ namespace ManyDiet.AndroidView
 				useContext = Resource.Menu.BurnEntryMenu;
 			}
 			if (ActionBar.SelectedNavigationIndex == 2) {
+				FindViewById<ListView> (Resource.Id.planlist).Adapter = plan;
+				RegisterForContextMenu (FindViewById<ListView> (Resource.Id.planlist));
+				useContext = Resource.Menu.PlanEntryMenu;
+				HighlightCurrentDietInstance ();
 			}
 		}
 
@@ -75,7 +79,7 @@ namespace ManyDiet.AndroidView
 			}
 		}
 		private DietInstanceVM _diet;
-		public DietInstanceVM diet
+		public DietInstanceVM currentDiet
 		{
 			set
 			{
@@ -99,9 +103,18 @@ namespace ManyDiet.AndroidView
 			burnitems = SetLines (lineitems, Resource.Layout.BurnEntryLine, ItemViewConfigs.Burn);
 			ReloadLayoutForTab ();
 		}
+		void HighlightCurrentDietInstance()
+		{
+			for (int i = 0; i < plan.Count; i++)
+				if(Object.ReferenceEquals(plan[i], _diet))
+					FindViewById<ListView>(Resource.Id.planlist).SetSelection(i);
+		}
+		DAdapter plan;
 		public void SetInstances (IEnumerable<DietInstanceVM> instanceitems)
 		{
-			throw new NotImplementedException ();
+			var itms = new List<DietInstanceVM> (instanceitems);
+			plan = new DAdapter (this, itms);
+			ReloadLayoutForTab ();
 		}
 		delegate void MyViewConfiguror<VMType>(View view, VMType vm, String use);
 		SetRet SetLines (IEnumerable<EntryLineVM> lineitems, int vid, MyViewConfiguror<EntryLineVM> cfg)

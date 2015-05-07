@@ -98,8 +98,8 @@ namespace ManyDiet.AndroidView
 			// aapt resource value: 0x7f060000
 			public const int burnpage = 2131099648;
 			
-			// aapt resource value: 0x7f06001d
-			public const int changePlan = 2131099677;
+			// aapt resource value: 0x7f06001e
+			public const int changePlan = 2131099678;
 			
 			// aapt resource value: 0x7f060009
 			public const int dietitemdatetime = 2131099657;
@@ -143,14 +143,17 @@ namespace ManyDiet.AndroidView
 			// aapt resource value: 0x7f060001
 			public const int frameLayout1burn = 2131099649;
 			
+			// aapt resource value: 0x7f060016
+			public const int planlist = 2131099670;
+			
 			// aapt resource value: 0x7f060017
 			public const int removeBurnEntry = 2131099671;
 			
 			// aapt resource value: 0x7f06001a
 			public const int removeEatEntry = 2131099674;
 			
-			// aapt resource value: 0x7f060016
-			public const int textView1 = 2131099670;
+			// aapt resource value: 0x7f06001d
+			public const int removePlanEntry = 2131099677;
 			
 			static Id()
 			{
@@ -209,7 +212,10 @@ namespace ManyDiet.AndroidView
 			public const int EatMenu = 2131034115;
 			
 			// aapt resource value: 0x7f050004
-			public const int PlanMenu = 2131034116;
+			public const int PlanEntryMenu = 2131034116;
+			
+			// aapt resource value: 0x7f050005
+			public const int PlanMenu = 2131034117;
 			
 			static Menu()
 			{
