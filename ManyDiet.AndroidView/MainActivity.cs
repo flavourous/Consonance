@@ -54,10 +54,12 @@ namespace ManyDiet.AndroidView
 				useContext = Resource.Menu.BurnEntryMenu;
 			}
 			if (ActionBar.SelectedNavigationIndex == 2) {
-				FindViewById<ListView> (Resource.Id.planlist).Adapter = plan;
-				RegisterForContextMenu (FindViewById<ListView> (Resource.Id.planlist));
+				var pl = FindViewById<ListView> (Resource.Id.planlist);
+				pl.Adapter = plan;
+				RegisterForContextMenu (pl);
 				useContext = Resource.Menu.PlanEntryMenu;
 				HighlightCurrentDietInstance ();
+				pl.ItemSelected += (sender, e) => selectdietinstance (plan [pl.SelectedItemPosition]);
 			}
 		}
 
@@ -68,6 +70,8 @@ namespace ManyDiet.AndroidView
 		public event Action addeatitemquick = delegate{};
 		public event Action addeatitem = delegate{};
 		public event Action<EntryLineVM> removeeatitem = delegate{};
+		public event Action adddietinstance;
+		public event Action<DietInstanceVM> selectdietinstance;
 		public event Action<DateTime> changeday = delegate{};
 		private DateTime _day;
 		public DateTime day 
@@ -165,6 +169,9 @@ namespace ManyDiet.AndroidView
 				break;
 			case Resource.Id.addEaten:
 				addeatitem ();
+				break;
+			case Resource.Id.addPlan:
+				adddietinstance ();
 				break;
 			default:
 				break;

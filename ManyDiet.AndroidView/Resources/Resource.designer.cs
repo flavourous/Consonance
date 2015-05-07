@@ -74,6 +74,9 @@ namespace ManyDiet.AndroidView
 			// aapt resource value: 0x7f06001c
 			public const int addEatenQuick = 2131099676;
 			
+			// aapt resource value: 0x7f06001e
+			public const int addPlan = 2131099678;
+			
 			// aapt resource value: 0x7f060015
 			public const int burn = 2131099669;
 			
@@ -97,9 +100,6 @@ namespace ManyDiet.AndroidView
 			
 			// aapt resource value: 0x7f060000
 			public const int burnpage = 2131099648;
-			
-			// aapt resource value: 0x7f06001e
-			public const int changePlan = 2131099678;
 			
 			// aapt resource value: 0x7f060009
 			public const int dietitemdatetime = 2131099657;

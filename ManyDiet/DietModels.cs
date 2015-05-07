@@ -92,6 +92,7 @@ namespace ManyDiet
 	public interface IDietModel 
 	{
 		// creator for dietinstance
+		String name { get; }
 		String[] DietCreationFields();
 		DietInstance NewDiet(double[] values);
 		bool IsDietInstance (DietInstance di);
@@ -161,7 +162,8 @@ namespace ManyDiet
 		}
 		public IEnumerable<DietInstance> GetDiets()
 		{
-			return conn.Table<DietInstType> ();
+			var tab = conn.Table<DietInstType> ();
+			return tab;
 		}
 		public IEnumerable<DietInstance> GetDiets(DateTime st, DateTime en)
 		{
@@ -185,7 +187,7 @@ namespace ManyDiet
 		{
 			this.conn = conn;
 			this.model = model;
-			conn.CreateTable<EatType> (CreateFlags.None);
+			conn.CreateTable<DietInstType> ();
 
 			// Bloody diamond...
 			var eatcreator = (IEntryCreation<BaseEntry, BaseInfo>)(model as IEntryCreation<BaseEatEntry, FoodInfo>);

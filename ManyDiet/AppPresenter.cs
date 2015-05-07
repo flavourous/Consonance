@@ -17,6 +17,7 @@ namespace ManyDiet
 			if (!Directory.Exists (datapath))
 				Directory.CreateDirectory (datapath);
 			var maindbpath = Path.Combine (datapath, "manydiet.db");
+			//File.Delete (maindbpath);
 			conn = new SQLiteConnection (maindbpath);
 			conn.CreateTable<DietInstance> (CreateFlags.None);
 		}
@@ -36,6 +37,7 @@ namespace ManyDiet
 			view.addburnitem += AddBurnItem;
 			view.removeburnitem += RemBurnItem;
 			view.changeday += ChangeDay;
+			view.adddietinstance += Handleadddietinstance;
 
 			// reactive...
 			conn.TableChanged += HandleTableChanged;
@@ -44,6 +46,15 @@ namespace ManyDiet
 			PushDietInstances ();
 			ChangeCurrentDiet(GetDefaultedDietInstance ());
 			ChangeDay (DateTime.UtcNow);
+		}
+
+		void Handleadddietinstance ()
+		{
+			List<String> s = new List<string> ();
+			foreach (var d in diets) s.Add (d.Key.model.name);
+			var diet = diets [view.SelectString ("Select Diet Type", s)];
+			var vals = view.GetValues ("Diet Name", diet.Key.model.DietCreationFields(), AddedItemVMDefaults.None);
+
 		}
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
@@ -57,7 +68,7 @@ namespace ManyDiet
 		void ChangeCurrentDiet(DietInstance to)
 		{
 			CurrentDietInstance = to;
-			view.currentDiet = diRefIndexM [to];
+			view.currentDiet = to == null ? null : diRefIndexM [to];
 		}
 		DietInstance GetDefaultedDietInstance()
 		{
@@ -233,12 +244,15 @@ namespace ManyDiet
 		event Action<EntryLineVM> removeburnitem;
 
 		// plan (diet managment)
+		event Action adddietinstance;
+		event Action<DietInstanceVM> selectdietinstance;
 
 		// User Input
 		AddedItemVM GetValues (String title, IEnumerable<String> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);
 		int SelectInfo (IReadOnlyList<SelectableItemVM> foods);
+		int SelectString (String title, IReadOnlyList<String> strings);
 	}
-	public enum AddedItemVMDefaults { Name =1, When = 2 };
+	public enum AddedItemVMDefaults { None =0, Name =1, When = 2 };
 	public class AddedItemVM
 	{
 		public readonly String name;
