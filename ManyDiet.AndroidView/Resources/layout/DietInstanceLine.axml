@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:dr="http://schemas.android.com/apk/res/android"
+    dr:layout_width="fill_parent"
+    dr:layout_height="wrap_content"
+    dr:orientation="horizontal">
+    <TextView
+        dr:textColor="?android:attr/textColorHighlightInverse"
+        dr:id="@+id/dietitemdatetime"
+        dr:layout_width="100dp"
+        dr:layout_height="wrap_content" />
+    <TextView
+        dr:textColor="?android:attr/textColorHighlightInverse"
+        dr:id="@+id/dietitemname"
+        dr:layout_weight="1"
+        dr:layout_width="wrap_content"
+        dr:layout_height="wrap_content" />
+    <TextView
+        dr:textColor="?android:attr/textColorHintInverse"
+        dr:id="@+id/dietitemmetric"
+        dr:layout_width="wrap_content"
+        dr:layout_height="wrap_content" />
+</LinearLayout>

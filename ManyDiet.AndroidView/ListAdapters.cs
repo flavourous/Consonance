@@ -6,17 +6,39 @@ using Android.Widget;
 
 namespace ManyDiet.AndroidView
 {
-
+	public delegate void ViewConfiguror<VMType>(View view, VMType vm); 
+	public static class ItemViewConfigs
+	{
+		public static void Eat(View view, EntryLineVM vm, String useTrack)
+		{
+			view.FindViewById<TextView> (Resource.Id.eatitemname).Text = vm.name;
+			view.FindViewById<TextView> (Resource.Id.eatitemdatetime).Text = vm.start.ToString();
+			var find = vm.displayAmounts.FindAll (k => k.Key == useTrack);
+			if(find.Count > 0)
+				view.FindViewById<TextView> (Resource.Id.eatitemtrack).Text = find[0].Value.ToString("F2");
+		}
+		public static void Burn(View view, EntryLineVM vm, String useTrack)
+		{
+			view.FindViewById<TextView> (Resource.Id.burnitemname).Text = vm.name;
+			view.FindViewById<TextView> (Resource.Id.burnitemdatetime).Text = vm.start.ToString();
+			var find = vm.displayAmounts.FindAll (k => k.Key == useTrack);
+			if(find.Count > 0)
+				view.FindViewById<TextView> (Resource.Id.burnitemtrack).Text = find[0].Value.ToString("F2");
+		}
+	}
+	class DAdapter : BaseAdapter<DietInstanceVM>{}
 	class LAdapter : BaseAdapter<EntryLineVM>
 	{
 		readonly Activity context;
 		readonly List<EntryLineVM> vms;
-		readonly String useTrack;
-		public LAdapter(Activity context, List<EntryLineVM> vms, String useTrack)
+		readonly int uView;
+		readonly ViewConfiguror<EntryLineVM> uConfig;
+		public LAdapter(Activity context, List<EntryLineVM> vms, int viewID, ViewConfiguror<EntryLineVM> config)
 		{
 			this.context = context;
 			this.vms = vms;
-			this.useTrack=useTrack;
+			uConfig = config;
+			uView = viewID;
 		}
 
 		#region implemented abstract members of BaseAdapter
@@ -24,13 +46,9 @@ namespace ManyDiet.AndroidView
 		public override View GetView (int position, View convertView, ViewGroup parent)
 		{
 			View view = convertView; // re-use an existing view, if one is available
-			if (view == null) // otherwise create a new one
-				view = context.LayoutInflater.Inflate (Resource.Layout.EatEntryLine, null);
-			view.FindViewById<TextView> (Resource.Id.eatitemname).Text = vms [position].name;
-			view.FindViewById<TextView> (Resource.Id.eatitemdatetime).Text = vms [position].start.ToString();
-			var find = vms [position].displayAmounts.FindAll (k => k.Key == useTrack);
-			if(find.Count > 0)
-				view.FindViewById<TextView> (Resource.Id.eatitemtrack).Text = find[0].Value.ToString("F2");
+			if (view == null || view.Id != uView) // otherwise create a new one
+				view = context.LayoutInflater.Inflate (uView, null);
+			uConfig (view, vms [position]);
 			return view;
 		}
 

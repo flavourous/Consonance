@@ -72,6 +72,8 @@
     <AndroidResource Include="Resources\layout\EatEntryLine.axml" />
     <AndroidResource Include="Resources\menu\EatEntryMenu.xml" />
     <AndroidResource Include="Resources\menu\BurnEntryMenu.xml" />
+    <AndroidResource Include="Resources\layout\BurnEntryLine.axml" />
+    <AndroidResource Include="Resources\layout\DietInstanceLine.axml" />
   </ItemGroup>
   <Import Project="..\ManyDiet\ManyDiet.projitems" Label="Shared" Condition="Exists('..\ManyDiet\ManyDiet.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />

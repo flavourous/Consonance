@@ -37,20 +37,34 @@ namespace ManyDiet
 			view.removeburnitem += RemBurnItem;
 			view.changeday += ChangeDay;
 
+			// reactive...
 			conn.TableChanged += HandleTableChanged;
+
+			// setup view
+			PushDietInstances ();
+			ChangeCurrentDiet(GetDefaultedDietInstance ());
 			ChangeDay (DateTime.UtcNow);
 		}
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
 		{
-			var dd = GetCurrentDietDomain ();
 			ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
 			de = ds.AddDays (1);
 			view.day = ds;
-			view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get(dd.instance, ds, de),dd.presenter));
-			view.SetBurnLines (GetLines ((IEnumerable<BaseBurnEntry>)dd.broker.firehandler.Get(dd.instance, ds, de),dd.presenter));
+			PushEatLines ();
+			PushBurnLines ();
 		}
-
+		void ChangeCurrentDiet(DietInstance to)
+		{
+			CurrentDietInstance = to;
+			view.currentDiet = diRefIndexM [to];
+		}
+		DietInstance GetDefaultedDietInstance()
+		{
+			var cdis = conn.Table<DietInstance> ().Where (d => d.started <= DateTime.Now && (d.ended == null || d.ended > DateTime.Now));
+			if(cdis.Count() == 0) return null;
+			return	cdis.First ();
+		}
 		void RemEatItem(EntryLineVM line)
 		{
 			var dd = GetCurrentDietDomain ();
@@ -107,11 +121,31 @@ namespace ManyDiet
 
 		void HandleTableChanged (object sender, NotifyTableChangedEventArgs e)
 		{
-			var dd = GetCurrentDietDomain ();
 			if (typeof(BaseEatEntry).IsAssignableFrom (e.Table.MappedType))
-				view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get (dd.instance, ds, de),dd.presenter));
+				PushEatLines ();
 			if (typeof(BaseBurnEntry).IsAssignableFrom (e.Table.MappedType))
-				view.SetBurnLines (GetLines ((IEnumerable<BaseBurnEntry>)dd.broker.firehandler.Get (dd.instance, ds, de), dd.presenter));
+				PushBurnLines ();
+			if (typeof(DietInstance).IsAssignableFrom (e.Table.MappedType))
+				PushDietInstances ();
+		}
+		void PushEatLines()
+		{
+			var dd = GetCurrentDietDomain ();
+			view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get (dd.instance, ds, de),dd.presenter));
+		}
+		void PushBurnLines()
+		{
+			var dd = GetCurrentDietDomain ();
+			view.SetBurnLines (GetLines ((IEnumerable<BaseBurnEntry>)dd.broker.firehandler.Get (dd.instance, ds, de), dd.presenter));
+		}
+		void PushDietInstances()
+		{
+			diRefIndexV.Clear ();
+			diRefIndexM.Clear ();
+			List<DietInstanceVM> built = new List<DietInstanceVM> ();
+			foreach (var dp in diets)
+				built.AddRange (GetIVMs (dp.Key.GetDiets (), dp.Value));
+			view.SetInstances (built);
 		}
 		Dictionary<EntryLineVM, BaseEatEntry> eatRefIndex = new Dictionary<EntryLineVM, BaseEatEntry>();
 		IEnumerable<EntryLineVM> GetLines(IEnumerable<BaseEatEntry> ents, IDietPresenter dp)
@@ -133,6 +167,17 @@ namespace ManyDiet
 				yield return vm;
 			}
 		}
+		Dictionary<DietInstanceVM,DietInstance> diRefIndexV = new Dictionary<DietInstanceVM, DietInstance> ();
+		Dictionary<DietInstance,DietInstanceVM> diRefIndexM = new Dictionary<DietInstance, DietInstanceVM> ();
+		IEnumerable<DietInstanceVM> GetIVMs(IEnumerable<DietInstance> insts, IDietPresenter dp)
+		{
+			foreach (var i in insts) {
+				var vm = dp.GetRepresentation (i);
+				diRefIndexV [vm] = i;
+				diRefIndexM [i] = vm;
+				yield return vm;
+			}
+		}
 			
 		// ** helpers for managing active diets ** //
 		class CDIThings 
@@ -141,26 +186,21 @@ namespace ManyDiet
 			public IDiet broker;
 			public IDietPresenter presenter;
 		}
-		DietInstance GetCurrentDietInstance()
-		{
-			var cdis = conn.Table<DietInstance> ().Where (d => d.started <= DateTime.Now && (d.ended == null || d.ended > DateTime.Now));
-			if(cdis.Count() == 0) return null;
-			return	cdis.First ();
-		}
 		CDIThings GetDietDomain (DietInstance di)
 		{
 			var mods = diets.Find (kv => kv.Key.model.IsDietInstance (di));
 			return new CDIThings () { instance = di, broker = mods.Key, presenter = mods.Value };
 		}
+		DietInstance CurrentDietInstance;	
 		CDIThings GetCurrentDietDomain()
 		{
-			return GetDietDomain (GetCurrentDietInstance ());
+			return GetDietDomain (CurrentDietInstance);
 		}
 		// ** ********************************* ** //
 
 		KVPList<IDiet,IDietPresenter> diets = new KVPList<IDiet, IDietPresenter>();
 		void AddDietPair<D,E,Ei,B,Bi>(IDietModel<D,E,Ei,B,Bi> dietModel, DietPresenter<D,E,Ei,B,Bi> dietPresenter)
-			where D : DietInstance
+			where D : DietInstance, new()
 			where E  : BaseEatEntry,new() 
 			where Ei : FoodInfo,new() 
 			where B  : BaseBurnEntry,new() 
@@ -177,8 +217,10 @@ namespace ManyDiet
 	{
 		void SetEatLines(IEnumerable<EntryLineVM> lineitems);
 		void SetBurnLines(IEnumerable<EntryLineVM> lineitems);
+		void SetInstances (IEnumerable<DietInstanceVM> instanceitems);
 		event Action<DateTime> changeday;
 		DateTime day { set; }
+		DietInstanceVM currentDiet { set; }
 
 		// eat
 		event Action addeatitem;

@@ -136,12 +136,14 @@ namespace ManyDiet
 	{
 		IDietModel model { get; }
 		DietInstance StartNewDiet(DateTime started, double[] values);
-		IHandleDietPlanModels foodhandler {get;}
+		IEnumerable<DietInstance> GetDiets (DateTime st, DateTime en);
+		IEnumerable<DietInstance> GetDiets ();
+		IHandleDietPlanModels foodhandler { get; }
 		IHandleDietPlanModels firehandler { get; }
 	}
 
 	class Diet<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IDiet
-		where DietInstType : DietInstance
+		where DietInstType : DietInstance, new()
 		where EatType : BaseEatEntry, new()
 		where EatInfoType : FoodInfo, new()
 		where BurnType : BaseBurnEntry, new()
@@ -156,6 +158,26 @@ namespace ManyDiet
 			di.ended = null;
 			conn.Insert (di);
 			return di;
+		}
+		public IEnumerable<DietInstance> GetDiets()
+		{
+			return conn.Table<DietInstType> ();
+		}
+		public IEnumerable<DietInstance> GetDiets(DateTime st, DateTime en)
+		{
+			//  | is i1/i2 \ is st/en		i1>st	i2>en	i1>en	i2>st		WANTED
+			// |    \    \     |		= 	false	true	false	true		true		
+			// \  |    \   |			=	true	true	false	true		true
+			// |    \    |   \ 			=	false	false	false	true		true
+			// \    |  |       \		=	true	false	true	true		true
+			// \  \   |   |				=	true	true	true	true		false
+			// |  |   \   \				=	false	false	false	false		false
+
+			// what works is (i1>st ^ i2 > en) | (i1>en ^ i2>st)
+
+			return conn.Table<DietInstType> ().Where (
+				d => ((d.ended == null && (st >= d.started || en >= d.started))
+					|| ((d.started >= st ^ d.ended >= en) || (d.started >= en ^ d.ended >= st))));
 		}
 		public IHandleDietPlanModels foodhandler { get; private set; }
 		public IHandleDietPlanModels firehandler { get; private set; }

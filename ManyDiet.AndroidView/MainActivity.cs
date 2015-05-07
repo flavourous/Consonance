@@ -33,13 +33,13 @@ namespace ManyDiet.AndroidView
 		{
 			SetContentView (tabs [ActionBar.SelectedNavigationIndex].layout);
 
-			ReloadItemsAdapterForTab ();
+			ReloadLayoutForTab ();
 
 			InvalidateOptionsMenu ();
 		}
 
 		int useContext;
-		void ReloadItemsAdapterForTab() {
+		void ReloadLayoutForTab() {
 			// FIXME why break pattern :/
 			if (ActionBar.SelectedNavigationIndex == 0) {
 				FindViewById<ListView> (Resource.Id.eatlist).Adapter = eatitems.apt;
@@ -52,6 +52,8 @@ namespace ManyDiet.AndroidView
 				FindViewById<TextView> (Resource.Id.burnlisttitletrack).Text = burnitems.name;
 				RegisterForContextMenu (FindViewById<ListView> (Resource.Id.burnlist));
 				useContext = Resource.Menu.BurnEntryMenu;
+			}
+			if (ActionBar.SelectedNavigationIndex == 2) {
 			}
 		}
 
@@ -72,6 +74,14 @@ namespace ManyDiet.AndroidView
 				// FIXME code to set day on view visible somewhere
 			}
 		}
+		private DietInstanceVM _diet;
+		public DietInstanceVM diet
+		{
+			set
+			{
+				_diet = value;
+			}
+		}
 
 		class SetRet {
 			public LAdapter apt;
@@ -81,15 +91,20 @@ namespace ManyDiet.AndroidView
 		SetRet eatitems, burnitems;
 		public void SetEatLines (IEnumerable<EntryLineVM> lineitems)
 		{
-			eatitems = SetLines (lineitems);
-			ReloadItemsAdapterForTab ();
+			eatitems = SetLines (lineitems, Resource.Layout.EatEntryLine, ItemViewConfigs.Eat);
+			ReloadLayoutForTab ();
 		}
 		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems)
 		{
-			burnitems = SetLines (lineitems);
-			ReloadItemsAdapterForTab ();
+			burnitems = SetLines (lineitems, Resource.Layout.BurnEntryLine, ItemViewConfigs.Burn);
+			ReloadLayoutForTab ();
 		}
-		SetRet SetLines (IEnumerable<EntryLineVM> lineitems)
+		public void SetInstances (IEnumerable<DietInstanceVM> instanceitems)
+		{
+			throw new NotImplementedException ();
+		}
+		delegate void MyViewConfiguror<VMType>(View view, VMType vm, String use);
+		SetRet SetLines (IEnumerable<EntryLineVM> lineitems, int vid, MyViewConfiguror<EntryLineVM> cfg)
 		{
 			var ll = new List<EntryLineVM> (lineitems);
 			Dictionary<string,int> test = new Dictionary<string, int> ();
@@ -107,7 +122,7 @@ namespace ManyDiet.AndroidView
 					num = tkv.Value;
 					use = tkv.Key;
 				}
-			return new SetRet () { apt = new LAdapter (this, ll, use), name = use };
+			return new SetRet () { apt = new LAdapter (this, ll, vid, (v,vm) => cfg(v,vm,use) ), name = use };
 		}
 			
 		public AddedItemVM GetValues (String title, IEnumerable<string> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When)

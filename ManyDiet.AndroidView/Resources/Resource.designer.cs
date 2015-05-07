@@ -62,20 +62,29 @@ namespace ManyDiet.AndroidView
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f060012
-			public const int addBurned = 2131099666;
+			// aapt resource value: 0x7f060018
+			public const int addBurned = 2131099672;
 			
-			// aapt resource value: 0x7f060013
-			public const int addBurnedQuick = 2131099667;
+			// aapt resource value: 0x7f060019
+			public const int addBurnedQuick = 2131099673;
+			
+			// aapt resource value: 0x7f06001b
+			public const int addEaten = 2131099675;
+			
+			// aapt resource value: 0x7f06001c
+			public const int addEatenQuick = 2131099676;
 			
 			// aapt resource value: 0x7f060015
-			public const int addEaten = 2131099669;
+			public const int burn = 2131099669;
 			
-			// aapt resource value: 0x7f060016
-			public const int addEatenQuick = 2131099670;
+			// aapt resource value: 0x7f060006
+			public const int burnitemdatetime = 2131099654;
 			
-			// aapt resource value: 0x7f06000f
-			public const int burn = 2131099663;
+			// aapt resource value: 0x7f060007
+			public const int burnitemname = 2131099655;
+			
+			// aapt resource value: 0x7f060008
+			public const int burnitemtrack = 2131099656;
 			
 			// aapt resource value: 0x7f060005
 			public const int burnlist = 2131099653;
@@ -89,50 +98,59 @@ namespace ManyDiet.AndroidView
 			// aapt resource value: 0x7f060000
 			public const int burnpage = 2131099648;
 			
-			// aapt resource value: 0x7f060017
-			public const int changePlan = 2131099671;
-			
-			// aapt resource value: 0x7f06000c
-			public const int eatitemdatetime = 2131099660;
-			
-			// aapt resource value: 0x7f06000d
-			public const int eatitemname = 2131099661;
-			
-			// aapt resource value: 0x7f06000e
-			public const int eatitemtrack = 2131099662;
-			
-			// aapt resource value: 0x7f06000b
-			public const int eatlist = 2131099659;
-			
-			// aapt resource value: 0x7f06000a
-			public const int eatlisttitlename = 2131099658;
+			// aapt resource value: 0x7f06001d
+			public const int changePlan = 2131099677;
 			
 			// aapt resource value: 0x7f060009
-			public const int eatlisttitletrack = 2131099657;
+			public const int dietitemdatetime = 2131099657;
 			
-			// aapt resource value: 0x7f060006
-			public const int eatpage = 2131099654;
+			// aapt resource value: 0x7f06000b
+			public const int dietitemmetric = 2131099659;
 			
-			// aapt resource value: 0x7f060008
-			public const int flb = 2131099656;
+			// aapt resource value: 0x7f06000a
+			public const int dietitemname = 2131099658;
+			
+			// aapt resource value: 0x7f060012
+			public const int eatitemdatetime = 2131099666;
+			
+			// aapt resource value: 0x7f060013
+			public const int eatitemname = 2131099667;
+			
+			// aapt resource value: 0x7f060014
+			public const int eatitemtrack = 2131099668;
+			
+			// aapt resource value: 0x7f060011
+			public const int eatlist = 2131099665;
+			
+			// aapt resource value: 0x7f060010
+			public const int eatlisttitlename = 2131099664;
+			
+			// aapt resource value: 0x7f06000f
+			public const int eatlisttitletrack = 2131099663;
+			
+			// aapt resource value: 0x7f06000c
+			public const int eatpage = 2131099660;
+			
+			// aapt resource value: 0x7f06000e
+			public const int flb = 2131099662;
 			
 			// aapt resource value: 0x7f060002
 			public const int flbBurn = 2131099650;
 			
-			// aapt resource value: 0x7f060007
-			public const int frameLayout1 = 2131099655;
+			// aapt resource value: 0x7f06000d
+			public const int frameLayout1 = 2131099661;
 			
 			// aapt resource value: 0x7f060001
 			public const int frameLayout1burn = 2131099649;
 			
-			// aapt resource value: 0x7f060011
-			public const int removeBurnEntry = 2131099665;
+			// aapt resource value: 0x7f060017
+			public const int removeBurnEntry = 2131099671;
 			
-			// aapt resource value: 0x7f060014
-			public const int removeEatEntry = 2131099668;
+			// aapt resource value: 0x7f06001a
+			public const int removeEatEntry = 2131099674;
 			
-			// aapt resource value: 0x7f060010
-			public const int textView1 = 2131099664;
+			// aapt resource value: 0x7f060016
+			public const int textView1 = 2131099670;
 			
 			static Id()
 			{
@@ -151,13 +169,19 @@ namespace ManyDiet.AndroidView
 			public const int Burn = 2130903040;
 			
 			// aapt resource value: 0x7f030001
-			public const int Eat = 2130903041;
+			public const int BurnEntryLine = 2130903041;
 			
 			// aapt resource value: 0x7f030002
-			public const int EatEntryLine = 2130903042;
+			public const int DietInstanceLine = 2130903042;
 			
 			// aapt resource value: 0x7f030003
-			public const int Plan = 2130903043;
+			public const int Eat = 2130903043;
+			
+			// aapt resource value: 0x7f030004
+			public const int EatEntryLine = 2130903044;
+			
+			// aapt resource value: 0x7f030005
+			public const int Plan = 2130903045;
 			
 			static Layout()
 			{
