@@ -27,6 +27,7 @@ namespace ManyDiet
 
 	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, CalorieDietEatInfo, CalorieDietBurnEntry, CalorieDietBurnInfo>
 	{
+		public String name { get { return "Calorie Diet"; } }
 		public String[] DietCreationFields() 
 		{
 			return new string[] { "Calorie Limit" };

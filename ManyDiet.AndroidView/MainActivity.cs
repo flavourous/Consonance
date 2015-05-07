@@ -60,6 +60,7 @@ namespace ManyDiet.AndroidView
 				useContext = Resource.Menu.PlanEntryMenu;
 				HighlightCurrentDietInstance ();
 				pl.ItemSelected += (sender, e) => selectdietinstance (plan [pl.SelectedItemPosition]);
+				RegisterForContextMenu (FindViewById<FrameLayout> (Resource.Layout.Plan));
 			}
 		}
 
@@ -153,6 +154,14 @@ namespace ManyDiet.AndroidView
 		{
 			return 0;
 		}
+
+		int sstring;
+		IReadOnlyList<String> strings = null;
+		public int SelectString(String title, IReadOnlyList<String> strings)
+		{
+			OpenContextMenu (FindViewById<FrameLayout>(Resource.Layout.Plan));
+			return sstring;
+		}
 		#endregion
 
 		public override bool OnOptionsItemSelected (IMenuItem item)
@@ -205,16 +214,35 @@ namespace ManyDiet.AndroidView
 			Presenter.Singleton.PresentTo (this);
 		}
 		ListView slv;
+		Action<IMenuItem> selectAction;
 		public override void OnCreateContextMenu (IContextMenu menu, View v, IContextMenuContextMenuInfo menuInfo)
 		{
 			base.OnCreateContextMenu (menu, v, menuInfo);
-			MenuInflater.Inflate (useContext, menu);
-			slv = v as ListView;
+			if (v.Id == Resource.Layout.Plan) {
+				selectAction = SelectStringContextSelected;
+				menu.Clear ();
+				for (int i = 0; i < strings.Count; i++)
+					menu.Add (0, i, i, strings [i]);
+			} else {
+				MenuInflater.Inflate (useContext, menu);
+				selectAction = ListContextSelected;
+				slv = v as ListView;
+			}
 		}
 		public override bool OnContextItemSelected (IMenuItem item)
 		{
+			selectAction (item);
+			return base.OnContextItemSelected (item);
+		}
+		public void SelectStringContextSelected(IMenuItem item)
+		{
+			sstring = item.Order;
+		}
+		public void ListContextSelected(IMenuItem item)
+		{
+			EntryLineVM vm;
 			var pos = (item.MenuInfo as AdapterView.AdapterContextMenuInfo).Position;
-			var vm = (slv.Adapter as BaseAdapter<EntryLineVM>)[pos];
+			vm = (slv.Adapter as BaseAdapter<EntryLineVM>) [pos];
 			switch (item.ItemId) {
 			case Resource.Id.removeEatEntry:
 				removeeatitem (vm);
@@ -223,7 +251,6 @@ namespace ManyDiet.AndroidView
 				removeburnitem (vm);
 				break;
 			}
-			return base.OnContextItemSelected (item);
 		}
 
 	}

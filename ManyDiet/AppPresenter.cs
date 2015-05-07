@@ -54,7 +54,6 @@ namespace ManyDiet
 			foreach (var d in diets) s.Add (d.Key.model.name);
 			var diet = diets [view.SelectString ("Select Diet Type", s)];
 			var vals = view.GetValues ("Diet Name", diet.Key.model.DietCreationFields(), AddedItemVMDefaults.None);
-
 		}
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
