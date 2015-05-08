@@ -38,6 +38,7 @@ namespace ManyDiet
 			view.removeburnitem += RemBurnItem;
 			view.changeday += ChangeDay;
 			view.adddietinstance += Handleadddietinstance;
+			view.selectdietinstance += Handleselectdietinstance;
 
 			// reactive...
 			conn.TableChanged += HandleTableChanged;
@@ -48,12 +49,20 @@ namespace ManyDiet
 			ChangeDay (DateTime.UtcNow);
 		}
 
+		void Handleselectdietinstance (DietInstanceVM obj)
+		{
+			ChangeCurrentDiet (diRefIndexV [obj]);
+		}
+
 		void Handleadddietinstance ()
 		{
 			List<String> s = new List<string> ();
 			foreach (var d in diets) s.Add (d.Key.model.name);
 			var diet = diets [view.SelectString ("Select Diet Type", s)];
 			var vals = view.GetValues ("Diet Name", diet.Key.model.DietCreationFields(), AddedItemVMDefaults.None);
+			var di = diet.Key.StartNewDiet (DateTime.Now, vals.values);
+			if(CurrentDietInstance == null)
+				ChangeCurrentDiet(di);
 		}
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
@@ -68,6 +77,8 @@ namespace ManyDiet
 		{
 			CurrentDietInstance = to;
 			view.currentDiet = to == null ? null : diRefIndexM [to];
+			PushEatLines ();
+			PushBurnLines ();
 		}
 		DietInstance GetDefaultedDietInstance()
 		{
@@ -138,15 +149,25 @@ namespace ManyDiet
 			if (typeof(DietInstance).IsAssignableFrom (e.Table.MappedType))
 				PushDietInstances ();
 		}
+		IEnumerable<BaseEatEntry> ecache = null;
+		IEnumerable<BaseEatEntry> EatEnts(CDIThings dd) { return (IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get (dd.instance, ds, de); }
 		void PushEatLines()
 		{
 			var dd = GetCurrentDietDomain ();
-			view.SetEatLines (GetLines ((IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get (dd.instance, ds, de),dd.presenter));
+			var ents = ecache = EatEnts (dd);
+			var lines = GetLines (ents, dd.presenter);
+			var tracks = dd.broker.model.DetermineEatTrackingForRange (ents, bcache ?? BurnEnts(dd), ds,de);
+			view.SetEatLines (lines, tracks);
 		}
+		IEnumerable<BaseBurnEntry> bcache = null;
+		IEnumerable<BaseBurnEntry> BurnEnts(CDIThings dd) { return (IEnumerable<BaseBurnEntry>)dd.broker.firehandler.Get (dd.instance, ds, de); }
 		void PushBurnLines()
 		{
 			var dd = GetCurrentDietDomain ();
-			view.SetBurnLines (GetLines ((IEnumerable<BaseBurnEntry>)dd.broker.firehandler.Get (dd.instance, ds, de), dd.presenter));
+			var ents = bcache = BurnEnts (dd);
+			var lines = GetLines (ents, dd.presenter);
+			var tracks = dd.broker.model.DetermineBurnTrackingForRange (ecache ?? EatEnts(dd), ents, ds,de);
+			view.SetBurnLines (lines, tracks);
 		}
 		void PushDietInstances()
 		{
@@ -225,8 +246,8 @@ namespace ManyDiet
 	/// </summary>
 	public interface IView
 	{
-		void SetEatLines(IEnumerable<EntryLineVM> lineitems);
-		void SetBurnLines(IEnumerable<EntryLineVM> lineitems);
+		void SetEatLines(IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo);
+		void SetBurnLines(IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo);
 		void SetInstances (IEnumerable<DietInstanceVM> instanceitems);
 		event Action<DateTime> changeday;
 		DateTime day { set; }

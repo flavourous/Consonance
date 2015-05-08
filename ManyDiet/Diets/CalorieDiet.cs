@@ -46,6 +46,38 @@ namespace ManyDiet
 
 		public IEntryCreation<BaseEatEntry, FoodInfo> foodcreator { get { return cde; } }
 		public IEntryCreation<BaseBurnEntry, FireInfo> firecreator { get { return cdb; } }
+
+		public IEnumerable<TrackingInfo> DetermineEatTrackingForRange (IEnumerable<BaseEatEntry> eats, IEnumerable<BaseBurnEntry> burns, DateTime startBound, DateTime endBound)
+		{
+			TrackingInfo ti = new TrackingInfo () {
+				valueName = "Calories Balance"
+			};
+
+			double kctot = 0.0;
+			List<double> kcin = new List<double> (), kcout = new List<double> ();
+			foreach (var eat in eats) {
+				var ke = ((CalorieDietEatEntry)eat);
+				kcin.Add (ke.kcals);
+				kctot += ke.kcals;
+			}
+			foreach (var burn in burns) {
+				var ke = ((CalorieDietBurnEntry)burn);
+				kcout.Add (ke.kcals);
+				kctot -= ke.kcals;
+			}
+
+			ti.eatValues = kcin.ToArray ();
+			ti.eatSources = new List<BaseEatEntry> (eats).ToArray ();
+			ti.burnValues = kcout.ToArray ();
+			ti.burnSources = new List<BaseBurnEntry> (burns).ToArray ();
+
+			yield return ti;
+		}
+
+		public IEnumerable<TrackingInfo> DetermineBurnTrackingForRange (IEnumerable<BaseEatEntry> eats, IEnumerable<BaseBurnEntry> burns, DateTime startBound, DateTime endBound)
+		{
+			return DetermineEatTrackingForRange (eats, burns, startBound, endBound);
+		}
 	}
 	public class CalorieDietEatCreation :IEntryCreation<BaseEatEntry, FoodInfo>
 	{

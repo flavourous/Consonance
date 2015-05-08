@@ -98,12 +98,12 @@ namespace ManyDiet.AndroidView
 		}
 
 		SetRet eatitems, burnitems;
-		public void SetEatLines (IEnumerable<EntryLineVM> lineitems)
+		public void SetEatLines (IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo)
 		{
 			eatitems = SetLines (lineitems, Resource.Layout.EatEntryLine, ItemViewConfigs.Eat);
 			ReloadLayoutForTab ();
 		}
-		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems)
+		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo)
 		{
 			burnitems = SetLines (lineitems, Resource.Layout.BurnEntryLine, ItemViewConfigs.Burn);
 			ReloadLayoutForTab ();
@@ -201,8 +201,8 @@ namespace ManyDiet.AndroidView
 			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
 
 			// init with nothing
-			SetEatLines (new EntryLineVM[0]);
-			SetBurnLines (new EntryLineVM[0]);
+			SetEatLines (new EntryLineVM[0], new TrackingInfo[0]);
+			SetBurnLines (new EntryLineVM[0], new TrackingInfo[0]);
 			
 			foreach (var tab in tabs) {
 				ActionBar.Tab t = ActionBar.NewTab ();

@@ -29,6 +29,15 @@ namespace ManyDiet
 	}
 	public class BaseEatEntry : BaseEntry {	}
 	public class BaseBurnEntry : BaseEntry { }
+	public class TrackingInfo 
+	{
+		public String valueName;
+		public double[] eatValues;
+		public BaseEatEntry[] eatSources;
+		public double[] burnValues;
+		public BaseBurnEntry[] burnSources;
+		public double targetValue;
+	}
 
 	// when we're doing a diet here, created by diet class
 	public class DietInstance
@@ -96,8 +105,15 @@ namespace ManyDiet
 		String[] DietCreationFields();
 		DietInstance NewDiet(double[] values);
 		bool IsDietInstance (DietInstance di);
+
+		// creates items
 		IEntryCreation<BaseEatEntry,FoodInfo> foodcreator { get; }
 		IEntryCreation<BaseBurnEntry,FireInfo> firecreator { get; }
+
+		// Deals with goal tracking
+		IEnumerable<TrackingInfo> DetermineEatTrackingForRange(IEnumerable<BaseEatEntry> eats, IEnumerable<BaseBurnEntry> burns, DateTime startBound,  DateTime endBound);
+		IEnumerable<TrackingInfo> DetermineBurnTrackingForRange(IEnumerable<BaseEatEntry> eats, IEnumerable<BaseBurnEntry> burns, DateTime startBound,  DateTime endBound);
+
 	}
 	public interface IEntryCreation<EntryType, InfoType>
 	{
