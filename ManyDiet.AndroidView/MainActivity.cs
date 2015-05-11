@@ -60,7 +60,7 @@ namespace ManyDiet.AndroidView
 				useContext = Resource.Menu.PlanEntryMenu;
 				HighlightCurrentDietInstance ();
 				pl.ItemSelected += (sender, e) => selectdietinstance (plan [pl.SelectedItemPosition]);
-				RegisterForContextMenu (FindViewById<FrameLayout> (Resource.Layout.Plan));
+				RegisterForContextMenu (FindViewById<RelativeLayout> (Resource.Id.plan));
 			}
 		}
 
@@ -143,24 +143,28 @@ namespace ManyDiet.AndroidView
 			return new SetRet () { apt = new LAdapter (this, ll, vid, (v,vm) => cfg(v,vm,use) ), name = use };
 		}
 			
-		public AddedItemVM GetValues (String title, IEnumerable<string> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When)
+		Promise<AddedItemVM> GetValuesPromise;
+		public void GetValues (String title, IEnumerable<String> names, Promise<AddedItemVM> completed, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When)
 		{
 			List<double> vs = new List<double>();
 			foreach (var s in names) vs.Add (42.0);
-			return new AddedItemVM (vs.ToArray(), DateTime.Now, "Namey 42 omg");
+			GetValuesPromise = completed;
+			GetValuesPromise(new AddedItemVM (vs.ToArray(), DateTime.Now, "Namey 42 omg"));
 		}
 
-		public int SelectInfo (IReadOnlyList<SelectableItemVM> foods)
+		Promise<int> SelectInfoPromise;
+		public void SelectInfo (IReadOnlyList<SelectableItemVM> foods, Promise<int> completed)
 		{
-			return 0;
+			SelectInfoPromise = completed;
+			SelectInfoPromise (0);
 		}
 
-		int sstring;
+		Promise<int> SelectStringPromise;
 		IReadOnlyList<String> strings = null;
-		public int SelectString(String title, IReadOnlyList<String> strings)
+		public void SelectString (String title, IReadOnlyList<String> strings, Promise<int> completed)
 		{
-			OpenContextMenu (FindViewById<FrameLayout>(Resource.Layout.Plan));
-			return sstring;
+			OpenContextMenu (FindViewById<RelativeLayout>(Resource.Id.plan));
+			SelectStringPromise = completed;
 		}
 		#endregion
 
@@ -236,7 +240,7 @@ namespace ManyDiet.AndroidView
 		}
 		public void SelectStringContextSelected(IMenuItem item)
 		{
-			sstring = item.Order;
+			SelectStringPromise (item.Order);
 		}
 		public void ListContextSelected(IMenuItem item)
 		{

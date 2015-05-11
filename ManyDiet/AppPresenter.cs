@@ -17,7 +17,9 @@ namespace ManyDiet
 			if (!Directory.Exists (datapath))
 				Directory.CreateDirectory (datapath);
 			var maindbpath = Path.Combine (datapath, "manydiet.db");
-			//File.Delete (maindbpath);
+			#if DEBUG
+			File.Delete (maindbpath); // fresh install 
+			#endif
 			conn = new SQLiteConnection (maindbpath);
 			conn.CreateTable<DietInstance> (CreateFlags.None);
 		}
@@ -45,7 +47,8 @@ namespace ManyDiet
 
 			// setup view
 			PushDietInstances ();
-			ChangeCurrentDiet(GetDefaultedDietInstance ());
+			var dd = GetDefaultedDietInstance ();
+			ChangeCurrentDiet(dd);
 			ChangeDay (DateTime.UtcNow);
 		}
 
@@ -57,12 +60,17 @@ namespace ManyDiet
 		void Handleadddietinstance ()
 		{
 			List<String> s = new List<string> ();
-			foreach (var d in diets) s.Add (d.Key.model.name);
-			var diet = diets [view.SelectString ("Select Diet Type", s)];
-			var vals = view.GetValues ("Diet Name", diet.Key.model.DietCreationFields(), AddedItemVMDefaults.None);
-			var di = diet.Key.StartNewDiet (DateTime.Now, vals.values);
-			if(CurrentDietInstance == null)
-				ChangeCurrentDiet(di);
+			foreach (var d in diets)
+				s.Add (d.Key.model.name);
+			view.SelectString ("Select Diet Type", s, diet_idx => {
+				var diet = diets [diet_idx];
+				view.GetValues ("Diet Name", diet.Key.model.DietCreationFields (), vals => {
+					var di = diet.Key.StartNewDiet (DateTime.Now, vals.values);
+					PushDietInstances ();
+					if (CurrentDietInstance == null)
+						ChangeCurrentDiet (di);
+				}, AddedItemVMDefaults.None);
+			});
 		}
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
@@ -76,7 +84,7 @@ namespace ManyDiet
 		void ChangeCurrentDiet(DietInstance to)
 		{
 			CurrentDietInstance = to;
-			view.currentDiet = to == null ? null : diRefIndexM [to];
+			view.currentDiet = to == null ? null : diRefIndexM [to.id];
 			PushEatLines ();
 			PushBurnLines ();
 		}
@@ -101,42 +109,48 @@ namespace ManyDiet
 		{
 			var dd = GetCurrentDietDomain ();
 			var fis = new List<FoodInfo> (conn.Table<FoodInfo> ().Where (f => dd.broker.model.foodcreator.IsInfoComplete (f)));
-			var foodidx = view.SelectInfo (new SelectVMListDecorator<FoodInfo> (fis,dd.presenter.GetRepresentation));
-			var food = fis [foodidx];
-			AddedItemVM mod=view.GetValues("Eat Entry", dd.broker.model.foodcreator.CalculationFields(food));
-			dd.broker.foodhandler.Add (dd.instance, mod.values, vm => {
-				vm.entryWhen = mod.when;
-				vm.entryName = mod.name;
+			view.SelectInfo (new SelectVMListDecorator<FoodInfo> (fis, dd.presenter.GetRepresentation), foodidx => {
+				var food = fis [foodidx];
+				view.GetValues ("Eat Entry", dd.broker.model.foodcreator.CalculationFields (food), mod => {
+					dd.broker.foodhandler.Add (dd.instance, mod.values, vm => {
+						vm.entryWhen = mod.when;
+						vm.entryName = mod.name;
+					});
+				});
 			});
 		}
 		void AddEatItemQuick()
 		{
 			var dd = GetCurrentDietDomain ();
-			var mod = view.GetValues ("Quick Eat Entry", dd.broker.model.foodcreator.CreationFields());
-			dd.broker.foodhandler.Add (dd.instance, mod.values, vm => {
-				vm.entryWhen = mod.when;
-				vm.entryName = mod.name;
+			view.GetValues ("Quick Eat Entry", dd.broker.model.foodcreator.CreationFields (), mod => {
+				dd.broker.foodhandler.Add (dd.instance, mod.values, vm => {
+					vm.entryWhen = mod.when;
+					vm.entryName = mod.name;
+				});
 			});
 		}
 		void AddBurnItem ()
 		{
 			var dd = GetCurrentDietDomain ();
 			var fis = new List<FireInfo> (conn.Table<FireInfo> ().Where (f => dd.broker.model.firecreator.IsInfoComplete (f)));
-			var idx = view.SelectInfo (new SelectVMListDecorator<FireInfo> (fis, dd.presenter.GetRepresentation));
-			var fire = fis [idx];
-			AddedItemVM mod=view.GetValues("Burn Entry", dd.broker.model.firecreator.CalculationFields(fire));
-			dd.broker.firehandler.Add (dd.instance, fire, mod.values, vm => {
-				vm.entryWhen = mod.when;
-				vm.entryName = mod.name;
+			view.SelectInfo (new SelectVMListDecorator<FireInfo> (fis, dd.presenter.GetRepresentation), idx => {
+				var fire = fis [idx];
+				view.GetValues ("Burn Entry", dd.broker.model.firecreator.CalculationFields (fire), mod => {
+					dd.broker.firehandler.Add (dd.instance, fire, mod.values, vm => {
+						vm.entryWhen = mod.when;
+						vm.entryName = mod.name;
+					});
+				});
 			});
 		}
 		void AddBurnItemQuick()
 		{
 			var dd = GetCurrentDietDomain ();
-			var mod = view.GetValues ("Quick Burn Entry", dd.broker.model.firecreator.CreationFields());
-			dd.broker.firehandler.Add (dd.instance, mod.values, vm => {
-				vm.entryWhen = mod.when;
-				vm.entryName = mod.name;
+			view.GetValues ("Quick Burn Entry", dd.broker.model.firecreator.CreationFields (), mod => {
+				dd.broker.firehandler.Add (dd.instance, mod.values, vm => {
+					vm.entryWhen = mod.when;
+					vm.entryName = mod.name;
+				});
 			});
 		}
 
@@ -153,6 +167,10 @@ namespace ManyDiet
 		IEnumerable<BaseEatEntry> EatEnts(CDIThings dd) { return (IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get (dd.instance, ds, de); }
 		void PushEatLines()
 		{
+			if (CurrentDietInstance == null) {
+				view.SetEatLines (new EntryLineVM[0], new TrackingInfo[0]);
+				return;
+			}
 			var dd = GetCurrentDietDomain ();
 			var ents = ecache = EatEnts (dd);
 			var lines = GetLines (ents, dd.presenter);
@@ -163,6 +181,10 @@ namespace ManyDiet
 		IEnumerable<BaseBurnEntry> BurnEnts(CDIThings dd) { return (IEnumerable<BaseBurnEntry>)dd.broker.firehandler.Get (dd.instance, ds, de); }
 		void PushBurnLines()
 		{
+			if (CurrentDietInstance == null) {
+				view.SetBurnLines (new EntryLineVM[0], new TrackingInfo[0]);
+				return;
+			}
 			var dd = GetCurrentDietDomain ();
 			var ents = bcache = BurnEnts (dd);
 			var lines = GetLines (ents, dd.presenter);
@@ -199,13 +221,13 @@ namespace ManyDiet
 			}
 		}
 		Dictionary<DietInstanceVM,DietInstance> diRefIndexV = new Dictionary<DietInstanceVM, DietInstance> ();
-		Dictionary<DietInstance,DietInstanceVM> diRefIndexM = new Dictionary<DietInstance, DietInstanceVM> ();
+		Dictionary<int,DietInstanceVM> diRefIndexM = new Dictionary<int, DietInstanceVM> ();
 		IEnumerable<DietInstanceVM> GetIVMs(IEnumerable<DietInstance> insts, IDietPresenter dp)
 		{
 			foreach (var i in insts) {
 				var vm = dp.GetRepresentation (i);
 				diRefIndexV [vm] = i;
-				diRefIndexM [i] = vm;
+				diRefIndexM [i.id] = vm;
 				yield return vm;
 			}
 		}
@@ -241,13 +263,15 @@ namespace ManyDiet
 		}
 	}
 
+	public delegate void Promise<T>(T arg);
+
 	/// <summary>
 	/// definition on the application view
 	/// </summary>
 	public interface IView
 	{
-		void SetEatLines(IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo);
-		void SetBurnLines(IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo);
+		void SetEatLines (IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo);
+		void SetBurnLines (IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo);
 		void SetInstances (IEnumerable<DietInstanceVM> instanceitems);
 		event Action<DateTime> changeday;
 		DateTime day { set; }
@@ -268,9 +292,9 @@ namespace ManyDiet
 		event Action<DietInstanceVM> selectdietinstance;
 
 		// User Input
-		AddedItemVM GetValues (String title, IEnumerable<String> names, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);
-		int SelectInfo (IReadOnlyList<SelectableItemVM> foods);
-		int SelectString (String title, IReadOnlyList<String> strings);
+		void GetValues (String title, IEnumerable<String> names, Promise<AddedItemVM> completed, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);
+		void SelectInfo (IReadOnlyList<SelectableItemVM> foods, Promise<int> completed);
+		void SelectString (String title, IReadOnlyList<String> strings, Promise<int> completed);
 	}
 	public enum AddedItemVMDefaults { None =0, Name =1, When = 2 };
 	public class AddedItemVM

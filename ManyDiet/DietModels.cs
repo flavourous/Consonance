@@ -173,7 +173,7 @@ namespace ManyDiet
 			var di = model.NewDiet (values);
 			di.started = started;
 			di.ended = null;
-			conn.Insert (di);
+			conn.Insert (di as DietInstType);
 			return di;
 		}
 		public IEnumerable<DietInstance> GetDiets()
