@@ -210,13 +210,63 @@ namespace ManyDiet
 			this.model = model;
 			conn.CreateTable<DietInstType> ();
 
-			// FIXME why the double cast neccesarry? Oh generics...
-			IEntryCreation<BaseEntry, BaseInfo> beh = (IEntryCreation<BaseEntry, BaseInfo>)((IEntryCreation<EatType, EatInfoType>)model.foodcreator);
-			IEntryCreation<BaseEntry, BaseInfo> bbh = (IEntryCreation<BaseEntry, BaseInfo>)((IEntryCreation<BurnType, BurnInfoType>)model.firecreator);
+			var beh = new StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe (model.foodcreator);
+			var bbh = new StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe (model.firecreator);
 
 			foodhandler = new EntryHandler<EatType, EatInfoType> (conn, beh);
 			firehandler = new EntryHandler<BurnType, BurnInfoType> (conn, bbh);
 		}
+	}
+
+	class StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe : IEntryCreation<BaseEntry, BaseInfo>
+	{
+		readonly IEntryCreation<BaseEatEntry, FoodInfo> decoratedFood;
+		readonly IEntryCreation<BaseBurnEntry, FireInfo> decoratedFire;
+		public StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe(IEntryCreation<BaseEatEntry, FoodInfo> decorate)
+		{
+			decoratedFood = decorate;
+		}
+		public StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe(IEntryCreation<BaseBurnEntry, FireInfo> decorate)
+		{
+			decoratedFire = decorate;
+		}
+
+		#region IEntryCreation implementation
+		public bool Calculate (BaseInfo info, IList<double> values, out BaseEntry result)
+		{
+			if (decoratedFood != null) {
+				BaseEatEntry opt;
+				var r = decoratedFood.Calculate (info as FoodInfo, values, out opt);
+				result = opt as BaseEntry;
+				return r;
+			}
+			BaseBurnEntry bbe;
+			var rr = decoratedFire.Calculate (info as FireInfo, values, out bbe);
+			result = bbe as BaseEntry;
+			return rr;
+
+		}
+		public bool Create (IList<double> values, out BaseEntry entry)
+		{
+			if (decoratedFood != null) {
+				BaseEatEntry opt;
+				var r = decoratedFood.Create(values, out opt);
+				entry = opt as BaseEntry;
+				return r;
+			}
+			BaseBurnEntry bbe;
+			var rr = decoratedFire.Create(values, out bbe);
+			entry = bbe as BaseEntry;
+			return rr;
+		}
+		// do not care ...
+		public string[] CreationFields () { throw new NotImplementedException (); }
+		public string[] CalculationFields (BaseInfo info) { throw new NotImplementedException (); }
+		public void CompleteInfo (ref BaseInfo toComplete, IList<double> values) { throw new NotImplementedException (); }
+		public string[] InfoCreationFields () { throw new NotImplementedException (); }
+		public BaseInfo CreateInfo (IList<double> values) { throw new NotImplementedException (); }
+		public bool IsInfoComplete (BaseInfo info) { throw new NotImplementedException (); }
+		#endregion
 	}
 
 	class EntryHandler<EntryType,EntryInfoType> : IHandleDietPlanModels
