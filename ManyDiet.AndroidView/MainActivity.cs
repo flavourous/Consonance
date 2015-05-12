@@ -60,7 +60,6 @@ namespace ManyDiet.AndroidView
 				useContext = Resource.Menu.PlanEntryMenu;
 				HighlightCurrentDietInstance ();
 				pl.ItemSelected += (sender, e) => selectdietinstance (plan [pl.SelectedItemPosition]);
-				RegisterForContextMenu (FindViewById<RelativeLayout> (Resource.Id.plan));
 			}
 		}
 
@@ -73,6 +72,7 @@ namespace ManyDiet.AndroidView
 		public event Action<EntryLineVM> removeeatitem = delegate{};
 		public event Action adddietinstance;
 		public event Action<DietInstanceVM> selectdietinstance;
+		public event Action<DietInstanceVM> removedietinstance;
 		public event Action<DateTime> changeday = delegate{};
 		private DateTime _day;
 		public DateTime day 
@@ -163,8 +163,11 @@ namespace ManyDiet.AndroidView
 		IReadOnlyList<String> strings = null;
 		public void SelectString (String title, IReadOnlyList<String> strings, Promise<int> completed)
 		{
-			OpenContextMenu (FindViewById<RelativeLayout>(Resource.Id.plan));
+			this.strings = strings;
 			SelectStringPromise = completed;
+			RegisterForContextMenu (FindViewById<RelativeLayout> (Resource.Id.plan));
+			OpenContextMenu (FindViewById<RelativeLayout>(Resource.Id.plan));
+			UnregisterForContextMenu (FindViewById<RelativeLayout> (Resource.Id.plan));
 		}
 		#endregion
 
@@ -222,7 +225,7 @@ namespace ManyDiet.AndroidView
 		public override void OnCreateContextMenu (IContextMenu menu, View v, IContextMenuContextMenuInfo menuInfo)
 		{
 			base.OnCreateContextMenu (menu, v, menuInfo);
-			if (v.Id == Resource.Layout.Plan) {
+			if (v.Id == Resource.Id.plan) {
 				selectAction = SelectStringContextSelected;
 				menu.Clear ();
 				for (int i = 0; i < strings.Count; i++)
@@ -244,15 +247,22 @@ namespace ManyDiet.AndroidView
 		}
 		public void ListContextSelected(IMenuItem item)
 		{
-			EntryLineVM vm;
+			EntryLineVM evm = null;
+			DietInstanceVM dvm = null;
 			var pos = (item.MenuInfo as AdapterView.AdapterContextMenuInfo).Position;
-			vm = (slv.Adapter as BaseAdapter<EntryLineVM>) [pos];
+			if(slv.Adapter is BaseAdapter<EntryLineVM>)
+				evm = (slv.Adapter as BaseAdapter<EntryLineVM>) [pos];
+			else if(slv.Adapter is BaseAdapter<DietInstanceVM>)
+				dvm = (slv.Adapter as BaseAdapter<DietInstanceVM>) [pos];
 			switch (item.ItemId) {
 			case Resource.Id.removeEatEntry:
-				removeeatitem (vm);
+				removeeatitem (evm);
 				break;
 			case Resource.Id.removeBurnEntry:
-				removeburnitem (vm);
+				removeburnitem (evm);
+				break;
+			case Resource.Id.removePlanEntry:
+				removedietinstance (dvm);
 				break;
 			}
 		}

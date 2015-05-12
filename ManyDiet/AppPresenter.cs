@@ -41,6 +41,7 @@ namespace ManyDiet
 			view.changeday += ChangeDay;
 			view.adddietinstance += Handleadddietinstance;
 			view.selectdietinstance += Handleselectdietinstance;
+			view.removedietinstance += Handleremovedietinstance;
 
 			// reactive...
 			conn.TableChanged += HandleTableChanged;
@@ -50,6 +51,12 @@ namespace ManyDiet
 			var dd = GetDefaultedDietInstance ();
 			ChangeCurrentDiet(dd);
 			ChangeDay (DateTime.UtcNow);
+		}
+
+		void Handleremovedietinstance (DietInstanceVM obj)
+		{
+			var dt = diRefIndexV [obj];
+			diRefIndexD[dt.id].RemoveDiet(dt);
 		}
 
 		void Handleselectdietinstance (DietInstanceVM obj)
@@ -195,10 +202,25 @@ namespace ManyDiet
 		{
 			diRefIndexV.Clear ();
 			diRefIndexM.Clear ();
+			diRefIndexD.Clear ();
 			List<DietInstanceVM> built = new List<DietInstanceVM> ();
 			foreach (var dp in diets)
-				built.AddRange (GetIVMs (dp.Key.GetDiets (), dp.Value));
+				built.AddRange (GetIVMs (dp));
 			view.SetInstances (built);
+		}
+		Dictionary<DietInstanceVM,DietInstance> diRefIndexV = new Dictionary<DietInstanceVM, DietInstance> ();
+		Dictionary<int,DietInstanceVM> diRefIndexM = new Dictionary<int, DietInstanceVM> ();
+		Dictionary<int, IDiet> diRefIndexD = new Dictionary<int, IDiet>();
+		IEnumerable<DietInstanceVM> GetIVMs(KeyValuePair<IDiet,IDietPresenter> dp)
+		{
+			var insts = dp.Key.GetDiets ();
+			foreach (var i in insts) {
+				var vm = dp.Value.GetRepresentation (i);
+				diRefIndexV [vm] = i;
+				diRefIndexM [i.id] = vm;
+				diRefIndexD[i.id] = dp.Key;
+				yield return vm;
+			}
 		}
 		Dictionary<EntryLineVM, BaseEatEntry> eatRefIndex = new Dictionary<EntryLineVM, BaseEatEntry>();
 		IEnumerable<EntryLineVM> GetLines(IEnumerable<BaseEatEntry> ents, IDietPresenter dp)
@@ -217,17 +239,6 @@ namespace ManyDiet
 			foreach (var e in ents) {
 				var vm = dp.GetRepresentation (e);
 				burnRefIndex[vm] = e;
-				yield return vm;
-			}
-		}
-		Dictionary<DietInstanceVM,DietInstance> diRefIndexV = new Dictionary<DietInstanceVM, DietInstance> ();
-		Dictionary<int,DietInstanceVM> diRefIndexM = new Dictionary<int, DietInstanceVM> ();
-		IEnumerable<DietInstanceVM> GetIVMs(IEnumerable<DietInstance> insts, IDietPresenter dp)
-		{
-			foreach (var i in insts) {
-				var vm = dp.GetRepresentation (i);
-				diRefIndexV [vm] = i;
-				diRefIndexM [i.id] = vm;
 				yield return vm;
 			}
 		}
@@ -290,6 +301,7 @@ namespace ManyDiet
 		// plan (diet managment)
 		event Action adddietinstance;
 		event Action<DietInstanceVM> selectdietinstance;
+		event Action<DietInstanceVM> removedietinstance;
 
 		// User Input
 		void GetValues (String title, IEnumerable<String> names, Promise<AddedItemVM> completed, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);

@@ -153,6 +153,7 @@ namespace ManyDiet
 	{
 		IDietModel model { get; }
 		DietInstance StartNewDiet(DateTime started, double[] values);
+		void RemoveDiet (DietInstance rem);
 		IEnumerable<DietInstance> GetDiets (DateTime st, DateTime en);
 		IEnumerable<DietInstance> GetDiets ();
 		IHandleDietPlanModels foodhandler { get; }
@@ -175,6 +176,10 @@ namespace ManyDiet
 			di.ended = null;
 			conn.Insert (di as DietInstType);
 			return di;
+		}
+		public void RemoveDiet(DietInstance rem)
+		{
+			conn.Delete<DietInstType> (rem.id);
 		}
 		public IEnumerable<DietInstance> GetDiets()
 		{
@@ -205,12 +210,12 @@ namespace ManyDiet
 			this.model = model;
 			conn.CreateTable<DietInstType> ();
 
-			// Bloody diamond...
-			var eatcreator = (IEntryCreation<BaseEntry, BaseInfo>)(model as IEntryCreation<BaseEatEntry, FoodInfo>);
-			var burncreator = (IEntryCreation<BaseEntry, BaseInfo>)(model as IEntryCreation<BaseBurnEntry, FireInfo>);
+			// FIXME why the double cast neccesarry? Oh generics...
+			IEntryCreation<BaseEntry, BaseInfo> beh = (IEntryCreation<BaseEntry, BaseInfo>)((IEntryCreation<EatType, EatInfoType>)model.foodcreator);
+			IEntryCreation<BaseEntry, BaseInfo> bbh = (IEntryCreation<BaseEntry, BaseInfo>)((IEntryCreation<BurnType, BurnInfoType>)model.firecreator);
 
-			foodhandler = new EntryHandler<EatType, EatInfoType> (conn, eatcreator);
-			firehandler = new EntryHandler<BurnType, BurnInfoType> (conn, burncreator);
+			foodhandler = new EntryHandler<EatType, EatInfoType> (conn, beh);
+			firehandler = new EntryHandler<BurnType, BurnInfoType> (conn, bbh);
 		}
 	}
 
