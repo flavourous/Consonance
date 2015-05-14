@@ -5,12 +5,34 @@ using System.IO;
 
 namespace ManyDiet
 {
+	class MyConn : SQLiteConnection
+	{
+		public MyConn(String dbPath, bool storeDateTimeAsTicks = false) : base(dbPath, storeDateTimeAsTicks)
+		{
+			TableChanged += MyTableChanged;
+		}
+		public MyConn(String dbPath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) : base(dbPath,openFlags, storeDateTimeAsTicks)
+		{
+		}
+		public event EventHandler<NotifyTableChangedEventArgs> MyTableChanged = delegate{};
+		public void Delete<T>(String whereClause)
+		{
+			Execute ("DELETE FROM " + typeof(T).Name + " WHERE " + whereClause);
+			MyTableChanged(
+				this,
+				new NotifyTableChangedEventArgs (
+					new TableMapping (typeof(T)), 
+					NotifyTableChangedAction.Delete
+				)
+			);
+		}
+	}
 	public class Presenter
 	{
 		// Singleton logic - lazily created
 		static Presenter singleton;
 		public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
-		SQLiteConnection conn;
+		MyConn conn;
 		private Presenter ()
 		{
 			var datapath = Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData);
@@ -20,7 +42,7 @@ namespace ManyDiet
 			#if DEBUG
 			File.Delete (maindbpath); // fresh install 
 			#endif
-			conn = new SQLiteConnection (maindbpath);
+			conn = new MyConn(maindbpath);
 			conn.CreateTable<DietInstance> (CreateFlags.None);
 		}
 
@@ -44,7 +66,7 @@ namespace ManyDiet
 			view.removedietinstance += Handleremovedietinstance;
 
 			// reactive...
-			conn.TableChanged += HandleTableChanged;
+			conn.MyTableChanged += HandleTableChanged;
 
 			// setup view
 			PushDietInstances ();
@@ -55,8 +77,11 @@ namespace ManyDiet
 
 		void Handleremovedietinstance (DietInstanceVM obj)
 		{
-			var dt = diRefIndexV [obj];
-			diRefIndexD[dt.id].RemoveDiet(dt);
+			var mdt = diRefIndexV [obj];
+			var mod = diRefIndexD [mdt.id];
+			mod.RemoveDiet(mdt);
+			if (CurrentDietInstance.id == mdt.id)
+				ChangeCurrentDiet (null);
 		}
 
 		void Handleselectdietinstance (DietInstanceVM obj)
@@ -163,6 +188,7 @@ namespace ManyDiet
 
 		void HandleTableChanged (object sender, NotifyTableChangedEventArgs e)
 		{
+			Console.WriteLine (DateTime.Now + ": table changed");
 			if (typeof(BaseEatEntry).IsAssignableFrom (e.Table.MappedType))
 				PushEatLines ();
 			if (typeof(BaseBurnEntry).IsAssignableFrom (e.Table.MappedType))
@@ -170,6 +196,7 @@ namespace ManyDiet
 			if (typeof(DietInstance).IsAssignableFrom (e.Table.MappedType))
 				PushDietInstances ();
 		}
+
 		IEnumerable<BaseEatEntry> ecache = null;
 		IEnumerable<BaseEatEntry> EatEnts(CDIThings dd) { return (IEnumerable<BaseEatEntry>)dd.broker.foodhandler.Get (dd.instance, ds, de); }
 		void PushEatLines()

@@ -1,16 +1,17 @@
 ﻿<Properties StartupItem="ManyDiet.AndroidView\ManyDiet.AndroidView.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.MonoForAndroid_API_12" />
-  <MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.SmallDroid" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="c:\cygwin\home\David\ManyDiet\ManyDiet\AppPresenter.cs">
     <Files>
-      <File FileName="ManyDiet.AndroidView\MainActivity.cs" Line="70" Column="70" />
-      <File FileName="ManyDiet.AndroidView\Resources\menu\EatMenu.xml" Line="16" Column="16" />
-      <File FileName="c:\cygwin\home\David\ManyDiet\ManyDiet\AppPresenter.cs" Line="17" Column="17" />
-      <File FileName="ManyDiet.AndroidView\Resources\menu\PlanMenu.xml" Line="61" Column="61" />
-      <File FileName="ManyDiet.AndroidView\Resources\menu\BurnMenu.xml" Line="66" Column="66" />
-      <File FileName="ManyDiet\Diets\CalorieDiet.cs" Line="31" Column="31" />
-      <File FileName="ManyDiet\DietPresenters.cs" Line="9" Column="9" />
+      <File FileName="ManyDiet.AndroidView\MainActivity.cs" Line="2" Column="2" />
+      <File FileName="ManyDiet.AndroidView\Resources\menu\EatMenu.xml" Line="1" Column="1" />
+      <File FileName="c:\cygwin\home\David\ManyDiet\ManyDiet\AppPresenter.cs" Line="8" Column="8" />
+      <File FileName="ManyDiet.AndroidView\Resources\menu\PlanMenu.xml" Line="1" Column="1" />
+      <File FileName="ManyDiet.AndroidView\Resources\menu\BurnMenu.xml" Line="1" Column="1" />
+      <File FileName="ManyDiet\DietPresenters.cs" Line="1" Column="1" />
       <File FileName="ManyDiet\DietModels.cs" Line="1" Column="1" />
-      <File FileName="ManyDiet.AndroidView\ListAdapters.cs" Line="32" Column="32" />
+      <File FileName="ManyDiet.AndroidView\ListAdapters.cs" Line="1" Column="1" />
+      <File FileName="c:\cygwin\home\David\ManyDiet\ManyDiet\Diets\CalorieDiet.cs" Line="1" Column="1" />
+      <File FileName="ManyDiet.AndroidView\Resources\menu\PlanEntryMenu.xml" Line="8" Column="8" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -19,12 +20,10 @@
             <Node name="Diets" expanded="True" />
           </Node>
           <Node name="ManyDiet.AndroidView" expanded="True">
-            <Node name="ComponentReferenceFolder" expanded="True">
-              <Node name="ComponentReference" selected="True" />
-            </Node>
             <Node name="Resources" expanded="True">
-              <Node name="layout" expanded="True" />
-              <Node name="menu" expanded="True" />
+              <Node name="menu" expanded="True">
+                <Node name="PlanEntryMenu.xml" selected="True" />
+              </Node>
             </Node>
           </Node>
         </State>

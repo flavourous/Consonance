@@ -56,6 +56,7 @@ namespace ManyDiet.AndroidView
 			if (ActionBar.SelectedNavigationIndex == 2) {
 				var pl = FindViewById<ListView> (Resource.Id.planlist);
 				pl.Adapter = plan;
+				pl.ItemSelected += (object sender, AdapterView.ItemSelectedEventArgs e) =>  selectdietinstance(plan[e.Position]);
 				RegisterForContextMenu (pl);
 				useContext = Resource.Menu.PlanEntryMenu;
 				HighlightCurrentDietInstance ();
@@ -89,6 +90,7 @@ namespace ManyDiet.AndroidView
 			set
 			{
 				_diet = value;
+				HighlightCurrentDietInstance ();
 			}
 		}
 
@@ -205,7 +207,6 @@ namespace ManyDiet.AndroidView
 			base.OnCreate (bundle);
 
 			Window.RequestFeature (WindowFeatures.ActionBar);
-			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
 
 			// init with nothing
 			SetEatLines (new EntryLineVM[0], new TrackingInfo[0]);
@@ -217,6 +218,8 @@ namespace ManyDiet.AndroidView
 				t.SetTabListener (this);
 				ActionBar.AddTab (t);
 			}
+
+			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
 
 			Presenter.Singleton.PresentTo (this);
 		}

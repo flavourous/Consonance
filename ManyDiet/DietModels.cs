@@ -20,7 +20,7 @@ namespace ManyDiet
 	public class BaseEntry 
 	{
 		[PrimaryKey, AutoIncrement]
-		public int id{get;set;}
+		public int id{ get;set; }
 		public int dietinstanceid{get;set;}
 		public int? infoinstanceid{get;set;}
 		public DateTime entryWhen {get;set;}
@@ -145,7 +145,7 @@ namespace ManyDiet
 	{
 		bool Add(DietInstance diet, BaseInfo info, IList<double> values, EntryCallback beforeInsert);
 		bool Add(DietInstance diet, IList<double> values, EntryCallback beforeInsert);
-		void Remove (BaseEntry tet);
+		void Remove (params BaseEntry[] tet);
 		IEnumerable<BaseEntry> Get(DietInstance diet, DateTime start, DateTime end);
 		int Count();
 	}
@@ -160,6 +160,8 @@ namespace ManyDiet
 		IHandleDietPlanModels firehandler { get; }
 	}
 
+
+
 	class Diet<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IDiet
 		where DietInstType : DietInstance, new()
 		where EatType : BaseEatEntry, new()
@@ -167,7 +169,7 @@ namespace ManyDiet
 		where BurnType : BaseBurnEntry, new()
 		where BurnInfoType : FireInfo, new()
 	{
-		readonly SQLiteConnection conn;
+		readonly MyConn conn;
 		public IDietModel model { get; private set; }
 		public DietInstance StartNewDiet(DateTime started, double[] values)
 		{
@@ -179,6 +181,8 @@ namespace ManyDiet
 		}
 		public void RemoveDiet(DietInstance rem)
 		{
+			conn.Delete<EatType>("dietinstanceid = " + rem.id);
+			conn.Delete<BurnType>("dietinstanceid = " + rem.id);
 			conn.Delete<DietInstType> (rem.id);
 		}
 		public IEnumerable<DietInstance> GetDiets()
@@ -204,7 +208,7 @@ namespace ManyDiet
 		}
 		public IHandleDietPlanModels foodhandler { get; private set; }
 		public IHandleDietPlanModels firehandler { get; private set; }
-		public Diet(SQLiteConnection conn, IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
+		public Diet(MyConn conn, IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
 		{
 			this.conn = conn;
 			this.model = model;
@@ -311,9 +315,11 @@ namespace ManyDiet
 			conn.Insert (ent);
 			return true;
 		}
-		public void Remove (BaseEntry tet)
+		public void Remove (params BaseEntry[] tets)
 		{
-			conn.Delete<EntryType> (tet.id);
+			// FIXME drop where?
+			foreach(var tet in tets)
+				conn.Delete<EntryType> (tet.id);
 		}
 		public IEnumerable<BaseEntry> Get (DietInstance diet, DateTime start, DateTime end)
 		{
