@@ -17,7 +17,9 @@
             p1:id="@+id/planlist"
             p1:layout_width="match_parent"
             p1:layout_height="match_parent"
-            p1:layout_alignParentBottom="true" />
+            p1:layout_alignParentBottom="true"
+            p1:choiceMode="singleChoice"
+            p1:listSelector="@drawable/DietInstanceLineSelector" />
     </FrameLayout>
     <FrameLayout
         p1:minWidth="25px"

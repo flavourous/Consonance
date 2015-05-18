@@ -12,20 +12,20 @@ namespace ManyDiet.AndroidView
 {
 	class TabDescList : List<TabDesc>
 	{
-		public void Add(String name, int layout, int menu)
+		public void Add(String name, int layout, int menu, int contextmenu)
 		{
-			this.Add(new TabDesc() { name=name, layout=layout, menu=menu });
+			this.Add(new TabDesc() { name=name, layout=layout, menu=menu, contextmenu=contextmenu });
 		}
 	}
-	class TabDesc { public String name; public int layout; public int menu; }
+	class TabDesc { public String name; public int layout; public int menu; public int contextmenu; }
 
 	[Activity (Label = "ManyDiet", MainLauncher=true, Icon = "@drawable/icon")]
 	public class MainActivity : Activity, ActionBar.ITabListener, IView
 	{
 		TabDescList tabs = new TabDescList () {
-			{ "Eat", Resource.Layout.Eat, Resource.Menu.EatMenu },
-			{ "Burn", Resource.Layout.Burn, Resource.Menu.BurnMenu },
-			{ "Plan", Resource.Layout.Plan, Resource.Menu.PlanMenu },
+			{ "Eat", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu },
+			{ "Burn", Resource.Layout.Burn, Resource.Menu.BurnMenu, Resource.Menu.BurnEntryMenu },
+			{ "Plan", Resource.Layout.Plan, Resource.Menu.PlanMenu, Resource.Menu.PlanEntryMenu },
 		};
 		public void OnTabReselected (ActionBar.Tab tab, FragmentTransaction ft) { }
 		public void OnTabUnselected (ActionBar.Tab tab, FragmentTransaction ft) { }
@@ -33,34 +33,35 @@ namespace ManyDiet.AndroidView
 		{
 			SetContentView (tabs [ActionBar.SelectedNavigationIndex].layout);
 
-			ReloadLayoutForTab ();
+			ReloadLayoutForTab (true);
 
 			InvalidateOptionsMenu ();
 		}
 
 		int useContext;
-		void ReloadLayoutForTab() {
+		void ReloadLayoutForTab(bool tabchanged=false) {
 			// FIXME why break pattern :/
 			if (ActionBar.SelectedNavigationIndex == 0) {
 				FindViewById<ListView> (Resource.Id.eatlist).Adapter = eatitems.apt;
 				FindViewById<TextView> (Resource.Id.eatlisttitletrack).Text = eatitems.name;
-				RegisterForContextMenu (FindViewById<ListView> (Resource.Id.eatlist));
+				if(tabchanged) RegisterForContextMenu (FindViewById<ListView> (Resource.Id.eatlist));
 				useContext = Resource.Menu.EatEntryMenu;
 			}
 			if (ActionBar.SelectedNavigationIndex == 1) {
 				FindViewById<ListView> (Resource.Id.burnlist).Adapter = burnitems.apt;
 				FindViewById<TextView> (Resource.Id.burnlisttitletrack).Text = burnitems.name;
-				RegisterForContextMenu (FindViewById<ListView> (Resource.Id.burnlist));
+				if(tabchanged) RegisterForContextMenu (FindViewById<ListView> (Resource.Id.burnlist));
 				useContext = Resource.Menu.BurnEntryMenu;
 			}
 			if (ActionBar.SelectedNavigationIndex == 2) {
 				var pl = FindViewById<ListView> (Resource.Id.planlist);
 				pl.Adapter = plan;
-				pl.ItemSelected += (object sender, AdapterView.ItemSelectedEventArgs e) =>  selectdietinstance(plan[e.Position]);
-				RegisterForContextMenu (pl);
 				useContext = Resource.Menu.PlanEntryMenu;
-				HighlightCurrentDietInstance ();
-				pl.ItemSelected += (sender, e) => selectdietinstance (plan [pl.SelectedItemPosition]);
+				SwitchHiglightDietInstance();
+				if (tabchanged) {
+					RegisterForContextMenu (pl);
+					pl.ItemClick += (sender, e) => selectdietinstance (plan [e.Position]);
+				}
 			}
 		}
 
@@ -90,7 +91,7 @@ namespace ManyDiet.AndroidView
 			set
 			{
 				_diet = value;
-				HighlightCurrentDietInstance ();
+				SwitchHiglightDietInstance();
 			}
 		}
 
@@ -103,25 +104,29 @@ namespace ManyDiet.AndroidView
 		public void SetEatLines (IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo)
 		{
 			eatitems = SetLines (lineitems, Resource.Layout.EatEntryLine, ItemViewConfigs.Eat);
-			ReloadLayoutForTab ();
+			if(ActionBar.SelectedNavigationIndex==0) ReloadLayoutForTab ();
 		}
 		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo)
 		{
 			burnitems = SetLines (lineitems, Resource.Layout.BurnEntryLine, ItemViewConfigs.Burn);
-			ReloadLayoutForTab ();
+			if(ActionBar.SelectedNavigationIndex==1) ReloadLayoutForTab ();
 		}
-		void HighlightCurrentDietInstance()
+		void SwitchHiglightDietInstance()
 		{
 			for (int i = 0; i < plan.Count; i++)
-				if(Object.ReferenceEquals(plan[i], _diet))
-					FindViewById<ListView>(Resource.Id.planlist).SetSelection(i);
+				if (Object.ReferenceEquals (plan [i], _diet)) {
+					var pl = FindViewById<ListView> (Resource.Id.planlist);
+					//pl.RequestFocusFromTouch ();
+					pl.SetItemChecked(i,true);
+					//pl.RequestFocus ();
+				}
 		}
 		DAdapter plan;
 		public void SetInstances (IEnumerable<DietInstanceVM> instanceitems)
 		{
 			var itms = new List<DietInstanceVM> (instanceitems);
 			plan = new DAdapter (this, itms);
-			ReloadLayoutForTab ();
+			if(ActionBar.SelectedNavigationIndex==2)ReloadLayoutForTab ();
 		}
 		delegate void MyViewConfiguror<VMType>(View view, VMType vm, String use);
 		SetRet SetLines (IEnumerable<EntryLineVM> lineitems, int vid, MyViewConfiguror<EntryLineVM> cfg)
@@ -220,7 +225,6 @@ namespace ManyDiet.AndroidView
 			}
 
 			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
-
 			Presenter.Singleton.PresentTo (this);
 		}
 		ListView slv;

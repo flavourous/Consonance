@@ -2,7 +2,8 @@
 <LinearLayout xmlns:dr="http://schemas.android.com/apk/res/android"
     dr:layout_width="fill_parent"
     dr:layout_height="wrap_content"
-    dr:orientation="horizontal">
+    dr:orientation="horizontal"
+    dr:background="?android:attr/activatedBackgroundIndicator">
     <TextView
         dr:textColor="?android:attr/textColorHighlightInverse"
         dr:id="@+id/dietitemdatetime"

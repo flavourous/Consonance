@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using SQLite;
 using System.IO;
@@ -9,10 +10,11 @@ namespace ManyDiet
 	{
 		public MyConn(String dbPath, bool storeDateTimeAsTicks = false) : base(dbPath, storeDateTimeAsTicks)
 		{
-			TableChanged += MyTableChanged;
+			TableChanged += (object sender, NotifyTableChangedEventArgs e) => MyTableChanged (sender, e);
 		}
 		public MyConn(String dbPath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) : base(dbPath,openFlags, storeDateTimeAsTicks)
 		{
+			TableChanged += (object sender, NotifyTableChangedEventArgs e) => MyTableChanged (sender, e);
 		}
 		public event EventHandler<NotifyTableChangedEventArgs> MyTableChanged = delegate{};
 		public void Delete<T>(String whereClause)
@@ -81,7 +83,7 @@ namespace ManyDiet
 			var mod = diRefIndexD [mdt.id];
 			mod.RemoveDiet(mdt);
 			if (CurrentDietInstance.id == mdt.id)
-				ChangeCurrentDiet (null);
+				ChangeCurrentDiet (GetDefaultedDietInstance());
 		}
 
 		void Handleselectdietinstance (DietInstanceVM obj)
@@ -98,7 +100,6 @@ namespace ManyDiet
 				var diet = diets [diet_idx];
 				view.GetValues ("Diet Name", diet.Key.model.DietCreationFields (), vals => {
 					var di = diet.Key.StartNewDiet (DateTime.Now, vals.values);
-					PushDietInstances ();
 					if (CurrentDietInstance == null)
 						ChangeCurrentDiet (di);
 				}, AddedItemVMDefaults.None);
@@ -188,7 +189,6 @@ namespace ManyDiet
 
 		void HandleTableChanged (object sender, NotifyTableChangedEventArgs e)
 		{
-			Console.WriteLine (DateTime.Now + ": table changed");
 			if (typeof(BaseEatEntry).IsAssignableFrom (e.Table.MappedType))
 				PushEatLines ();
 			if (typeof(BaseBurnEntry).IsAssignableFrom (e.Table.MappedType))
