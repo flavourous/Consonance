@@ -22,7 +22,7 @@ namespace ManyDiet
 	}
 	public class CalorieDietInstance : DietInstance
 	{
-		public double callim;
+		public double callim {get;set;}
 	}
 
 	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, CalorieDietEatInfo, CalorieDietBurnEntry, CalorieDietBurnInfo>

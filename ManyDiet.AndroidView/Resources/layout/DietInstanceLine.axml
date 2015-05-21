@@ -3,6 +3,7 @@
     dr:layout_width="fill_parent"
     dr:layout_height="wrap_content"
     dr:orientation="horizontal"
+    dr:gravity="center_vertical"
     dr:background="?android:attr/activatedBackgroundIndicator">
     <TextView
         dr:textColor="?android:attr/textColorHighlightInverse"

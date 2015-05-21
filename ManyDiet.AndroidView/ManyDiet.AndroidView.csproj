@@ -77,6 +77,8 @@
     <AndroidResource Include="Resources\menu\PlanEntryMenu.xml" />
     <AndroidResource Include="Resources\drawable\DietInstanceLineSelector.xml" />
     <AndroidResource Include="Resources\values\colors.xml" />
+    <AndroidResource Include="Resources\layout\GetValues.axml" />
+    <AndroidResource Include="Resources\layout\GetValueRow.axml" />
   </ItemGroup>
   <Import Project="..\ManyDiet\ManyDiet.projitems" Label="Shared" Condition="Exists('..\ManyDiet\ManyDiet.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />

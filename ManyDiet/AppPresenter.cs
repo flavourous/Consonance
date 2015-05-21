@@ -76,13 +76,21 @@ namespace ManyDiet
 			ChangeCurrentDiet(dd);
 			ChangeDay (DateTime.UtcNow);
 		}
+			
+		class dbtest {
+			[PrimaryKey]
+			public int id { get; set; }
+			public double db{ get; set; }
+		}
 
 		void Handleremovedietinstance (DietInstanceVM obj)
 		{
 			var mdt = diRefIndexV [obj];
 			var mod = diRefIndexD [mdt.id];
-			mod.RemoveDiet(mdt);
 			if (CurrentDietInstance.id == mdt.id)
+				CurrentDietInstance = null;
+			mod.RemoveDiet(mdt);
+			if (CurrentDietInstance == null)
 				ChangeCurrentDiet (GetDefaultedDietInstance());
 		}
 
@@ -142,7 +150,7 @@ namespace ManyDiet
 		{
 			var dd = GetCurrentDietDomain ();
 			var fis = new List<FoodInfo> (conn.Table<FoodInfo> ().Where (f => dd.broker.model.foodcreator.IsInfoComplete (f)));
-			view.SelectInfo (new SelectVMListDecorator<FoodInfo> (fis, dd.presenter.GetRepresentation), foodidx => {
+			view.SelectInfo ("Select Food", new SelectVMListDecorator<FoodInfo> (fis, dd.presenter.GetRepresentation), foodidx => {
 				var food = fis [foodidx];
 				view.GetValues ("Eat Entry", dd.broker.model.foodcreator.CalculationFields (food), mod => {
 					dd.broker.foodhandler.Add (dd.instance, mod.values, vm => {
@@ -166,7 +174,7 @@ namespace ManyDiet
 		{
 			var dd = GetCurrentDietDomain ();
 			var fis = new List<FireInfo> (conn.Table<FireInfo> ().Where (f => dd.broker.model.firecreator.IsInfoComplete (f)));
-			view.SelectInfo (new SelectVMListDecorator<FireInfo> (fis, dd.presenter.GetRepresentation), idx => {
+			view.SelectInfo ("Select Burn", new SelectVMListDecorator<FireInfo> (fis, dd.presenter.GetRepresentation), idx => {
 				var fire = fis [idx];
 				view.GetValues ("Burn Entry", dd.broker.model.firecreator.CalculationFields (fire), mod => {
 					dd.broker.firehandler.Add (dd.instance, fire, mod.values, vm => {
@@ -234,6 +242,8 @@ namespace ManyDiet
 			foreach (var dp in diets)
 				built.AddRange (GetIVMs (dp));
 			view.SetInstances (built);
+			if (CurrentDietInstance != null)
+				view.currentDiet = diRefIndexM [CurrentDietInstance.id];
 		}
 		Dictionary<DietInstanceVM,DietInstance> diRefIndexV = new Dictionary<DietInstanceVM, DietInstance> ();
 		Dictionary<int,DietInstanceVM> diRefIndexM = new Dictionary<int, DietInstanceVM> ();
@@ -302,7 +312,6 @@ namespace ManyDiet
 	}
 
 	public delegate void Promise<T>(T arg);
-
 	/// <summary>
 	/// definition on the application view
 	/// </summary>
@@ -332,7 +341,7 @@ namespace ManyDiet
 
 		// User Input
 		void GetValues (String title, IEnumerable<String> names, Promise<AddedItemVM> completed, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);
-		void SelectInfo (IReadOnlyList<SelectableItemVM> foods, Promise<int> completed);
+		void SelectInfo (String title, IReadOnlyList<SelectableItemVM> foods, Promise<int> completed);
 		void SelectString (String title, IReadOnlyList<String> strings, Promise<int> completed);
 	}
 	public enum AddedItemVMDefaults { None =0, Name =1, When = 2 };

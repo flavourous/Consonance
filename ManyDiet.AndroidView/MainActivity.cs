@@ -31,10 +31,12 @@ namespace ManyDiet.AndroidView
 		public void OnTabUnselected (ActionBar.Tab tab, FragmentTransaction ft) { }
 		public void OnTabSelected (ActionBar.Tab tab, FragmentTransaction ft)
 		{
+			LoadTab ();
+		}
+		void LoadTab()
+		{
 			SetContentView (tabs [ActionBar.SelectedNavigationIndex].layout);
-
 			ReloadLayoutForTab (true);
-
 			InvalidateOptionsMenu ();
 		}
 
@@ -116,9 +118,7 @@ namespace ManyDiet.AndroidView
 			for (int i = 0; i < plan.Count; i++)
 				if (Object.ReferenceEquals (plan [i], _diet)) {
 					var pl = FindViewById<ListView> (Resource.Id.planlist);
-					//pl.RequestFocusFromTouch ();
 					pl.SetItemChecked(i,true);
-					//pl.RequestFocus ();
 				}
 		}
 		DAdapter plan;
@@ -153,19 +153,52 @@ namespace ManyDiet.AndroidView
 		Promise<AddedItemVM> GetValuesPromise;
 		public void GetValues (String title, IEnumerable<String> names, Promise<AddedItemVM> completed, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When)
 		{
-			List<double> vs = new List<double>();
-			foreach (var s in names) vs.Add (42.0);
-			GetValuesPromise = completed;
-			GetValuesPromise(new AddedItemVM (vs.ToArray(), DateTime.Now, "Namey 42 omg"));
+			// init dialog
+			Dialog gvDialog = new Dialog (this);
+			gvDialog.RequestWindowFeature ((int)WindowFeatures.NoTitle);
+			gvDialog.SetCanceledOnTouchOutside (true);
+			gvDialog.Window.SetLayout (ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent	);
+			gvDialog.SetContentView (Resource.Layout.GetValues);
+
+			// get elements
+			var ok = gvDialog.FindViewById<Button> (Resource.Id.getvalues_ok);
+			var cancel = gvDialog.FindViewById<Button> (Resource.Id.getvalues_cancel);
+			var sll = gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_scrolllinearlayout);
+			var gvtitle = gvDialog.FindViewById<TextView> (Resource.Id.getvalues_titletext);
+
+			// set element values
+			gvtitle.Text = title;
+			List<EditText> vals = new List<EditText> ();
+			foreach (var vv in names) {
+				var row = gvDialog.LayoutInflater.Inflate (Resource.Layout.GetValueRow, sll);
+				vals.Add (row.FindViewById<EditText> (Resource.Id.getvalues_itemvalue));
+				row.FindViewById<TextView> (Resource.Id.getvalues_itemtitle).Text = vv;
+			}
+
+			// hook events
+			ok.Click += (sender, e) => {
+				List<double> valvals = new List<double>();
+				foreach(var v in vals)
+					valvals.Add(double.Parse(v.Text));
+				gvDialog.Cancel();
+				completed(new AddedItemVM(valvals.ToArray(),DateTime.Now,"a name"));
+			};
+
+			cancel.Click += (sender, e) => {
+				gvDialog.Cancel(); // just dont complete the promise! ok they are good.
+			};
+
+			gvDialog.Show ();
 		}
 
 		Promise<int> SelectInfoPromise;
-		public void SelectInfo (IReadOnlyList<SelectableItemVM> foods, Promise<int> completed)
+		public void SelectInfo (String title, IReadOnlyList<SelectableItemVM> items, Promise<int> completed)
 		{
-			SelectInfoPromise = completed;
-			SelectInfoPromise (0);
+			List<String> sings = new List<string> ();
+			foreach (var si in items)
+				sings.Add (si.name);
+			SelectString (title, sings, completed);
 		}
-
 		Promise<int> SelectStringPromise;
 		IReadOnlyList<String> strings = null;
 		public void SelectString (String title, IReadOnlyList<String> strings, Promise<int> completed)

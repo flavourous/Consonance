@@ -293,26 +293,24 @@ namespace ManyDiet
 		// eaties
 		public bool Add (DietInstance diet, BaseInfo info, IList<double> values, EntryCallback beforeInsert)
 		{
-			EntryType ent = new EntryType ();
-			BaseEntry ent_cast = ent;
-			if (creator.Calculate (info, values, out ent_cast))
+			BaseEntry ent;
+			if (creator.Calculate (info, values, out ent))
 				return false;
 			ent.dietinstanceid = diet.id;
 			ent.infoinstanceid = info.id;
 			beforeInsert (ent);
-			conn.Insert (ent);
+			conn.Insert (ent as EntryType);
 			return true;
 		}
 		public bool Add (DietInstance diet, IList<double> values, EntryCallback beforeInsert )
 		{
-			EntryType ent = new EntryType ();
-			BaseEntry ent_cast = ent;
-			if (!creator.Create (values, out ent_cast))
+			BaseEntry ent;
+			if (!creator.Create (values, out ent))
 				return false;
 			ent.dietinstanceid = diet.id;
 			ent.infoinstanceid = null;
 			beforeInsert (ent);
-			conn.Insert (ent);
+			conn.Insert (ent as EntryType);
 			return true;
 		}
 		public void Remove (params BaseEntry[] tets)
