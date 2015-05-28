@@ -33,7 +33,7 @@ namespace ManyDiet
 		}
 	}
 	// basic workings of presenter and VMs, to be rehomed.
-	public class EntryLineVM
+	public class EntryLineVM : OriginatorVM
 	{
 		public readonly DateTime start;
 		public readonly TimeSpan duration;
@@ -74,6 +74,14 @@ namespace ManyDiet
 		IEnumerable<TrackingInfo> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end);
 		void StartNewDiet();
 		void RemoveDiet (DietInstanceVM dvm);
+
+		// entries
+		void QuickEat(DietInstanceVM to);
+		void FullEat(DietInstanceVM to);
+		void RemoveEat(EntryLineVM toRemove);
+		void QuickBurn(DietInstanceVM to);
+		void FullBurn(DietInstanceVM to);
+		void RemoveBurn(EntryLineVM toRemove);
 	}
 	enum DietVMChangeType { None, Instances, EatEntries, BurnEntries };
 	class DietVMChangeEventArgs
@@ -143,7 +151,15 @@ namespace ManyDiet
 		public IEnumerable<EntryLineVM> EatEntries(DietInstanceVM instance, DateTime start, DateTime end)
 		{
 			var eatModels = modelHandler.foodhandler.Get (instance.originator as DietInstType, start, end);
-			return ConvertMtoVM<EntryLineVM, EatType, EatInfoType> (eatModels, presenter.GetRepresentation, ee => GetInfo<EatInfoType>(ee.infoinstanceid));
+			return ConvertMtoVM<EntryLineVM, EatType, EatInfoType> (
+				eatModels, 
+				(e,i) => {
+					var vm= presenter.GetRepresentation(e,i);
+					vm.originator = e;
+					return vm;
+				}, 
+				ee => GetInfo<EatInfoType>(ee.infoinstanceid)
+			);
 		}
 		public IEnumerable<TrackingInfo> GetEatTracking (DietInstanceVM instance, DateTime start, DateTime end)
 		{
@@ -154,7 +170,15 @@ namespace ManyDiet
 		public IEnumerable<EntryLineVM> BurnEntries(DietInstanceVM instance, DateTime start, DateTime end)
 		{
 			var burnModels = modelHandler.firehandler.Get (instance.originator as DietInstType, start, end);
-			return ConvertMtoVM<EntryLineVM, BurnType, BurnInfoType> (burnModels, presenter.GetRepresentation, ee => GetInfo<BurnInfoType>(ee.infoinstanceid));
+			return ConvertMtoVM<EntryLineVM, BurnType, BurnInfoType> (
+				burnModels, 
+				(e,i) => {
+					var vm= presenter.GetRepresentation(e,i);
+					vm.originator = e;
+					return vm;
+				}, 
+				ee => GetInfo<BurnInfoType>(ee.infoinstanceid)
+			);
 		}
 		public IEnumerable<TrackingInfo> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end)
 		{
@@ -187,8 +211,56 @@ namespace ManyDiet
 		{
 			modelHandler.RemoveDiet (dvm.originator as DietInstType);
 		}
+			
+		public void QuickEat (DietInstanceVM to) {
+			Quick<EatType, EatInfoType> (to, modelHandler.model.foodcreator, modelHandler.foodhandler, "Eat");
+		}
+		public void QuickBurn (DietInstanceVM to){
+			Quick<BurnType, BurnInfoType> (to, modelHandler.model.firecreator, modelHandler.firehandler, "Burn");
+		}
+		void Quick<T,I>(DietInstanceVM to, IEntryCreation<T,I> creator, EntryHandler<DietInstType,T,I> handler, String entryName)
+			where T : BaseEntry, new()
+			where I : BaseInfo, new()
+		{
+			getInput.GetValues ("Quick "+entryName+" Entry", creator.CreationFields (), mod =>
+				handler.Add (to.originator as DietInstType, mod.values, vm => {
+					vm.entryWhen = mod.when;
+					vm.entryName = mod.name;
+				}));
+		}
+
+		public void FullEat (DietInstanceVM to) {
+			Full<EatType,EatInfoType> (to, modelHandler.model.foodcreator, modelHandler.foodhandler, "Food", "Eat", presenter.GetRepresentation);
+		}
+		public void FullBurn (DietInstanceVM to) {
+			Full<BurnType,BurnInfoType> (to, modelHandler.model.firecreator, modelHandler.firehandler, "Burn", "Burn", presenter.GetRepresentation);
+		}
+		void Full<T,I>(DietInstanceVM to, IEntryCreation<T,I> creator, 
+			EntryHandler<DietInstType,T,I> handler, String infoName, String entryName,
+			CreateSelectableVM<I> iconv) 
+				where T : BaseEntry, new()
+				where I : BaseInfo, new()
+		{
+			var fis = new List<I> (conn.Table<I> ().Where (creator.IsInfoComplete));
+			getInput.SelectInfo ("Select " + infoName, new SelectVMListDecorator<I> (fis, iconv), foodidx => {
+				var food = fis [foodidx];
+				getInput.GetValues ("Eat " + entryName, creator.CalculationFields (food), mod =>
+					handler.Add (to.originator as DietInstType, mod.values, vm => {
+						vm.entryWhen = mod.when;
+						vm.entryName = mod.name;
+				}));
+			});
+		}
+
+		public void RemoveEat (EntryLineVM toRemove)
+		{
+			modelHandler.foodhandler.Remove (toRemove.originator as EatType);
+		}
+		public void RemoveBurn (EntryLineVM toRemove)
+		{
+			modelHandler.firehandler.Remove (toRemove.originator as BurnType);
+		}
 	}
-		
 
 	class IndexEnumerator<T> : IEnumerator<T>
 	{

@@ -49,18 +49,20 @@ namespace ManyDiet
 
 		// present app logic domain to this view.
 		IView view;
+		DietInstanceVM cd {get{return view.currentDiet;}}
+		IAbstractedDiet cdh {get{return view.currentDiet.sender as IAbstractedDiet;}}
 		public void PresentTo(IView view)
 		{
 			this.view = view;
 			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter ());
 
 			// commanding...
-//			view.addeatitemquick += AddEatItemQuick;
-//			view.addeatitem += AddEatItem;
-//			view.removeeatitem += RemEatItem;
-//			view.addburnitemquick += AddBurnItemQuick;
-//			view.addburnitem += AddBurnItem;
-//			view.removeburnitem += RemBurnItem;
+			view.addeatitemquick += ()=>cdh.QuickEat(cd);
+			view.addeatitem += ()=>cdh.FullEat(cd);
+			view.removeeatitem += cdh.RemoveEat;
+			view.addburnitemquick += ()=>cdh.QuickBurn(cd);
+			view.addburnitem += ()=>cdh.FullBurn(cd);
+			view.removeburnitem += cdh.RemoveBurn;
 			view.changeday += ChangeDay;
 			view.adddietinstance += Handleadddietinstance;
 			view.selectdietinstance += (obj) => { 
