@@ -3,7 +3,7 @@
     p1:minWidth="25px"
     p1:minHeight="25px"
     p1:layout_width="match_parent"
-    p1:layout_height="match_parent"
+    p1:layout_height="wrap_content"
     p1:id="@+id/getvalues">
     <TextView
         p1:id="@+id/getvalues_titletext"
@@ -13,12 +13,46 @@
         p1:text="This is the title"
         p1:textSize="24dp"
         p1:gravity="center" />
+    <LinearLayout
+        p1:id="@+id/getvalues_titlebox"
+        p1:layout_width="match_parent"
+        p1:layout_height="wrap_content"
+        p1:layout_below="@+id/getvalues_titletext"
+        p1:orientation="horizontal">
+        <TextView
+            p1:layout_width="wrap_content"
+            p1:layout_height="wrap_content"
+            p1:text="Name"
+            p1:gravity="center" />
+        <EditText
+            p1:id="@+id/getvalues_titleboxname"
+            p1:layout_width="match_parent"
+            p1:layout_height="wrap_content" />
+    </LinearLayout>
+    <LinearLayout
+        p1:layout_width="match_parent"
+        p1:layout_height="wrap_content"
+        p1:id="@+id/getvalues_date"
+        p1:layout_below="@+id/getvalues_titlebox"
+        p1:orientation="horizontal">
+        <TextView
+            p1:layout_width="wrap_content"
+            p1:layout_height="wrap_content"
+            p1:text="When"
+            p1:gravity="center" />
+        <DatePicker
+            p1:id="@+id/getvalues_datepicker"
+            p1:layout_width="match_parent"
+            p1:layout_height="wrap_content"
+            p1:calendarViewShown="false"
+            p1:spinnersShown="true" />
+    </LinearLayout>
     <ScrollView
         p1:id="@+id/getvalues_valuesscroller"
         p1:layout_width="match_parent"
-        p1:layout_height="match_parent"
+        p1:layout_height="wrap_content"
         p1:layout_above="@+id/getvalues_ok"
-        p1:layout_below="@+id/getvalues_titletext">
+        p1:layout_below="@+id/getvalues_date">
         <LinearLayout
             p1:orientation="vertical"
             p1:id="@+id/getvalues_scrolllinearlayout"

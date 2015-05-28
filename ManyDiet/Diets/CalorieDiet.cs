@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq.Expressions;
 using System.Collections.Generic;
 
 namespace ManyDiet
@@ -32,22 +33,18 @@ namespace ManyDiet
 		{
 			return new string[] { "Calorie Limit" };
 		}
-		public DietInstance NewDiet (double[] values)
+		public CalorieDietInstance NewDiet (double[] values)
 		{
 			return new CalorieDietInstance () { name = "Calorie Diet", callim = values[0] };
-		}
-		public bool IsDietInstance(DietInstance di)
-		{
-			return di is CalorieDietInstance;
 		}
 
 		CalorieDietEatCreation cde = new CalorieDietEatCreation();
 		CalorieDietBurnCreation cdb = new CalorieDietBurnCreation();
 
-		public IEntryCreation<BaseEatEntry, FoodInfo> foodcreator { get { return cde; } }
-		public IEntryCreation<BaseBurnEntry, FireInfo> firecreator { get { return cdb; } }
+		public IEntryCreation<CalorieDietEatEntry, CalorieDietEatInfo> foodcreator { get { return cde; } }
+		public IEntryCreation<CalorieDietBurnEntry, CalorieDietBurnInfo> firecreator { get { return cdb; } }
 
-		public IEnumerable<TrackingInfo> DetermineEatTrackingForRange (IEnumerable<BaseEatEntry> eats, IEnumerable<BaseBurnEntry> burns, DateTime startBound, DateTime endBound)
+		public IEnumerable<TrackingInfo> DetermineEatTrackingForRange(IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
 		{
 			TrackingInfo ti = new TrackingInfo () {
 				valueName = "Calories Balance"
@@ -56,42 +53,40 @@ namespace ManyDiet
 			double kctot = 0.0;
 			List<double> kcin = new List<double> (), kcout = new List<double> ();
 			foreach (var eat in eats) {
-				var ke = ((CalorieDietEatEntry)eat);
-				kcin.Add (ke.kcals);
-				kctot += ke.kcals;
+				kcin.Add (eat.kcals);
+				kctot += eat.kcals;
 			}
 			foreach (var burn in burns) {
-				var ke = ((CalorieDietBurnEntry)burn);
-				kcout.Add (ke.kcals);
-				kctot -= ke.kcals;
+				kcout.Add (burn.kcals);
+				kctot -= burn.kcals;
 			}
 
 			ti.eatValues = kcin.ToArray ();
-			ti.eatSources = new List<BaseEatEntry> (eats).ToArray ();
+			ti.eatSources = new List<CalorieDietEatEntry> (eats).ToArray ();
 			ti.burnValues = kcout.ToArray ();
-			ti.burnSources = new List<BaseBurnEntry> (burns).ToArray ();
+			ti.burnSources = new List<CalorieDietBurnEntry> (burns).ToArray ();
 
 			yield return ti;
 		}
 
-		public IEnumerable<TrackingInfo> DetermineBurnTrackingForRange (IEnumerable<BaseEatEntry> eats, IEnumerable<BaseBurnEntry> burns, DateTime startBound, DateTime endBound)
+		public IEnumerable<TrackingInfo> DetermineBurnTrackingForRange(IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
 		{
 			return DetermineEatTrackingForRange (eats, burns, startBound, endBound);
 		}
 	}
-	public class CalorieDietEatCreation :IEntryCreation<BaseEatEntry, FoodInfo>
+	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, CalorieDietEatInfo>
 	{
 		#region IEntryCreation implementation
 		public string[] CreationFields ()
 		{
 			return new string[] { "Calories" };
 		}
-		public bool Create (IList<double> values, out BaseEatEntry entry)
+		public bool Create (IList<double> values, out CalorieDietEatEntry entry)
 		{
 			entry = new CalorieDietEatEntry () { kcals = values [0] };
 			return true;
 		}
-		public string[] CalculationFields (FoodInfo info)
+		public string[] CalculationFields (CalorieDietEatInfo info)
 		{
 			List<String> needed = new List<string> ();
 			needed.Add ("Grams");
@@ -99,7 +94,7 @@ namespace ManyDiet
 				needed.Add ("Calories");
 			return needed.ToArray();
 		}
-		public bool Calculate (FoodInfo info, IList<double> values, out BaseEatEntry result)
+		public bool Calculate (CalorieDietEatInfo info, IList<double> values, out CalorieDietEatEntry result)
 		{
 			result = null;
 			if (values.Count != CalculationFields (info).Length)
@@ -109,7 +104,7 @@ namespace ManyDiet
 			};
 			return true;
 		}
-		public void CompleteInfo (ref FoodInfo toComplete, IList<double> values)
+		public void CompleteInfo (ref CalorieDietEatInfo toComplete, IList<double> values)
 		{
 			toComplete.calories = values [1];
 		}
@@ -117,24 +112,21 @@ namespace ManyDiet
 		{
 			return new string[] { "Calories" };
 		}
-		public FoodInfo CreateInfo (IList<double> values)
+		public CalorieDietEatInfo CreateInfo (IList<double> values)
 		{
 			return new CalorieDietEatInfo () { calories = values [0] };
 		}
-		public bool IsInfoComplete (FoodInfo info)
-		{
-			return info.calories.HasValue;
-		}
+		public Expression<Func<CalorieDietEatInfo,bool>> IsInfoComplete {get{return info=>info.calories.HasValue;}}
 		#endregion
 	}
-	public class CalorieDietBurnCreation :IEntryCreation<BaseBurnEntry, FireInfo>
+	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, CalorieDietBurnInfo>
 	{
 		#region IEntryCreation implementation
 		public string[] CreationFields ()
 		{
 			return new string[] { "Cal Burned" };
 		}
-		public bool Create (IList<double> values, out BaseBurnEntry entry)
+		public bool Create (IList<double> values, out CalorieDietBurnEntry entry)
 		{
 			entry = null;
 			if (values.Count != 1)
@@ -142,7 +134,7 @@ namespace ManyDiet
 			entry = new CalorieDietBurnEntry () { kcals = values [0] };
 			return true;
 		}
-		public string[] CalculationFields (FireInfo info)
+		public string[] CalculationFields (CalorieDietBurnInfo info)
 		{
 			List<String> needs = new List<string> ();
 			needs.Add ("Duration (h)");
@@ -150,7 +142,7 @@ namespace ManyDiet
 				needs.Add ("Calories Burned");
 			return needs.ToArray();
 		}
-		public bool Calculate (FireInfo info, IList<double> values, out BaseBurnEntry result)
+		public bool Calculate (CalorieDietBurnInfo info, IList<double> values, out CalorieDietBurnEntry result)
 		{
 			result = null;
 			if (values.Count != CalculationFields (info).Length)
@@ -160,7 +152,7 @@ namespace ManyDiet
 			};
 			return true;
 		}
-		public void CompleteInfo (ref FireInfo toComplete, IList<double> values)
+		public void CompleteInfo (ref CalorieDietBurnInfo toComplete, IList<double> values)
 		{
 			toComplete.calories = values [0];
 		}
@@ -168,46 +160,39 @@ namespace ManyDiet
 		{
 			return new String[] { "Calories Burned", "Duration" };
 		}
-		public FireInfo CreateInfo (IList<double> values)
+		public CalorieDietBurnInfo CreateInfo (IList<double> values)
 		{
 			return new CalorieDietBurnInfo () { per_hour = 1.0 / values [1], calories = values [0] };
 		}
-		public bool IsInfoComplete (FireInfo info)
-		{
-			return info.calories.HasValue;
-		}
+		public Expression<Func<CalorieDietBurnInfo,bool>> IsInfoComplete { get { return f => f.calories.HasValue;  } }
 		#endregion
 	}
 
 	// hmmmm calling into presenter is a nasty....abstract class?
-	public class CalorieDietPresenter : DietPresenter<CalorieDietInstance, CalorieDietEatEntry, CalorieDietEatInfo, CalorieDietBurnEntry, CalorieDietBurnInfo>
+	public class CalorieDietPresenter : IDietPresenter<CalorieDietInstance, CalorieDietEatEntry, CalorieDietEatInfo, CalorieDietBurnEntry, CalorieDietBurnInfo>
 	{
 		#region IDietPresenter implementation
-		public override EntryLineVM GetRepresentation (BaseEatEntry entry)
+		public EntryLineVM GetRepresentation (CalorieDietEatEntry entry, CalorieDietEatInfo entryInfo)
 		{
-			var ent = (entry as CalorieDietEatEntry);
-			var fi = FindInfo<FoodInfo> (ent.infoinstanceid);
 			return new EntryLineVM (
-				ent.entryWhen,
-				ent.entryDur,
-				ent.myname, 
-				fi == null ? "" : fi.name, 
-				new KVPList<string, double> { { "kcal", ent.kcals } }
+				entry.entryWhen,
+				entry.entryDur,
+				entry.myname, 
+				entryInfo == null ? "" : entryInfo.name, 
+				new KVPList<string, double> { { "kcal", entry.kcals } }
 			);
 		}
-		public override EntryLineVM GetRepresentation (BaseBurnEntry entry)
+		public EntryLineVM GetRepresentation (CalorieDietBurnEntry entry, CalorieDietBurnInfo entryInfo)
 		{
-			var ent = (entry as CalorieDietBurnEntry);
-			var fi = FindInfo<FireInfo> (ent.infoinstanceid);
 			return new EntryLineVM (
-				ent.entryWhen, 
-				ent.entryDur,
-				ent.myname, 
-				fi == null ? "" : fi.name, 
-				new KVPList<string, double> { { "kcal", ent.kcals } }
+				entry.entryWhen, 
+				entry.entryDur,
+				entry.myname, 
+				entryInfo == null ? "" : entryInfo.name, 
+				new KVPList<string, double> { { "kcal", entry.kcals } }
 			);
 		}
-		public override DietInstanceVM GetRepresentation (DietInstance entry)
+		public DietInstanceVM GetRepresentation (CalorieDietInstance entry)
 		{
 			var ent = (entry as CalorieDietInstance);
 			return new DietInstanceVM(
@@ -218,11 +203,11 @@ namespace ManyDiet
 				new KVPList<string, double> { { "kcal", ent.callim } }
 			);
 		}
-		public override SelectableItemVM GetRepresentation (FoodInfo info)
+		public SelectableItemVM GetRepresentation (CalorieDietEatInfo info)
 		{
 			return new SelectableItemVM () { name = info.name };
 		}
-		public override SelectableItemVM GetRepresentation (FireInfo info)
+		public SelectableItemVM GetRepresentation (CalorieDietBurnInfo info)
 		{
 			return new SelectableItemVM () { name = info.name };
 		}

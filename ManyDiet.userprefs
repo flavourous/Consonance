@@ -1,40 +1,41 @@
 ﻿<Properties StartupItem="ManyDiet.AndroidView\ManyDiet.AndroidView.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.SmallDroid" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="ManyDiet.AndroidView\Resources\values\colors.xml">
+  <MonoDevelop.Ide.Workbench ActiveDocument="c:\cygwin\home\David\ManyDiet\ManyDiet\DietModels.cs">
     <Files>
-      <File FileName="ManyDiet.AndroidView\MainActivity.cs" Line="1" Column="1" />
-      <File FileName="ManyDiet.AndroidView\Resources\menu\EatMenu.xml" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\ManyDiet\ManyDiet\AppPresenter.cs" Line="1" Column="1" />
-      <File FileName="ManyDiet.AndroidView\Resources\menu\PlanMenu.xml" Line="1" Column="1" />
-      <File FileName="ManyDiet.AndroidView\Resources\menu\BurnMenu.xml" Line="1" Column="1" />
-      <File FileName="ManyDiet\DietPresenters.cs" Line="1" Column="1" />
-      <File FileName="ManyDiet\DietModels.cs" Line="1" Column="1" />
-      <File FileName="ManyDiet.AndroidView\ListAdapters.cs" Line="1" Column="1" />
+      <File FileName="ManyDiet.AndroidView\MainActivity.cs" Line="4" Column="4" />
+      <File FileName="c:\cygwin\home\David\ManyDiet\ManyDiet\AppPresenter.cs" Line="2" Column="2" />
       <File FileName="c:\cygwin\home\David\ManyDiet\ManyDiet\Diets\CalorieDiet.cs" Line="1" Column="1" />
-      <File FileName="ManyDiet.AndroidView\Resources\menu\PlanEntryMenu.xml" Line="1" Column="1" />
-      <File FileName="ManyDiet.AndroidView\Resources\values\colors.xml" Line="2" Column="2" />
-      <File FileName="ManyDiet.AndroidView\Resources\drawable\DietInstanceLineSelector.xml" Line="32" Column="32" />
+      <File FileName="c:\cygwin\home\David\ManyDiet\ManyDiet\DietModels.cs" Line="3" Column="3" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
+          <Node name="ManyDiet" expanded="True">
+            <Node name="Diets" expanded="True" />
+          </Node>
           <Node name="ManyDiet.AndroidView" expanded="True">
             <Node name="Resources" expanded="True">
               <Node name="drawable" expanded="True" />
-              <Node name="layout" expanded="True">
-                <Node name="Plan.axml" selected="True" />
-              </Node>
+              <Node name="layout" expanded="True" />
               <Node name="menu" expanded="True" />
               <Node name="values" expanded="True" />
             </Node>
+            <Node name="MainActivity.cs" selected="True" />
           </Node>
         </State>
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State />
       </Pad>
     </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="c:\cygwin\home\David\ManyDiet\ManyDiet\AppPresenter.cs" line="167" column="2" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches>
+    <Watch file="c:\cygwin\home\David\ManyDiet\ManyDiet\DietModels.cs" line="315" offsetX="270" offsetY="5024" expression="ent" liveUpdate="False" />
+  </MonoDevelop.Ide.DebuggingService.PinnedWatches>
   <MonoDevelop.Ide.ItemProperties.ManyDiet.AndroidView AndroidDesignerPreferredDevice="Nexus 4" />
 </Properties>

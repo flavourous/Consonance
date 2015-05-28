@@ -17,4 +17,7 @@
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Diets\" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)OldCode.txt" />
+  </ItemGroup>
 </Project>

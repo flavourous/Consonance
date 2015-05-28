@@ -87,20 +87,20 @@ namespace ManyDiet.AndroidView
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f070021
-			public const int addBurned = 2131165217;
-			
-			// aapt resource value: 0x7f070022
-			public const int addBurnedQuick = 2131165218;
-			
-			// aapt resource value: 0x7f070024
-			public const int addEaten = 2131165220;
-			
 			// aapt resource value: 0x7f070025
-			public const int addEatenQuick = 2131165221;
+			public const int addBurned = 2131165221;
 			
-			// aapt resource value: 0x7f070027
-			public const int addPlan = 2131165223;
+			// aapt resource value: 0x7f070026
+			public const int addBurnedQuick = 2131165222;
+			
+			// aapt resource value: 0x7f070028
+			public const int addEaten = 2131165224;
+			
+			// aapt resource value: 0x7f070029
+			public const int addEatenQuick = 2131165225;
+			
+			// aapt resource value: 0x7f07002b
+			public const int addPlan = 2131165227;
 			
 			// aapt resource value: 0x7f070006
 			public const int burnitemdatetime = 2131165190;
@@ -168,8 +168,14 @@ namespace ManyDiet.AndroidView
 			// aapt resource value: 0x7f070018
 			public const int getvalues = 2131165208;
 			
+			// aapt resource value: 0x7f070021
+			public const int getvalues_cancel = 2131165217;
+			
+			// aapt resource value: 0x7f07001c
+			public const int getvalues_date = 2131165212;
+			
 			// aapt resource value: 0x7f07001d
-			public const int getvalues_cancel = 2131165213;
+			public const int getvalues_datepicker = 2131165213;
 			
 			// aapt resource value: 0x7f070015
 			public const int getvalues_item = 2131165205;
@@ -180,32 +186,38 @@ namespace ManyDiet.AndroidView
 			// aapt resource value: 0x7f070017
 			public const int getvalues_itemvalue = 2131165207;
 			
-			// aapt resource value: 0x7f07001b
-			public const int getvalues_ok = 2131165211;
+			// aapt resource value: 0x7f07001f
+			public const int getvalues_ok = 2131165215;
 			
-			// aapt resource value: 0x7f07001c
-			public const int getvalues_scrolllinearlayout = 2131165212;
+			// aapt resource value: 0x7f070020
+			public const int getvalues_scrolllinearlayout = 2131165216;
+			
+			// aapt resource value: 0x7f07001a
+			public const int getvalues_titlebox = 2131165210;
+			
+			// aapt resource value: 0x7f07001b
+			public const int getvalues_titleboxname = 2131165211;
 			
 			// aapt resource value: 0x7f070019
 			public const int getvalues_titletext = 2131165209;
 			
-			// aapt resource value: 0x7f07001a
-			public const int getvalues_valuesscroller = 2131165210;
-			
 			// aapt resource value: 0x7f07001e
-			public const int plan = 2131165214;
+			public const int getvalues_valuesscroller = 2131165214;
 			
-			// aapt resource value: 0x7f07001f
-			public const int planlist = 2131165215;
-			
-			// aapt resource value: 0x7f070020
-			public const int removeBurnEntry = 2131165216;
+			// aapt resource value: 0x7f070022
+			public const int plan = 2131165218;
 			
 			// aapt resource value: 0x7f070023
-			public const int removeEatEntry = 2131165219;
+			public const int planlist = 2131165219;
 			
-			// aapt resource value: 0x7f070026
-			public const int removePlanEntry = 2131165222;
+			// aapt resource value: 0x7f070024
+			public const int removeBurnEntry = 2131165220;
+			
+			// aapt resource value: 0x7f070027
+			public const int removeEatEntry = 2131165223;
+			
+			// aapt resource value: 0x7f07002a
+			public const int removePlanEntry = 2131165226;
 			
 			static Id()
 			{

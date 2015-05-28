@@ -86,6 +86,7 @@ namespace ManyDiet.AndroidView
 				_day = value;
 				// FIXME code to set day on view visible somewhere
 			}
+			get{ return _day; }
 		}
 		private DietInstanceVM _diet;
 		public DietInstanceVM currentDiet
@@ -95,6 +96,7 @@ namespace ManyDiet.AndroidView
 				_diet = value;
 				SwitchHiglightDietInstance();
 			}
+			get { return _diet; }
 		}
 
 		class SetRet {
@@ -103,15 +105,21 @@ namespace ManyDiet.AndroidView
 		}
 
 		SetRet eatitems, burnitems;
-		public void SetEatLines (IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo)
+		public void SetEatLines (IEnumerable<EntryLineVM> lineitems)
 		{
 			eatitems = SetLines (lineitems, Resource.Layout.EatEntryLine, ItemViewConfigs.Eat);
 			if(ActionBar.SelectedNavigationIndex==0) ReloadLayoutForTab ();
 		}
-		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems, IEnumerable<TrackingInfo> trackinfo)
+		public void SetEatTrack(IEnumerable<TrackingInfo> trackinfo)
+		{
+		}
+		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems)
 		{
 			burnitems = SetLines (lineitems, Resource.Layout.BurnEntryLine, ItemViewConfigs.Burn);
 			if(ActionBar.SelectedNavigationIndex==1) ReloadLayoutForTab ();
+		}
+		public void SetBurnTrack(IEnumerable<TrackingInfo> trackinfo)
+		{
 		}
 		void SwitchHiglightDietInstance()
 		{
@@ -157,7 +165,6 @@ namespace ManyDiet.AndroidView
 			Dialog gvDialog = new Dialog (this);
 			gvDialog.RequestWindowFeature ((int)WindowFeatures.NoTitle);
 			gvDialog.SetCanceledOnTouchOutside (true);
-			gvDialog.Window.SetLayout (ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent	);
 			gvDialog.SetContentView (Resource.Layout.GetValues);
 
 			// get elements
@@ -165,6 +172,13 @@ namespace ManyDiet.AndroidView
 			var cancel = gvDialog.FindViewById<Button> (Resource.Id.getvalues_cancel);
 			var sll = gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_scrolllinearlayout);
 			var gvtitle = gvDialog.FindViewById<TextView> (Resource.Id.getvalues_titletext);
+
+			// options
+			bool useName = (defaultUse & AddedItemVMDefaults.Name) == AddedItemVMDefaults.Name;
+			bool useWhen = (defaultUse & AddedItemVMDefaults.When) == AddedItemVMDefaults.When;
+			if (!useName)
+				gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_titlebox).Visibility = ViewStates.Gone;
+			if (!useWhen) gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_date).Visibility = ViewStates.Gone;
 
 			// set element values
 			gvtitle.Text = title;
@@ -175,13 +189,18 @@ namespace ManyDiet.AndroidView
 				row.FindViewById<TextView> (Resource.Id.getvalues_itemtitle).Text = vv;
 			}
 
+			// do wrapping layout
+			gvDialog.Window.SetLayout (ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+
 			// hook events
 			ok.Click += (sender, e) => {
 				List<double> valvals = new List<double>();
 				foreach(var v in vals)
-					valvals.Add(double.Parse(v.Text));
+					valvals.Add(double.Parse(v.Text == "" ? "0.0" : v.Text));
 				gvDialog.Cancel();
-				completed(new AddedItemVM(valvals.ToArray(),DateTime.Now,"a name"));
+				completed(new AddedItemVM(valvals.ToArray(),
+					gvDialog.FindViewById<DatePicker> (Resource.Id.getvalues_datepicker).DateTime,
+					gvDialog.FindViewById<EditText> (Resource.Id.getvalues_titleboxname).Text));
 			};
 
 			cancel.Click += (sender, e) => {
@@ -236,8 +255,10 @@ namespace ManyDiet.AndroidView
 		}
 		public override bool OnPrepareOptionsMenu (IMenu menu)
 		{
-			menu.Clear ();
-			MenuInflater.Inflate (tabs [ActionBar.SelectedNavigationIndex].menu, menu);
+			if (ActionBar.SelectedNavigationIndex > -1) {
+				menu.Clear ();
+				MenuInflater.Inflate (tabs [ActionBar.SelectedNavigationIndex].menu, menu);
+			}
 			return base.OnPrepareOptionsMenu (menu);
 		}
 		protected override void OnCreate (Bundle bundle)
@@ -247,8 +268,10 @@ namespace ManyDiet.AndroidView
 			Window.RequestFeature (WindowFeatures.ActionBar);
 
 			// init with nothing
-			SetEatLines (new EntryLineVM[0], new TrackingInfo[0]);
-			SetBurnLines (new EntryLineVM[0], new TrackingInfo[0]);
+			SetEatLines (new EntryLineVM[0]);
+			SetBurnLines (new EntryLineVM[0]);
+			SetEatTrack (new TrackingInfo[0]);
+			SetBurnTrack (new TrackingInfo[0]);
 			
 			foreach (var tab in tabs) {
 				ActionBar.Tab t = ActionBar.NewTab ();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq.Expressions;
 using System.Collections.Generic;
 using SQLite;
 
@@ -13,8 +14,6 @@ namespace ManyDiet
 	// Strategy is to have a central repository of food items with full nutrient info.  Other data, specific to other diets would
 	// exist on foreign tables.  The prime table would have nullable columns, indicating a lack of data.  Diet models could calculate
 	// thier index from the prime table or insist manual assignment.
-
-
 
 	#region BASE_MODELS
 	public class BaseEntry 
@@ -88,32 +87,25 @@ namespace ManyDiet
 	#endregion
 
 	#region DIET_PLAN_INTERFACES
-	public interface IDietModel<D,Te,Tei,Tb,Tbi> : IDietModel 
+	public interface IDietModel<D,Te,Tei,Tb,Tbi>
 		where D : DietInstance
 		where Te  : BaseEatEntry
 		where Tei : FoodInfo
 		where Tb  : BaseBurnEntry
 		where Tbi : FireInfo
-	{ }
-	/// <summary>
-	/// Recommend implimenting explicitly - dreaded diamond.
-	/// </summary>
-	public interface IDietModel 
 	{
+		// creates items
+		IEntryCreation<Te,Tei> foodcreator { get; }
+		IEntryCreation<Tb,Tbi> firecreator { get; }
+
+		// Deals with goal tracking
+		IEnumerable<TrackingInfo> DetermineEatTrackingForRange(IEnumerable<Te> eats, IEnumerable<Tb> burns, DateTime startBound,  DateTime endBound);
+		IEnumerable<TrackingInfo> DetermineBurnTrackingForRange(IEnumerable<Te> eats, IEnumerable<Tb> burns, DateTime startBound,  DateTime endBound);
+
 		// creator for dietinstance
 		String name { get; }
 		String[] DietCreationFields();
-		DietInstance NewDiet(double[] values);
-		bool IsDietInstance (DietInstance di);
-
-		// creates items
-		IEntryCreation<BaseEatEntry,FoodInfo> foodcreator { get; }
-		IEntryCreation<BaseBurnEntry,FireInfo> firecreator { get; }
-
-		// Deals with goal tracking
-		IEnumerable<TrackingInfo> DetermineEatTrackingForRange(IEnumerable<BaseEatEntry> eats, IEnumerable<BaseBurnEntry> burns, DateTime startBound,  DateTime endBound);
-		IEnumerable<TrackingInfo> DetermineBurnTrackingForRange(IEnumerable<BaseEatEntry> eats, IEnumerable<BaseBurnEntry> burns, DateTime startBound,  DateTime endBound);
-
+		D NewDiet(double[] values);
 	}
 	public interface IEntryCreation<EntryType, InfoType>
 	{
@@ -134,35 +126,15 @@ namespace ManyDiet
 		// ok make me an info please here's that data.
 		InfoType CreateInfo (IList<double> values);
 		// ok is this info like complete for your diety? yes. ffs.
-		bool IsInfoComplete (InfoType info);
+		Expression<Func<InfoType,bool>> IsInfoComplete { get; }
 	}
 	#endregion
 
 	#region DIET_MODELS_PRESENTER_HANDLER
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
 	delegate void EntryCallback(BaseEntry entry);
-	interface IHandleDietPlanModels
-	{
-		bool Add(DietInstance diet, BaseInfo info, IList<double> values, EntryCallback beforeInsert);
-		bool Add(DietInstance diet, IList<double> values, EntryCallback beforeInsert);
-		void Remove (params BaseEntry[] tet);
-		IEnumerable<BaseEntry> Get(DietInstance diet, DateTime start, DateTime end);
-		int Count();
-	}
-	interface IDiet
-	{
-		IDietModel model { get; }
-		DietInstance StartNewDiet(DateTime started, double[] values);
-		void RemoveDiet (DietInstance rem);
-		IEnumerable<DietInstance> GetDiets (DateTime st, DateTime en);
-		IEnumerable<DietInstance> GetDiets ();
-		IHandleDietPlanModels foodhandler { get; }
-		IHandleDietPlanModels firehandler { get; }
-	}
 
-
-
-	class Diet<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IDiet
+	class DietModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType>
 		where DietInstType : DietInstance, new()
 		where EatType : BaseEatEntry, new()
 		where EatInfoType : FoodInfo, new()
@@ -170,27 +142,38 @@ namespace ManyDiet
 		where BurnInfoType : FireInfo, new()
 	{
 		readonly MyConn conn;
-		public IDietModel model { get; private set; }
-		public DietInstance StartNewDiet(DateTime started, double[] values)
+		public readonly IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
+		public readonly EntryHandler<DietInstType, EatType, EatInfoType> foodhandler;
+		public readonly EntryHandler<DietInstType, BurnType, BurnInfoType> firehandler;
+		public DietModelAccessLayer(MyConn conn, IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
+		{
+			this.conn = conn;
+			this.model = model;
+			conn.CreateTable<DietInstType> ();
+			foodhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (conn, model.foodcreator);
+			firehandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (conn, model.firecreator);
+		}
+		public DietInstType StartNewDiet(String name, DateTime started, double[] values)
 		{
 			var di = model.NewDiet (values);
 			di.started = started;
 			di.ended = null;
+			di.name = name;
 			conn.Insert (di as DietInstType);
 			return di;
 		}
-		public void RemoveDiet(DietInstance rem)
+		public void RemoveDiet(DietInstType rem)
 		{
 			conn.Delete<EatType>("dietinstanceid = " + rem.id);
 			conn.Delete<BurnType>("dietinstanceid = " + rem.id);
 			conn.Delete<DietInstType> (rem.id);
 		}
-		public IEnumerable<DietInstance> GetDiets()
+		public IEnumerable<DietInstType> GetDiets()
 		{
 			var tab = conn.Table<DietInstType> ();
 			return tab;
 		}
-		public IEnumerable<DietInstance> GetDiets(DateTime st, DateTime en)
+		public IEnumerable<DietInstType> GetDiets(DateTime st, DateTime en)
 		{
 			//  | is i1/i2 \ is st/en		i1>st	i2>en	i1>en	i2>st		WANTED
 			// |    \    \     |		= 	false	true	false	true		true		
@@ -206,80 +189,17 @@ namespace ManyDiet
 				d => ((d.ended == null && (st >= d.started || en >= d.started))
 					|| ((d.started >= st ^ d.ended >= en) || (d.started >= en ^ d.ended >= st))));
 		}
-		public IHandleDietPlanModels foodhandler { get; private set; }
-		public IHandleDietPlanModels firehandler { get; private set; }
-		public Diet(MyConn conn, IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
-		{
-			this.conn = conn;
-			this.model = model;
-			conn.CreateTable<DietInstType> ();
 
-			var beh = new StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe (model.foodcreator);
-			var bbh = new StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe (model.firecreator);
-
-			foodhandler = new EntryHandler<EatType, EatInfoType> (conn, beh);
-			firehandler = new EntryHandler<BurnType, BurnInfoType> (conn, bbh);
-		}
 	}
 
-	class StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe : IEntryCreation<BaseEntry, BaseInfo>
-	{
-		readonly IEntryCreation<BaseEatEntry, FoodInfo> decoratedFood;
-		readonly IEntryCreation<BaseBurnEntry, FireInfo> decoratedFire;
-		public StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe(IEntryCreation<BaseEatEntry, FoodInfo> decorate)
-		{
-			decoratedFood = decorate;
-		}
-		public StupidWrapperThatCouldBeSolvedByGenericCovarianceMaybe(IEntryCreation<BaseBurnEntry, FireInfo> decorate)
-		{
-			decoratedFire = decorate;
-		}
-
-		#region IEntryCreation implementation
-		public bool Calculate (BaseInfo info, IList<double> values, out BaseEntry result)
-		{
-			if (decoratedFood != null) {
-				BaseEatEntry opt;
-				var r = decoratedFood.Calculate (info as FoodInfo, values, out opt);
-				result = opt as BaseEntry;
-				return r;
-			}
-			BaseBurnEntry bbe;
-			var rr = decoratedFire.Calculate (info as FireInfo, values, out bbe);
-			result = bbe as BaseEntry;
-			return rr;
-
-		}
-		public bool Create (IList<double> values, out BaseEntry entry)
-		{
-			if (decoratedFood != null) {
-				BaseEatEntry opt;
-				var r = decoratedFood.Create(values, out opt);
-				entry = opt as BaseEntry;
-				return r;
-			}
-			BaseBurnEntry bbe;
-			var rr = decoratedFire.Create(values, out bbe);
-			entry = bbe as BaseEntry;
-			return rr;
-		}
-		// do not care ...
-		public string[] CreationFields () { throw new NotImplementedException (); }
-		public string[] CalculationFields (BaseInfo info) { throw new NotImplementedException (); }
-		public void CompleteInfo (ref BaseInfo toComplete, IList<double> values) { throw new NotImplementedException (); }
-		public string[] InfoCreationFields () { throw new NotImplementedException (); }
-		public BaseInfo CreateInfo (IList<double> values) { throw new NotImplementedException (); }
-		public bool IsInfoComplete (BaseInfo info) { throw new NotImplementedException (); }
-		#endregion
-	}
-
-	class EntryHandler<EntryType,EntryInfoType> : IHandleDietPlanModels
+	class EntryHandler<D, EntryType,EntryInfoType>
+		where D : DietInstance, new()
 		where EntryType : BaseEntry, new()
 		where EntryInfoType : BaseInfo, new()
 	{
 		readonly SQLiteConnection conn;
-		readonly IEntryCreation<BaseEntry, BaseInfo> creator;
-		public EntryHandler(SQLiteConnection conn, IEntryCreation<BaseEntry, BaseInfo> creator)
+		readonly IEntryCreation<EntryType, EntryInfoType> creator;
+		public EntryHandler(SQLiteConnection conn, IEntryCreation<EntryType, EntryInfoType> creator)
 		{
 			this.conn = conn;
 			this.creator = creator;
@@ -291,9 +211,9 @@ namespace ManyDiet
 
 		#region IHandleDietPlanModels implementation
 		// eaties
-		public bool Add (DietInstance diet, BaseInfo info, IList<double> values, EntryCallback beforeInsert)
+		public bool Add (D diet, EntryInfoType info, IList<double> values, EntryCallback beforeInsert)
 		{
-			BaseEntry ent;
+			EntryType ent;
 			if (creator.Calculate (info, values, out ent))
 				return false;
 			ent.dietinstanceid = diet.id;
@@ -302,9 +222,9 @@ namespace ManyDiet
 			conn.Insert (ent as EntryType);
 			return true;
 		}
-		public bool Add (DietInstance diet, IList<double> values, EntryCallback beforeInsert )
+		public bool Add (D diet, IList<double> values, EntryCallback beforeInsert )
 		{
-			BaseEntry ent;
+			EntryType ent;
 			if (!creator.Create (values, out ent))
 				return false;
 			ent.dietinstanceid = diet.id;
@@ -313,13 +233,13 @@ namespace ManyDiet
 			conn.Insert (ent as EntryType);
 			return true;
 		}
-		public void Remove (params BaseEntry[] tets)
+		public void Remove (params EntryType[] tets)
 		{
 			// FIXME drop where?
 			foreach(var tet in tets)
 				conn.Delete<EntryType> (tet.id);
 		}
-		public IEnumerable<BaseEntry> Get (DietInstance diet, DateTime start, DateTime end)
+		public IEnumerable<EntryType> Get (D diet, DateTime start, DateTime end)
 		{
 			return conn.Table<EntryType> ().Where (d => d.dietinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
 		}
