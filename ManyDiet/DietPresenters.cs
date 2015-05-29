@@ -145,6 +145,7 @@ namespace ManyDiet
 			{
 				var rep = presenter.GetRepresentation (dt);
 				rep.sender = this;
+				rep.originator = dt;
 				yield return rep;
 			}
 		}

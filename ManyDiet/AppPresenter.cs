@@ -59,10 +59,10 @@ namespace ManyDiet
 			// commanding...
 			view.addeatitemquick += ()=>cdh.QuickEat(cd);
 			view.addeatitem += ()=>cdh.FullEat(cd);
-			view.removeeatitem += cdh.RemoveEat;
+			view.removeeatitem += vm =>cdh.RemoveEat(vm);
 			view.addburnitemquick += ()=>cdh.QuickBurn(cd);
 			view.addburnitem += ()=>cdh.FullBurn(cd);
-			view.removeburnitem += cdh.RemoveBurn;
+			view.removeburnitem += vm=>cdh.RemoveBurn(vm);
 			view.changeday += ChangeDay;
 			view.adddietinstance += Handleadddietinstance;
 			view.selectdietinstance += (obj) => { 
@@ -139,7 +139,7 @@ namespace ManyDiet
 			if (currentRemoved || view.currentDiet == null) {
 				// select the first one thats open today
 				foreach (var d in build) {
-					if (d.start >= DateTime.Now && (d.end ?? DateTime.MaxValue) <= DateTime.Now) {
+					if (d.start <= DateTime.Now && (d.end ?? DateTime.MaxValue) >= DateTime.Now) {
 						view.currentDiet = d;
 						break;
 					}
@@ -170,8 +170,12 @@ namespace ManyDiet
 					PushDietInstances ();
 					break;
 				case DietVMChangeType.EatEntries:
+					PushEatLines ();
+					PushTracking ();
 					break;
 				case DietVMChangeType.BurnEntries:
+					PushBurnLines ();
+					PushTracking ();
 					break;
 				}
 			}
