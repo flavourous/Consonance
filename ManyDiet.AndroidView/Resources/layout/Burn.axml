@@ -44,5 +44,11 @@
         p1:layout_width="match_parent"
         p1:layout_height="150dp"
         p1:id="@+id/flbBurn"
-        p1:layout_alignParentBottom="true" />
+        p1:layout_alignParentBottom="true">
+        <TextView
+            p1:layout_width="match_parent"
+            p1:layout_height="match_parent"
+            p1:id="@+id/burnTrackText"
+            p1:gravity="center" />
+    </FrameLayout>
 </RelativeLayout>

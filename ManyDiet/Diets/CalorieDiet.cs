@@ -44,35 +44,6 @@ namespace ManyDiet
 		public IEntryCreation<CalorieDietEatEntry, CalorieDietEatInfo> foodcreator { get { return cde; } }
 		public IEntryCreation<CalorieDietBurnEntry, CalorieDietBurnInfo> firecreator { get { return cdb; } }
 
-		public IEnumerable<TrackingInfo> DetermineEatTrackingForRange(IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
-		{
-			TrackingInfo ti = new TrackingInfo () {
-				valueName = "Calories Balance"
-			};
-
-			double kctot = 0.0;
-			List<double> kcin = new List<double> (), kcout = new List<double> ();
-			foreach (var eat in eats) {
-				kcin.Add (eat.kcals);
-				kctot += eat.kcals;
-			}
-			foreach (var burn in burns) {
-				kcout.Add (burn.kcals);
-				kctot -= burn.kcals;
-			}
-
-			ti.eatValues = kcin.ToArray ();
-			ti.eatSources = new List<CalorieDietEatEntry> (eats).ToArray ();
-			ti.burnValues = kcout.ToArray ();
-			ti.burnSources = new List<CalorieDietBurnEntry> (burns).ToArray ();
-
-			yield return ti;
-		}
-
-		public IEnumerable<TrackingInfo> DetermineBurnTrackingForRange(IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
-		{
-			return DetermineEatTrackingForRange (eats, burns, startBound, endBound);
-		}
 	}
 	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, CalorieDietEatInfo>
 	{
@@ -210,6 +181,34 @@ namespace ManyDiet
 		public SelectableItemVM GetRepresentation (CalorieDietBurnInfo info)
 		{
 			return new SelectableItemVM () { name = info.name };
+		}
+
+
+		public IEnumerable<TrackingInfoVM> DetermineEatTrackingForRange(IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
+		{
+			TrackingInfoVM ti = new TrackingInfoVM () {
+				valueName = "Calories Balance"
+			};
+
+			double kctot = 0.0;
+			List<TrackingElementVM> kcin = new List<TrackingElementVM> (), kcout = new List<TrackingElementVM> ();
+			foreach (var eat in eats) {
+				kcin.Add (new TrackingElementVM () { value = eat.kcals, name = eat.entryName });
+				kctot += eat.kcals;
+			}
+			foreach (var burn in burns) {
+						kcout.Add (new TrackingElementVM () { value = burn.kcals, name = burn.entryName });
+				kctot -= burn.kcals;
+			}
+
+			ti.eatValues = kcin.ToArray ();
+			ti.burnValues = kcout.ToArray ();
+			yield return ti;
+		}
+
+		public IEnumerable<TrackingInfoVM> DetermineBurnTrackingForRange(IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
+		{
+			return DetermineEatTrackingForRange (eats, burns, startBound, endBound);
 		}
 		#endregion
 	}

@@ -32,7 +32,6 @@ namespace ManyDiet
 			displayAmounts = t;
 		}
 	}
-	// basic workings of presenter and VMs, to be rehomed.
 	public class EntryLineVM : OriginatorVM
 	{
 		public readonly DateTime start;
@@ -48,6 +47,22 @@ namespace ManyDiet
 			displayAmounts = t;
 		}
 	}
+
+	// The default behaviour is something like this:
+	// balance value if both not null.  if one is null, treat as a simple target. 
+	public class TrackingElementVM
+	{
+		public String name;
+		public double value;
+	}
+	public class TrackingInfoVM
+	{
+		public String valueName;
+		public TrackingElementVM[] eatValues;
+		public TrackingElementVM[] burnValues;
+		public double targetValue;
+	}
+
 	public interface IDietPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>
 		where DietInstType : DietInstance, new()
 		where EatType : BaseEatEntry, new()
@@ -62,6 +77,10 @@ namespace ManyDiet
 		SelectableItemVM GetRepresentation (BurnInfoType info);
 
 		DietInstanceVM GetRepresentation (DietInstType entry);
+
+		// Deals with goal tracking
+		IEnumerable<TrackingInfoVM> DetermineEatTrackingForRange(IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
+		IEnumerable<TrackingInfoVM> DetermineBurnTrackingForRange(IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
 	}
 
 	interface IAbstractedDiet
@@ -70,8 +89,8 @@ namespace ManyDiet
 		IEnumerable<DietInstanceVM> Instances();
 		IEnumerable<EntryLineVM>  EatEntries (DietInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<EntryLineVM>  BurnEntries(DietInstanceVM instance, DateTime start, DateTime end);
-		IEnumerable<TrackingInfo> GetEatTracking (DietInstanceVM instance, DateTime start, DateTime end);
-		IEnumerable<TrackingInfo> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end);
+		IEnumerable<TrackingInfoVM> GetEatTracking (DietInstanceVM instance, DateTime start, DateTime end);
+		IEnumerable<TrackingInfoVM> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end);
 		void StartNewDiet();
 		void RemoveDiet (DietInstanceVM dvm);
 
@@ -162,11 +181,11 @@ namespace ManyDiet
 				ee => GetInfo<EatInfoType>(ee.infoinstanceid)
 			);
 		}
-		public IEnumerable<TrackingInfo> GetEatTracking (DietInstanceVM instance, DateTime start, DateTime end)
+		public IEnumerable<TrackingInfoVM> GetEatTracking (DietInstanceVM instance, DateTime start, DateTime end)
 		{
 			var eatModels = modelHandler.foodhandler.Get (instance.originator as DietInstType, start, end);
 			var burnModels = modelHandler.firehandler.Get (instance.originator as DietInstType, start, end);
-			return modelHandler.model.DetermineEatTrackingForRange (eatModels, burnModels, start, end);
+			return presenter.DetermineEatTrackingForRange (eatModels, burnModels, start, end);
 		}
 		public IEnumerable<EntryLineVM> BurnEntries(DietInstanceVM instance, DateTime start, DateTime end)
 		{
@@ -181,11 +200,11 @@ namespace ManyDiet
 				ee => GetInfo<BurnInfoType>(ee.infoinstanceid)
 			);
 		}
-		public IEnumerable<TrackingInfo> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end)
+		public IEnumerable<TrackingInfoVM> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end)
 		{
 			var eatModels = modelHandler.foodhandler.Get (instance.originator as DietInstType, start, end);
 			var burnModels = modelHandler.firehandler.Get (instance.originator as DietInstType, start, end);
-			return modelHandler.model.DetermineBurnTrackingForRange (eatModels, burnModels, start, end);
+			return presenter.DetermineBurnTrackingForRange (eatModels, burnModels, start, end);
 		}
 		T GetInfo<T>(int? id) where T : BaseInfo, new()
 		{

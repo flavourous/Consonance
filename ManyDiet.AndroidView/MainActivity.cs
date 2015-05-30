@@ -48,12 +48,14 @@ namespace ManyDiet.AndroidView
 				FindViewById<TextView> (Resource.Id.eatlisttitletrack).Text = eatitems.name;
 				if(tabchanged) RegisterForContextMenu (FindViewById<ListView> (Resource.Id.eatlist));
 				useContext = Resource.Menu.EatEntryMenu;
+				FindViewById<TextView> (Resource.Id.eatTrackText).Text = eatTrackText;
 			}
 			if (ActionBar.SelectedNavigationIndex == 1) {
 				FindViewById<ListView> (Resource.Id.burnlist).Adapter = burnitems.apt;
 				FindViewById<TextView> (Resource.Id.burnlisttitletrack).Text = burnitems.name;
 				if(tabchanged) RegisterForContextMenu (FindViewById<ListView> (Resource.Id.burnlist));
 				useContext = Resource.Menu.BurnEntryMenu;
+				FindViewById<TextView> (Resource.Id.burnTrackText).Text = burnTrackText;
 			}
 			if (ActionBar.SelectedNavigationIndex == 2) {
 				var pl = FindViewById<ListView> (Resource.Id.planlist);
@@ -110,16 +112,64 @@ namespace ManyDiet.AndroidView
 			eatitems = SetLines (lineitems, Resource.Layout.EatEntryLine, ItemViewConfigs.Eat);
 			if(ActionBar.SelectedNavigationIndex==0) ReloadLayoutForTab ();
 		}
-		public void SetEatTrack(IEnumerable<TrackingInfo> trackinfo)
+		String eatTrackText;
+		public void SetEatTrack(IEnumerable<TrackingInfoVM> trackinfo)
 		{
+			List<String> elns = new List<string> ();
+			foreach(var ti in trackinfo)
+			{
+				double? inVal = 0.0;
+				if (ti.eatValues == null) inVal = null;
+				else foreach (var te in ti.eatValues)
+					inVal += te.value;
+
+				double? outVal = 0.0;
+				if (ti.burnValues == null) outVal = null;
+				else foreach (var te in ti.burnValues)
+					outVal += te.value;
+
+				if (!inVal.HasValue)
+					elns.Add (ti.valueName + " : " + ti.targetValue);
+				else if (!outVal.HasValue)
+					elns.Add (ti.valueName + " : " + inVal + "/" + ti.targetValue);
+				else 
+					elns.Add(String.Format("{0:0} eaten - {1:0} burned = {2:0} of {3:0} {4}",
+						inVal, outVal, inVal-outVal, ti.targetValue, ti.valueName));
+			}
+			eatTrackText = String.Join ("\n", elns);
+			if(ActionBar.SelectedNavigationIndex==0) ReloadLayoutForTab ();
 		}
 		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems)
 		{
 			burnitems = SetLines (lineitems, Resource.Layout.BurnEntryLine, ItemViewConfigs.Burn);
 			if(ActionBar.SelectedNavigationIndex==1) ReloadLayoutForTab ();
 		}
-		public void SetBurnTrack(IEnumerable<TrackingInfo> trackinfo)
+		String burnTrackText;
+		public void SetBurnTrack(IEnumerable<TrackingInfoVM> trackinfo)
 		{
+			List<String> elns = new List<string> ();
+			foreach(var ti in trackinfo)
+			{
+				double? inVal = 0.0;
+				if (ti.eatValues == null) inVal = null;
+				else foreach (var te in ti.eatValues)
+					inVal += te.value;
+
+				double? outVal = 0.0;
+				if (ti.burnValues == null) outVal = null;
+				else foreach (var te in ti.burnValues)
+					outVal += te.value;
+
+				if (!outVal.HasValue)
+					elns.Add (ti.valueName + " : " + ti.targetValue);
+				else if (!inVal.HasValue)
+					elns.Add (ti.valueName + " : " + outVal + "/" + ti.targetValue);
+				else 
+					elns.Add(String.Format("{0:0} eaten - {1:0} burned = {2:0} of {3:0} {4}",
+						inVal, outVal, inVal-outVal, ti.targetValue, ti.valueName));
+			}
+			burnTrackText = String.Join ("\n", elns);
+			if(ActionBar.SelectedNavigationIndex==1) ReloadLayoutForTab ();
 		}
 		void SwitchHiglightDietInstance()
 		{
@@ -270,8 +320,8 @@ namespace ManyDiet.AndroidView
 			// init with nothing
 			SetEatLines (new EntryLineVM[0]);
 			SetBurnLines (new EntryLineVM[0]);
-			SetEatTrack (new TrackingInfo[0]);
-			SetBurnTrack (new TrackingInfo[0]);
+			SetEatTrack (new TrackingInfoVM[0]);
+			SetBurnTrack (new TrackingInfoVM[0]);
 			
 			foreach (var tab in tabs) {
 				ActionBar.Tab t = ActionBar.NewTab ();

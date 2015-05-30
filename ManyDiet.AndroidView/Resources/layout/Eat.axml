@@ -12,7 +12,7 @@
         p1:layout_height="wrap_content"
         p1:id="@+id/frameLayout1"
         p1:layout_alignParentTop="true"
-        p1:layout_above="@+id/flb">
+        p1:layout_above="@+id/flpEat">
         <TextView
             p1:paddingLeft="100dp"
             p1:background="?android:attr/textColorLinkInverse"
@@ -43,6 +43,12 @@
         p1:minHeight="25px"
         p1:layout_width="match_parent"
         p1:layout_height="150dp"
-        p1:id="@+id/flb"
-        p1:layout_alignParentBottom="true" />
+        p1:id="@+id/flpEat"
+        p1:layout_alignParentBottom="true">
+        <TextView
+            p1:layout_width="match_parent"
+            p1:layout_height="match_parent"
+            p1:id="@+id/eatTrackText"
+            p1:gravity="center" />
+    </FrameLayout>
 </RelativeLayout>

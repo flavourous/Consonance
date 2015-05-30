@@ -141,6 +141,9 @@ namespace ManyDiet
 				foreach (var d in build) {
 					if (d.start <= DateTime.Now && (d.end ?? DateTime.MaxValue) >= DateTime.Now) {
 						view.currentDiet = d;
+						PushEatLines ();
+						PushBurnLines ();
+						PushTracking ();
 						break;
 					}
 				}
@@ -188,8 +191,8 @@ namespace ManyDiet
 	/// </summary>
 	public interface IView : IUserInput
 	{
-		void SetEatTrack(IEnumerable<TrackingInfo> trackinfo);
-		void SetBurnTrack(IEnumerable<TrackingInfo> trackinfo);
+		void SetEatTrack(IEnumerable<TrackingInfoVM> trackinfo);
+		void SetBurnTrack(IEnumerable<TrackingInfoVM> trackinfo);
 		void SetEatLines (IEnumerable<EntryLineVM> lineitems);
 		void SetBurnLines (IEnumerable<EntryLineVM> lineitems);
 		void SetInstances (IEnumerable<DietInstanceVM> instanceitems);
