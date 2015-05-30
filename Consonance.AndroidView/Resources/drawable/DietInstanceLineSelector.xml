@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<selector xmlns:dr="http://schemas.android.com/apk/res/android">
+	<item dr:drawable="@color/norm"/>
+	<item dr:drawable="@color/sel" dr:state_selected="true"/>
+	<item dr:drawable="@color/pres" dr:state_pressed="true"/>
+</selector>

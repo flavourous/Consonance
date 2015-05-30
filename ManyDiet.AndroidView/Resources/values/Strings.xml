@@ -1,8 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<resources>
-	<string name="hello">Hello World, Click Me!</string>
-	<string name="app_name">ManyDiet.AndroidView</string>
-	<string name="eat">Eat</string>
-	<string name="burn">Burn</string>
-	<string name="plan">Plan</string>
-</resources>

@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+	<resources>
+		<color name="norm">#00000000</color>
+		<color name="sel">#AA0000FF</color>
+		<color name="pres">#FF0000FF</color>
+	</resources>
