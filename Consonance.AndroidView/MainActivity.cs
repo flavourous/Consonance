@@ -173,11 +173,13 @@ namespace Consonance.AndroidView
 		}
 		void SwitchHiglightDietInstance()
 		{
-			for (int i = 0; i < plan.Count; i++)
-				if (Object.ReferenceEquals (plan [i], _diet)) {
-					var pl = FindViewById<ListView> (Resource.Id.planlist);
-					pl.SetItemChecked(i,true);
-				}
+			if (ActionBar.SelectedNavigationIndex == 2) {
+				for (int i = 0; i < plan.Count; i++)
+					if (Object.ReferenceEquals (plan [i], _diet)) {
+						var pl = FindViewById<ListView> (Resource.Id.planlist);
+						pl.SetItemChecked (i, true);
+					}
+			}
 		}
 		DAdapter plan;
 		public void SetInstances (IEnumerable<DietInstanceVM> instanceitems)
@@ -208,7 +210,7 @@ namespace Consonance.AndroidView
 			return new SetRet () { apt = new LAdapter (this, ll, vid, (v,vm) => cfg(v,vm,use) ), name = use };
 		}
 			
-		Promise<AddedItemVM> GetValuesPromise;
+		//Promise<AddedItemVM> GetValuesPromise;
 		public void GetValues (String title, IEnumerable<String> names, Promise<AddedItemVM> completed, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When)
 		{
 			// init dialog
@@ -260,7 +262,7 @@ namespace Consonance.AndroidView
 			gvDialog.Show ();
 		}
 
-		Promise<int> SelectInfoPromise;
+		//Promise<int> SelectInfoPromise;
 		public void SelectInfo (String title, IReadOnlyList<SelectableItemVM> items, Promise<int> completed)
 		{
 			List<String> sings = new List<string> ();
@@ -272,11 +274,13 @@ namespace Consonance.AndroidView
 		IReadOnlyList<String> strings = null;
 		public void SelectString (String title, IReadOnlyList<String> strings, Promise<int> completed)
 		{
+			int ani = ActionBar.SelectedNavigationIndex;
+			int useView = ani == 0 ? Resource.Id.eatpage : ani == 1 ? Resource.Id.burnpage : Resource.Id.plan;
 			this.strings = strings;
 			SelectStringPromise = completed;
-			RegisterForContextMenu (FindViewById<RelativeLayout> (Resource.Id.plan));
-			OpenContextMenu (FindViewById<RelativeLayout>(Resource.Id.plan));
-			UnregisterForContextMenu (FindViewById<RelativeLayout> (Resource.Id.plan));
+			RegisterForContextMenu (FindViewById<View> (useView));
+			OpenContextMenu (FindViewById<View>(useView));
+			UnregisterForContextMenu (FindViewById<View> (useView));
 		}
 		#endregion
 
@@ -338,7 +342,7 @@ namespace Consonance.AndroidView
 		public override void OnCreateContextMenu (IContextMenu menu, View v, IContextMenuContextMenuInfo menuInfo)
 		{
 			base.OnCreateContextMenu (menu, v, menuInfo);
-			if (v.Id == Resource.Id.plan) {
+			if (v.Id == Resource.Id.plan || v.Id == Resource.Id.eatpage || v.Id == Resource.Id.burnpage) {
 				selectAction = SelectStringContextSelected;
 				menu.Clear ();
 				for (int i = 0; i < strings.Count; i++)

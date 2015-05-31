@@ -6,6 +6,7 @@ using System.IO;
 
 namespace Consonance
 {
+	[System.Reflection.Obfuscation(Exclude=true, ApplyToMembers=true)]
 	class MyConn : SQLiteConnection
 	{
 		public MyConn(String dbPath, bool storeDateTimeAsTicks = false) : base(dbPath, storeDateTimeAsTicks)
@@ -40,9 +41,9 @@ namespace Consonance
 			var datapath = Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData);
 			if (!Directory.Exists (datapath))
 				Directory.CreateDirectory (datapath);
-			var maindbpath = Path.Combine (datapath, "manydiet.db");
+			var maindbpath = Path.Combine (datapath, "manydiet_canyousee.db");
 			#if DEBUG
-			File.Delete (maindbpath); // fresh install 
+			//File.Delete (maindbpath); // fresh install 
 			#endif
 			conn = new MyConn(maindbpath);
 		}
@@ -57,25 +58,42 @@ namespace Consonance
 			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter ());
 
 			// commanding...
-			view.addeatitemquick += ()=>cdh.QuickEat(cd);
-			view.addeatitem += ()=>cdh.FullEat(cd);
-			view.removeeatitem += vm =>cdh.RemoveEat(vm);
-			view.addburnitemquick += ()=>cdh.QuickBurn(cd);
-			view.addburnitem += ()=>cdh.FullBurn(cd);
-			view.removeburnitem += vm=>cdh.RemoveBurn(vm);
+			view.addeatitemquick += View_addeatitemquick;
+			view.addeatitem += View_addeatitem;
+			view.removeeatitem += View_removeeatitem;
+			view.addburnitemquick += View_addburnitemquick;
+			view.addburnitem += View_addburnitem;
+			view.removeburnitem += View_removeburnitem;;
 			view.changeday += ChangeDay;
 			view.adddietinstance += Handleadddietinstance;
-			view.selectdietinstance += (obj) => { 
-				view.currentDiet = obj;
-				PushEatLines();
-				PushBurnLines();
-				PushTracking();
-			};
-			view.removedietinstance += Handleremovedietinstance;;
+			view.selectdietinstance += View_selectdietinstance;
+			view.removedietinstance += Handleremovedietinstance;
 
 			// setup view
 			PushDietInstances ();
 			ChangeDay (DateTime.UtcNow);
+		}
+
+		void View_selectdietinstance (DietInstanceVM obj)
+		{
+			view.currentDiet = obj;
+			PushEatLines();
+			PushBurnLines();
+			PushTracking();	
+		}
+		void View_removeburnitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.RemoveBurn (vm); }
+		void View_addburnitem () 					{ if (!VerifyDiet ()) return; cdh.FullBurn (cd); }
+		void View_addburnitemquick () 				{ if (!VerifyDiet ()) return; cdh.QuickBurn (cd); }
+		void View_removeeatitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.RemoveEat (vm); }
+		void View_addeatitem () 					{ if (!VerifyDiet ()) return; cdh.FullEat (cd); }
+		void View_addeatitemquick () 				{ if (!VerifyDiet ()) return; cdh.QuickEat (cd); }
+		bool VerifyDiet()
+		{
+			if (cd == null) {
+				// ping the view about being stupid.
+				return false;
+			}
+			return true;
 		}
 
 		DateTime ds,de;

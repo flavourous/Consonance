@@ -1,16 +1,17 @@
 ﻿<Properties StartupItem="Consonance.AndroidView\Consonance.AndroidView.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.MonoForAndroid_API_12" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="c:\cygwin\home\David\Consonance\Consonance\AppPresenter.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" PreferredExecutionTarget="Android.andry" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance\AppPresenter.cs">
     <Files>
       <File FileName="Consonance.AndroidView\MainActivity.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\AppPresenter.cs" Line="28" Column="28" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\DietModels.cs" Line="1" Column="1" />
       <File FileName="Consonance\DietPresenters.cs" Line="1" Column="1" />
+      <File FileName="Consonance\AppPresenter.cs" Line="46" Column="49" />
+      <File FileName="Consonance\DietModels.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\MainActivity.cs" line="277" column="45" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>
     <Watch file="c:\cygwin\home\David\Consonance\Consonance\DietModels.cs" line="315" offsetX="270" offsetY="5024" expression="ent" liveUpdate="False" />

@@ -79,8 +79,8 @@ namespace Consonance
 		DietInstanceVM GetRepresentation (DietInstType entry);
 
 		// Deals with goal tracking
-		IEnumerable<TrackingInfoVM> DetermineEatTrackingForRange(IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
-		IEnumerable<TrackingInfoVM> DetermineBurnTrackingForRange(IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
+		IEnumerable<TrackingInfoVM> DetermineEatTrackingForRange(DietInstType di, IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
+		IEnumerable<TrackingInfoVM> DetermineBurnTrackingForRange(DietInstType di, IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
 	}
 
 	interface IAbstractedDiet
@@ -185,7 +185,7 @@ namespace Consonance
 		{
 			var eatModels = modelHandler.foodhandler.Get (instance.originator as DietInstType, start, end);
 			var burnModels = modelHandler.firehandler.Get (instance.originator as DietInstType, start, end);
-			return presenter.DetermineEatTrackingForRange (eatModels, burnModels, start, end);
+			return presenter.DetermineEatTrackingForRange (instance.originator as DietInstType, eatModels, burnModels, start, end);
 		}
 		public IEnumerable<EntryLineVM> BurnEntries(DietInstanceVM instance, DateTime start, DateTime end)
 		{
@@ -204,7 +204,7 @@ namespace Consonance
 		{
 			var eatModels = modelHandler.foodhandler.Get (instance.originator as DietInstType, start, end);
 			var burnModels = modelHandler.firehandler.Get (instance.originator as DietInstType, start, end);
-			return presenter.DetermineBurnTrackingForRange (eatModels, burnModels, start, end);
+			return presenter.DetermineBurnTrackingForRange (instance.originator as DietInstType, eatModels, burnModels, start, end);
 		}
 		T GetInfo<T>(int? id) where T : BaseInfo, new()
 		{
@@ -264,7 +264,7 @@ namespace Consonance
 			var fis = new List<I> (conn.Table<I> ().Where (creator.IsInfoComplete));
 			getInput.SelectInfo ("Select " + infoName, new SelectVMListDecorator<I> (fis, iconv), foodidx => {
 				var food = fis [foodidx];
-				getInput.GetValues ("Eat " + entryName, creator.CalculationFields (food), mod =>
+				getInput.GetValues (entryName + " " + food.name, creator.CalculationFields (food), mod =>
 					handler.Add (to.originator as DietInstType, mod.values, vm => {
 						vm.entryWhen = mod.when;
 						vm.entryName = mod.name;

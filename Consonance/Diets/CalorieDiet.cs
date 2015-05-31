@@ -6,27 +6,18 @@ namespace Consonance
 {
 	public class CalorieDietEatEntry : BaseEatEntry
 	{
-		public String myname {get;set;}
 		public double kcals { get; set; }
-	}
-	public class CalorieDietEatInfo : FoodInfo
-	{
 	}
 	public class CalorieDietBurnEntry : BaseBurnEntry
 	{
-		public String myname {get;set;}
 		public double kcals { get; set; }
-	}
-	public class CalorieDietBurnInfo : FireInfo
-	{
-
 	}
 	public class CalorieDietInstance : DietInstance
 	{
 		public double callim {get;set;}
 	}
 
-	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, CalorieDietEatInfo, CalorieDietBurnEntry, CalorieDietBurnInfo>
+	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		public String name { get { return "Calorie Diet"; } }
 		public String[] DietCreationFields() 
@@ -41,11 +32,11 @@ namespace Consonance
 		CalorieDietEatCreation cde = new CalorieDietEatCreation();
 		CalorieDietBurnCreation cdb = new CalorieDietBurnCreation();
 
-		public IEntryCreation<CalorieDietEatEntry, CalorieDietEatInfo> foodcreator { get { return cde; } }
-		public IEntryCreation<CalorieDietBurnEntry, CalorieDietBurnInfo> firecreator { get { return cdb; } }
+		public IEntryCreation<CalorieDietEatEntry, FoodInfo> foodcreator { get { return cde; } }
+		public IEntryCreation<CalorieDietBurnEntry, FireInfo> firecreator { get { return cdb; } }
 
 	}
-	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, CalorieDietEatInfo>
+	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, FoodInfo>
 	{
 		#region IEntryCreation implementation
 		public string[] CreationFields ()
@@ -57,7 +48,7 @@ namespace Consonance
 			entry = new CalorieDietEatEntry () { kcals = values [0] };
 			return true;
 		}
-		public string[] CalculationFields (CalorieDietEatInfo info)
+		public string[] CalculationFields (FoodInfo info)
 		{
 			List<String> needed = new List<string> ();
 			needed.Add ("Grams");
@@ -65,17 +56,18 @@ namespace Consonance
 				needed.Add ("Calories");
 			return needed.ToArray();
 		}
-		public bool Calculate (CalorieDietEatInfo info, IList<double> values, out CalorieDietEatEntry result)
+		public bool Calculate (FoodInfo info, IList<double> values, out CalorieDietEatEntry result)
 		{
 			result = null;
 			if (values.Count != CalculationFields (info).Length)
 				return false;
 			result = new CalorieDietEatEntry () { 
-				kcals = (info.calories ?? values [1]) * ((values [0] / 100.0) / info.per_hundred_grams)
+				kcals = (info.calories ?? values [1]) * ((values [0] / 100.0) / info.per_hundred_grams),
+				info_grams = values[0]
 			};
 			return true;
 		}
-		public void CompleteInfo (ref CalorieDietEatInfo toComplete, IList<double> values)
+		public void CompleteInfo (ref FoodInfo toComplete, IList<double> values)
 		{
 			toComplete.calories = values [1];
 		}
@@ -83,14 +75,14 @@ namespace Consonance
 		{
 			return new string[] { "Calories" };
 		}
-		public CalorieDietEatInfo CreateInfo (IList<double> values)
+		public FoodInfo CreateInfo (IList<double> values)
 		{
-			return new CalorieDietEatInfo () { calories = values [0] };
+			return new FoodInfo () { calories = values [0] };
 		}
-		public Expression<Func<CalorieDietEatInfo,bool>> IsInfoComplete {get{return info=>info.calories.HasValue;}}
+		public Expression<Func<FoodInfo,bool>> IsInfoComplete {get{return info=>info.calories != null;}}
 		#endregion
 	}
-	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, CalorieDietBurnInfo>
+	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, FireInfo>
 	{
 		#region IEntryCreation implementation
 		public string[] CreationFields ()
@@ -105,7 +97,7 @@ namespace Consonance
 			entry = new CalorieDietBurnEntry () { kcals = values [0] };
 			return true;
 		}
-		public string[] CalculationFields (CalorieDietBurnInfo info)
+		public string[] CalculationFields (FireInfo info)
 		{
 			List<String> needs = new List<string> ();
 			needs.Add ("Duration (h)");
@@ -113,17 +105,18 @@ namespace Consonance
 				needs.Add ("Calories Burned");
 			return needs.ToArray();
 		}
-		public bool Calculate (CalorieDietBurnInfo info, IList<double> values, out CalorieDietBurnEntry result)
+		public bool Calculate (FireInfo info, IList<double> values, out CalorieDietBurnEntry result)
 		{
 			result = null;
 			if (values.Count != CalculationFields (info).Length)
 				return false;
 			result = new CalorieDietBurnEntry () {
-				kcals = (info.calories ?? values [1]) * (values [0] / info.per_hour)
+				kcals = (info.calories ?? values [1]) * (values [0] / info.per_hour),
+				info_hours = values[0]
 			};
 			return true;
 		}
-		public void CompleteInfo (ref CalorieDietBurnInfo toComplete, IList<double> values)
+		public void CompleteInfo (ref FireInfo toComplete, IList<double> values)
 		{
 			toComplete.calories = values [0];
 		}
@@ -131,34 +124,34 @@ namespace Consonance
 		{
 			return new String[] { "Calories Burned", "Duration" };
 		}
-		public CalorieDietBurnInfo CreateInfo (IList<double> values)
+		public FireInfo CreateInfo (IList<double> values)
 		{
-			return new CalorieDietBurnInfo () { per_hour = 1.0 / values [1], calories = values [0] };
+			return new FireInfo () { per_hour = 1.0 / values [1], calories = values [0] };
 		}
-		public Expression<Func<CalorieDietBurnInfo,bool>> IsInfoComplete { get { return f => f.calories.HasValue;  } }
+		public Expression<Func<FireInfo,bool>> IsInfoComplete { get { return f => f.calories != null;  } }
 		#endregion
 	}
 
 	// hmmmm calling into presenter is a nasty....abstract class?
-	public class CalorieDietPresenter : IDietPresenter<CalorieDietInstance, CalorieDietEatEntry, CalorieDietEatInfo, CalorieDietBurnEntry, CalorieDietBurnInfo>
+	public class CalorieDietPresenter : IDietPresenter<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		#region IDietPresenter implementation
-		public EntryLineVM GetRepresentation (CalorieDietEatEntry entry, CalorieDietEatInfo entryInfo)
+		public EntryLineVM GetRepresentation (CalorieDietEatEntry entry, FoodInfo entryInfo)
 		{
 			return new EntryLineVM (
 				entry.entryWhen,
 				entry.entryDur,
-				entry.myname, 
+				entry.entryName, 
 				entryInfo == null ? "" : entryInfo.name, 
 				new KVPList<string, double> { { "kcal", entry.kcals } }
 			);
 		}
-		public EntryLineVM GetRepresentation (CalorieDietBurnEntry entry, CalorieDietBurnInfo entryInfo)
+		public EntryLineVM GetRepresentation (CalorieDietBurnEntry entry, FireInfo entryInfo)
 		{
 			return new EntryLineVM (
 				entry.entryWhen, 
 				entry.entryDur,
-				entry.myname, 
+				entry.entryName, 
 				entryInfo == null ? "" : entryInfo.name, 
 				new KVPList<string, double> { { "kcal", entry.kcals } }
 			);
@@ -174,20 +167,21 @@ namespace Consonance
 				new KVPList<string, double> { { "kcal", ent.callim } }
 			);
 		}
-		public SelectableItemVM GetRepresentation (CalorieDietEatInfo info)
+		public SelectableItemVM GetRepresentation (FoodInfo info)
 		{
 			return new SelectableItemVM () { name = info.name };
 		}
-		public SelectableItemVM GetRepresentation (CalorieDietBurnInfo info)
+		public SelectableItemVM GetRepresentation (FireInfo info)
 		{
 			return new SelectableItemVM () { name = info.name };
 		}
 
 
-		public IEnumerable<TrackingInfoVM> DetermineEatTrackingForRange(IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
+		public IEnumerable<TrackingInfoVM> DetermineEatTrackingForRange(CalorieDietInstance di, IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
 		{
 			TrackingInfoVM ti = new TrackingInfoVM () {
-				valueName = "Calories Balance"
+				valueName = "Calories Balance",
+				targetValue= di.callim
 			};
 
 			double kctot = 0.0;
@@ -206,9 +200,9 @@ namespace Consonance
 			yield return ti;
 		}
 
-		public IEnumerable<TrackingInfoVM> DetermineBurnTrackingForRange(IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
+		public IEnumerable<TrackingInfoVM> DetermineBurnTrackingForRange(CalorieDietInstance di, IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
 		{
-			return DetermineEatTrackingForRange (eats, burns, startBound, endBound);
+			return DetermineEatTrackingForRange (di, eats, burns, startBound, endBound);
 		}
 		#endregion
 	}

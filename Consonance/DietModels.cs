@@ -26,8 +26,14 @@ namespace Consonance
 		public TimeSpan entryDur {get;set;}
 		public String entryName{ get; set; }
 	}
-	public class BaseEatEntry : BaseEntry {	}
-	public class BaseBurnEntry : BaseEntry { }
+	public class BaseEatEntry : BaseEntry 
+	{
+		public double? info_grams { get; set; }		
+	}
+	public class BaseBurnEntry : BaseEntry 
+	{ 
+		public double? info_hours { get; set; }		
+	}
 
 	// when we're doing a diet here, created by diet class
 	public class DietInstance
