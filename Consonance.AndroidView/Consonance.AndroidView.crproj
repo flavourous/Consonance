@@ -1,5 +1,22 @@
-<project outputDir="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\bin\Release" baseDir="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\bin\Release" xmlns="http://confuser.codeplex.com">
+<project outputDir="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\bin\Release\Confused" baseDir="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\bin\Release" xmlns="http://confuser.codeplex.com">
   <module path="Consonance.AndroidView.dll">
-    <rule pattern="true" preset="normal" />
+    <rule pattern="true">
+      <protection id="anti ildasm" action="remove"/>
+      <protection id="anti tamper" action="remove"/>
+      <protection id="constants" action="remove"/>
+      <protection id="ctrl flow" action="remove"/>
+      <protection id="anti dump" action="remove"/>
+      <protection id="anti debug" action="remove"/>
+      <protection id="invalid metadata" action="remove"/>
+      <protection id="ref proxy" action="remove"/>
+      <protection id="resources" action="remove"/>
+      <protection id="rename">
+        <argument name="mode" value="decodable"/>
+        <argument name="renPublic" value="true"/>
+        <argument name="forceRen" value="true"/>
+      </protection>
+    </rule>
   </module>
+  <probePath>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\MonoAndroid\v1.0</probePath>
+  <probePath>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\MonoAndroid\v4.0.3</probePath>
 </project>

@@ -9,9 +9,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-[assembly: global::Android.Runtime.ResourceDesignerAttribute("Consonance.AndroidView.Resource", IsApplication=true)]
+[assembly: global::Android.Runtime.ResourceDesignerAttribute("Consonance.Resource", IsApplication=true)]
 
-namespace Consonance.AndroidView
+namespace Consonance
 {
 	
 	
@@ -26,8 +26,8 @@ namespace Consonance.AndroidView
 		
 		public static void UpdateIdValues()
 		{
-			global::SQLite.Resource.String.ApplicationName = global::Consonance.AndroidView.Resource.String.ApplicationName;
-			global::SQLite.Resource.String.Hello = global::Consonance.AndroidView.Resource.String.Hello;
+			global::SQLite.Resource.String.ApplicationName = global::Consonance.Resource.String.ApplicationName;
+			global::SQLite.Resource.String.Hello = global::Consonance.Resource.String.Hello;
 		}
 		
 		public partial class Attribute

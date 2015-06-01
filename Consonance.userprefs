@@ -4,7 +4,7 @@
     <Files>
       <File FileName="Consonance.AndroidView\MainActivity.cs" Line="1" Column="1" />
       <File FileName="Consonance\DietPresenters.cs" Line="1" Column="1" />
-      <File FileName="Consonance\AppPresenter.cs" Line="46" Column="49" />
+      <File FileName="Consonance\AppPresenter.cs" Line="29" Column="6" />
       <File FileName="Consonance\DietModels.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
@@ -16,5 +16,4 @@
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>
     <Watch file="c:\cygwin\home\David\Consonance\Consonance\DietModels.cs" line="315" offsetX="270" offsetY="5024" expression="ent" liveUpdate="False" />
   </MonoDevelop.Ide.DebuggingService.PinnedWatches>
-  <MonoDevelop.Ide.ItemProperties.Consonance.AndroidView AndroidDesignerPreferredDevice="Nexus 4" />
 </Properties>

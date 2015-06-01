@@ -41,7 +41,7 @@ namespace Consonance
 			var datapath = Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData);
 			if (!Directory.Exists (datapath))
 				Directory.CreateDirectory (datapath);
-			var maindbpath = Path.Combine (datapath, "manydiet_canyousee.db");
+			var maindbpath = Path.Combine (datapath, "manydiet_changetest.db");
 			#if DEBUG
 			//File.Delete (maindbpath); // fresh install 
 			#endif
