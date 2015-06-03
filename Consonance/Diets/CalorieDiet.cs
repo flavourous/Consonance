@@ -20,13 +20,19 @@ namespace Consonance
 	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		public String name { get { return "Calorie Diet"; } }
-		public String[] DietCreationFields() 
+		IRequest<double> dietCalLim; 
+		IRequest<String> dietName;
+		public T[] DietCreationFields<T>(IValueRequestFactory<T> factory) 
 		{
-			return new string[] { "Calorie Limit" };
+			return new T[] 
+			{
+				(dietName as IValueRequest<T,String> ?? factory.StringRequestor ("Diet Name")).request,
+				(dietCalLim as IValueRequest<T,double> ?? factory.DoubleRequestor ("Calorie Limit")).request
+			};
 		}
-		public CalorieDietInstance NewDiet (double[] values)
+		public CalorieDietInstance NewDiet ()
 		{
-			return new CalorieDietInstance () { name = "Calorie Diet", callim = values[0] };
+			return new CalorieDietInstance () { name = dietName.value, callim = dietCalLim.value };
 		}
 
 		CalorieDietEatCreation cde = new CalorieDietEatCreation();
@@ -39,18 +45,22 @@ namespace Consonance
 	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, FoodInfo>
 	{
 		#region IEntryCreation implementation
-		public string[] CreationFields ()
+		IRequest<double> calories, grams;
+		public T[] CreationFields<T> (IValueRequestFactory<T> factory)
 		{
-			return new string[] { "Calories" };
+			return new T[] 
+			{
+				(calories as IValueRequest<T,double> ?? factory.DoubleRequestor ("Calories")).request 
+			};
 		}
-		public bool Create (IList<double> values, out CalorieDietEatEntry entry)
+		public bool Create (out CalorieDietEatEntry entry)
 		{
-			entry = new CalorieDietEatEntry () { kcals = values [0] };
+			entry = new CalorieDietEatEntry () { kcals = calories };
 			return true;
 		}
-		public string[] CalculationFields (FoodInfo info)
+		public T[] CalculationFields <T>(IValueRequestFactory<T> factory, FoodInfo info)
 		{
-			List<String> needed = new List<string> ();
+			List<T> needed = new List<T> ();
 			needed.Add ("Grams");
 			if (!info.calories.HasValue)
 				needed.Add ("Calories");
@@ -85,9 +95,10 @@ namespace Consonance
 	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, FireInfo>
 	{
 		#region IEntryCreation implementation
-		public string[] CreationFields ()
+		IRequest<String> caloriesBurned;
+		public T[] CreationFields<T> (IValueRequestFactory<T> factory)
 		{
-			return new string[] { "Cal Burned" };
+			return new T[] { (caloriesBurned as IValueRequest<T,String> ?? factory.StringRequestor ("Calories Burned")).request };
 		}
 		public bool Create (IList<double> values, out CalorieDietBurnEntry entry)
 		{
@@ -167,13 +178,13 @@ namespace Consonance
 				new KVPList<string, double> { { "kcal", ent.callim } }
 			);
 		}
-		public SelectableItemVM GetRepresentation (FoodInfo info)
+		public InfoLineVM GetRepresentation (FoodInfo info)
 		{
-			return new SelectableItemVM () { name = info.name };
+			return new InfoLineVM () { name = info.name };
 		}
-		public SelectableItemVM GetRepresentation (FireInfo info)
+		public InfoLineVM GetRepresentation (FireInfo info)
 		{
-			return new SelectableItemVM () { name = info.name };
+			return new InfoLineVM () { name = info.name };
 		}
 
 

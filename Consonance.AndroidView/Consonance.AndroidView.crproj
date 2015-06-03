@@ -1,4 +1,4 @@
-<project outputDir="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\bin\Release\Confused" baseDir="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\bin\Release" xmlns="http://confuser.codeplex.com">
+<project outputDir="C:\cygwin\home\David\Consonance\Consonance.AndroidView\bin\Release\Confused" baseDir="C:\cygwin\home\David\Consonance\Consonance.AndroidView\bin\Release" xmlns="http://confuser.codeplex.com">
   <module path="Consonance.AndroidView.dll">
     <rule pattern="true">
       <protection id="anti ildasm" action="remove"/>

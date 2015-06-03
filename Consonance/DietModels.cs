@@ -97,27 +97,27 @@ namespace Consonance
 
 		// creator for dietinstance
 		String name { get; }
-		String[] DietCreationFields();
+		T[] DietCreationFields<T>(IValueRequestFactory<T> factory);
 		D NewDiet(double[] values);
 	}
 	public interface IEntryCreation<EntryType, InfoType>
 	{
 		// What named fields do I need to fully create an entry (eg eating a banana) - "kcal", "fat"
-		String[] CreationFields (); 
+		T[] CreationFields<T> (IValueRequestFactory<T> factory); 
 		// Here's those values, give me the entry (ww points on eating a bananna) - broker wont attempt to remember a "item / info".
-		bool Create (IList<double> values, out EntryType entry);
+		bool Create (out EntryType entry);
 
 		// Ok, I've got info on this food (bananna, per 100g, only kcal info) - I still need "fat" and "grams"
-		String[] CalculationFields (InfoType info);
+		T[] CalculationFields <T>(IValueRequestFactory<T> factory, InfoType info);
 		// right, heres the fat too, give me entry (broker will update that bananna info also)
-		bool Calculate(InfoType info, IList<double> values, out EntryType result);
+		bool Calculate(InfoType info, out EntryType result);
 
 		// Ok what was the change to the foodinfo from that calculate that completes this food for you? - :here I added in those "fat"
-		void CompleteInfo(ref InfoType toComplete, IList<double> values);
+		void CompleteInfo(ref InfoType toComplete);
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
-		String[] InfoCreationFields();
+		T[] InfoCreationFields<T>(IValueRequestFactory<T> factory);
 		// ok make me an info please here's that data.
-		InfoType CreateInfo (IList<double> values);
+		InfoType CreateInfo ();
 		// ok is this info like complete for your diety? yes. ffs.
 		Expression<Func<InfoType,bool>> IsInfoComplete { get; }
 	}

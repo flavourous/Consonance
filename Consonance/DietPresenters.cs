@@ -62,6 +62,10 @@ namespace Consonance
 		public TrackingElementVM[] burnValues;
 		public double targetValue;
 	}
+	public class InfoLineVM
+	{
+		public String name;
+	}
 
 	public interface IDietPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>
 		where DietInstType : DietInstance, new()
@@ -73,8 +77,8 @@ namespace Consonance
 		EntryLineVM GetRepresentation (EatType entry, EatInfoType entryInfo);
 		EntryLineVM GetRepresentation (BurnType entry, BurnInfoType entryInfo);
 
-		SelectableItemVM GetRepresentation (EatInfoType info);
-		SelectableItemVM GetRepresentation (BurnInfoType info);
+		InfoLineVM GetRepresentation (EatInfoType info);
+		InfoLineVM GetRepresentation (BurnInfoType info);
 
 		DietInstanceVM GetRepresentation (DietInstType entry);
 
@@ -93,14 +97,17 @@ namespace Consonance
 		IEnumerable<TrackingInfoVM> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end);
 		void StartNewDiet();
 		void RemoveDiet (DietInstanceVM dvm);
+		void EditDiet (DietInstanceVM dvm);
 
 		// entries
 		void QuickEat(DietInstanceVM to);
 		void FullEat(DietInstanceVM to);
 		void RemoveEat(EntryLineVM toRemove);
+		void EditEat(EntryLineVM toEdit);
 		void QuickBurn(DietInstanceVM to);
 		void FullBurn(DietInstanceVM to);
 		void RemoveBurn(EntryLineVM toRemove);
+		void EditBurn(EntryLineVM toEdit);
 	}
 	enum DietVMChangeType { None, Instances, EatEntries, BurnEntries };
 	class DietVMChangeEventArgs
@@ -117,19 +124,21 @@ namespace Consonance
 	/// As such, it should obey a non-generic contract that the AppPresenter can easily consume and
 	/// query for data.
 	/// </summary>
-	class DietPresentationAbstractionHandler <DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDiet
+	class DietPresentationAbstractionHandler <IRO, DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDiet
 		where DietInstType : DietInstance, new()
 		where EatType : BaseEatEntry, new()
 		where EatInfoType : FoodInfo, new()
 		where BurnType : BaseBurnEntry, new()
 		where BurnInfoType : FireInfo, new()
 	{
+		readonly IValueRequestBuilder<IRO> getValues;
 		readonly IUserInput getInput;
 		readonly IDietPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
 		readonly DietModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
 		readonly MyConn conn;
 		public DietPresentationAbstractionHandler(
-			IUserInput getInput, 
+			IValueRequestBuilder<IRO> getValues, 
+			IUserInput getInput,
 			MyConn conn,
 			IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model,
 			IDietPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter
@@ -223,7 +232,7 @@ namespace Consonance
 		}
 		public void StartNewDiet()
 		{
-			getInput.GetValues ("New " + dietName, modelHandler.model.DietCreationFields(), aivm => {
+			getValues.GetValues("New " + dietName, modelHandler.model.DietCreationFields(), aivm => {
 				var di = modelHandler.StartNewDiet(aivm.name, aivm.when, aivm.values);
 			}); // defaults to getting name and date.
 		}
@@ -242,7 +251,7 @@ namespace Consonance
 			where T : BaseEntry, new()
 			where I : BaseInfo, new()
 		{
-			getInput.GetValues ("Quick "+entryName+" Entry", creator.CreationFields (), mod =>
+			getValues.GetValues ("Quick "+entryName+" Entry", creator.CreationFields (), mod =>
 				handler.Add (to.originator as DietInstType, mod.values, vm => {
 					vm.entryWhen = mod.when;
 					vm.entryName = mod.name;
@@ -255,15 +264,16 @@ namespace Consonance
 		public void FullBurn (DietInstanceVM to) {
 			Full<BurnType,BurnInfoType> (to, modelHandler.model.firecreator, modelHandler.firehandler, "Burn", "Burn", presenter.GetRepresentation);
 		}
+		delegate InfoLineVM CreateInfoLineVM<T>(T input);
 		void Full<T,I>(DietInstanceVM to, IEntryCreation<T,I> creator, 
 			EntryHandler<DietInstType,T,I> handler, String infoName, String entryName,
-			CreateSelectableVM<I> iconv) 
+			CreateInfoLineVM<I> iconv) 
 				where T : BaseEntry, new()
 				where I : BaseInfo, new()
 		{
-			var fis = new List<I> (conn.Table<I> ().Where (creator.IsInfoComplete));
-			getInput.SelectInfo ("Select " + infoName, new SelectVMListDecorator<I> (fis, iconv), foodidx => {
-				var food = fis [foodidx];
+			var fis = new List<String> (conn.Table<I> ().Where (creator.IsInfoComplete).Select<String>(fi=>fi.name));
+			getInput.SelectString ("Select " + infoName, fis, foodidx => {
+				var food = conn.Table<I> ().ElementAt(foodidx);
 				getInput.GetValues (entryName + " " + food.name, creator.CalculationFields (food), mod =>
 					handler.Add (to.originator as DietInstType, mod.values, vm => {
 						vm.entryWhen = mod.when;
@@ -280,68 +290,21 @@ namespace Consonance
 		{
 			modelHandler.firehandler.Remove (toRemove.originator as BurnType);
 		}
-	}
 
-	class IndexEnumerator<T> : IEnumerator<T>
-	{
-		IReadOnlyList<T> items;
-		int curr = 0;
-		public IndexEnumerator(IReadOnlyList<T> items)
+		public void EditDiet (DietInstanceVM dvm)
 		{
-			this.items = items;
+			throw new NotImplementedException ();
 		}
 
-		#region IEnumerator implementation
-		public bool MoveNext () { return ++curr < items.Count; }
-		public void Reset () { curr = 0; }
-		object System.Collections.IEnumerator.Current { get { return items [curr]; } }
-		#endregion
-
-		#region IDisposable implementation
-		public void Dispose () { }
-		#endregion
-
-		#region IEnumerator implementation
-		T IEnumerator<T>.Current { get { return items [curr]; } }
-		#endregion
-	}
-	delegate SelectableItemVM CreateSelectableVM<T>(T item);
-	class SelectVMListDecorator<T> : IReadOnlyList<SelectableItemVM> where T : BaseInfo
-	{
-		IList<T> items;
-		CreateSelectableVM<T> creator;
-		public SelectVMListDecorator(IList<T> items, CreateSelectableVM<T> creator)
+		public void EditEat (EntryLineVM toEdit)
 		{
-			this.items = items;
-			this.creator = creator;
+			throw new NotImplementedException ();
 		}
 
-		#region IEnumerable implementation
-		public IEnumerator<SelectableItemVM> GetEnumerator ()
+		public void EditBurn (EntryLineVM toEdit)
 		{
-			return new IndexEnumerator<SelectableItemVM> (this);
+			throw new NotImplementedException ();
 		}
-		#endregion
-		#region IEnumerable implementation
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
-		{
-			return new IndexEnumerator<SelectableItemVM> (this);
-		}
-		#endregion
-		#region IReadOnlyList implementation
-		public SelectableItemVM this [int index] {
-			get {
-				return creator (items [index]);
-			}
-		}
-		#endregion
-		#region IReadOnlyCollection implementation
-		public int Count {
-			get {
-				return items.Count;
-			}
-		}
-		#endregion
 	}
 }
 

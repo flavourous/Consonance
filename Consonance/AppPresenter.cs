@@ -50,12 +50,14 @@ namespace Consonance
 
 		// present app logic domain to this view.
 		IView view;
+		IUserInput input;
 		DietInstanceVM cd {get{return view.currentDiet;}}
 		IAbstractedDiet cdh {get{return view.currentDiet.sender as IAbstractedDiet;}}
-		public void PresentTo(IView view)
+		public void PresentTo<VRO>(IView view, IUserInput input, IValueRequestBuilder<VRO> vrb)
 		{
 			this.view = view;
-			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter ());
+			this.input = input;
+			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter (), vrb);
 
 			// commanding...
 			view.addeatitemquick += View_addeatitemquick;
@@ -68,12 +70,17 @@ namespace Consonance
 			view.adddietinstance += Handleadddietinstance;
 			view.selectdietinstance += View_selectdietinstance;
 			view.removedietinstance += Handleremovedietinstance;
+			view.editeatitem += View_editeatitem;
+			view.editburnitem += View_editburnitem;
+			view.editdietinstance += View_editdietinstance;
 
 			// setup view
 			PushDietInstances ();
 			ChangeDay (DateTime.UtcNow);
 		}
 
+
+			
 		void View_selectdietinstance (DietInstanceVM obj)
 		{
 			view.currentDiet = obj;
@@ -87,6 +94,8 @@ namespace Consonance
 		void View_removeeatitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.RemoveEat (vm); }
 		void View_addeatitem () 					{ if (!VerifyDiet ()) return; cdh.FullEat (cd); }
 		void View_addeatitemquick () 				{ if (!VerifyDiet ()) return; cdh.QuickEat (cd); }
+		void View_editeatitem (EntryLineVM vm) 		{ if (!VerifyDiet ()) return; cdh.EditEat (vm); }
+		void View_editburnitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.EditBurn (vm); }
 		bool VerifyDiet()
 		{
 			if (cd == null) {
@@ -115,12 +124,16 @@ namespace Consonance
 			List<String> dietnames = new List<string> ();
 			foreach (var ad in saveDiets)
 				dietnames.Add (ad.dietName);
-			view.SelectString ("Select Diet Type", dietnames, si => saveDiets[si].StartNewDiet());
+			input.SelectString ("Select Diet Type", dietnames, -1, si => saveDiets[si].StartNewDiet());
 		}
 
 		void Handleremovedietinstance (DietInstanceVM obj)
 		{
 			(obj.sender as IAbstractedDiet).RemoveDiet (obj);
+		}
+		void View_editdietinstance (DietInstanceVM obj)
+		{
+			(obj.sender as IAbstractedDiet).EditDiet (obj);
 		}
 
 		void PushEatLines()
@@ -170,14 +183,14 @@ namespace Consonance
 		}
 			
 		List<IAbstractedDiet> dietHandlers = new List<IAbstractedDiet>();
-		void AddDietPair<D,E,Ei,B,Bi>(IDietModel<D,E,Ei,B,Bi> dietModel, IDietPresenter<D,E,Ei,B,Bi> dietPresenter)
+		void AddDietPair<VRO, D,E,Ei,B,Bi>(IDietModel<D,E,Ei,B,Bi> dietModel, IDietPresenter<D,E,Ei,B,Bi> dietPresenter, IValueRequestBuilder<VRO> vro)
 			where D : DietInstance, new()
 			where E  : BaseEatEntry,new() 
 			where Ei : FoodInfo,new() 
 			where B  : BaseBurnEntry,new() 
 			where Bi : FireInfo,new() 
 		{
-			var presentationHandler = new DietPresentationAbstractionHandler<D,E,Ei,B,Bi> (view, conn, dietModel, dietPresenter);
+			var presentationHandler = new DietPresentationAbstractionHandler<VRO, D,E,Ei,B,Bi> (vro, input, conn, dietModel, dietPresenter);
 			dietHandlers.Add (presentationHandler);
 			presentationHandler.ViewModelsChanged += HandleViewModelsChanged;
 		}
@@ -203,11 +216,13 @@ namespace Consonance
 		}
 	}
 
+	public delegate bool Predicate();
+	public delegate void Promise();
 	public delegate void Promise<T>(T arg);
 	/// <summary>
 	/// definition on the application view
 	/// </summary>
-	public interface IView : IUserInput
+	public interface IView
 	{
 		void SetEatTrack(IEnumerable<TrackingInfoVM> trackinfo);
 		void SetBurnTrack(IEnumerable<TrackingInfoVM> trackinfo);
@@ -219,43 +234,52 @@ namespace Consonance
 		DietInstanceVM currentDiet { get; set; }
 
 		// eat
-		event Action addeatitem;
-		event Action addeatitemquick;
-		event Action<EntryLineVM> removeeatitem;
+		event Action addeatitem, addeatitemquick;
+		event Action<EntryLineVM> removeeatitem,editeatitem;
 
 		// burn
-		event Action addburnitem;
-		event Action addburnitemquick;
-		event Action<EntryLineVM> removeburnitem;
+		event Action addburnitem, addburnitemquick;
+		event Action<EntryLineVM> removeburnitem, editburnitem;
 
 		// plan (diet managment)
 		event Action adddietinstance;
-		event Action<DietInstanceVM> selectdietinstance;
-		event Action<DietInstanceVM> removedietinstance;
+		event Action<DietInstanceVM> selectdietinstance, removedietinstance, editdietinstance;
 	}
 	public interface IUserInput
 	{
 		// User Input
-		void GetValues (String title, IEnumerable<String> names, Promise<AddedItemVM> completed, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When);
-		void SelectInfo (String title, IReadOnlyList<SelectableItemVM> foods, Promise<int> completed);
-		void SelectString (String title, IReadOnlyList<String> strings, Promise<int> completed);
+		void SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
 	}
-	[Flags]
-	public enum AddedItemVMDefaults { None =0, Name =1, When = 2 };
-	public class AddedItemVM
+	public interface IValueRequestBuilder<T>
 	{
-		public readonly String name;
-		public readonly DateTime when;
-		public readonly double[] values;
-		public AddedItemVM(double[] values, DateTime when, String name)
-		{
-			this.values = values;
-			this.when = when;
-			this.name = name;
-		}
+		// get generic set of values on a page thing
+		void GetValues (String title, IEnumerable<T> requests, Promise completed);
+
+		// VRO Factory Method
+		IValueRequestFactory<T> requestFactory { get; }
 	}
-	public class SelectableItemVM {
-		public String name;
+	public interface IValueRequestFactory<T>
+	{
+		IValueRequest<T, String> StringRequestor(String name);
+		IValueRequest<T, InfoSelectValue> InfoLineVMRequestor(String name);
+		IValueRequest<T, DateTime> DateRequestor(String name);
+		IValueRequest<T, double> DoubleRequestor(String name);
+	}
+	public class InfoSelectValue
+	{
+		public int selected;
+		public IReadOnlyList<InfoLineVM> choices;
+	}
+	public interface IValueRequest<T,V> : IRequest<V>
+	{
+		T request { get; }  // used by view to encapsulate viewbuilding lookups
+	}
+	public interface IRequest<V>
+	{
+		V value { get; set; } // set by view when done, and set by view to indicate an initial value.
+		bool hasInitial { set; } // for when value was initialised
+		bool lostInitial { set; } // for when (eg editing) there was a value entered by user previously, but it was not stored.
+		Predicate validator { set; } // if we want to check the value set is ok
 	}
 }
 

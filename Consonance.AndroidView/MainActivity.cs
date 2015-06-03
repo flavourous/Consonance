@@ -19,8 +19,51 @@ namespace Consonance.AndroidView
 	}
 	class TabDesc { public String name; public int layout; public int menu; public int contextmenu; }
 
+	public class ValueRequestWrapper
+	{
+		public readonly String name;
+		public ValueRequestWrapper(String name)
+		{
+			this.name=name;
+		}
+		public ValueRequestWrapper request { get { return this; } }
+		public bool hasInitial { get; set; }
+		public bool lostInitial { get; set; } 
+		public Predicate validator { get; set; } 
+	}
+	class StringRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, String>
+	{
+		public StringRequestWrapper(String n) : base(n) { }
+		public string value { get; set; }
+	}
+	class InfoSelectRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, InfoSelectValue>
+	{
+		public InfoSelectRequestWrapper(String n) : base(n) { }
+		public InfoSelectValue value { get; set; }
+	}
+	class DateTimeRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, DateTime>
+	{
+		public DateTimeRequestWrapper(String n) : base(n) { }
+		public DateTime value { get; set; }
+	}
+	class DoubleRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, double>
+	{
+		public DoubleRequestWrapper(String n) : base(n) { }
+		public double value { get; set; }
+	}
+	class ValueRequestFactory : IValueRequestFactory<ValueRequestWrapper>
+	{
+		#region IValueRequestFactory implementation
+		public IValueRequest<ValueRequestWrapper, string> StringRequestor(String name) { return new StringRequestWrapper (name); }
+		public IValueRequest<ValueRequestWrapper, InfoSelectValue> InfoLineVMRequestor(String name) { return new InfoSelectRequestWrapper (name); }
+		public IValueRequest<ValueRequestWrapper, DateTime> DateRequestor(String name) { return new DateTimeRequestWrapper (name); }
+		public IValueRequest<ValueRequestWrapper, double> DoubleRequestor(String name) { return new DoubleRequestWrapper (name); }
+		#endregion
+		
+	}
+
 	[Activity (Label = "Consonance", MainLauncher=true, Icon = "@drawable/icon")]
-	public class MainActivity : Activity, ActionBar.ITabListener, IView
+	public class MainActivity : Activity, ActionBar.ITabListener, IView, IUserInput, IValueRequestBuilder<ValueRequestWrapper>
 	{
 		TabDescList tabs = new TabDescList () {
 			{ "Eat", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu },
@@ -76,10 +119,14 @@ namespace Consonance.AndroidView
 		public event Action addeatitemquick = delegate{};
 		public event Action addeatitem = delegate{};
 		public event Action<EntryLineVM> removeeatitem = delegate{};
-		public event Action adddietinstance;
-		public event Action<DietInstanceVM> selectdietinstance;
-		public event Action<DietInstanceVM> removedietinstance;
+		public event Action adddietinstance = delegate { };
+		public event Action<DietInstanceVM> selectdietinstance = delegate { };
+		public event Action<DietInstanceVM> removedietinstance = delegate { };
 		public event Action<DateTime> changeday = delegate{};
+		public event Action<EntryLineVM> editeatitem = delegate { };
+		public event Action<EntryLineVM> editburnitem = delegate { };
+		public event Action<DietInstanceVM> editdietinstance = delegate { };
+
 		private DateTime _day;
 		public DateTime day 
 		{ 
@@ -209,9 +256,14 @@ namespace Consonance.AndroidView
 				}
 			return new SetRet () { apt = new LAdapter (this, ll, vid, (v,vm) => cfg(v,vm,use) ), name = use };
 		}
-			
+
+		#endregion
+
+		#region IValueRequestBuilder<ValueRequestWrapper> implimentation
+		readonly ValueRequestFactory vrf = new ValueRequestFactory();
+		public IValueRequestFactory<ValueRequestWrapper> requestFactory { get { return vrf; } }
 		//Promise<AddedItemVM> GetValuesPromise;
-		public void GetValues (String title, IEnumerable<String> names, Promise<AddedItemVM> completed, AddedItemVMDefaults defaultUse = AddedItemVMDefaults.Name | AddedItemVMDefaults.When)
+		public void GetValues (String title, IEnumerable<ValueRequestWrapper> requests, Promise completed)
 		{
 			// init dialog
 			Dialog gvDialog = new Dialog (this);
@@ -226,8 +278,8 @@ namespace Consonance.AndroidView
 			var gvtitle = gvDialog.FindViewById<TextView> (Resource.Id.getvalues_titletext);
 
 			// options
-			bool useName = (defaultUse & AddedItemVMDefaults.Name) == AddedItemVMDefaults.Name;
-			bool useWhen = (defaultUse & AddedItemVMDefaults.When) == AddedItemVMDefaults.When;
+			bool useName =true;// (defaultUse & AddedItemVMDefaults.Name) == AddedItemVMDefaults.Name;
+			bool useWhen = true;//(defaultUse & AddedItemVMDefaults.When) == AddedItemVMDefaults.When;
 			if (!useName)
 				gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_titlebox).Visibility = ViewStates.Gone;
 			if (!useWhen) gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_date).Visibility = ViewStates.Gone;
@@ -235,11 +287,11 @@ namespace Consonance.AndroidView
 			// set element values
 			gvtitle.Text = title;
 			List<EditText> vals = new List<EditText> ();
-			foreach (var vv in names) {
-				var row = gvDialog.LayoutInflater.Inflate (Resource.Layout.GetValueRow, sll);
-				vals.Add (row.FindViewById<EditText> (Resource.Id.getvalues_itemvalue));
-				row.FindViewById<TextView> (Resource.Id.getvalues_itemtitle).Text = vv;
-			}
+//			foreach (var vv in names) {
+//				var row = gvDialog.LayoutInflater.Inflate (Resource.Layout.GetValueRow, sll);
+//				vals.Add (row.FindViewById<EditText> (Resource.Id.getvalues_itemvalue));
+//				row.FindViewById<TextView> (Resource.Id.getvalues_itemtitle).Text = vv;
+//			}
 
 			// do wrapping layout
 			gvDialog.Window.SetLayout (ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
@@ -250,9 +302,7 @@ namespace Consonance.AndroidView
 				foreach(var v in vals)
 					valvals.Add(double.Parse(v.Text == "" ? "0.0" : v.Text));
 				gvDialog.Cancel();
-				completed(new AddedItemVM(valvals.ToArray(),
-					gvDialog.FindViewById<DatePicker> (Resource.Id.getvalues_datepicker).DateTime,
-					gvDialog.FindViewById<EditText> (Resource.Id.getvalues_titleboxname).Text));
+				completed();
 			};
 
 			cancel.Click += (sender, e) => {
@@ -261,18 +311,12 @@ namespace Consonance.AndroidView
 
 			gvDialog.Show ();
 		}
+		#endregion
 
-		//Promise<int> SelectInfoPromise;
-		public void SelectInfo (String title, IReadOnlyList<SelectableItemVM> items, Promise<int> completed)
-		{
-			List<String> sings = new List<string> ();
-			foreach (var si in items)
-				sings.Add (si.name);
-			SelectString (title, sings, completed);
-		}
+		#region IUserInput implimentation
 		Promise<int> SelectStringPromise;
 		IReadOnlyList<String> strings = null;
-		public void SelectString (String title, IReadOnlyList<String> strings, Promise<int> completed)
+		public void SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed)
 		{
 			int ani = ActionBar.SelectedNavigationIndex;
 			int useView = ani == 0 ? Resource.Id.eatpage : ani == 1 ? Resource.Id.burnpage : Resource.Id.plan;
@@ -335,7 +379,7 @@ namespace Consonance.AndroidView
 			}
 
 			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
-			Presenter.Singleton.PresentTo (this);
+			Presenter.Singleton.PresentTo (this, this, this);
 		}
 		ListView slv;
 		Action<IMenuItem> selectAction;
