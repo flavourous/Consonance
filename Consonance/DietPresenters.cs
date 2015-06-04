@@ -232,8 +232,8 @@ namespace Consonance
 		}
 		public void StartNewDiet()
 		{
-			getValues.GetValues("New " + dietName, modelHandler.model.DietCreationFields(), aivm => {
-				var di = modelHandler.StartNewDiet(aivm.name, aivm.when, aivm.values);
+			getValues.GetValues("New " + dietName, modelHandler.model.DietCreationFields<IRO>(getValues.requestFactory), () => {
+				var di = modelHandler.StartNewDiet();
 			}); // defaults to getting name and date.
 		}
 		public void RemoveDiet (DietInstanceVM dvm)
@@ -251,11 +251,8 @@ namespace Consonance
 			where T : BaseEntry, new()
 			where I : BaseInfo, new()
 		{
-			getValues.GetValues ("Quick "+entryName+" Entry", creator.CreationFields (), mod =>
-				handler.Add (to.originator as DietInstType, mod.values, vm => {
-					vm.entryWhen = mod.when;
-					vm.entryName = mod.name;
-				}));
+			getValues.GetValues ("Quick " + entryName + " Entry", creator.CreationFields <IRO> (getValues.requestFactory), () =>
+				handler.Add (to.originator as DietInstType));
 		}
 
 		public void FullEat (DietInstanceVM to) {
@@ -272,13 +269,10 @@ namespace Consonance
 				where I : BaseInfo, new()
 		{
 			var fis = new List<String> (conn.Table<I> ().Where (creator.IsInfoComplete).Select<String>(fi=>fi.name));
-			getInput.SelectString ("Select " + infoName, fis, foodidx => {
-				var food = conn.Table<I> ().ElementAt(foodidx);
-				getInput.GetValues (entryName + " " + food.name, creator.CalculationFields (food), mod =>
-					handler.Add (to.originator as DietInstType, mod.values, vm => {
-						vm.entryWhen = mod.when;
-						vm.entryName = mod.name;
-				}));
+			getInput.SelectString ("Select " + infoName, fis, -1, foodidx => {
+				var food = conn.Table<I> ().ElementAt (foodidx);
+				getValues.GetValues (entryName + " " + food.name, creator.CalculationFields<IRO> (getValues.requestFactory, food), () =>
+					handler.Add (to.originator as DietInstType, food));
 			});
 		}
 

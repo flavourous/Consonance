@@ -98,22 +98,20 @@ namespace Consonance
 		// creator for dietinstance
 		String name { get; }
 		T[] DietCreationFields<T>(IValueRequestFactory<T> factory);
-		D NewDiet(double[] values);
+		D NewDiet();
 	}
 	public interface IEntryCreation<EntryType, InfoType>
 	{
 		// What named fields do I need to fully create an entry (eg eating a banana) - "kcal", "fat"
 		T[] CreationFields<T> (IValueRequestFactory<T> factory); 
 		// Here's those values, give me the entry (ww points on eating a bananna) - broker wont attempt to remember a "item / info".
-		bool Create (out EntryType entry);
+		EntryType Create ();
 
 		// Ok, I've got info on this food (bananna, per 100g, only kcal info) - I still need "fat" and "grams"
 		T[] CalculationFields <T>(IValueRequestFactory<T> factory, InfoType info);
 		// right, heres the fat too, give me entry (broker will update that bananna info also)
-		bool Calculate(InfoType info, out EntryType result);
+		EntryType Calculate(InfoType info, Predicate shouldComplete);
 
-		// Ok what was the change to the foodinfo from that calculate that completes this food for you? - :here I added in those "fat"
-		void CompleteInfo(ref InfoType toComplete);
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
 		T[] InfoCreationFields<T>(IValueRequestFactory<T> factory);
 		// ok make me an info please here's that data.
@@ -146,12 +144,10 @@ namespace Consonance
 			foodhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (conn, model.foodcreator);
 			firehandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (conn, model.firecreator);
 		}
-		public DietInstType StartNewDiet(String name, DateTime started, double[] values)
+		public DietInstType StartNewDiet()
 		{
-			var di = model.NewDiet (values);
-			di.started = started;
+			var di = model.NewDiet ();
 			di.ended = null;
-			di.name = name;
 			conn.Insert (di as DietInstType);
 			return di;
 		}
@@ -204,27 +200,23 @@ namespace Consonance
 
 		#region IHandleDietPlanModels implementation
 		// eaties
-		public bool Add (D diet, EntryInfoType info, IList<double> values, EntryCallback beforeInsert)
+		public bool ShouldComplete()
 		{
-			EntryType ent;
-			if (creator.Calculate (info, values, out ent))
-				return false;
-			ent.dietinstanceid = diet.id;
-			ent.infoinstanceid = info.id;
-			beforeInsert (ent);
-			conn.Insert (ent as EntryType);
 			return true;
 		}
-		public bool Add (D diet, IList<double> values, EntryCallback beforeInsert )
+		public void Add (D diet, EntryInfoType info)
 		{
-			EntryType ent;
-			if (!creator.Create (values, out ent))
-				return false;
+			EntryType ent = creator.Calculate (info, ShouldComplete);
+			ent.dietinstanceid = diet.id;
+			ent.infoinstanceid = info.id;
+			conn.Insert (ent as EntryType);
+		}
+		public void Add (D diet)
+		{
+			EntryType ent = creator.Create ();
 			ent.dietinstanceid = diet.id;
 			ent.infoinstanceid = null;
-			beforeInsert (ent);
 			conn.Insert (ent as EntryType);
-			return true;
 		}
 		public void Remove (params EntryType[] tets)
 		{

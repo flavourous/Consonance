@@ -51,6 +51,11 @@ namespace Consonance.AndroidView
 		public DoubleRequestWrapper(String n) : base(n) { }
 		public double value { get; set; }
 	}
+	class TimeSpanRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, TimeSpan>
+	{
+		public TimeSpanRequestWrapper(String n) : base(n) { }
+		public TimeSpan value {get;set;}
+	}
 	class ValueRequestFactory : IValueRequestFactory<ValueRequestWrapper>
 	{
 		#region IValueRequestFactory implementation
@@ -58,6 +63,7 @@ namespace Consonance.AndroidView
 		public IValueRequest<ValueRequestWrapper, InfoSelectValue> InfoLineVMRequestor(String name) { return new InfoSelectRequestWrapper (name); }
 		public IValueRequest<ValueRequestWrapper, DateTime> DateRequestor(String name) { return new DateTimeRequestWrapper (name); }
 		public IValueRequest<ValueRequestWrapper, double> DoubleRequestor(String name) { return new DoubleRequestWrapper (name); }
+		public IValueRequest<ValueRequestWrapper, TimeSpan> TimeSpanRequestor (string name) { return new TimeSpanRequestWrapper (name); }
 		#endregion
 		
 	}

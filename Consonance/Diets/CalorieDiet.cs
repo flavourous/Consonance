@@ -45,49 +45,45 @@ namespace Consonance
 	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, FoodInfo>
 	{
 		#region IEntryCreation implementation
-		IRequest<double> calories, grams;
+		RequestStorageHelper<double> calories = new RequestStorageHelper<double> ("calories");
+		RequestStorageHelper<double> grams = new RequestStorageHelper<double> ("grams");
 		public T[] CreationFields<T> (IValueRequestFactory<T> factory)
 		{
 			return new T[] 
 			{
-				(calories as IValueRequest<T,double> ?? factory.DoubleRequestor ("Calories")).request 
+				calories.CGet(factory.DoubleRequestor)
 			};
 		}
-		public bool Create (out CalorieDietEatEntry entry)
+		public CalorieDietEatEntry  Create ()
 		{
-			entry = new CalorieDietEatEntry () { kcals = calories };
-			return true;
+			return new CalorieDietEatEntry () { kcals = calories };
 		}
 		public T[] CalculationFields <T>(IValueRequestFactory<T> factory, FoodInfo info)
 		{
 			List<T> needed = new List<T> ();
-			needed.Add ("Grams");
+			needed.Add (grams.CGet(factory.DoubleRequestor));
 			if (!info.calories.HasValue)
-				needed.Add ("Calories");
+				needed.Add (calories.CGet (factory.DoubleRequestor));
 			return needed.ToArray();
 		}
-		public bool Calculate (FoodInfo info, IList<double> values, out CalorieDietEatEntry result)
+		public CalorieDietEatEntry Calculate (FoodInfo info, Predicate shouldComplete)
 		{
-			result = null;
-			if (values.Count != CalculationFields (info).Length)
-				return false;
-			result = new CalorieDietEatEntry () { 
-				kcals = (info.calories ?? values [1]) * ((values [0] / 100.0) / info.per_hundred_grams),
-				info_grams = values[0]
+			if (info.calories == null && shouldComplete ())
+				info.calories = calories;
+			return new CalorieDietEatEntry () { 
+				kcals = (info.calories ?? calories) * ((grams / 100.0) / info.per_hundred_grams),
+				info_grams = grams
 			};
-			return true;
 		}
-		public void CompleteInfo (ref FoodInfo toComplete, IList<double> values)
+		public T[] InfoCreationFields<T> (IValueRequestFactory<T> rf)
 		{
-			toComplete.calories = values [1];
+			return new T[] { 
+				calories.CGet(rf.DoubleRequestor)
+			};
 		}
-		public string[] InfoCreationFields ()
+		public FoodInfo CreateInfo ()
 		{
-			return new string[] { "Calories" };
-		}
-		public FoodInfo CreateInfo (IList<double> values)
-		{
-			return new FoodInfo () { calories = values [0] };
+			return new FoodInfo () { calories = calories };
 		}
 		public Expression<Func<FoodInfo,bool>> IsInfoComplete {get{return info=>info.calories != null;}}
 		#endregion
@@ -95,49 +91,45 @@ namespace Consonance
 	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, FireInfo>
 	{
 		#region IEntryCreation implementation
-		IRequest<String> caloriesBurned;
+		RequestStorageHelper<double> caloriesBurned = new RequestStorageHelper<double>("Calories Burned");
+		RequestStorageHelper<TimeSpan> burnTime = new RequestStorageHelper<TimeSpan>("Burn Duration");
 		public T[] CreationFields<T> (IValueRequestFactory<T> factory)
 		{
-			return new T[] { (caloriesBurned as IValueRequest<T,String> ?? factory.StringRequestor ("Calories Burned")).request };
+			return new T[] { 
+				caloriesBurned.CGet (factory.DoubleRequestor)
+			};
 		}
-		public bool Create (IList<double> values, out CalorieDietBurnEntry entry)
+		public CalorieDietBurnEntry Create ()
 		{
-			entry = null;
-			if (values.Count != 1)
-				return false;
-			entry = new CalorieDietBurnEntry () { kcals = values [0] };
-			return true;
+			return new CalorieDietBurnEntry () { kcals = caloriesBurned };
 		}
-		public string[] CalculationFields (FireInfo info)
+		public T[] CalculationFields <T>(IValueRequestFactory<T> factory, FireInfo info)
 		{
-			List<String> needs = new List<string> ();
-			needs.Add ("Duration (h)");
+			List<T> needs = new List<T> ();
+			needs.Add (burnTime.CGet (factory.TimeSpanRequestor));
 			if (info.calories.HasValue)
-				needs.Add ("Calories Burned");
+				needs.Add (caloriesBurned.CGet(factory.DoubleRequestor));
 			return needs.ToArray();
 		}
-		public bool Calculate (FireInfo info, IList<double> values, out CalorieDietBurnEntry result)
+		public CalorieDietBurnEntry Calculate (FireInfo info, Predicate shouldComplete)
 		{
-			result = null;
-			if (values.Count != CalculationFields (info).Length)
-				return false;
-			result = new CalorieDietBurnEntry () {
-				kcals = (info.calories ?? values [1]) * (values [0] / info.per_hour),
-				info_hours = values[0]
+			if (info.calories == null && shouldComplete ())
+				info.calories = caloriesBurned;
+			return new CalorieDietBurnEntry () {
+				kcals = (info.calories ?? caloriesBurned) * (burnTime.request.value.TotalHours / info.per_hour),
+				info_hours = burnTime.request.value.TotalHours
 			};
-			return true;
 		}
-		public void CompleteInfo (ref FireInfo toComplete, IList<double> values)
+		public T[] InfoCreationFields<T> (IValueRequestFactory<T> factory)
 		{
-			toComplete.calories = values [0];
+			return new T[] { 
+				caloriesBurned.CGet(factory.DoubleRequestor),  
+				burnTime.CGet(factory.TimeSpanRequestor)
+			};
 		}
-		public string[] InfoCreationFields ()
+		public FireInfo CreateInfo ()
 		{
-			return new String[] { "Calories Burned", "Duration" };
-		}
-		public FireInfo CreateInfo (IList<double> values)
-		{
-			return new FireInfo () { per_hour = 1.0 / values [1], calories = values [0] };
+			return new FireInfo () { per_hour = 1.0 / burnTime.request.value.TotalHours, calories = caloriesBurned };
 		}
 		public Expression<Func<FireInfo,bool>> IsInfoComplete { get { return f => f.calories != null;  } }
 		#endregion

@@ -263,6 +263,7 @@ namespace Consonance
 		IValueRequest<T, String> StringRequestor(String name);
 		IValueRequest<T, InfoSelectValue> InfoLineVMRequestor(String name);
 		IValueRequest<T, DateTime> DateRequestor(String name);
+		IValueRequest<T, TimeSpan> TimeSpanRequestor(String name);
 		IValueRequest<T, double> DoubleRequestor(String name);
 	}
 	public class InfoSelectValue
@@ -281,5 +282,23 @@ namespace Consonance
 		bool lostInitial { set; } // for when (eg editing) there was a value entered by user previously, but it was not stored.
 		Predicate validator { set; } // if we want to check the value set is ok
 	}
+	public class RequestStorageHelper<V>
+	{
+		public IRequest<V> request { get; private set; }
+		readonly String name;
+		public RequestStorageHelper(String requestName)
+		{
+			name = requestName;
+		}
+		public T CGet<T>(Func<String,IValueRequest<T,V>> creator)
+		{
+			if (request == null)
+				request = creator (name);
+			return (request as IValueRequest<T,V>).request;
+		}
+		public static implicit operator V (RequestStorageHelper<V> me)
+		{
+			return me.request.value;
+		}
+	}
 }
-
