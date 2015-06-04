@@ -97,8 +97,18 @@ namespace Consonance
 
 		// creator for dietinstance
 		String name { get; }
-		T[] DietCreationFields<T>(IValueRequestFactory<T> factory);
+		IEnumerable<DietWizardPage<T>> DietCreationPages<T>(IValueRequestFactory<T> factory);
 		D NewDiet();
+	}
+	public class DietWizardPage<T>
+	{
+		public readonly String title;
+		public readonly IEnumerable<T> valuerequests;
+		public DietWizardPage( String title, IEnumerable<T> req)
+		{
+			this.title = title;
+			valuerequests = req;
+		}
 	}
 	public interface IEntryCreation<EntryType, InfoType>
 	{

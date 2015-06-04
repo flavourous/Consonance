@@ -232,9 +232,18 @@ namespace Consonance
 		}
 		public void StartNewDiet()
 		{
-			getValues.GetValues("New " + dietName, modelHandler.model.DietCreationFields<IRO>(getValues.requestFactory), () => {
-				var di = modelHandler.StartNewDiet();
-			}); // defaults to getting name and date.
+			var pages = new List<DietWizardPage<IRO>> (modelHandler.model.DietCreationPages<IRO> (getValues.requestFactory));
+			int page = 0;
+			Action pageit = null; // anonymous recursion hack - maybe use some oo?
+			pageit = () =>
+				getValues.GetValues(pages[page].title, pages[page].valuerequests, () => {
+					page++;
+					if(++page < pages.Count) pageit();
+					else {
+						var di = modelHandler.StartNewDiet();
+					}
+				}); // defaults to getting name and date.
+			pageit ();
 		}
 		public void RemoveDiet (DietInstanceVM dvm)
 		{

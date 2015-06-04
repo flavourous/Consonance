@@ -20,19 +20,19 @@ namespace Consonance
 	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		public String name { get { return "Calorie Diet"; } }
-		IRequest<double> dietCalLim; 
-		IRequest<String> dietName;
-		public T[] DietCreationFields<T>(IValueRequestFactory<T> factory) 
+		RequestStorageHelper<double> dietCalLim = new RequestStorageHelper<double> ("Diet Name");
+		RequestStorageHelper<String> dietName = new RequestStorageHelper<string> ("Calorie Limit");
+		public IEnumerable<DietWizardPage<T>> DietCreationPages<T>(IValueRequestFactory<T> factory) 
 		{
-			return new T[] 
-			{
-				(dietName as IValueRequest<T,String> ?? factory.StringRequestor ("Diet Name")).request,
-				(dietCalLim as IValueRequest<T,double> ?? factory.DoubleRequestor ("Calorie Limit")).request
-			};
+			yield return new DietWizardPage<T> ("Create a simple calorie diet",
+				new T[] {
+					dietName.CGet(factory.StringRequestor),
+					dietCalLim.CGet(factory.DoubleRequestor)
+				});
 		}
 		public CalorieDietInstance NewDiet ()
 		{
-			return new CalorieDietInstance () { name = dietName.value, callim = dietCalLim.value };
+			return new CalorieDietInstance () { name = dietName, callim = dietCalLim };
 		}
 
 		CalorieDietEatCreation cde = new CalorieDietEatCreation();
