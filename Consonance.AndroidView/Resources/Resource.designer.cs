@@ -46,14 +46,14 @@ namespace Consonance
 		public partial class Color
 		{
 			
-			// aapt resource value: 0x7f040000
-			public const int norm = 2130968576;
+			// aapt resource value: 0x7f050000
+			public const int norm = 2131034112;
 			
-			// aapt resource value: 0x7f040002
-			public const int pres = 2130968578;
+			// aapt resource value: 0x7f050002
+			public const int pres = 2131034114;
 			
-			// aapt resource value: 0x7f040001
-			public const int sel = 2130968577;
+			// aapt resource value: 0x7f050001
+			public const int sel = 2131034113;
 			
 			static Color()
 			{
@@ -74,6 +74,9 @@ namespace Consonance
 			// aapt resource value: 0x7f020001
 			public const int Icon = 2130837505;
 			
+			// aapt resource value: 0x7f020002
+			public const int monoandroidsplash = 2130837506;
+			
 			static Drawable()
 			{
 				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
@@ -87,146 +90,116 @@ namespace Consonance
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f070028
-			public const int addBurned = 2131165224;
+			// aapt resource value: 0x7f08001d
+			public const int addBurned = 2131230749;
 			
-			// aapt resource value: 0x7f070029
-			public const int addBurnedQuick = 2131165225;
+			// aapt resource value: 0x7f08001e
+			public const int addBurnedQuick = 2131230750;
 			
-			// aapt resource value: 0x7f07002b
-			public const int addEaten = 2131165227;
+			// aapt resource value: 0x7f080020
+			public const int addEaten = 2131230752;
 			
-			// aapt resource value: 0x7f07002c
-			public const int addEatenQuick = 2131165228;
+			// aapt resource value: 0x7f080021
+			public const int addEatenQuick = 2131230753;
 			
-			// aapt resource value: 0x7f07002e
-			public const int addPlan = 2131165230;
+			// aapt resource value: 0x7f080024
+			public const int addPlan = 2131230756;
 			
-			// aapt resource value: 0x7f070006
-			public const int burnTrackText = 2131165190;
+			// aapt resource value: 0x7f080006
+			public const int burnTrackText = 2131230726;
 			
-			// aapt resource value: 0x7f070007
-			public const int burnitemdatetime = 2131165191;
+			// aapt resource value: 0x7f080007
+			public const int burnitemdatetime = 2131230727;
 			
-			// aapt resource value: 0x7f070008
-			public const int burnitemname = 2131165192;
+			// aapt resource value: 0x7f080008
+			public const int burnitemname = 2131230728;
 			
-			// aapt resource value: 0x7f070009
-			public const int burnitemtrack = 2131165193;
+			// aapt resource value: 0x7f080009
+			public const int burnitemtrack = 2131230729;
 			
-			// aapt resource value: 0x7f070005
-			public const int burnlist = 2131165189;
+			// aapt resource value: 0x7f080005
+			public const int burnlist = 2131230725;
 			
-			// aapt resource value: 0x7f070004
-			public const int burnlisttitlename = 2131165188;
+			// aapt resource value: 0x7f080004
+			public const int burnlisttitlename = 2131230724;
 			
-			// aapt resource value: 0x7f070003
-			public const int burnlisttitletrack = 2131165187;
+			// aapt resource value: 0x7f080003
+			public const int burnlisttitletrack = 2131230723;
 			
-			// aapt resource value: 0x7f070000
-			public const int burnpage = 2131165184;
+			// aapt resource value: 0x7f080000
+			public const int burnpage = 2131230720;
 			
-			// aapt resource value: 0x7f07000a
-			public const int dietitemdatetime = 2131165194;
+			// aapt resource value: 0x7f08000a
+			public const int dietitemdatetime = 2131230730;
 			
-			// aapt resource value: 0x7f07000c
-			public const int dietitemmetric = 2131165196;
+			// aapt resource value: 0x7f08000c
+			public const int dietitemmetric = 2131230732;
 			
-			// aapt resource value: 0x7f07000b
-			public const int dietitemname = 2131165195;
+			// aapt resource value: 0x7f08000b
+			public const int dietitemname = 2131230731;
 			
-			// aapt resource value: 0x7f070013
-			public const int eatTrackText = 2131165203;
+			// aapt resource value: 0x7f080013
+			public const int eatTrackText = 2131230739;
 			
-			// aapt resource value: 0x7f070014
-			public const int eatitemdatetime = 2131165204;
+			// aapt resource value: 0x7f080014
+			public const int eatitemdatetime = 2131230740;
 			
-			// aapt resource value: 0x7f070015
-			public const int eatitemname = 2131165205;
+			// aapt resource value: 0x7f080015
+			public const int eatitemname = 2131230741;
 			
-			// aapt resource value: 0x7f070016
-			public const int eatitemtrack = 2131165206;
+			// aapt resource value: 0x7f080016
+			public const int eatitemtrack = 2131230742;
 			
-			// aapt resource value: 0x7f070012
-			public const int eatlist = 2131165202;
+			// aapt resource value: 0x7f080012
+			public const int eatlist = 2131230738;
 			
-			// aapt resource value: 0x7f070011
-			public const int eatlisttitlename = 2131165201;
+			// aapt resource value: 0x7f080011
+			public const int eatlisttitlename = 2131230737;
 			
-			// aapt resource value: 0x7f070010
-			public const int eatlisttitletrack = 2131165200;
+			// aapt resource value: 0x7f080010
+			public const int eatlisttitletrack = 2131230736;
 			
-			// aapt resource value: 0x7f07000d
-			public const int eatpage = 2131165197;
+			// aapt resource value: 0x7f08000d
+			public const int eatpage = 2131230733;
 			
-			// aapt resource value: 0x7f070025
-			public const int flb = 2131165221;
+			// aapt resource value: 0x7f080023
+			public const int editPlanEntry = 2131230755;
 			
-			// aapt resource value: 0x7f070002
-			public const int flbBurn = 2131165186;
+			// aapt resource value: 0x7f080018
+			public const int flb = 2131230744;
 			
-			// aapt resource value: 0x7f07000f
-			public const int flpEat = 2131165199;
+			// aapt resource value: 0x7f080002
+			public const int flbBurn = 2131230722;
 			
-			// aapt resource value: 0x7f07000e
-			public const int frameLayout1 = 2131165198;
+			// aapt resource value: 0x7f08000f
+			public const int flpEat = 2131230735;
 			
-			// aapt resource value: 0x7f070001
-			public const int frameLayout1burn = 2131165185;
+			// aapt resource value: 0x7f08000e
+			public const int frameLayout1 = 2131230734;
 			
-			// aapt resource value: 0x7f07001a
-			public const int getvalues = 2131165210;
+			// aapt resource value: 0x7f080001
+			public const int frameLayout1burn = 2131230721;
 			
-			// aapt resource value: 0x7f070023
-			public const int getvalues_cancel = 2131165219;
+			// aapt resource value: 0x7f08001a
+			public const int name = 2131230746;
 			
-			// aapt resource value: 0x7f07001e
-			public const int getvalues_date = 2131165214;
+			// aapt resource value: 0x7f080017
+			public const int plan = 2131230743;
 			
-			// aapt resource value: 0x7f07001f
-			public const int getvalues_datepicker = 2131165215;
+			// aapt resource value: 0x7f080019
+			public const int planlist = 2131230745;
 			
-			// aapt resource value: 0x7f070017
-			public const int getvalues_item = 2131165207;
+			// aapt resource value: 0x7f08001c
+			public const int removeBurnEntry = 2131230748;
 			
-			// aapt resource value: 0x7f070018
-			public const int getvalues_itemtitle = 2131165208;
+			// aapt resource value: 0x7f08001f
+			public const int removeEatEntry = 2131230751;
 			
-			// aapt resource value: 0x7f070019
-			public const int getvalues_itemvalue = 2131165209;
+			// aapt resource value: 0x7f080022
+			public const int removePlanEntry = 2131230754;
 			
-			// aapt resource value: 0x7f070021
-			public const int getvalues_ok = 2131165217;
-			
-			// aapt resource value: 0x7f070022
-			public const int getvalues_scrolllinearlayout = 2131165218;
-			
-			// aapt resource value: 0x7f07001c
-			public const int getvalues_titlebox = 2131165212;
-			
-			// aapt resource value: 0x7f07001d
-			public const int getvalues_titleboxname = 2131165213;
-			
-			// aapt resource value: 0x7f07001b
-			public const int getvalues_titletext = 2131165211;
-			
-			// aapt resource value: 0x7f070020
-			public const int getvalues_valuesscroller = 2131165216;
-			
-			// aapt resource value: 0x7f070024
-			public const int plan = 2131165220;
-			
-			// aapt resource value: 0x7f070026
-			public const int planlist = 2131165222;
-			
-			// aapt resource value: 0x7f070027
-			public const int removeBurnEntry = 2131165223;
-			
-			// aapt resource value: 0x7f07002a
-			public const int removeEatEntry = 2131165226;
-			
-			// aapt resource value: 0x7f07002d
-			public const int removePlanEntry = 2131165229;
+			// aapt resource value: 0x7f08001b
+			public const int value = 2131230747;
 			
 			static Id()
 			{
@@ -257,13 +230,13 @@ namespace Consonance
 			public const int EatEntryLine = 2130903044;
 			
 			// aapt resource value: 0x7f030005
-			public const int GetValueRow = 2130903045;
+			public const int Plan = 2130903045;
 			
 			// aapt resource value: 0x7f030006
-			public const int GetValues = 2130903046;
+			public const int ValueRequests_Double = 2130903046;
 			
 			// aapt resource value: 0x7f030007
-			public const int Plan = 2130903047;
+			public const int ValueRequests_String = 2130903047;
 			
 			static Layout()
 			{
@@ -278,23 +251,23 @@ namespace Consonance
 		public partial class Menu
 		{
 			
-			// aapt resource value: 0x7f060000
-			public const int BurnEntryMenu = 2131099648;
+			// aapt resource value: 0x7f070000
+			public const int BurnEntryMenu = 2131165184;
 			
-			// aapt resource value: 0x7f060001
-			public const int BurnMenu = 2131099649;
+			// aapt resource value: 0x7f070001
+			public const int BurnMenu = 2131165185;
 			
-			// aapt resource value: 0x7f060002
-			public const int EatEntryMenu = 2131099650;
+			// aapt resource value: 0x7f070002
+			public const int EatEntryMenu = 2131165186;
 			
-			// aapt resource value: 0x7f060003
-			public const int EatMenu = 2131099651;
+			// aapt resource value: 0x7f070003
+			public const int EatMenu = 2131165187;
 			
-			// aapt resource value: 0x7f060004
-			public const int PlanEntryMenu = 2131099652;
+			// aapt resource value: 0x7f070004
+			public const int PlanEntryMenu = 2131165188;
 			
-			// aapt resource value: 0x7f060005
-			public const int PlanMenu = 2131099653;
+			// aapt resource value: 0x7f070005
+			public const int PlanMenu = 2131165189;
 			
 			static Menu()
 			{
@@ -309,26 +282,26 @@ namespace Consonance
 		public partial class String
 		{
 			
-			// aapt resource value: 0x7f050006
-			public const int ApplicationName = 2131034118;
+			// aapt resource value: 0x7f040001
+			public const int ApplicationName = 2130968577;
 			
-			// aapt resource value: 0x7f050005
-			public const int Hello = 2131034117;
+			// aapt resource value: 0x7f040000
+			public const int Hello = 2130968576;
 			
-			// aapt resource value: 0x7f050001
-			public const int app_name = 2131034113;
+			// aapt resource value: 0x7f040003
+			public const int app_name = 2130968579;
 			
-			// aapt resource value: 0x7f050003
-			public const int burn = 2131034115;
+			// aapt resource value: 0x7f040005
+			public const int burn = 2130968581;
 			
-			// aapt resource value: 0x7f050002
-			public const int eat = 2131034114;
+			// aapt resource value: 0x7f040004
+			public const int eat = 2130968580;
 			
-			// aapt resource value: 0x7f050000
-			public const int hello = 2131034112;
+			// aapt resource value: 0x7f040002
+			public const int hello = 2130968578;
 			
-			// aapt resource value: 0x7f050004
-			public const int plan = 2131034116;
+			// aapt resource value: 0x7f040006
+			public const int plan = 2130968582;
 			
 			static String()
 			{
@@ -336,6 +309,22 @@ namespace Consonance
 			}
 			
 			private String()
+			{
+			}
+		}
+		
+		public partial class Style
+		{
+			
+			// aapt resource value: 0x7f060000
+			public const int Mono_Android_Theme_Splash = 2131099648;
+			
+			static Style()
+			{
+				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
+			}
+			
+			private Style()
 			{
 			}
 		}

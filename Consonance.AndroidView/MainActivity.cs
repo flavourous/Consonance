@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Collections;
 using System.Collections.Generic;
 using Android.App;
@@ -19,57 +20,10 @@ namespace Consonance.AndroidView
 	}
 	class TabDesc { public String name; public int layout; public int menu; public int contextmenu; }
 
-	public class ValueRequestWrapper
-	{
-		public readonly String name;
-		public ValueRequestWrapper(String name)
-		{
-			this.name=name;
-		}
-		public ValueRequestWrapper request { get { return this; } }
-		public bool hasInitial { get; set; }
-		public bool lostInitial { get; set; } 
-		public Predicate validator { get; set; } 
-	}
-	class StringRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, String>
-	{
-		public StringRequestWrapper(String n) : base(n) { }
-		public string value { get; set; }
-	}
-	class InfoSelectRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, InfoSelectValue>
-	{
-		public InfoSelectRequestWrapper(String n) : base(n) { }
-		public InfoSelectValue value { get; set; }
-	}
-	class DateTimeRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, DateTime>
-	{
-		public DateTimeRequestWrapper(String n) : base(n) { }
-		public DateTime value { get; set; }
-	}
-	class DoubleRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, double>
-	{
-		public DoubleRequestWrapper(String n) : base(n) { }
-		public double value { get; set; }
-	}
-	class TimeSpanRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, TimeSpan>
-	{
-		public TimeSpanRequestWrapper(String n) : base(n) { }
-		public TimeSpan value {get;set;}
-	}
-	class ValueRequestFactory : IValueRequestFactory<ValueRequestWrapper>
-	{
-		#region IValueRequestFactory implementation
-		public IValueRequest<ValueRequestWrapper, string> StringRequestor(String name) { return new StringRequestWrapper (name); }
-		public IValueRequest<ValueRequestWrapper, InfoSelectValue> InfoLineVMRequestor(String name) { return new InfoSelectRequestWrapper (name); }
-		public IValueRequest<ValueRequestWrapper, DateTime> DateRequestor(String name) { return new DateTimeRequestWrapper (name); }
-		public IValueRequest<ValueRequestWrapper, double> DoubleRequestor(String name) { return new DoubleRequestWrapper (name); }
-		public IValueRequest<ValueRequestWrapper, TimeSpan> TimeSpanRequestor (string name) { return new TimeSpanRequestWrapper (name); }
-		#endregion
-		
-	}
+
 
 	[Activity (Label = "Consonance", MainLauncher=true, Icon = "@drawable/icon")]
-	public class MainActivity : Activity, ActionBar.ITabListener, IView, IUserInput, IValueRequestBuilder<ValueRequestWrapper>
+	public class MainActivity : Activity, ActionBar.ITabListener, IView, IUserInput
 	{
 		TabDescList tabs = new TabDescList () {
 			{ "Eat", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu },
@@ -265,59 +219,6 @@ namespace Consonance.AndroidView
 
 		#endregion
 
-		#region IValueRequestBuilder<ValueRequestWrapper> implimentation
-		readonly ValueRequestFactory vrf = new ValueRequestFactory();
-		public IValueRequestFactory<ValueRequestWrapper> requestFactory { get { return vrf; } }
-		//Promise<AddedItemVM> GetValuesPromise;
-		public void GetValues (String title, IEnumerable<ValueRequestWrapper> requests, Promise completed)
-		{
-			// init dialog
-			Dialog gvDialog = new Dialog (this);
-			gvDialog.RequestWindowFeature ((int)WindowFeatures.NoTitle);
-			gvDialog.SetCanceledOnTouchOutside (true);
-			gvDialog.SetContentView (Resource.Layout.GetValues);
-
-			// get elements
-			var ok = gvDialog.FindViewById<Button> (Resource.Id.getvalues_ok);
-			var cancel = gvDialog.FindViewById<Button> (Resource.Id.getvalues_cancel);
-			var sll = gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_scrolllinearlayout);
-			var gvtitle = gvDialog.FindViewById<TextView> (Resource.Id.getvalues_titletext);
-
-			// options
-			bool useName =true;// (defaultUse & AddedItemVMDefaults.Name) == AddedItemVMDefaults.Name;
-			bool useWhen = true;//(defaultUse & AddedItemVMDefaults.When) == AddedItemVMDefaults.When;
-			if (!useName)
-				gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_titlebox).Visibility = ViewStates.Gone;
-			if (!useWhen) gvDialog.FindViewById<LinearLayout> (Resource.Id.getvalues_date).Visibility = ViewStates.Gone;
-
-			// set element values
-			gvtitle.Text = title;
-			List<EditText> vals = new List<EditText> ();
-//			foreach (var vv in names) {
-//				var row = gvDialog.LayoutInflater.Inflate (Resource.Layout.GetValueRow, sll);
-//				vals.Add (row.FindViewById<EditText> (Resource.Id.getvalues_itemvalue));
-//				row.FindViewById<TextView> (Resource.Id.getvalues_itemtitle).Text = vv;
-//			}
-
-			// do wrapping layout
-			gvDialog.Window.SetLayout (ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
-
-			// hook events
-			ok.Click += (sender, e) => {
-				List<double> valvals = new List<double>();
-				foreach(var v in vals)
-					valvals.Add(double.Parse(v.Text == "" ? "0.0" : v.Text));
-				gvDialog.Cancel();
-				completed();
-			};
-
-			cancel.Click += (sender, e) => {
-				gvDialog.Cancel(); // just dont complete the promise! ok they are good.
-			};
-
-			gvDialog.Show ();
-		}
-		#endregion
 
 		#region IUserInput implimentation
 		Promise<int> SelectStringPromise;
@@ -385,7 +286,7 @@ namespace Consonance.AndroidView
 			}
 
 			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
-			Presenter.Singleton.PresentTo (this, this, this);
+			Presenter.Singleton.PresentTo (this, this, new AndroidRequestBuilder(this));
 		}
 		ListView slv;
 		Action<IMenuItem> selectAction;
@@ -430,6 +331,9 @@ namespace Consonance.AndroidView
 				break;
 			case Resource.Id.removePlanEntry:
 				removedietinstance (dvm);
+				break;
+			case Resource.Id.editPlanEntry:
+				editdietinstance (dvm);
 				break;
 			}
 		}

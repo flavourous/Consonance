@@ -20,11 +20,22 @@ namespace Consonance
 	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		public String name { get { return "Calorie Diet"; } }
-		RequestStorageHelper<double> dietCalLim = new RequestStorageHelper<double> ("Diet Name");
-		RequestStorageHelper<String> dietName = new RequestStorageHelper<string> ("Calorie Limit");
+		RequestStorageHelper<String> dietName = new RequestStorageHelper<string> ("Diet Name");
+		RequestStorageHelper<double> dietCalLim = new RequestStorageHelper<double> ("Calorie Limit");
 		public IEnumerable<DietWizardPage<T>> DietCreationPages<T>(IValueRequestFactory<T> factory) 
 		{
-			yield return new DietWizardPage<T> ("Create a simple calorie diet",
+			yield return GetIt<T> ("Create a simple calorie diet", factory);
+		}
+		public IEnumerable<DietWizardPage<T>> DietEditPages<T> (CalorieDietInstance editing, IValueRequestFactory<T> factory)
+		{
+			var eros = GetIt<T> ("Edit simple diet", factory);
+			dietName.request.value = editing.name;
+			dietCalLim.request.value = editing.callim;
+			yield return eros;
+		}
+		DietWizardPage<T> GetIt<T>(String name, IValueRequestFactory<T> factory)
+		{
+			return new DietWizardPage<T> (name,
 				new T[] {
 					dietName.CGet(factory.StringRequestor),
 					dietCalLim.CGet(factory.DoubleRequestor)
@@ -33,6 +44,11 @@ namespace Consonance
 		public CalorieDietInstance NewDiet ()
 		{
 			return new CalorieDietInstance () { name = dietName, callim = dietCalLim };
+		}
+		public void EditDiet (CalorieDietInstance toEdit)
+		{
+			toEdit.callim = dietCalLim;
+			toEdit.name = dietName;
 		}
 
 		CalorieDietEatCreation cde = new CalorieDietEatCreation();
@@ -47,9 +63,9 @@ namespace Consonance
 		#region IEntryCreation implementation
 		RequestStorageHelper<double> calories = new RequestStorageHelper<double> ("calories");
 		RequestStorageHelper<double> grams = new RequestStorageHelper<double> ("grams");
-		public T[] CreationFields<T> (IValueRequestFactory<T> factory)
+		public IList<T> CreationFields<T> (IValueRequestFactory<T> factory)
 		{
-			return new T[] 
+			return new List<T> 
 			{
 				calories.CGet(factory.DoubleRequestor)
 			};
@@ -58,13 +74,13 @@ namespace Consonance
 		{
 			return new CalorieDietEatEntry () { kcals = calories };
 		}
-		public T[] CalculationFields <T>(IValueRequestFactory<T> factory, FoodInfo info)
+		public IList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FoodInfo info)
 		{
 			List<T> needed = new List<T> ();
 			needed.Add (grams.CGet(factory.DoubleRequestor));
 			if (!info.calories.HasValue)
 				needed.Add (calories.CGet (factory.DoubleRequestor));
-			return needed.ToArray();
+			return needed;
 		}
 		public CalorieDietEatEntry Calculate (FoodInfo info, Predicate shouldComplete)
 		{
@@ -75,9 +91,9 @@ namespace Consonance
 				info_grams = grams
 			};
 		}
-		public T[] InfoCreationFields<T> (IValueRequestFactory<T> rf)
+		public IList<T> InfoCreationFields<T> (IValueRequestFactory<T> rf)
 		{
-			return new T[] { 
+			return new List<T> { 
 				calories.CGet(rf.DoubleRequestor)
 			};
 		}
@@ -93,9 +109,9 @@ namespace Consonance
 		#region IEntryCreation implementation
 		RequestStorageHelper<double> caloriesBurned = new RequestStorageHelper<double>("Calories Burned");
 		RequestStorageHelper<TimeSpan> burnTime = new RequestStorageHelper<TimeSpan>("Burn Duration");
-		public T[] CreationFields<T> (IValueRequestFactory<T> factory)
+		public IList<T> CreationFields<T> (IValueRequestFactory<T> factory)
 		{
-			return new T[] { 
+			return new List<T> { 
 				caloriesBurned.CGet (factory.DoubleRequestor)
 			};
 		}
@@ -103,13 +119,13 @@ namespace Consonance
 		{
 			return new CalorieDietBurnEntry () { kcals = caloriesBurned };
 		}
-		public T[] CalculationFields <T>(IValueRequestFactory<T> factory, FireInfo info)
+		public IList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FireInfo info)
 		{
 			List<T> needs = new List<T> ();
 			needs.Add (burnTime.CGet (factory.TimeSpanRequestor));
 			if (info.calories.HasValue)
 				needs.Add (caloriesBurned.CGet(factory.DoubleRequestor));
-			return needs.ToArray();
+			return needs;
 		}
 		public CalorieDietBurnEntry Calculate (FireInfo info, Predicate shouldComplete)
 		{
@@ -120,9 +136,9 @@ namespace Consonance
 				info_hours = burnTime.request.value.TotalHours
 			};
 		}
-		public T[] InfoCreationFields<T> (IValueRequestFactory<T> factory)
+		public IList<T> InfoCreationFields<T> (IValueRequestFactory<T> factory)
 		{
-			return new T[] { 
+			return new List<T> { 
 				caloriesBurned.CGet(factory.DoubleRequestor),  
 				burnTime.CGet(factory.TimeSpanRequestor)
 			};

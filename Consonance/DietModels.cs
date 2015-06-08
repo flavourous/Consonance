@@ -98,13 +98,15 @@ namespace Consonance
 		// creator for dietinstance
 		String name { get; }
 		IEnumerable<DietWizardPage<T>> DietCreationPages<T>(IValueRequestFactory<T> factory);
+		IEnumerable<DietWizardPage<T>> DietEditPages<T>(D editing, IValueRequestFactory<T> factory);
 		D NewDiet();
+		void EditDiet (D toEdit);
 	}
 	public class DietWizardPage<T>
 	{
 		public readonly String title;
-		public readonly IEnumerable<T> valuerequests;
-		public DietWizardPage( String title, IEnumerable<T> req)
+		public readonly IList<T> valuerequests;
+		public DietWizardPage( String title, IList<T> req)
 		{
 			this.title = title;
 			valuerequests = req;
@@ -113,17 +115,17 @@ namespace Consonance
 	public interface IEntryCreation<EntryType, InfoType>
 	{
 		// What named fields do I need to fully create an entry (eg eating a banana) - "kcal", "fat"
-		T[] CreationFields<T> (IValueRequestFactory<T> factory); 
+		IList<T> CreationFields<T> (IValueRequestFactory<T> factory); 
 		// Here's those values, give me the entry (ww points on eating a bananna) - broker wont attempt to remember a "item / info".
 		EntryType Create ();
 
 		// Ok, I've got info on this food (bananna, per 100g, only kcal info) - I still need "fat" and "grams"
-		T[] CalculationFields <T>(IValueRequestFactory<T> factory, InfoType info);
+		IList<T> CalculationFields <T>(IValueRequestFactory<T> factory, InfoType info);
 		// right, heres the fat too, give me entry (broker will update that bananna info also)
 		EntryType Calculate(InfoType info, Predicate shouldComplete);
 
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
-		T[] InfoCreationFields<T>(IValueRequestFactory<T> factory);
+		IList<T> InfoCreationFields<T>(IValueRequestFactory<T> factory);
 		// ok make me an info please here's that data.
 		InfoType CreateInfo ();
 		// ok is this info like complete for your diety? yes. ffs.

@@ -1,11 +1,12 @@
 ﻿<Properties StartupItem="Consonance.AndroidView\Consonance.AndroidView.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" PreferredExecutionTarget="Android.MonoForAndroid_API_12" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance\AppPresenter.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.AndroidView\ValueRequestHandler.cs">
     <Files>
       <File FileName="Consonance.AndroidView\MainActivity.cs" Line="1" Column="1" />
       <File FileName="Consonance\DietPresenters.cs" Line="1" Column="1" />
-      <File FileName="Consonance\AppPresenter.cs" Line="14" Column="14" />
+      <File FileName="Consonance\AppPresenter.cs" Line="1" Column="1" />
       <File FileName="Consonance\DietModels.cs" Line="1" Column="1" />
+      <File FileName="Consonance.AndroidView\ValueRequestHandler.cs" Line="51" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

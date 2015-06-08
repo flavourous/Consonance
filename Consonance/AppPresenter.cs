@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Collections.Generic;
 using SQLite;
@@ -253,7 +254,7 @@ namespace Consonance
 	public interface IValueRequestBuilder<T>
 	{
 		// get generic set of values on a page thing
-		void GetValues (String title, IEnumerable<T> requests, Promise completed);
+		void GetValues (String title, BindingList<T> requests, Promise completed, int page, int pages);
 
 		// VRO Factory Method
 		IValueRequestFactory<T> requestFactory { get; }
@@ -280,7 +281,9 @@ namespace Consonance
 		V value { get; set; } // set by view when done, and set by view to indicate an initial value.
 		bool hasInitial { set; } // for when value was initialised
 		bool lostInitial { set; } // for when (eg editing) there was a value entered by user previously, but it was not stored.
-		Predicate validator { set; } // if we want to check the value set is ok
+		event Action changed; // so model domain can change the flags
+		bool enabled { set; } // so the model domain can communicate what fields should be in action (for combining quick and calculate entries)
+		bool valid { set; } // if we want to check the value set is ok
 	}
 	public class RequestStorageHelper<V>
 	{

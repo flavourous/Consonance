@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 using SQLite;
@@ -146,6 +147,7 @@ namespace Consonance
 		{
 			// store objects
 			this.getInput = getInput;
+			this.getValues = getValues;
 			this.presenter = presenter;
 			this.modelHandler = new DietModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
 			this.conn = conn;
@@ -232,18 +234,28 @@ namespace Consonance
 		}
 		public void StartNewDiet()
 		{
-			var pages = new List<DietWizardPage<IRO>> (modelHandler.model.DietCreationPages<IRO> (getValues.requestFactory));
-			int page = 0;
-			Action pageit = null; // anonymous recursion hack - maybe use some oo?
-			pageit = () =>
-				getValues.GetValues(pages[page].title, pages[page].valuerequests, () => {
-					page++;
-					if(++page < pages.Count) pageit();
-					else {
-						var di = modelHandler.StartNewDiet();
-					}
-				}); // defaults to getting name and date.
-			pageit ();
+			PageIt (
+				new List<DietWizardPage<IRO>> (modelHandler.model.DietCreationPages<IRO> (getValues.requestFactory)),
+				() => {
+					var di = modelHandler.StartNewDiet ();
+				}
+			);
+		}
+		public void EditDiet (DietInstanceVM dvm)
+		{
+			PageIt (
+				new List<DietWizardPage<IRO>> (modelHandler.model.DietEditPages<IRO> (dvm.originator as DietInstType, getValues.requestFactory)),
+				() => {
+					modelHandler.model.EditDiet (dvm.originator as DietInstType);
+				}
+			);
+		}
+		void PageIt(List<DietWizardPage<IRO>> pages, Action complete, int page = 0)
+		{
+			getValues.GetValues(pages[page].title, new BindingList<IRO>(pages[page].valuerequests), () => {
+				if(++page < pages.Count) PageIt(pages, complete, page);
+				else complete();
+			}, page, pages.Count);
 		}
 		public void RemoveDiet (DietInstanceVM dvm)
 		{
@@ -260,8 +272,9 @@ namespace Consonance
 			where T : BaseEntry, new()
 			where I : BaseInfo, new()
 		{
-			getValues.GetValues ("Quick " + entryName + " Entry", creator.CreationFields <IRO> (getValues.requestFactory), () =>
-				handler.Add (to.originator as DietInstType));
+			var iros = new BindingList<IRO> (creator.CreationFields <IRO> (getValues.requestFactory));
+			getValues.GetValues ("Quick " + entryName + " Entry", iros, () =>
+				handler.Add (to.originator as DietInstType),0,1);
 		}
 
 		public void FullEat (DietInstanceVM to) {
@@ -277,12 +290,42 @@ namespace Consonance
 				where T : BaseEntry, new()
 				where I : BaseInfo, new()
 		{
-			var fis = new List<String> (conn.Table<I> ().Where (creator.IsInfoComplete).Select<String>(fi=>fi.name));
-			getInput.SelectString ("Select " + infoName, fis, -1, foodidx => {
-				var food = conn.Table<I> ().ElementAt (foodidx);
-				getValues.GetValues (entryName + " " + food.name, creator.CalculationFields<IRO> (getValues.requestFactory, food), () =>
-					handler.Add (to.originator as DietInstType, food));
-			});
+			// get a request object for infos
+			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + infoName);
+
+			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
+			var fis = new List<I> (conn.Table<I> ().Where (creator.IsInfoComplete));
+			var fi_vms = new List<InfoLineVM> ();
+			foreach (var m in fis)
+				fi_vms.Add (iconv(m));
+
+			// binfy
+			BindingList<IRO> requests = new BindingList<IRO> ();
+			requests.Add (infoRequest.request);
+			infoRequest.changed += () => {
+				if (infoRequest.value.selected >= 0) {
+					var nrq = creator.CalculationFields (getValues.requestFactory, fis [infoRequest.value.selected]);
+					nrq.Insert (0, infoRequest.request);
+					//remove gone
+					for (int i = 0; i < requests.Count; i++)
+						if (!nrq.Contains (requests [i]))
+							requests.RemoveAt (i);
+					//add new
+					for (int i = 0; i < nrq.Count; i++)
+						if (!requests.Contains (nrq [i]))
+							requests.Insert (i, nrq [i]);
+					//should respect ordering - doing all that so we dont remove ones that didnt change
+				} else
+					for (int i = 1; i < requests.Count; i++)
+						requests.RemoveAt (i);
+			};
+
+			getValues.GetValues(
+				entryName,
+				requests, 
+				() => handler.Add (to.originator as DietInstType, fis[infoRequest.value.selected]),
+				0, 1
+			);
 		}
 
 		public void RemoveEat (EntryLineVM toRemove)
@@ -293,12 +336,7 @@ namespace Consonance
 		{
 			modelHandler.firehandler.Remove (toRemove.originator as BurnType);
 		}
-
-		public void EditDiet (DietInstanceVM dvm)
-		{
-			throw new NotImplementedException ();
-		}
-
+			
 		public void EditEat (EntryLineVM toEdit)
 		{
 			throw new NotImplementedException ();
