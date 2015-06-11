@@ -6,7 +6,7 @@ using Android.Widget;
 using System.ComponentModel;
 using Consonance;
 
-namespace Consonance
+namespace Consonance.AndroidView
 {
 	class AndroidRequestBuilder : IValueRequestBuilder<ValueRequestWrapper>
 	{
@@ -20,7 +20,7 @@ namespace Consonance
 		readonly ValueRequestFactory vrf;
 		public IValueRequestFactory<ValueRequestWrapper> requestFactory { get { return vrf; } }
 		//Promise<AddedItemVM> GetValuesPromise;
-		public void GetValues (String title, BindingList<ValueRequestWrapper> requests, Promise completed, int page, int pages)
+		public void GetValues (String title, BindingList<ValueRequestWrapper> requests, Promise<bool> completed, int page, int pages)
 		{
 			// root layout
 			var rootLayout = new RelativeLayout(parent);
@@ -74,7 +74,9 @@ namespace Consonance
 				lp3.AddRule (LayoutRules.Below, 3);
 				cancel.Click += (sender, e) => {
 					requests.ListChanged -= leh;
-					gvDialog.Cancel (); // just dont complete the promise! ok they are good.
+					completed(false);
+					gvDialog.Cancel ();
+					requestArea.RemoveAllViews();
 				};
 				cancel.LayoutParameters = lp3;
 				cancel.Id = 2;
@@ -94,8 +96,9 @@ namespace Consonance
 					// set loading message and ping completed
 					requests.ListChanged -= leh;
 					gvDialog.Window.SetContentView(proc);
-					completed(); // it can do values it self! probabbly this before view is closed... accessors dietcty acess view..
-					gvDialog.Cancel (); // just dont complete the promise! ok they are good.
+					completed(true); // it can do values it self! probabbly this before view is closed... accessors dietcty acess view..
+					gvDialog.Cancel (); // just d7ont complete the promise! ok they are good.
+					requestArea.RemoveAllViews();
 				};
 				ofn.LayoutParameters = lp4;
 				rootLayout.AddView (ofn);
@@ -153,6 +156,34 @@ namespace Consonance
 		}
 		protected override int inputID { get { return Resource.Layout.ValueRequests_Double; } }
 	}
+	class InfoSelectRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, InfoSelectValue>
+	{
+		public InfoSelectRequestWrapper (String n, Activity a) : base(n,a) 
+		{
+			var spinny = inputView.FindViewById<Spinner> (Resource.Id.values);
+			spinny.ItemSelected += (sender, e) => _value.selected = e.Position-1;
+		}
+		InfoSelectValue _value;
+		public InfoSelectValue value 
+		{
+			set
+			{
+				_value = value;
+				var spinny = inputView.FindViewById<Spinner> (Resource.Id.values);
+				List<InfoLineVM> quickHack = new List<InfoLineVM> { new InfoLineVM () { name = "None (Quick Entry)" } };
+				quickHack.AddRange (_value.choices);
+				var adapt = new LAdapter<InfoLineVM> (
+					act, 
+					quickHack, 
+					Resource.Layout.InfoComboVal,
+					(v, i) => v.FindViewById<TextView>(Resource.Id.value).Text = i.name
+				);
+				spinny.Adapter = adapt; // set adapt with these choices
+			}
+			get { return _value; }
+		}
+		protected override int inputID { get { return Resource.Layout.ValueRequests_InfoSelect; } }
+	}
 	class TimeSpanRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, TimeSpan>
 	{
 		public TimeSpanRequestWrapper (String n, Activity a) : base(n,a) { }
@@ -165,13 +196,6 @@ namespace Consonance
 		public DateTime value { get; set; }
 		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
 	}
-	class InfoSelectRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, InfoSelectValue>
-	{
-		public InfoSelectRequestWrapper (String n, Activity a) : base(n,a) { }
-		public InfoSelectValue value { get; set; }
-		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
-	}
-
 	class ValueRequestFactory : IValueRequestFactory<ValueRequestWrapper>
 	{
 		readonly Activity act;

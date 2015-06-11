@@ -72,7 +72,7 @@ namespace Consonance
 		}
 		public CalorieDietEatEntry  Create ()
 		{
-			return new CalorieDietEatEntry () { kcals = calories };
+			return Edit (new CalorieDietEatEntry());
 		}
 		public IList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FoodInfo info)
 		{
@@ -82,14 +82,9 @@ namespace Consonance
 				needed.Add (calories.CGet (factory.DoubleRequestor));
 			return needed;
 		}
-		public CalorieDietEatEntry Calculate (FoodInfo info, Predicate shouldComplete)
+		public CalorieDietEatEntry Calculate (FoodInfo info, bool shouldComplete)
 		{
-			if (info.calories == null && shouldComplete ())
-				info.calories = calories;
-			return new CalorieDietEatEntry () { 
-				kcals = (info.calories ?? calories) * ((grams / 100.0) / info.per_hundred_grams),
-				info_grams = grams
-			};
+			return Edit (new CalorieDietEatEntry (), info, shouldComplete);
 		}
 		public IList<T> InfoCreationFields<T> (IValueRequestFactory<T> rf)
 		{
@@ -102,6 +97,35 @@ namespace Consonance
 			return new FoodInfo () { calories = calories };
 		}
 		public Expression<Func<FoodInfo,bool>> IsInfoComplete {get{return info=>info.calories != null;}}
+
+		public IList<T> EditFields<T> (CalorieDietEatEntry toEdit, IValueRequestFactory<T> factory)
+		{
+			var ret = CreationFields (factory);
+			calories.request.value = toEdit.kcals;
+			return ret;
+		}
+
+		public CalorieDietEatEntry Edit (CalorieDietEatEntry toEdit)
+		{
+			toEdit.kcals = calories;
+			return toEdit;
+		}
+
+		public IList<T> EditFields<T> (CalorieDietEatEntry toEdit, IValueRequestFactory<T> factory, FoodInfo info)
+		{
+			var ret = CalculationFields (factory, info);
+			calories.request.value = toEdit.kcals;
+			return ret;
+		}
+
+		public CalorieDietEatEntry Edit (CalorieDietEatEntry toEdit, FoodInfo info, bool shouldComplete)
+		{
+			if (info.calories == null && shouldComplete)
+				info.calories = calories;
+			toEdit.kcals = (info.calories ?? calories) * ((grams / 100.0) / info.per_hundred_grams);
+			toEdit.info_grams = grams;
+			return toEdit;
+		}
 		#endregion
 	}
 	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, FireInfo>
@@ -112,12 +136,14 @@ namespace Consonance
 		public IList<T> CreationFields<T> (IValueRequestFactory<T> factory)
 		{
 			return new List<T> { 
-				caloriesBurned.CGet (factory.DoubleRequestor)
+				caloriesBurned.CGet (factory.DoubleRequestor),
 			};
 		}
 		public CalorieDietBurnEntry Create ()
 		{
-			return new CalorieDietBurnEntry () { kcals = caloriesBurned };
+			var ret = new CalorieDietBurnEntry ();
+			Edit (ret);
+			return ret;
 		}
 		public IList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FireInfo info)
 		{
@@ -127,14 +153,11 @@ namespace Consonance
 				needs.Add (caloriesBurned.CGet(factory.DoubleRequestor));
 			return needs;
 		}
-		public CalorieDietBurnEntry Calculate (FireInfo info, Predicate shouldComplete)
+		public CalorieDietBurnEntry Calculate (FireInfo info, bool shouldComplete)
 		{
-			if (info.calories == null && shouldComplete ())
-				info.calories = caloriesBurned;
-			return new CalorieDietBurnEntry () {
-				kcals = (info.calories ?? caloriesBurned) * (burnTime.request.value.TotalHours / info.per_hour),
-				info_hours = burnTime.request.value.TotalHours
-			};
+			var ret = new CalorieDietBurnEntry ();
+			Edit (ret, info, shouldComplete);
+			return ret;
 		}
 		public IList<T> InfoCreationFields<T> (IValueRequestFactory<T> factory)
 		{
@@ -148,6 +171,35 @@ namespace Consonance
 			return new FireInfo () { per_hour = 1.0 / burnTime.request.value.TotalHours, calories = caloriesBurned };
 		}
 		public Expression<Func<FireInfo,bool>> IsInfoComplete { get { return f => f.calories != null;  } }
+
+		public IList<T> EditFields<T> (CalorieDietBurnEntry toEdit, IValueRequestFactory<T> factory)
+		{
+			var ret = CreationFields<T> (factory);
+			caloriesBurned.request.value = toEdit.kcals;
+			return ret;
+		}
+
+		public CalorieDietBurnEntry Edit (CalorieDietBurnEntry toEdit)
+		{
+			toEdit.kcals = caloriesBurned;
+			return toEdit;
+		}
+
+		public IList<T> EditFields<T> (CalorieDietBurnEntry toEdit, IValueRequestFactory<T> factory, FireInfo info)
+		{
+			var ret = CalculationFields<T> (factory, info);
+			caloriesBurned.request.value = toEdit.kcals;
+			return ret;
+		}
+
+		public CalorieDietBurnEntry Edit (CalorieDietBurnEntry toEdit, FireInfo info, bool shouldComplete)
+		{
+			if (info.calories == null && shouldComplete)
+				info.calories = caloriesBurned;
+			toEdit.kcals = (info.calories ?? caloriesBurned) * (burnTime.request.value.TotalHours / info.per_hour);
+			toEdit.entryDur = TimeSpan.FromHours(burnTime.request.value.TotalHours);
+			return toEdit;
+		}
 		#endregion
 	}
 

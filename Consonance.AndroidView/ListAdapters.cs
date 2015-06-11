@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Android.App;
 using Android.Views;
@@ -53,13 +54,13 @@ namespace Consonance.AndroidView
 		}
 		public override DietInstanceVM this [int index] { get { return vms [index]; } }
 	}
-	class LAdapter : BaseAdapter<EntryLineVM>
+	class LAdapter<T> : BaseAdapter<T>
 	{
 		readonly Activity context;
-		readonly List<EntryLineVM> vms;
+		readonly IReadOnlyList<T> vms;
 		readonly int uView;
-		readonly ViewConfiguror<EntryLineVM> uConfig;
-		public LAdapter(Activity context, List<EntryLineVM> vms, int viewID, ViewConfiguror<EntryLineVM> config)
+		readonly ViewConfiguror<T> uConfig;
+		public LAdapter(Activity context, IReadOnlyList<T> vms, int viewID, ViewConfiguror<T> config)
 		{
 			this.context = context;
 			this.vms = vms;
@@ -83,10 +84,9 @@ namespace Consonance.AndroidView
 				return vms.Count;
 			}
 		}
-		public override EntryLineVM this [int index] { get { return vms [index]; } }
+		public override T this [int index] { get { return vms [index]; } }
 		#endregion
 	}
-
 
 }
 

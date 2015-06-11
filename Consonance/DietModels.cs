@@ -23,7 +23,7 @@ namespace Consonance
 		public int dietinstanceid{get;set;}
 		public int? infoinstanceid{get;set;}
 		public DateTime entryWhen {get;set;}
-		public TimeSpan entryDur {get;set;}
+		public TimeSpan entryDur { get; set; }
 		public String entryName{ get; set; }
 	}
 	public class BaseEatEntry : BaseEntry 
@@ -32,7 +32,6 @@ namespace Consonance
 	}
 	public class BaseBurnEntry : BaseEntry 
 	{ 
-		public double? info_hours { get; set; }		
 	}
 
 	// when we're doing a diet here, created by diet class
@@ -122,7 +121,13 @@ namespace Consonance
 		// Ok, I've got info on this food (bananna, per 100g, only kcal info) - I still need "fat" and "grams"
 		IList<T> CalculationFields <T>(IValueRequestFactory<T> factory, InfoType info);
 		// right, heres the fat too, give me entry (broker will update that bananna info also)
-		EntryType Calculate(InfoType info, Predicate shouldComplete);
+		EntryType Calculate(InfoType info, bool shouldComplete);
+
+		// and again for editing
+		IList<T> EditFields<T> (EntryType toEdit, IValueRequestFactory<T> factory); 
+		EntryType Edit (EntryType toEdit);
+		IList<T> EditFields <T>(EntryType toEdit, IValueRequestFactory<T> factory, InfoType info);
+		EntryType Edit(EntryType toEdit, InfoType info, bool shouldComplete);
 
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
 		IList<T> InfoCreationFields<T>(IValueRequestFactory<T> factory);
@@ -162,6 +167,20 @@ namespace Consonance
 			di.ended = null;
 			conn.Insert (di as DietInstType);
 			return di;
+		}
+		public void EditDiet(DietInstType diet)
+		{
+			List<BaseEntry> orphans = new List<BaseEntry>();
+			orphans.AddRange (foodhandler.GetOrphans (diet));
+			orphans.AddRange (firehandler.GetOrphans (diet));
+			foreach (var e in orphans)
+				if (e.entryWhen < diet.started)
+					diet.started = e.entryWhen;
+			if (diet.ended.HasValue)
+				foreach (var e in orphans)
+					if (e.entryWhen > diet.ended)
+						diet.ended = e.entryWhen;
+			conn.Update (diet, typeof(DietInstType)); 
 		}
 		public void RemoveDiet(DietInstType rem)
 		{
@@ -212,15 +231,30 @@ namespace Consonance
 
 		#region IHandleDietPlanModels implementation
 		// eaties
-		public bool ShouldComplete()
+		bool ShouldComplete()
 		{
 			return true;
 		}
+		void CheckOrphans(D diet, EntryType entry)
+		{
+			bool updateDiet = false;
+			if (diet.started > entry.entryWhen) {
+				updateDiet = true;
+				diet.started = entry.entryWhen;
+			}
+			if (diet.ended != null && diet.ended < entry.entryWhen) {
+				updateDiet = true;
+				diet.ended = entry.entryWhen;
+			}
+			if (updateDiet)
+				conn.Update (diet, typeof(D));
+		}
 		public void Add (D diet, EntryInfoType info)
 		{
-			EntryType ent = creator.Calculate (info, ShouldComplete);
+			EntryType ent = creator.Calculate (info, ShouldComplete());
 			ent.dietinstanceid = diet.id;
 			ent.infoinstanceid = info.id;
+			CheckOrphans (diet, ent);
 			conn.Insert (ent as EntryType);
 		}
 		public void Add (D diet)
@@ -228,7 +262,24 @@ namespace Consonance
 			EntryType ent = creator.Create ();
 			ent.dietinstanceid = diet.id;
 			ent.infoinstanceid = null;
+			CheckOrphans (diet, ent);
 			conn.Insert (ent as EntryType);
+		}
+		public void Edit(EntryType ent, D diet, EntryInfoType info)
+		{
+			creator.Edit(ent, info, ShouldComplete());
+			ent.dietinstanceid = diet.id;
+			ent.infoinstanceid = info.id;
+			CheckOrphans (diet, ent);
+			conn.Update (ent as EntryType);
+		}
+		public void Edit(EntryType ent, D diet)
+		{
+			creator.Edit (ent);
+			ent.dietinstanceid = diet.id;
+			ent.infoinstanceid = null;
+			CheckOrphans (diet, ent);
+			conn.Update (ent as EntryType);
 		}
 		public void Remove (params EntryType[] tets)
 		{
@@ -240,9 +291,22 @@ namespace Consonance
 		{
 			return conn.Table<EntryType> ().Where (d => d.dietinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
 		}
+		public IEnumerable<EntryType> GetOrphans(D diet)
+		{
+			return conn.Table<EntryType> ().Where (d => 
+				d.dietinstanceid == diet.id &&  (
+					d.entryWhen < diet.started || 
+					(diet.ended != null && d.entryWhen > diet.ended)
+				)
+			);
+		}
 		public int Count ()
 		{
 			return conn.Table<EntryType> ().Count ();
+		}
+		public int Count (D diet)
+		{
+			return conn.Table<EntryType> ().Where(e=>e.dietinstanceid==diet.id).Count ();
 		}
 
 		#endregion

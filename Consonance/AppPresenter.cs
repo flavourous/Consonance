@@ -61,10 +61,8 @@ namespace Consonance
 			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter (), vrb);
 
 			// commanding...
-			view.addeatitemquick += View_addeatitemquick;
 			view.addeatitem += View_addeatitem;
 			view.removeeatitem += View_removeeatitem;
-			view.addburnitemquick += View_addburnitemquick;
 			view.addburnitem += View_addburnitem;
 			view.removeburnitem += View_removeburnitem;;
 			view.changeday += ChangeDay;
@@ -91,10 +89,8 @@ namespace Consonance
 		}
 		void View_removeburnitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.RemoveBurn (vm); }
 		void View_addburnitem () 					{ if (!VerifyDiet ()) return; cdh.FullBurn (cd); }
-		void View_addburnitemquick () 				{ if (!VerifyDiet ()) return; cdh.QuickBurn (cd); }
 		void View_removeeatitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.RemoveEat (vm); }
 		void View_addeatitem () 					{ if (!VerifyDiet ()) return; cdh.FullEat (cd); }
-		void View_addeatitemquick () 				{ if (!VerifyDiet ()) return; cdh.QuickEat (cd); }
 		void View_editeatitem (EntryLineVM vm) 		{ if (!VerifyDiet ()) return; cdh.EditEat (vm); }
 		void View_editburnitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.EditBurn (vm); }
 		bool VerifyDiet()
@@ -235,11 +231,11 @@ namespace Consonance
 		DietInstanceVM currentDiet { get; set; }
 
 		// eat
-		event Action addeatitem, addeatitemquick;
+		event Action addeatitem;
 		event Action<EntryLineVM> removeeatitem,editeatitem;
 
 		// burn
-		event Action addburnitem, addburnitemquick;
+		event Action addburnitem;
 		event Action<EntryLineVM> removeburnitem, editburnitem;
 
 		// plan (diet managment)
@@ -250,11 +246,12 @@ namespace Consonance
 	{
 		// User Input
 		void SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
+		void WarnConfirm (String action, Promise confirmed);
 	}
 	public interface IValueRequestBuilder<T>
 	{
 		// get generic set of values on a page thing
-		void GetValues (String title, BindingList<T> requests, Promise completed, int page, int pages);
+		void GetValues (String title, BindingList<T> requests, Promise<bool> completed, int page, int pages);
 
 		// VRO Factory Method
 		IValueRequestFactory<T> requestFactory { get; }

@@ -73,10 +73,8 @@ namespace Consonance.AndroidView
 		}
 
 		#region IView implementation
-		public event Action addburnitemquick = delegate{};
 		public event Action addburnitem = delegate{};
 		public event Action<EntryLineVM> removeburnitem = delegate{};
-		public event Action addeatitemquick = delegate{};
 		public event Action addeatitem = delegate{};
 		public event Action<EntryLineVM> removeeatitem = delegate{};
 		public event Action adddietinstance = delegate { };
@@ -109,7 +107,7 @@ namespace Consonance.AndroidView
 		}
 
 		class SetRet {
-			public LAdapter apt;
+			public LAdapter<EntryLineVM> apt;
 			public String name;
 		}
 
@@ -214,13 +212,23 @@ namespace Consonance.AndroidView
 					num = tkv.Value;
 					use = tkv.Key;
 				}
-			return new SetRet () { apt = new LAdapter (this, ll, vid, (v,vm) => cfg(v,vm,use) ), name = use };
+			return new SetRet () { apt = new LAdapter<EntryLineVM> (this, ll, vid, (v,vm) => cfg(v,vm,use) ), name = use };
 		}
 
 		#endregion
 
 
 		#region IUserInput implimentation
+
+		public void WarnConfirm (string action, Promise confirmed)
+		{
+			new AlertDialog.Builder (this)
+				.SetNegativeButton("Cancel", (o,a) => {})
+				.SetPositiveButton("OK", (o,a) => confirmed ())
+				.SetTitle ("Warning")
+				.SetMessage (action)
+				.Create().Show ();
+		}
 		Promise<int> SelectStringPromise;
 		IReadOnlyList<String> strings = null;
 		public void SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed)
@@ -240,12 +248,6 @@ namespace Consonance.AndroidView
 			switch (item.ItemId) {
 			case Resource.Id.addBurned:
 				addburnitem ();
-				break;
-			case Resource.Id.addBurnedQuick:
-				addburnitemquick ();
-				break;
-			case Resource.Id.addEatenQuick:
-				addeatitemquick ();
 				break;
 			case Resource.Id.addEaten:
 				addeatitem ();
