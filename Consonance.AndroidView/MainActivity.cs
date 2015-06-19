@@ -21,10 +21,57 @@ namespace Consonance.AndroidView
 	class TabDesc { public String name; public int layout; public int menu; public int contextmenu; }
 
 
+	class BoundCommands : IPlanCommands<ValueRequestWrapper>
+	{
+		#region IPlanCommands implementation
+		public readonly BoundRequestCaller<EntryLineVM> _eat = new BoundRequestCaller<EntryLineVM>();
+		public ICollectionEditorBoundCommands<EntryLineVM, ValueRequestWrapper> eat { get { return _eat; } }
+
+		public readonly BoundRequestCaller<InfoLineVM> _eatinfo = new BoundRequestCaller<InfoLineVM>();
+		public ICollectionEditorBoundCommands<InfoLineVM, ValueRequestWrapper> eatinfo { get { return _eatinfo; } }
+
+		public readonly BoundRequestCaller<EntryLineVM> _burn = new BoundRequestCaller<EntryLineVM>();
+		public ICollectionEditorBoundCommands<EntryLineVM, ValueRequestWrapper> burn { get { return _burn; } }
+
+		public readonly BoundRequestCaller<InfoLineVM> _burninfo = new BoundRequestCaller<InfoLineVM>();
+		public ICollectionEditorBoundCommands<InfoLineVM, ValueRequestWrapper> burninfo { get { return _burninfo; } }
+		#endregion
+	}
+
+	class LooseRequestCaller<T> : ICollectionEditorLooseCommands<T>
+	{
+		#region ICollectionEditorWeakCommands implementation
+		public event Action add = delegate { };
+		public event Action<T> remove= delegate { };
+		public event Action<T> edit= delegate { };
+		public event Action<T> select= delegate { };
+		#endregion
+		public void OnAdd() { add (); }
+		public void OnRemove(T t) { remove (t); }
+		public void OnEdit(T t) { edit (t); }
+		public void OnSelect(T t) { select (t); }
+	}
+	class BoundRequestCaller<T> : ICollectionEditorBoundCommands<T, ValueRequestWrapper>
+	{
+		#region ICollectionEditorBoundCommands implementation
+		public event Action<IValueRequestBuilder<ValueRequestWrapper>> add;
+		public event Action<T> remove;
+		public event Action<T, IValueRequestBuilder<ValueRequestWrapper>> edit;
+		#endregion
+		public void OnAdd(IValueRequestBuilder<ValueRequestWrapper> builder) { add (builder); }
+		public void OnRemove(T t) { remove (t); }
+		public void OnEdit(T t,IValueRequestBuilder<ValueRequestWrapper> builder) { edit (t, builder); }
+	}
 
 	[Activity (Label = "Consonance", MainLauncher=true, Icon = "@drawable/icon")]
 	public class MainActivity : Activity, ActionBar.ITabListener, IView, IUserInput
 	{
+		readonly AndroidRequestBuilder defaultBuilder;
+		public MainActivity()
+		{
+			defaultBuilder = new AndroidRequestBuilder (this);
+		}
+
 		TabDescList tabs = new TabDescList () {
 			{ "Eat", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu },
 			{ "Burn", Resource.Layout.Burn, Resource.Menu.BurnMenu, Resource.Menu.BurnEntryMenu },
@@ -62,28 +109,35 @@ namespace Consonance.AndroidView
 			}
 			if (ActionBar.SelectedNavigationIndex == 2) {
 				var pl = FindViewById<ListView> (Resource.Id.planlist);
-				pl.Adapter = plan;
+				pl.Adapter = planAdapter;
 				useContext = Resource.Menu.PlanEntryMenu;
 				SwitchHiglightDietInstance();
 				if (tabchanged) {
 					RegisterForContextMenu (pl);
-					pl.ItemClick += (sender, e) => selectdietinstance (plan [e.Position]);
+					pl.ItemClick += (sender, e) => _plan.OnSelect (planAdapter [e.Position]);
 				}
 			}
 		}
 
 		#region IView implementation
-		public event Action addburnitem = delegate{};
-		public event Action<EntryLineVM> removeburnitem = delegate{};
-		public event Action addeatitem = delegate{};
-		public event Action<EntryLineVM> removeeatitem = delegate{};
-		public event Action adddietinstance = delegate { };
-		public event Action<DietInstanceVM> selectdietinstance = delegate { };
-		public event Action<DietInstanceVM> removedietinstance = delegate { };
-		public event Action<DateTime> changeday = delegate{};
-		public event Action<EntryLineVM> editeatitem = delegate { };
-		public event Action<EntryLineVM> editburnitem = delegate { };
-		public event Action<DietInstanceVM> editdietinstance = delegate { };
+
+		public event Action<DateTime> changeday = delegate { };
+		readonly LooseRequestCaller<DietInstanceVM> _plan = new LooseRequestCaller<DietInstanceVM>();
+		public ICollectionEditorLooseCommands<DietInstanceVM> plan { get { return _plan; } }
+		public event Action<InfoManageType> manageInfo = delegate { };
+		ManageInfoActivity infoManager = new ManageInfoActivity();
+		public void ManageInfos (InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, Action finished)
+		{
+			// launch that manage activity...and erm pass it some hooks?? 
+			var mii = new ManageInfoIntent(
+				finished,
+				toManage, 
+				(mt == InfoManageType.Eat ? planCommands.eatinfo : planCommands.burninfo) as BoundRequestCaller<InfoLineVM>,
+				this, 
+				infoManager.Class
+				);
+			SendBroadcast (mii);
+		}
 
 		private DateTime _day;
 		public DateTime day 
@@ -179,18 +233,18 @@ namespace Consonance.AndroidView
 		void SwitchHiglightDietInstance()
 		{
 			if (ActionBar.SelectedNavigationIndex == 2) {
-				for (int i = 0; i < plan.Count; i++)
-					if (Object.ReferenceEquals (plan [i], _diet)) {
+				for (int i = 0; i < planAdapter.Count; i++)
+					if (Object.ReferenceEquals (planAdapter [i], _diet)) {
 						var pl = FindViewById<ListView> (Resource.Id.planlist);
 						pl.SetItemChecked (i, true);
 					}
 			}
 		}
-		DAdapter plan;
+		DAdapter planAdapter;
 		public void SetInstances (IEnumerable<DietInstanceVM> instanceitems)
 		{
 			var itms = new List<DietInstanceVM> (instanceitems);
-			plan = new DAdapter (this, itms);
+			planAdapter = new DAdapter (this, itms);
 			if(ActionBar.SelectedNavigationIndex==2)ReloadLayoutForTab ();
 		}
 		delegate void MyViewConfiguror<VMType>(View view, VMType vm, String use);
@@ -247,13 +301,19 @@ namespace Consonance.AndroidView
 		{
 			switch (item.ItemId) {
 			case Resource.Id.addBurned:
-				addburnitem ();
+				planCommands._burn.OnAdd (defaultBuilder);
 				break;
 			case Resource.Id.addEaten:
-				addeatitem ();
+				planCommands._eat.OnAdd (defaultBuilder);
 				break;
 			case Resource.Id.addPlan:
-				adddietinstance ();
+				_plan.OnAdd ();
+				break;
+			case Resource.Id.manageFoods:
+				manageInfo (InfoManageType.Eat);
+				break;
+			case Resource.Id.manageBurns:
+				manageInfo (InfoManageType.Burn);
 				break;
 			default:
 				break;
@@ -268,6 +328,7 @@ namespace Consonance.AndroidView
 			}
 			return base.OnPrepareOptionsMenu (menu);
 		}
+		BoundCommands planCommands = new BoundCommands ();
 		protected override void OnCreate (Bundle bundle)
 		{
 			base.OnCreate (bundle);
@@ -288,7 +349,7 @@ namespace Consonance.AndroidView
 			}
 
 			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
-			Presenter.Singleton.PresentTo (this, this, new AndroidRequestBuilder(this));
+			Presenter.Singleton.PresentTo (this, this, planCommands, defaultBuilder);
 		}
 		ListView slv;
 		Action<IMenuItem> selectAction;
@@ -326,16 +387,16 @@ namespace Consonance.AndroidView
 				dvm = (slv.Adapter as BaseAdapter<DietInstanceVM>) [pos];
 			switch (item.ItemId) {
 			case Resource.Id.removeEatEntry:
-				removeeatitem (evm);
+				planCommands._eat.OnRemove (evm);
 				break;
 			case Resource.Id.removeBurnEntry:
-				removeburnitem (evm);
+				planCommands._burn.OnRemove (evm);
 				break;
 			case Resource.Id.removePlanEntry:
-				removedietinstance (dvm);
+				_plan.OnRemove (dvm);
 				break;
 			case Resource.Id.editPlanEntry:
-				editdietinstance (dvm);
+				_plan.OnEdit (dvm);
 				break;
 			}
 		}

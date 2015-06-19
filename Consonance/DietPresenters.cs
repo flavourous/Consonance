@@ -63,7 +63,7 @@ namespace Consonance
 		public TrackingElementVM[] burnValues;
 		public double targetValue;
 	}
-	public class InfoLineVM
+	public class InfoLineVM : OriginatorVM
 	{
 		public String name;
 	}
@@ -99,21 +99,33 @@ namespace Consonance
 		void StartNewDiet();
 		void RemoveDiet (DietInstanceVM dvm);
 		void EditDiet (DietInstanceVM dvm);
-
-		// entries
-		void FullEat(DietInstanceVM to);
-		void RemoveEat(EntryLineVM toRemove);
-		void EditEat(EntryLineVM toEdit);
-		void FullBurn(DietInstanceVM to);
-		void RemoveBurn(EntryLineVM toRemove);
-		void EditBurn(EntryLineVM toEdit);
+		IEnumerable<InfoLineVM> EatInfos (bool onlycomplete);
+		IEnumerable<InfoLineVM> BurnInfos (bool onlycomplete);
+		event DietVMChangeEventHandler ViewModelsChanged;
 	}
-	enum DietVMChangeType { None, Instances, EatEntries, BurnEntries };
+	interface INotSoAbstractedDiet<IRO>
+	{
+		// entry ones
+		void AddEat (DietInstanceVM diet, IValueRequestBuilder<IRO> bld);
+		void RemoveEat (EntryLineVM evm);
+		void EditEat (EntryLineVM evm, IValueRequestBuilder<IRO> bld);
+		void AddEatInfo (IValueRequestBuilder<IRO> bld);
+		void RemoveEatInfo (InfoLineVM ivm);
+		void EditEatInfo (InfoLineVM ivm, IValueRequestBuilder<IRO> bld);
+		void AddBurn (DietInstanceVM diet, IValueRequestBuilder<IRO> bld);
+		void RemoveBurn (EntryLineVM evm);
+		void EditBurn (EntryLineVM evm, IValueRequestBuilder<IRO> bld);
+		void AddBurnInfo (IValueRequestBuilder<IRO> bld);
+		void RemoveBurnInfo (InfoLineVM ivm);
+		void EditBurnInfo (InfoLineVM ivm, IValueRequestBuilder<IRO> bld);
+	}
+	enum DietVMChangeType { None, Instances, EatEntries, BurnEntries, EatInfos, BurnInfos };
 	class DietVMChangeEventArgs
 	{
 		public DietVMChangeType changeType;
 	}
 	delegate void DietVMChangeEventHandler(IAbstractedDiet sender, DietVMChangeEventArgs args);
+	delegate DietInstanceVM DVMPuller();
 	/// <summary>
 	/// This contains all the code which the app would want to do to get viewmodels out of
 	/// implimentations, and retains the generic definitions therefore.
@@ -123,20 +135,20 @@ namespace Consonance
 	/// As such, it should obey a non-generic contract that the AppPresenter can easily consume and
 	/// query for data.
 	/// </summary>
-	class DietPresentationAbstractionHandler <IRO, DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDiet
+	class DietPresentationAbstractionHandler <IRO, DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDiet, INotSoAbstractedDiet<IRO>
 		where DietInstType : DietInstance, new()
 		where EatType : BaseEatEntry, new()
 		where EatInfoType : FoodInfo, new()
 		where BurnType : BaseBurnEntry, new()
 		where BurnInfoType : FireInfo, new()
 	{
-		readonly IValueRequestBuilder<IRO> getValues;
+		readonly IValueRequestBuilder<IRO> instanceBuilder;
 		readonly IUserInput getInput;
 		readonly IDietPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
 		readonly DietModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
 		readonly MyConn conn;
 		public DietPresentationAbstractionHandler(
-			IValueRequestBuilder<IRO> getValues, 
+			IValueRequestBuilder<IRO> instanceBuilder,
 			IUserInput getInput,
 			MyConn conn,
 			IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model,
@@ -144,8 +156,8 @@ namespace Consonance
 		)
 		{
 			// store objects
+			this.instanceBuilder = instanceBuilder;
 			this.getInput = getInput;
-			this.getValues = getValues;
 			this.presenter = presenter;
 			this.modelHandler = new DietModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
 			this.conn = conn;
@@ -161,6 +173,10 @@ namespace Consonance
 				changeType = DietVMChangeType.EatEntries;
 			if (e.Table.MappedType.Equals (typeof(BurnType)))
 				changeType = DietVMChangeType.BurnEntries;
+			if (e.Table.MappedType.Equals (typeof(EatInfoType)))
+				changeType = DietVMChangeType.EatInfos;
+			if (e.Table.MappedType.Equals (typeof(BurnInfoType)))
+				changeType = DietVMChangeType.BurnInfos;
 			if (changeType != DietVMChangeType.None)
 				ViewModelsChanged (this, new DietVMChangeEventArgs () { changeType = changeType });
 		}
@@ -220,6 +236,30 @@ namespace Consonance
 			if (!id.HasValue) return null;
 			return conn.Table<T> ().Where (e => e.id == id.Value).First();
 		}
+		public IEnumerable<InfoLineVM> EatInfos(bool complete)
+		{
+			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
+			var fis = conn.Table<EatInfoType> ();
+			if(complete) fis=fis.Where (modelHandler.model.foodcreator.IsInfoComplete);
+			foreach (var m in fis)
+			{
+				var vm = presenter.GetRepresentation (m);
+				vm.originator = m;
+				yield return vm;
+			}
+		}
+		public IEnumerable<InfoLineVM> BurnInfos(bool complete)
+		{
+			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
+			var fis = conn.Table<BurnInfoType> ();
+			if (complete) fis = fis.Where (modelHandler.model.firecreator.IsInfoComplete);
+			foreach (var m in fis)
+			{
+				var vm = presenter.GetRepresentation (m);
+				vm.originator = m;
+				yield return vm;
+			}
+		}
 		IEnumerable<O> ConvertMtoVM<O,I1,I2>(IEnumerable<I1> input, Func<I1,I2,O> convert, Func<I1,I2> findSecondInput)
 		{
 			foreach (I1 i in input)
@@ -233,16 +273,14 @@ namespace Consonance
 		public void StartNewDiet()
 		{
 			PageIt (
-				new List<DietWizardPage<IRO>> (modelHandler.model.DietCreationPages<IRO> (getValues.requestFactory)),
-				() => {
-					var di = modelHandler.StartNewDiet ();
-				}
+				new List<DietWizardPage<IRO>> (modelHandler.model.DietCreationPages<IRO> (instanceBuilder.requestFactory)),
+				() => modelHandler.StartNewDiet()
 			);
 		}
 		public void EditDiet (DietInstanceVM dvm)
 		{
 			PageIt (
-				new List<DietWizardPage<IRO>> (modelHandler.model.DietEditPages<IRO> (dvm.originator as DietInstType, getValues.requestFactory)),
+				new List<DietWizardPage<IRO>> (modelHandler.model.DietEditPages<IRO> (dvm.originator as DietInstType, instanceBuilder.requestFactory)),
 				() => {
 					modelHandler.EditDiet (dvm.originator as DietInstType);
 				}
@@ -250,7 +288,7 @@ namespace Consonance
 		}
 		void PageIt(List<DietWizardPage<IRO>> pages, Action complete, int page = 0)
 		{
-			getValues.GetValues(pages[page].title, new BindingList<IRO>(pages[page].valuerequests), b => {
+			instanceBuilder.GetValues(pages[page].title, new BindingList<IRO>(pages[page].valuerequests), b => {
 				if(++page < pages.Count) PageIt(pages, complete, page);
 				else complete();
 			}, page, pages.Count);
@@ -265,17 +303,21 @@ namespace Consonance
 					() => modelHandler.RemoveDiet (diet)
 				);
 		}
-			
-		public void FullEat (DietInstanceVM to) {
-			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.foodcreator, modelHandler.foodhandler, "Food", "Eat", presenter.GetRepresentation);
+
+		public void AddEat(DietInstanceVM to, IValueRequestBuilder<IRO> bld)
+		{
+			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.foodcreator, modelHandler.foodhandler, "Food", "Eat", EatInfos(false), bld);
 		}
-		public void FullBurn (DietInstanceVM to) {
-			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.firecreator, modelHandler.firehandler, "Burn", "Burn", presenter.GetRepresentation);
+		public void AddBurn(DietInstanceVM to, IValueRequestBuilder<IRO> bld)
+		{
+			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.firecreator, modelHandler.firehandler, "Burn", "Burn", BurnInfos(false), bld);
 		}
-		delegate InfoLineVM CreateInfoLineVM<T>(T input);
+
+
+
 		void Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
 			EntryHandler<DietInstType,T,I> handler, String infoName, String entryName,
-			CreateInfoLineVM<I> iconv, T editing = null) 
+			IEnumerable<InfoLineVM> infos, IValueRequestBuilder<IRO> getValues, T editing = null) 
 				where T : BaseEntry, new()
 				where I : BaseInfo, new()
 		{
@@ -284,14 +326,9 @@ namespace Consonance
 			var dateRequest = getValues.requestFactory.DateRequestor ("When");
 			var nameRequest = getValues.requestFactory.StringRequestor("Name");
 
-			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
-			var fis = new List<I> (conn.Table<I> ().Where (creator.IsInfoComplete));
-			var fi_vms = new List<InfoLineVM> ();
-			foreach (var m in fis)
-				fi_vms.Add (iconv(m));
-
 			// triggers code in factory
-			infoRequest.value = new InfoSelectValue () { choices = fi_vms, selected = -1 };
+			var fis = new List<InfoLineVM>(infos);
+			infoRequest.value = new InfoSelectValue () { choices = fis, selected = -1 };
 			dateRequest.value = DateTime.Now;
 
 			// Set up for editing
@@ -303,8 +340,8 @@ namespace Consonance
 						creator.EditFields (editing, getValues.requestFactory);						
 				else 
 					return editing == null ?
-						creator.CalculationFields (getValues.requestFactory, fis[selectedInfo]) :
-						creator.EditFields (editing, getValues.requestFactory, fis[selectedInfo]);
+						creator.CalculationFields (getValues.requestFactory, fis[selectedInfo].originator as I) :
+						creator.EditFields (editing, getValues.requestFactory, fis[selectedInfo].originator as I);
 			};
 			Action editit = () => {
 				if (selectedInfo < 0) {
@@ -314,9 +351,9 @@ namespace Consonance
 						handler.Edit (editing, diet);						
 				} else {
 					if (editing == null)
-						handler.Add (diet, fis [selectedInfo]);
+						handler.Add (diet, fis[selectedInfo].originator as I);
 					else
-						handler.Edit (editing, diet, fis [selectedInfo]);
+						handler.Edit (editing, diet, fis[selectedInfo].originator as I);
 				}
 			};
 
@@ -367,13 +404,53 @@ namespace Consonance
 			return dis.Count() == 0 ? null : dis.First();
 		}
 
-		public void EditEat (EntryLineVM ed) {
+		public void EditEat (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
 			var eat = ed.originator as EatType;
-			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.foodcreator, modelHandler.foodhandler, "Food", "Eat", presenter.GetRepresentation,eat);
+			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.foodcreator, modelHandler.foodhandler, "Food", "Eat", EatInfos(true),bld,eat);
 		}
-		public void EditBurn (EntryLineVM ed) {
+		public void EditBurn (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
 			var burn = ed.originator as BurnType;
-			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.firecreator, modelHandler.firehandler, "Burn", "Burn", presenter.GetRepresentation,burn);
+			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.firecreator, modelHandler.firehandler, "Burn", "Burn", BurnInfos(true), bld,burn);
+		}
+
+		public void AddEatInfo(IValueRequestBuilder<IRO> bld)
+		{
+			DoInfo<EatInfoType> ("Create a Food", modelHandler.model.foodcreator, modelHandler.foodhandler, bld);
+		}
+		public void EditEatInfo(InfoLineVM ivm, IValueRequestBuilder<IRO> bld)
+		{
+			DoInfo<EatInfoType> ("Edit Food", modelHandler.model.foodcreator, modelHandler.foodhandler, bld, ivm.originator as EatInfoType);
+		}
+		public void RemoveEatInfo(InfoLineVM ivm)
+		{
+			modelHandler.foodhandler.Remove (ivm.originator as EatInfoType);
+		}
+
+		void DoInfo<I>(String title, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder<IRO> builder, I toEdit = null)  where I : BaseInfo, new()
+		{
+			bool editing = toEdit != null;
+			builder.GetValues (
+				title,
+				creator.InfoFields<IRO>(builder.requestFactory, toEdit),
+				success => {
+					if(editing) handler.Edit(toEdit);
+					else handler.Add();
+				},
+				0,
+				1);
+		}
+
+		public void AddBurnInfo(IValueRequestBuilder<IRO> bld)
+		{
+			DoInfo<BurnInfoType> ("Create a Fire", modelHandler.model.firecreator, modelHandler.firehandler, bld);
+		}
+		public void EditBurnInfo(InfoLineVM ivm, IValueRequestBuilder<IRO> bld)
+		{
+			DoInfo<BurnInfoType> ("Edit Food", modelHandler.model.firecreator, modelHandler.firehandler, bld, ivm.originator as BurnInfoType);
+		}
+		public void RemoveBurnInfo(InfoLineVM ivm)
+		{
+			modelHandler.firehandler.Remove (ivm.originator as BurnInfoType);
 		}
 	}
 }

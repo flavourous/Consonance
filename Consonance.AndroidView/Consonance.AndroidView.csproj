@@ -57,6 +57,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ListAdapters.cs" />
     <Compile Include="ValueRequestHandler.cs" />
+    <Compile Include="ManageInfoActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -86,6 +87,8 @@
     <AndroidResource Include="Resources\layout\ValueRequests_Double.axml" />
     <AndroidResource Include="Resources\layout\ValueRequests_InfoSelect.axml" />
     <AndroidResource Include="Resources\layout\InfoComboVal.axml" />
+    <AndroidResource Include="Resources\layout\ManageInfoView.axml" />
+    <AndroidResource Include="Resources\layout\ManageInfoLine.axml" />
   </ItemGroup>
   <Import Project="..\Consonance\Consonance.projitems" Label="Shared" Condition="Exists('..\Consonance\Consonance.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />

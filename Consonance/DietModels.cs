@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 using SQLite;
@@ -104,35 +105,37 @@ namespace Consonance
 	public class DietWizardPage<T>
 	{
 		public readonly String title;
-		public readonly IList<T> valuerequests;
-		public DietWizardPage( String title, IList<T> req)
+		public readonly BindingList<T> valuerequests;
+		public DietWizardPage( String title, BindingList<T> req)
 		{
 			this.title = title;
 			valuerequests = req;
 		}
 	}
-	public interface IEntryCreation<EntryType, InfoType>
+	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
 	{
 		// What named fields do I need to fully create an entry (eg eating a banana) - "kcal", "fat"
-		IList<T> CreationFields<T> (IValueRequestFactory<T> factory); 
+		BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory); 
 		// Here's those values, give me the entry (ww points on eating a bananna) - broker wont attempt to remember a "item / info".
 		EntryType Create ();
 
 		// Ok, I've got info on this food (bananna, per 100g, only kcal info) - I still need "fat" and "grams"
-		IList<T> CalculationFields <T>(IValueRequestFactory<T> factory, InfoType info);
+		BindingList<T> CalculationFields <T>(IValueRequestFactory<T> factory, InfoType info);
 		// right, heres the fat too, give me entry (broker will update that bananna info also)
 		EntryType Calculate(InfoType info, bool shouldComplete);
 
 		// and again for editing
-		IList<T> EditFields<T> (EntryType toEdit, IValueRequestFactory<T> factory); 
+		BindingList<T> EditFields<T> (EntryType toEdit, IValueRequestFactory<T> factory); 
 		EntryType Edit (EntryType toEdit);
-		IList<T> EditFields <T>(EntryType toEdit, IValueRequestFactory<T> factory, InfoType info);
+		BindingList<T> EditFields <T>(EntryType toEdit, IValueRequestFactory<T> factory, InfoType info);
 		EntryType Edit(EntryType toEdit, InfoType info, bool shouldComplete);
-
+	}
+	public interface IInfoCreation<InfoType> where InfoType : class
+	{
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
-		IList<T> InfoCreationFields<T>(IValueRequestFactory<T> factory);
+		BindingList<T> InfoFields<T>(IValueRequestFactory<T> factory, InfoType willEdit=null);
 		// ok make me an info please here's that data.
-		InfoType CreateInfo ();
+		InfoType MakeInfo (InfoType toEdit=null);
 		// ok is this info like complete for your diety? yes. ffs.
 		Expression<Func<InfoType,bool>> IsInfoComplete { get; }
 	}
@@ -164,7 +167,6 @@ namespace Consonance
 		public DietInstType StartNewDiet()
 		{
 			var di = model.NewDiet ();
-			di.ended = null;
 			conn.Insert (di as DietInstType);
 			return di;
 		}
@@ -212,7 +214,15 @@ namespace Consonance
 
 	}
 
-	class EntryHandler<D, EntryType,EntryInfoType>
+
+	interface IInfoHandler<EntryInfoType> where EntryInfoType : BaseInfo, new()
+	{
+		void Add ();
+		void Edit(EntryInfoType editing);
+		void Remove(EntryInfoType removing);
+	}
+
+	class EntryHandler<D, EntryType,EntryInfoType> : IInfoHandler<EntryInfoType>
 		where D : DietInstance, new()
 		where EntryType : BaseEntry, new()
 		where EntryInfoType : BaseInfo, new()
@@ -310,6 +320,28 @@ namespace Consonance
 		}
 
 		#endregion
+
+		#region IInfoHandler implementation
+
+		public void Add ()
+		{
+			var mod = creator.MakeInfo ();
+			conn.Insert (mod, typeof(EntryInfoType));
+		}
+
+		public void Edit (EntryInfoType editing)
+		{
+			creator.MakeInfo (editing);
+			conn.Update (editing, typeof(EntryInfoType));
+		}
+
+		public void Remove (EntryInfoType removing)
+		{
+			conn.Delete (removing);
+		}
+
+		#endregion
 	}
+
 	#endregion
 }

@@ -130,6 +130,7 @@ namespace Consonance.AndroidView
 		public bool hasInitial { get; set; }
 		public bool lostInitial { get; set; } 
 		public event Action changed = delegate { };
+		public event Action ended = delegate { };
 		public bool enabled { get; set; }
 		public bool valid { get; set; } 
 
@@ -196,6 +197,12 @@ namespace Consonance.AndroidView
 		public DateTime value { get; set; }
 		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
 	}
+	class BoolRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, bool>
+	{
+		public BoolRequestWrapper(String n, Activity a) : base(n,a) { }
+		public bool value { get; set; }
+		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
+	}
 	class ValueRequestFactory : IValueRequestFactory<ValueRequestWrapper>
 	{
 		readonly Activity act;
@@ -209,6 +216,7 @@ namespace Consonance.AndroidView
 		public IValueRequest<ValueRequestWrapper, TimeSpan> TimeSpanRequestor (string name) { return new TimeSpanRequestWrapper (name,act); }
 		public IValueRequest<ValueRequestWrapper, DateTime> DateRequestor(String name) { return new DateTimeRequestWrapper (name,act); }
 		public IValueRequest<ValueRequestWrapper, InfoSelectValue> InfoLineVMRequestor(String name) { return new InfoSelectRequestWrapper (name,act); }
+		public IValueRequest<ValueRequestWrapper, bool> BoolRequestor(String name) { return new BoolRequestWrapper (name,act); }
 		#endregion
 	}
 }

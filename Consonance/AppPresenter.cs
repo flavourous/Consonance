@@ -7,6 +7,64 @@ using System.IO;
 
 namespace Consonance
 {
+	public class ChangeTriggerList<T> : List<T>
+	{
+		public event Action Changed = delegate { };
+		public void OnChanged() { Changed (); }
+	}
+
+	class PlanCommandManager<IRO> 
+	{
+		INotSoAbstractedDiet<IRO> cdh;
+		DietInstanceVM cd;
+		readonly Func<DietInstanceVM> getCurrent;
+		public PlanCommandManager(IPlanCommands<IRO> commands, Func<DietInstanceVM> getCurrent)
+		{
+			// remember it
+			this.getCurrent = getCurrent;
+
+			// commanding for pland
+			commands.eat.add += View_addeatitem;
+			commands.eat.remove += View_removeeatitem;
+			commands.eat.edit += View_editeatitem;
+			commands.eatinfo.add += View_addeatinfo;
+			commands.eatinfo.remove += View_removeeatinfo;
+			commands.eatinfo.edit += View_editeatinfo;
+			commands.burn.add += View_addburnitem;
+			commands.burn.remove += View_removeburnitem;
+			commands.burn.edit += View_editburnitem;
+			commands.burninfo.add += View_addburninfo;
+			commands.burninfo.remove += View_removeburninfo;
+			commands.burninfo.edit += View_editburninfo;
+
+		}
+
+		void View_addeatitem (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddEat (cd,bld); }
+		void View_removeeatitem (EntryLineVM vm) 								{ if (!VerifyDiet ()) return; cdh.RemoveEat (vm); }
+		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditEat (vm,bld); }
+		void View_addeatinfo (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddEatInfo (bld); }
+		void View_removeeatinfo (InfoLineVM vm) 								{ if (!VerifyDiet ()) return; cdh.RemoveEatInfo (vm); }
+		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditEatInfo (vm,bld); }
+		void View_addburnitem (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddBurn (cd,bld); }
+		void View_removeburnitem (EntryLineVM vm)							 	{ if (!VerifyDiet ()) return; cdh.RemoveBurn (vm); }
+		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditBurn (vm,bld); }
+		void View_addburninfo (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddBurnInfo (bld); }
+		void View_removeburninfo (InfoLineVM vm)							 	{ if (!VerifyDiet ()) return; cdh.RemoveBurnInfo (vm); }
+		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditBurnInfo (vm,bld); }
+
+		bool VerifyDiet()
+		{
+			cd = getCurrent();
+			if (cd == null) {
+				// ping the view about being stupid.
+				cdh = null;
+				return false;
+			}
+			cdh = cd.sender as INotSoAbstractedDiet<IRO>;
+			return true;
+		}
+	}
+
 	[System.Reflection.Obfuscation(Exclude=true, ApplyToMembers=true)]
 	class MyConn : SQLiteConnection
 	{
@@ -52,33 +110,69 @@ namespace Consonance
 		// present app logic domain to this view.
 		IView view;
 		IUserInput input;
-		DietInstanceVM cd {get{return view.currentDiet;}}
-		IAbstractedDiet cdh {get{return view.currentDiet.sender as IAbstractedDiet;}}
-		public void PresentTo<VRO>(IView view, IUserInput input, IValueRequestBuilder<VRO> vrb)
+		Object pcm_refholder;
+		public void PresentTo<VRO>(IView view, IUserInput input, IPlanCommands<VRO> commands, IValueRequestBuilder<VRO> defBuilder)
 		{
 			this.view = view;
 			this.input = input;
-			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter (), vrb);
+			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter (), defBuilder);
 
 			// commanding...
-			view.addeatitem += View_addeatitem;
-			view.removeeatitem += View_removeeatitem;
-			view.addburnitem += View_addburnitem;
-			view.removeburnitem += View_removeburnitem;;
+			view.plan.add += Handleadddietinstance;
+			view.plan.select += View_selectdietinstance;
+			view.plan.remove += Handleremovedietinstance;
+			view.plan.edit += View_editdietinstance;
+
+			// more commanding...
 			view.changeday += ChangeDay;
-			view.adddietinstance += Handleadddietinstance;
-			view.selectdietinstance += View_selectdietinstance;
-			view.removedietinstance += Handleremovedietinstance;
-			view.editeatitem += View_editeatitem;
-			view.editburnitem += View_editburnitem;
-			view.editdietinstance += View_editdietinstance;
+			view.manageInfo += View_manageInfo;
+
+			pcm_refholder = new PlanCommandManager<VRO> (commands, () => view.currentDiet);
 
 			// setup view
 			PushDietInstances ();
 			ChangeDay (DateTime.UtcNow);
 		}
 
+		void View_manageInfo (InfoManageType obj)
+		{
+			if (view.currentDiet == null) return;
+			var cdh = view.currentDiet.sender as IAbstractedDiet;
+			ChangeTriggerList<InfoLineVM> lines = new ChangeTriggerList<InfoLineVM> ();
 
+			DietVMChangeEventHandler cdel = (sender, args) => {
+				switch(args.changeType)
+				{
+				case DietVMChangeType.EatInfos:
+					if(obj == InfoManageType.Eat)
+						PushInLinesAndFire (obj, lines);
+					break;
+				case DietVMChangeType.BurnInfos:
+					if(obj == InfoManageType.Burn)
+						PushInLinesAndFire (obj, lines);
+					break;
+				}
+			};
+			Action finished = () => cdh.ViewModelsChanged -= cdel;
+			cdh.ViewModelsChanged += cdel;
+			PushInLinesAndFire (obj, lines);
+			view.ManageInfos(obj, lines, finished);
+		}
+			
+		void PushInLinesAndFire(InfoManageType mt, ChangeTriggerList<InfoLineVM> bl)
+		{
+			var cdh = view.currentDiet.sender as IAbstractedDiet;
+			bl.Clear ();
+			switch (mt) {
+			case InfoManageType.Eat:
+				bl.AddRange (cdh.EatInfos (false));
+				break;
+			case InfoManageType.Burn:
+				bl.AddRange (cdh.BurnInfos (false));
+				break;
+			}
+			bl.OnChanged ();
+		}
 			
 		void View_selectdietinstance (DietInstanceVM obj)
 		{
@@ -86,20 +180,6 @@ namespace Consonance
 			PushEatLines();
 			PushBurnLines();
 			PushTracking();	
-		}
-		void View_removeburnitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.RemoveBurn (vm); }
-		void View_addburnitem () 					{ if (!VerifyDiet ()) return; cdh.FullBurn (cd); }
-		void View_removeeatitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.RemoveEat (vm); }
-		void View_addeatitem () 					{ if (!VerifyDiet ()) return; cdh.FullEat (cd); }
-		void View_editeatitem (EntryLineVM vm) 		{ if (!VerifyDiet ()) return; cdh.EditEat (vm); }
-		void View_editburnitem (EntryLineVM vm) 	{ if (!VerifyDiet ()) return; cdh.EditBurn (vm); }
-		bool VerifyDiet()
-		{
-			if (cd == null) {
-				// ping the view about being stupid.
-				return false;
-			}
-			return true;
 		}
 
 		DateTime ds,de;
@@ -180,14 +260,14 @@ namespace Consonance
 		}
 			
 		List<IAbstractedDiet> dietHandlers = new List<IAbstractedDiet>();
-		void AddDietPair<VRO, D,E,Ei,B,Bi>(IDietModel<D,E,Ei,B,Bi> dietModel, IDietPresenter<D,E,Ei,B,Bi> dietPresenter, IValueRequestBuilder<VRO> vro)
+		void AddDietPair<VRO, D,E,Ei,B,Bi>(IDietModel<D,E,Ei,B,Bi> dietModel, IDietPresenter<D,E,Ei,B,Bi> dietPresenter, IValueRequestBuilder<VRO> defBuilder)
 			where D : DietInstance, new()
 			where E  : BaseEatEntry,new() 
 			where Ei : FoodInfo,new() 
 			where B  : BaseBurnEntry,new() 
 			where Bi : FireInfo,new() 
 		{
-			var presentationHandler = new DietPresentationAbstractionHandler<VRO, D,E,Ei,B,Bi> (vro, input, conn, dietModel, dietPresenter);
+			var presentationHandler = new DietPresentationAbstractionHandler<VRO, D,E,Ei,B,Bi> (defBuilder, input, conn, dietModel, dietPresenter);
 			dietHandlers.Add (presentationHandler);
 			presentationHandler.ViewModelsChanged += HandleViewModelsChanged;
 		}
@@ -229,18 +309,33 @@ namespace Consonance
 		event Action<DateTime> changeday;
 		DateTime day { get; set; }
 		DietInstanceVM currentDiet { get; set; }
+		ICollectionEditorLooseCommands<DietInstanceVM> plan { get; }
 
-		// eat
-		event Action addeatitem;
-		event Action<EntryLineVM> removeeatitem,editeatitem;
-
-		// burn
-		event Action addburnitem;
-		event Action<EntryLineVM> removeburnitem, editburnitem;
-
-		// plan (diet managment)
-		event Action adddietinstance;
-		event Action<DietInstanceVM> selectdietinstance, removedietinstance, editdietinstance;
+		event Action<InfoManageType> manageInfo;
+		// these fire to trigger managment of eat or burn infos
+		void ManageInfos(InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, Action finished); // which ends up calling this one
+		// and the plancommands get called by the view for stuff...
+	}
+	public enum InfoManageType { Eat, Burn };
+	public interface IPlanCommands<IRO>
+	{
+		ICollectionEditorBoundCommands<EntryLineVM, IRO> eat { get; }
+		ICollectionEditorBoundCommands<InfoLineVM, IRO> eatinfo { get; }
+		ICollectionEditorBoundCommands<EntryLineVM, IRO> burn { get; }
+		ICollectionEditorBoundCommands<InfoLineVM, IRO> burninfo { get; }
+	}
+	public interface ICollectionEditorBoundCommands<T, IRO> 
+	{
+		event Action<IValueRequestBuilder<IRO>> add;
+		event Action<T> remove;
+		event Action<T, IValueRequestBuilder<IRO>> edit;
+	}
+	public interface ICollectionEditorLooseCommands<T>
+	{
+		event Action add;
+		event Action<T> remove;
+		event Action<T> edit;
+		event Action<T> select;
 	}
 	public interface IUserInput
 	{
@@ -248,13 +343,13 @@ namespace Consonance
 		void SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
 		void WarnConfirm (String action, Promise confirmed);
 	}
-	public interface IValueRequestBuilder<T>
+	public interface IValueRequestBuilder<IRO>
 	{
 		// get generic set of values on a page thing
-		void GetValues (String title, BindingList<T> requests, Promise<bool> completed, int page, int pages);
+		void GetValues (String title, BindingList<IRO> requests, Promise<bool> completed, int page, int pages);
 
 		// VRO Factory Method
-		IValueRequestFactory<T> requestFactory { get; }
+		IValueRequestFactory<IRO> requestFactory { get; }
 	}
 	public interface IValueRequestFactory<T>
 	{
@@ -263,6 +358,7 @@ namespace Consonance
 		IValueRequest<T, DateTime> DateRequestor(String name);
 		IValueRequest<T, TimeSpan> TimeSpanRequestor(String name);
 		IValueRequest<T, double> DoubleRequestor(String name);
+		IValueRequest<T, bool> BoolRequestor(String name);
 	}
 	public class InfoSelectValue
 	{
@@ -276,9 +372,7 @@ namespace Consonance
 	public interface IRequest<V>
 	{
 		V value { get; set; } // set by view when done, and set by view to indicate an initial value.
-		bool hasInitial { set; } // for when value was initialised
-		bool lostInitial { set; } // for when (eg editing) there was a value entered by user previously, but it was not stored.
-		event Action changed; // so model domain can change the flags
+		event Action changed, ended; // so model domain can change the flags
 		bool enabled { set; } // so the model domain can communicate what fields should be in action (for combining quick and calculate entries)
 		bool valid { set; } // if we want to check the value set is ok
 	}

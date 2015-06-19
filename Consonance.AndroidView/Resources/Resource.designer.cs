@@ -90,14 +90,17 @@ namespace Consonance
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f08001e
-			public const int addBurned = 2131230750;
+			// aapt resource value: 0x7f08001d
+			public const int add = 2131230749;
 			
-			// aapt resource value: 0x7f080020
-			public const int addEaten = 2131230752;
+			// aapt resource value: 0x7f080024
+			public const int addBurned = 2131230756;
 			
-			// aapt resource value: 0x7f080023
-			public const int addPlan = 2131230755;
+			// aapt resource value: 0x7f080027
+			public const int addEaten = 2131230759;
+			
+			// aapt resource value: 0x7f08002b
+			public const int addPlan = 2131230763;
 			
 			// aapt resource value: 0x7f080006
 			public const int burnTrackText = 2131230726;
@@ -122,6 +125,9 @@ namespace Consonance
 			
 			// aapt resource value: 0x7f080000
 			public const int burnpage = 2131230720;
+			
+			// aapt resource value: 0x7f08001b
+			public const int delete = 2131230747;
 			
 			// aapt resource value: 0x7f08000a
 			public const int dietitemdatetime = 2131230730;
@@ -156,11 +162,14 @@ namespace Consonance
 			// aapt resource value: 0x7f08000d
 			public const int eatpage = 2131230733;
 			
-			// aapt resource value: 0x7f080022
-			public const int editPlanEntry = 2131230754;
+			// aapt resource value: 0x7f08001c
+			public const int edit = 2131230748;
 			
-			// aapt resource value: 0x7f080019
-			public const int flb = 2131230745;
+			// aapt resource value: 0x7f08002a
+			public const int editPlanEntry = 2131230762;
+			
+			// aapt resource value: 0x7f08001f
+			public const int flb = 2131230751;
 			
 			// aapt resource value: 0x7f080002
 			public const int flbBurn = 2131230722;
@@ -174,29 +183,44 @@ namespace Consonance
 			// aapt resource value: 0x7f080001
 			public const int frameLayout1burn = 2131230721;
 			
-			// aapt resource value: 0x7f08001b
-			public const int name = 2131230747;
-			
-			// aapt resource value: 0x7f080018
-			public const int plan = 2131230744;
+			// aapt resource value: 0x7f080019
+			public const int infolist = 2131230745;
 			
 			// aapt resource value: 0x7f08001a
-			public const int planlist = 2131230746;
+			public const int ll = 2131230746;
 			
-			// aapt resource value: 0x7f08001d
-			public const int removeBurnEntry = 2131230749;
+			// aapt resource value: 0x7f080025
+			public const int manageBurns = 2131230757;
 			
-			// aapt resource value: 0x7f08001f
-			public const int removeEatEntry = 2131230751;
+			// aapt resource value: 0x7f080028
+			public const int manageFoods = 2131230760;
 			
 			// aapt resource value: 0x7f080021
-			public const int removePlanEntry = 2131230753;
+			public const int name = 2131230753;
+			
+			// aapt resource value: 0x7f08001e
+			public const int plan = 2131230750;
+			
+			// aapt resource value: 0x7f080020
+			public const int planlist = 2131230752;
+			
+			// aapt resource value: 0x7f080023
+			public const int removeBurnEntry = 2131230755;
+			
+			// aapt resource value: 0x7f080026
+			public const int removeEatEntry = 2131230758;
+			
+			// aapt resource value: 0x7f080029
+			public const int removePlanEntry = 2131230761;
+			
+			// aapt resource value: 0x7f080018
+			public const int rl = 2131230744;
 			
 			// aapt resource value: 0x7f080017
 			public const int value = 2131230743;
 			
-			// aapt resource value: 0x7f08001c
-			public const int values = 2131230748;
+			// aapt resource value: 0x7f080022
+			public const int values = 2131230754;
 			
 			static Id()
 			{
@@ -230,16 +254,22 @@ namespace Consonance
 			public const int InfoComboVal = 2130903045;
 			
 			// aapt resource value: 0x7f030006
-			public const int Plan = 2130903046;
+			public const int ManageInfoLine = 2130903046;
 			
 			// aapt resource value: 0x7f030007
-			public const int ValueRequests_Double = 2130903047;
+			public const int ManageInfoView = 2130903047;
 			
 			// aapt resource value: 0x7f030008
-			public const int ValueRequests_InfoSelect = 2130903048;
+			public const int Plan = 2130903048;
 			
 			// aapt resource value: 0x7f030009
-			public const int ValueRequests_String = 2130903049;
+			public const int ValueRequests_Double = 2130903049;
+			
+			// aapt resource value: 0x7f03000a
+			public const int ValueRequests_InfoSelect = 2130903050;
+			
+			// aapt resource value: 0x7f03000b
+			public const int ValueRequests_String = 2130903051;
 			
 			static Layout()
 			{
