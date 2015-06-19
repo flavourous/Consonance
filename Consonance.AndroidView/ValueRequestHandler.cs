@@ -185,16 +185,17 @@ namespace Consonance.AndroidView
 		}
 		protected override int inputID { get { return Resource.Layout.ValueRequests_InfoSelect; } }
 	}
+	class DateTimeRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, DateTime>
+	{
+		public DateTimeRequestWrapper (String n, Activity a) : base(n,a) { }
+		DatePicker dp { get { return inputView.FindViewById<DatePicker> (Resource.Id.value); } }
+		public DateTime value { get { return dp.DateTime; } set { dp.DateTime = value; } }
+		protected override int inputID { get { return Resource.Layout.ValueRequests_DateTime; } }
+	}
 	class TimeSpanRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, TimeSpan>
 	{
 		public TimeSpanRequestWrapper (String n, Activity a) : base(n,a) { }
 		public TimeSpan value { get; set; }
-		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
-	}
-	class DateTimeRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, DateTime>
-	{
-		public DateTimeRequestWrapper (String n, Activity a) : base(n,a) { }
-		public DateTime value { get; set; }
 		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
 	}
 	class BoolRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, bool>

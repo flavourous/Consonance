@@ -323,13 +323,10 @@ namespace Consonance
 		{
 			// get a request object for infos
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + infoName);
-			var dateRequest = getValues.requestFactory.DateRequestor ("When");
-			var nameRequest = getValues.requestFactory.StringRequestor("Name");
 
 			// triggers code in factory
 			var fis = new List<InfoLineVM>(infos);
 			infoRequest.value = new InfoSelectValue () { choices = fis, selected = -1 };
-			dateRequest.value = DateTime.Now;
 
 			// Set up for editing
 			int selectedInfo = -1;

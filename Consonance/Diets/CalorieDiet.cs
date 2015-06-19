@@ -84,10 +84,15 @@ namespace Consonance
 		#region IEntryCreation implementation
 		RequestStorageHelper<double> calories = new RequestStorageHelper<double> ("calories");
 		RequestStorageHelper<double> grams = new RequestStorageHelper<double> ("grams");
+		RequestStorageHelper<String> name = new RequestStorageHelper<string> ("name");
+		RequestStorageHelper<DateTime> when = new RequestStorageHelper<DateTime>("when", () => DateTime.Now);
+
 		public BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory)
 		{
 			return new BindingList<T> 
 			{
+				name.CGet(factory.StringRequestor),
+				when.CGet(factory.DateRequestor),
 				calories.CGet(factory.DoubleRequestor)
 			};
 		}
@@ -97,8 +102,11 @@ namespace Consonance
 		}
 		public BindingList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FoodInfo info)
 		{
-			var needed = new BindingList<T> ();
-			needed.Add (grams.CGet(factory.DoubleRequestor));
+			var needed = new BindingList<T> () {
+				name.CGet(factory.StringRequestor),
+				when.CGet(factory.DateRequestor),				
+				grams.CGet (factory.DoubleRequestor),
+			};
 			if (!info.calories.HasValue)
 				needed.Add (calories.CGet (factory.DoubleRequestor));
 			return needed;
@@ -154,6 +162,8 @@ namespace Consonance
 				info.calories = calories;
 			toEdit.kcals = (info.calories ?? calories) * ((grams / 100.0) / info.per_hundred_grams);
 			toEdit.info_grams = grams;
+			toEdit.entryName = name;
+			toEdit.entryWhen = when;
 			return toEdit;
 		}
 		#endregion
@@ -163,9 +173,13 @@ namespace Consonance
 		#region IEntryCreation implementation
 		RequestStorageHelper<double> caloriesBurned = new RequestStorageHelper<double>("Calories Burned");
 		RequestStorageHelper<TimeSpan> burnTime = new RequestStorageHelper<TimeSpan>("Burn Duration");
+		RequestStorageHelper<String> name = new RequestStorageHelper<string> ("name");
+		RequestStorageHelper<DateTime> when = new RequestStorageHelper<DateTime>("when");
 		public BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory)
 		{
 			return new BindingList<T> { 
+				name.CGet(factory.StringRequestor),
+				when.CGet(factory.DateRequestor),				
 				caloriesBurned.CGet (factory.DoubleRequestor),
 			};
 		}
@@ -177,8 +191,11 @@ namespace Consonance
 		}
 		public BindingList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FireInfo info)
 		{
-			var needs = new BindingList<T> ();
-			needs.Add (burnTime.CGet (factory.TimeSpanRequestor));
+			var needs = new BindingList<T> {
+				name.CGet(factory.StringRequestor),
+				when.CGet(factory.DateRequestor),				
+				burnTime.CGet (factory.TimeSpanRequestor)
+			};
 			if (info.calories.HasValue)
 				needs.Add (caloriesBurned.CGet(factory.DoubleRequestor));
 			return needs;
@@ -233,6 +250,8 @@ namespace Consonance
 				info.calories = caloriesBurned;
 			toEdit.kcals = (info.calories ?? caloriesBurned) * (burnTime.request.value.TotalHours / info.per_hour);
 			toEdit.entryDur = TimeSpan.FromHours(burnTime.request.value.TotalHours);
+			toEdit.entryName = name;
+			toEdit.entryWhen = when;
 			return toEdit;
 		}
 		#endregion

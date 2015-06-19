@@ -380,6 +380,14 @@ namespace Consonance
 	{
 		public IRequest<V> request { get; private set; }
 		readonly String name;
+		readonly Func<V> defaultValue = () => default(V);
+		readonly bool resetOnCGet = false;
+		public RequestStorageHelper(String requestName, Func<V> defaultValue)
+		{
+			this.resetOnCGet = true;
+			this.defaultValue = defaultValue;
+			name = requestName;
+		}
 		public RequestStorageHelper(String requestName)
 		{
 			name = requestName;
@@ -388,6 +396,8 @@ namespace Consonance
 		{
 			if (request == null)
 				request = creator (name);
+			if (resetOnCGet)
+				request.value = defaultValue();
 			return (request as IValueRequest<T,V>).request;
 		}
 		public static implicit operator V (RequestStorageHelper<V> me)

@@ -263,13 +263,16 @@ namespace Consonance
 			public const int Plan = 2130903048;
 			
 			// aapt resource value: 0x7f030009
-			public const int ValueRequests_Double = 2130903049;
+			public const int ValueRequests_DateTime = 2130903049;
 			
 			// aapt resource value: 0x7f03000a
-			public const int ValueRequests_InfoSelect = 2130903050;
+			public const int ValueRequests_Double = 2130903050;
 			
 			// aapt resource value: 0x7f03000b
-			public const int ValueRequests_String = 2130903051;
+			public const int ValueRequests_InfoSelect = 2130903051;
+			
+			// aapt resource value: 0x7f03000c
+			public const int ValueRequests_String = 2130903052;
 			
 			static Layout()
 			{
