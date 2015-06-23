@@ -114,6 +114,9 @@ namespace Consonance
 	}
 	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
 	{
+		// ok you can clear stored data now
+		void ResetRequests();
+
 		// What named fields do I need to fully create an entry (eg eating a banana) - "kcal", "fat"
 		BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory); 
 		// Here's those values, give me the entry (ww points on eating a bananna) - broker wont attempt to remember a "item / info".

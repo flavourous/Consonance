@@ -6,7 +6,9 @@
     <ListView
         android:id="@+id/infolist"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:choiceMode="singleChoice"
+        android:listSelector="@drawable/DietInstanceLineSelector" />
     <LinearLayout
         android:id="@+id/ll"
         android:layout_alignParentBottom="true"

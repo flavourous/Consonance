@@ -372,7 +372,8 @@ namespace Consonance
 	public interface IRequest<V>
 	{
 		V value { get; set; } // set by view when done, and set by view to indicate an initial value.
-		event Action changed, ended; // so model domain can change the flags
+		event Action changed; // so model domain can change the flags
+		void ClearListeners();
 		bool enabled { set; } // so the model domain can communicate what fields should be in action (for combining quick and calculate entries)
 		bool valid { set; } // if we want to check the value set is ok
 	}
@@ -381,23 +382,27 @@ namespace Consonance
 		public IRequest<V> request { get; private set; }
 		readonly String name;
 		readonly Func<V> defaultValue = () => default(V);
-		readonly bool resetOnCGet = false;
-		public RequestStorageHelper(String requestName, Func<V> defaultValue)
+		readonly Action validate;
+		public RequestStorageHelper(String requestName, Func<V> defaultValue, Action validate)
 		{
-			this.resetOnCGet = true;
+			this.validate = validate;
 			this.defaultValue = defaultValue;
 			name = requestName;
 		}
-		public RequestStorageHelper(String requestName)
+		public void Reset()
 		{
-			name = requestName;
+			request.ClearListeners ();
+			request.value = defaultValue ();
 		}
+		// will return cached instance if possible, but will do defaulting if specified and will
+		// always call ClearListeners, so that old registrations to the changed event are no longer called.
 		public T CGet<T>(Func<String,IValueRequest<T,V>> creator)
 		{
-			if (request == null)
+			if (request == null) {
 				request = creator (name);
-			if (resetOnCGet)
-				request.value = defaultValue();
+				request.changed += validate;
+			}
+			request.ClearListeners ();
 			return (request as IValueRequest<T,V>).request;
 		}
 		public static implicit operator V (RequestStorageHelper<V> me)

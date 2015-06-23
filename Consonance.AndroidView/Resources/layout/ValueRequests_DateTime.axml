@@ -4,15 +4,15 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content">
     <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/name"
-        android:gravity="center" />
-    <DatePicker
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/name"
+        android:id="@+id/name"
+        android:text="daaaae" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/name"
         android:id="@+id/value"
-        android:layout_alignParentBottom="true"
-        android:calendarViewShown="false" />
+        android:layout_alignParentRight="true"
+        android:text="daaaae" />
 </RelativeLayout>

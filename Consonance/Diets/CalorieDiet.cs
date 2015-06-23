@@ -21,13 +21,26 @@ namespace Consonance
 	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		public String name { get { return "Calorie Diet"; } }
-		RequestStorageHelper<String> dietName = new RequestStorageHelper<string> ("Diet Name");
-		RequestStorageHelper<double> dietCalLim = new RequestStorageHelper<double> ("Calorie Limit");
-		RequestStorageHelper<DateTime> dietStart = new RequestStorageHelper<DateTime> ("Start Date");
-		RequestStorageHelper<bool> dietEnded = new RequestStorageHelper<bool> ("Ended");
-		RequestStorageHelper<DateTime> dietEnd = new RequestStorageHelper<DateTime> ("End Date");
+		RequestStorageHelper<String> dietName;
+		RequestStorageHelper<double> dietCalLim;
+		RequestStorageHelper<DateTime> dietStart;
+		RequestStorageHelper<bool> dietEnded;
+		RequestStorageHelper<DateTime> dietEnd;
+		public CalorieDiet()
+		{
+			dietName = new RequestStorageHelper<string> ("Diet Name",()=>"",Validate);
+			dietCalLim = new RequestStorageHelper<double> ("Calorie Limit",()=>0.0,Validate);
+			dietStart = new RequestStorageHelper<DateTime> ("Start Date",()=>DateTime.Now,Validate);
+			dietEnded = new RequestStorageHelper<bool> ("Ended",()=>false,Validate);
+			dietEnd = new RequestStorageHelper<DateTime> ("End Date",()=>DateTime.Now,Validate);
+		}
+
+		Action toValidate = delegate { };
+		void Validate() { toValidate (); }
+
 		public IEnumerable<DietWizardPage<T>> DietCreationPages<T>(IValueRequestFactory<T> factory) 
 		{
+			toValidate = ValidateCreate;
 			yield return GetIt<T> ("Create a simple calorie diet", factory);
 		}
 		public IEnumerable<DietWizardPage<T>> DietEditPages<T> (CalorieDietInstance editing, IValueRequestFactory<T> factory)
@@ -40,37 +53,52 @@ namespace Consonance
 			dietStart.request.value = editing.started;
 			yield return eros;
 		}
+		void ValidateCreate()
+		{
+			dietName.request.valid = !string.IsNullOrWhiteSpace (dietName);
+			dietCalLim.request.valid = dietCalLim > 0;
+			dietStart.request.valid = true;
+		}
 		DietWizardPage<T> GetIt<T>(String name, IValueRequestFactory<T> factory, bool edit = false)
 		{
+			toValidate = ValidateEdit;
+			dietName.Reset ();
+			dietStart.Reset ();
+			dietCalLim.Reset ();
 			var ad = new BindingList<T> {
 				dietName.CGet (factory.StringRequestor),
 				dietStart.CGet (factory.DateRequestor),
 				dietCalLim.CGet (factory.DoubleRequestor),
 			};
 			if (edit) {
+				dietEnded.Reset ();
+				dietEnd.Reset ();
 				ad.Add (dietEnded.CGet(factory.BoolRequestor));
-				Action changeAction = () => {
+				dietEnd.request.changed += () => {
 					if(dietEnded) ad.Add(dietEnd.CGet(factory.DateRequestor));
 					else ad.Remove(dietEnd.CGet(factory.DateRequestor));
 				};
-				Action unhook = null;
-				unhook = () => {
-					dietEnd.request.changed -= changeAction;
-					dietEnd.request.ended -= unhook;
-				};
-				dietEnd.request.changed += changeAction;
-				dietEnd.request.ended += unhook;
 			}
 			return new DietWizardPage<T> (name, ad);
 		}
+		void ValidateEdit()
+		{
+			dietName.request.valid = !string.IsNullOrWhiteSpace (dietName);
+			dietCalLim.request.valid = dietCalLim > 0;
+			dietStart.request.valid = !dietEnded || dietStart.request.value < dietEnd;
+			dietEnded.request.valid = true;
+			dietEnd.request.valid = !dietEnded || dietEnd > dietStart.request.value;
+		}
 		public CalorieDietInstance NewDiet ()
 		{
-			return new CalorieDietInstance () { name = dietName, callim = dietCalLim };
+			return new CalorieDietInstance () { name = dietName, callim = dietCalLim, started = dietStart };
 		}
 		public void EditDiet (CalorieDietInstance toEdit)
 		{
 			toEdit.callim = dietCalLim;
 			toEdit.name = dietName;
+			toEdit.started = dietStart;
+			toEdit.ended = dietEnded ? dietEnd : null;
 		}
 
 		CalorieDietEatCreation cde = new CalorieDietEatCreation();
@@ -82,13 +110,32 @@ namespace Consonance
 	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, FoodInfo>
 	{
 		#region IEntryCreation implementation
-		RequestStorageHelper<double> calories = new RequestStorageHelper<double> ("calories");
-		RequestStorageHelper<double> grams = new RequestStorageHelper<double> ("grams");
-		RequestStorageHelper<String> name = new RequestStorageHelper<string> ("name");
-		RequestStorageHelper<DateTime> when = new RequestStorageHelper<DateTime>("when", () => DateTime.Now);
+		RequestStorageHelper<double> calories;
+		RequestStorageHelper<double> grams;
+		RequestStorageHelper<String> name;
+		RequestStorageHelper<DateTime> when;
+		public CalorieDietEatCreation()
+		{
+			calories = new RequestStorageHelper<double> ("calories",()=>0.0,Validate);
+			grams = new RequestStorageHelper<double> ("grams",()=>0.0,Validate);
+			name = new RequestStorageHelper<string> ("name",()=>"",Validate);
+			when = new RequestStorageHelper<DateTime>("when", () => DateTime.Now,Validate);
+		}
+
+		Action toValidate = delegate { };
+		void Validate() { toValidate (); }
+
+		public void ResetRequests ()
+		{
+			calories.Reset ();
+			grams.Reset ();
+			name.Reset ();
+			when.Reset ();
+		}
 
 		public BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory)
 		{
+			toValidate = CheckCreationValidity;
 			return new BindingList<T> 
 			{
 				name.CGet(factory.StringRequestor),
@@ -96,14 +143,20 @@ namespace Consonance
 				calories.CGet(factory.DoubleRequestor)
 			};
 		}
+		void CheckCreationValidity ()
+		{
+			name.request.valid = !String.IsNullOrWhiteSpace (name);
+			when.request.valid = true;
+			calories.request.valid = calories >= 0.0;
+		}
 		public CalorieDietEatEntry  Create ()
 		{
 			return Edit (new CalorieDietEatEntry());
 		}
 		public BindingList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FoodInfo info)
 		{
+			toValidate = () => CheckCalculationValidity(info);
 			var needed = new BindingList<T> () {
-				name.CGet(factory.StringRequestor),
 				when.CGet(factory.DateRequestor),				
 				grams.CGet (factory.DoubleRequestor),
 			};
@@ -111,25 +164,43 @@ namespace Consonance
 				needed.Add (calories.CGet (factory.DoubleRequestor));
 			return needed;
 		}
+		void CheckCalculationValidity (FoodInfo info)
+		{
+			when.request.valid = true;
+			grams.request.valid = grams >= 0.0;
+			if (!info.calories.HasValue)
+				calories.request.valid = calories >= 0;
+		}
 		public CalorieDietEatEntry Calculate (FoodInfo info, bool shouldComplete)
 		{
+			name.request.value = grams.request.value + "g of " + info.name;
 			return Edit (new CalorieDietEatEntry (), info, shouldComplete);
 		}
 		public BindingList<T> InfoFields<T> (IValueRequestFactory<T> rf, FoodInfo willedit=null)
 		{
+			toValidate = CheckInfoValidity;
 			var ret = new BindingList<T> { 
+				name.CGet(rf.StringRequestor),
 				calories.CGet(rf.DoubleRequestor),
 				grams.CGet(rf.DoubleRequestor)
 			};
 			if (willedit != null) {
+				name.request.value = willedit.name;
 				calories.request.value = willedit.calories ?? 0.0;
 				grams.request.value = willedit.per_hundred_grams * 100.0;
 			}
 			return ret;
 		}
+		void CheckInfoValidity()
+		{
+			name.request.valid = !String.IsNullOrWhiteSpace (name);
+			calories.request.valid = calories >= 0;
+			grams.request.valid = grams > 0;
+		}
 		public FoodInfo MakeInfo (FoodInfo edit=null)
 		{
 			var use = edit ?? new FoodInfo ();
+			use.name = name;
 			use.calories = calories;
 			use.per_hundred_grams = grams / 100.0;
 			return use;
@@ -171,17 +242,43 @@ namespace Consonance
 	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, FireInfo>
 	{
 		#region IEntryCreation implementation
-		RequestStorageHelper<double> caloriesBurned = new RequestStorageHelper<double>("Calories Burned");
-		RequestStorageHelper<TimeSpan> burnTime = new RequestStorageHelper<TimeSpan>("Burn Duration");
-		RequestStorageHelper<String> name = new RequestStorageHelper<string> ("name");
-		RequestStorageHelper<DateTime> when = new RequestStorageHelper<DateTime>("when");
+		RequestStorageHelper<double> caloriesBurned;
+		RequestStorageHelper<TimeSpan> burnTime;
+		RequestStorageHelper<String> name;
+		RequestStorageHelper<DateTime> when;
+		public CalorieDietBurnCreation()
+		{
+			caloriesBurned = new RequestStorageHelper<double>("Calories Burned",()=>0.0,Validate);
+			burnTime = new RequestStorageHelper<TimeSpan>("Burn Duration",()=>TimeSpan.Zero,Validate);
+			name = new RequestStorageHelper<string> ("name",()=>"",Validate);
+			when = new RequestStorageHelper<DateTime>("when",()=>DateTime.Now,Validate);
+		}
+
+		Action toValidate = delegate { };
+		void Validate() { toValidate (); }
+
+		public void ResetRequests ()
+		{
+			caloriesBurned.Reset ();
+			burnTime.Reset ();
+			name.Reset ();
+			when.Reset ();
+		}
+
 		public BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory)
 		{
+			toValidate = CheckCreationValidity;
 			return new BindingList<T> { 
 				name.CGet(factory.StringRequestor),
 				when.CGet(factory.DateRequestor),				
 				caloriesBurned.CGet (factory.DoubleRequestor),
 			};
+		}
+		void CheckCreationValidity ()
+		{
+			name.request.valid = !String.IsNullOrWhiteSpace (name);
+			when.request.valid = true;
+			caloriesBurned.request.valid = caloriesBurned >= 0.0;
 		}
 		public CalorieDietBurnEntry Create ()
 		{
@@ -191,14 +288,21 @@ namespace Consonance
 		}
 		public BindingList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FireInfo info)
 		{
+			toValidate = () => CheckCalculationValidity (info);
 			var needs = new BindingList<T> {
-				name.CGet(factory.StringRequestor),
 				when.CGet(factory.DateRequestor),				
 				burnTime.CGet (factory.TimeSpanRequestor)
 			};
-			if (info.calories.HasValue)
+			if (!info.calories.HasValue)
 				needs.Add (caloriesBurned.CGet(factory.DoubleRequestor));
 			return needs;
+		}
+		void CheckCalculationValidity (FireInfo info)
+		{
+			when.request.valid = true;
+			burnTime.request.valid = burnTime.request.value.TotalHours >= 0.0;
+			if (!info.calories.HasValue)
+				caloriesBurned.request.valid = caloriesBurned >= 0;
 		}
 		public CalorieDietBurnEntry Calculate (FireInfo info, bool shouldComplete)
 		{
@@ -208,16 +312,29 @@ namespace Consonance
 		}
 		public BindingList<T> InfoFields<T> (IValueRequestFactory<T> factory, FireInfo willedit = null)
 		{
+			toValidate = CheckInfoValidity;
 			var ret = new BindingList<T> { 
+				name.CGet(factory.StringRequestor),
 				caloriesBurned.CGet(factory.DoubleRequestor),  
 				burnTime.CGet(factory.TimeSpanRequestor)
 			};
-
+			if (willedit != null) {
+				name.request.value = willedit.name;
+				caloriesBurned.request.value = willedit.calories ?? 0.0;
+				burnTime.request.value = TimeSpan.FromHours (willedit.per_hour);
+			}
 			return ret;
+		}
+		void CheckInfoValidity()
+		{
+			name.request.valid = !String.IsNullOrWhiteSpace (name);
+			caloriesBurned.request.valid = caloriesBurned >= 0;
+			burnTime.request.valid = burnTime.request.value.TotalHours >= 0;
 		}
 		public FireInfo MakeInfo (FireInfo edit = null)
 		{
 			var use = edit ?? new FireInfo ();
+			use.name = name;
 			use.per_hour = 1.0 / burnTime.request.value.TotalHours;
 			use.calories = caloriesBurned;
 			return use;

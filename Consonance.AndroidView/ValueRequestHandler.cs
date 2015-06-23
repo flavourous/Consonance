@@ -127,12 +127,15 @@ namespace Consonance.AndroidView
 			inputView.FindViewById<TextView> (Resource.Id.name).Text = name;
 		}
 		public ValueRequestWrapper request { get { return this; } }
-		public bool hasInitial { get; set; }
-		public bool lostInitial { get; set; } 
-		public event Action changed = delegate { };
-		public event Action ended = delegate { };
-		public bool enabled { get; set; }
+		public bool enabled { set { inputView.Enabled = value; } }
 		public bool valid { get; set; } 
+
+		public event Action changed = delegate { };
+		public void ClearListeners()
+		{
+			changed = delegate {
+			};
+		}
 
 		public View inputView { get; private set;}
 		protected abstract int inputID {get;}
@@ -187,9 +190,17 @@ namespace Consonance.AndroidView
 	}
 	class DateTimeRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, DateTime>
 	{
-		public DateTimeRequestWrapper (String n, Activity a) : base(n,a) { }
-		DatePicker dp { get { return inputView.FindViewById<DatePicker> (Resource.Id.value); } }
-		public DateTime value { get { return dp.DateTime; } set { dp.DateTime = value; } }
+		DatePickerDialog picker;
+		public DateTimeRequestWrapper (String n, Activity a) : base(n,a) 
+		{
+			vtv.Click += Gvt_Click;
+			picker = new DatePickerDialog (a, picker_callback, DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
+		}
+		void Gvt_Click (object sender, EventArgs e) { picker.Show (); }
+		void picker_callback(Object sender, DatePickerDialog.DateSetEventArgs e) { value = new DateTime (e.Year, e.MonthOfYear, e.DayOfMonth); }
+		DateTime dateSet = DateTime.Now;
+		TextView vtv { get { return inputView.FindViewById<TextView> (Resource.Id.value); } }
+		public DateTime value { get { return dateSet; } set { dateSet = value; vtv.Text = value.ToString (); } }
 		protected override int inputID { get { return Resource.Layout.ValueRequests_DateTime; } }
 	}
 	class TimeSpanRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, TimeSpan>

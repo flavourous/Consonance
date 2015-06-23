@@ -281,16 +281,14 @@ namespace Consonance
 		{
 			PageIt (
 				new List<DietWizardPage<IRO>> (modelHandler.model.DietEditPages<IRO> (dvm.originator as DietInstType, instanceBuilder.requestFactory)),
-				() => {
-					modelHandler.EditDiet (dvm.originator as DietInstType);
-				}
+				() => modelHandler.EditDiet (dvm.originator as DietInstType)
 			);
 		}
 		void PageIt(List<DietWizardPage<IRO>> pages, Action complete, int page = 0)
 		{
 			instanceBuilder.GetValues(pages[page].title, new BindingList<IRO>(pages[page].valuerequests), b => {
 				if(++page < pages.Count) PageIt(pages, complete, page);
-				else complete();
+				else if(b) complete();
 			}, page, pages.Count);
 		}
 		public void RemoveDiet (DietInstanceVM dvm)
@@ -321,6 +319,9 @@ namespace Consonance
 				where T : BaseEntry, new()
 				where I : BaseInfo, new()
 		{
+			// reset to start
+			creator.ResetRequests();
+
 			// get a request object for infos
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + infoName);
 

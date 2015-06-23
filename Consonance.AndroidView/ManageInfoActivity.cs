@@ -14,29 +14,30 @@ using System.ComponentModel;
 
 namespace Consonance.AndroidView
 {
-	class ManageInfoIntent : Intent
-	{
-		public readonly Action finished;
-		public readonly ChangeTriggerList<InfoLineVM> toShow;
-		public readonly BoundRequestCaller<InfoLineVM> icom;
-		public ManageInfoIntent(Action finished, ChangeTriggerList<InfoLineVM> l, BoundRequestCaller<InfoLineVM> c, Context cont, Java.Lang.Class cls) : base(cont,cls)
-		{
-			this.finished = finished;
-			this.toShow = l;
-			this.icom = c;
-		}
-	}
 
 	[Activity (Label = "ManageInfoActivity")]			
 	public class ManageInfoActivity : Activity
 	{
+		public static void SetSharedObjects(Action finished, ChangeTriggerList<InfoLineVM> toShow, BoundRequestCaller<InfoLineVM> icom)
+		{
+			SO.finished = finished;
+			SO.toShow = toShow;
+			SO.icom = icom;
+		}
+		static class SO
+		{
+			public static Action finished;
+			public static ChangeTriggerList<InfoLineVM> toShow;
+			public static BoundRequestCaller<InfoLineVM> icom;
+		}
+
 		readonly AndroidRequestBuilder defBuilder;
 		public ManageInfoActivity()
 		{
 			defBuilder = new AndroidRequestBuilder (this);
 		}
-
-		ManageInfoIntent itnt;
+		ListView ilv;
+		Button b_add,b_edit,b_delete;
 		protected override void OnCreate (Bundle bundle)
 		{
 			base.OnCreate (bundle);
@@ -45,36 +46,55 @@ namespace Consonance.AndroidView
 			SetContentView (Resource.Layout.ManageInfoView);
 
 			// cant be clicked when not showing, so leave attached.
-			FindViewById<Button>(Resource.Id.add).Click += (sender, e) => itnt.icom.OnAdd(defBuilder);
-			FindViewById<Button>(Resource.Id.edit).Click += (sender, e) => itnt.icom.OnEdit(itnt.toShow[sid], defBuilder);
-			FindViewById<Button>(Resource.Id.delete).Click += (sender, e) => itnt.icom.OnRemove(itnt.toShow[sid]);
+			(b_add=FindViewById<Button>(Resource.Id.add)).Click += (sender, e) => SO.icom.OnAdd(defBuilder);
+			(b_edit=FindViewById<Button>(Resource.Id.edit)).Click += (sender, e) => SO.icom.OnEdit(si, defBuilder);
+			(b_delete=FindViewById<Button>(Resource.Id.delete)).Click += (sender, e) => SO.icom.OnRemove(si);
+			b_delete.Enabled = b_edit.Enabled = false;
+
+			// state
+			ilv = FindViewById<ListView>(Resource.Id.infolist);
+			ilv.ItemClick += Ilv_ItemClick;;
 		}
+
+		InfoLineVM si = null;
+		void Ilv_ItemClick (object sender, AdapterView.ItemClickEventArgs e)
+		{
+			si = SO.toShow[e.Position];
+			CheckSel ();
+		}
+		void CheckSel()
+		{
+			int sidx = SO.toShow.IndexOf (si);
+			if (sidx == -1) si = null;
+			else if (ilv.SelectedItemPosition != sidx)
+				ilv.SetSelection (sidx);
+			b_delete.Enabled = b_edit.Enabled = si != null;
+		}
+
 		protected override void OnStart ()
 		{
 			// grab the intent...ugh
-			itnt = Intent as ManageInfoIntent;
-			itnt.toShow.Changed += Itnt_toShow_Changed;;
+			SO.toShow.Changed += Itnt_toShow_Changed;
 			MakeLAD ();
 			base.OnStart ();
 		}
 		protected override void OnStop ()
 		{
-			itnt.toShow.Changed -= Itnt_toShow_Changed;;
-			itnt.finished ();
+			SO.finished ();
 			base.OnStop ();
 		}
 
 		void Itnt_toShow_Changed ()
 		{
 			MakeLAD ();
+			CheckSel ();
 		}
-		int sid { get { return FindViewById<ListView> (Resource.Id.infolist).SelectedItemPosition; } }
 		void MakeLAD()
 		{
 			var lv = FindViewById<ListView>(Resource.Id.infolist);
 			LAdapter<InfoLineVM> ld= new LAdapter<InfoLineVM>(
 				this, 
-				itnt.toShow,
+				SO.toShow,
 				Resource.Layout.ManageInfoLine,
 				ConfigLine
 			);

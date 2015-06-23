@@ -51,7 +51,7 @@ namespace Consonance.AndroidView
 		public void OnEdit(T t) { edit (t); }
 		public void OnSelect(T t) { select (t); }
 	}
-	class BoundRequestCaller<T> : ICollectionEditorBoundCommands<T, ValueRequestWrapper>
+	public class BoundRequestCaller<T> : ICollectionEditorBoundCommands<T, ValueRequestWrapper>
 	{
 		#region ICollectionEditorBoundCommands implementation
 		public event Action<IValueRequestBuilder<ValueRequestWrapper>> add;
@@ -125,18 +125,12 @@ namespace Consonance.AndroidView
 		readonly LooseRequestCaller<DietInstanceVM> _plan = new LooseRequestCaller<DietInstanceVM>();
 		public ICollectionEditorLooseCommands<DietInstanceVM> plan { get { return _plan; } }
 		public event Action<InfoManageType> manageInfo = delegate { };
-		ManageInfoActivity infoManager = new ManageInfoActivity();
 		public void ManageInfos (InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, Action finished)
 		{
 			// launch that manage activity...and erm pass it some hooks?? 
-			var mii = new ManageInfoIntent(
-				finished,
-				toManage, 
-				(mt == InfoManageType.Eat ? planCommands.eatinfo : planCommands.burninfo) as BoundRequestCaller<InfoLineVM>,
-				this, 
-				infoManager.Class
-				);
-			SendBroadcast (mii);
+			var icom = (mt == InfoManageType.Eat ? planCommands.eatinfo : planCommands.burninfo) as BoundRequestCaller<InfoLineVM>;
+			ManageInfoActivity.SetSharedObjects(finished, toManage, icom);
+			StartActivity (new Intent(this, typeof(ManageInfoActivity)));
 		}
 
 		private DateTime _day;
