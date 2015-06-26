@@ -13,12 +13,12 @@ namespace Consonance
 	{
 		public double kcals { get; set; }
 	}
-	public class CalorieDietInstance : DietInstance
+	public class CalorieDietInstance : TrackerInstance
 	{
 		public double callim {get;set;}
 	}
 
-	public class CalorieDiet : IDietModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
+	public class CalorieDiet : ITrackModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		public String name { get { return "Calorie Diet"; } }
 		RequestStorageHelper<String> dietName;
@@ -38,20 +38,23 @@ namespace Consonance
 		Action toValidate = delegate { };
 		void Validate() { toValidate (); }
 
-		public IEnumerable<DietWizardPage<T>> DietCreationPages<T>(IValueRequestFactory<T> factory) 
+		public IEnumerable<TrackerWizardPage<T>> CreationPages<T>(IValueRequestFactory<T> factory) 
 		{
 			toValidate = ValidateCreate;
 			yield return GetIt<T> ("Create a simple calorie diet", factory);
+			Validate ();
 		}
-		public IEnumerable<DietWizardPage<T>> DietEditPages<T> (CalorieDietInstance editing, IValueRequestFactory<T> factory)
+		public IEnumerable<TrackerWizardPage<T>> EditPages<T> (CalorieDietInstance editing, IValueRequestFactory<T> factory)
 		{
+			toValidate = ValidateEdit;
 			var eros = GetIt<T> ("Edit simple diet", factory, true);
 			dietName.request.value = editing.name;
 			dietCalLim.request.value = editing.callim;
-			dietEnded.request.value = editing.ended.HasValue;
-			if (dietEnded) dietEnd.request.value = editing.ended.Value;
+			dietEnded.request.value = editing.hasEnded;
+			if (dietEnded) dietEnd.request.value = editing.ended;
 			dietStart.request.value = editing.started;
 			yield return eros;
+			Validate ();
 		}
 		void ValidateCreate()
 		{
@@ -59,9 +62,8 @@ namespace Consonance
 			dietCalLim.request.valid = dietCalLim > 0;
 			dietStart.request.valid = true;
 		}
-		DietWizardPage<T> GetIt<T>(String name, IValueRequestFactory<T> factory, bool edit = false)
+		TrackerWizardPage<T> GetIt<T>(String name, IValueRequestFactory<T> factory, bool edit = false)
 		{
-			toValidate = ValidateEdit;
 			dietName.Reset ();
 			dietStart.Reset ();
 			dietCalLim.Reset ();
@@ -70,16 +72,21 @@ namespace Consonance
 				dietStart.CGet (factory.DateRequestor),
 				dietCalLim.CGet (factory.DoubleRequestor),
 			};
+
+			// cause of validation these need alive before callbacks
+			var de = dietEnded.CGet (factory.BoolRequestor);
+			var ded = dietEnd.CGet (factory.DateRequestor);
+
 			if (edit) {
 				dietEnded.Reset ();
 				dietEnd.Reset ();
-				ad.Add (dietEnded.CGet(factory.BoolRequestor));
-				dietEnd.request.changed += () => {
-					if(dietEnded) ad.Add(dietEnd.CGet(factory.DateRequestor));
-					else ad.Remove(dietEnd.CGet(factory.DateRequestor));
+				ad.Add (de);
+				dietEnded.request.changed += () => {
+					if(dietEnded) ad.Add(ded);
+					else ad.Remove(ded);
 				};
 			}
-			return new DietWizardPage<T> (name, ad);
+			return new TrackerWizardPage<T> (name, ad);
 		}
 		void ValidateEdit()
 		{
@@ -87,28 +94,34 @@ namespace Consonance
 			dietCalLim.request.valid = dietCalLim > 0;
 			dietStart.request.valid = !dietEnded || dietStart.request.value < dietEnd;
 			dietEnded.request.valid = true;
-			dietEnd.request.valid = !dietEnded || dietEnd > dietStart.request.value;
+			if(dietEnded)
+				dietEnd.request.valid = !dietEnded || dietEnd > dietStart.request.value;
 		}
-		public CalorieDietInstance NewDiet ()
+		public CalorieDietInstance New ()
 		{
 			return new CalorieDietInstance () { name = dietName, callim = dietCalLim, started = dietStart };
 		}
-		public void EditDiet (CalorieDietInstance toEdit)
+		public void Edit (CalorieDietInstance toEdit)
 		{
 			toEdit.callim = dietCalLim;
 			toEdit.name = dietName;
 			toEdit.started = dietStart;
-			toEdit.ended = dietEnded ? dietEnd : null;
+			toEdit.hasEnded = dietEnded;
+			if (dietEnded)
+				toEdit.ended = dietEnd;
 		}
 
 		CalorieDietEatCreation cde = new CalorieDietEatCreation();
 		CalorieDietBurnCreation cdb = new CalorieDietBurnCreation();
 
-		public IEntryCreation<CalorieDietEatEntry, FoodInfo> foodcreator { get { return cde; } }
-		public IEntryCreation<CalorieDietBurnEntry, FireInfo> firecreator { get { return cdb; } }
+		public IEntryCreation<CalorieDietEatEntry, FoodInfo> increator { get { return cde; } }
+		public IEntryCreation<CalorieDietBurnEntry, FireInfo> outcreator { get { return cdb; } }
 	}
 	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, FoodInfo>
 	{
+		string IEntryCreation<CalorieDietEatEntry, FoodInfo>.name { get { return "Eat"; } }
+		string IInfoCreation<FoodInfo>.name { get { return "Food"; } }
+
 		#region IEntryCreation implementation
 		RequestStorageHelper<double> calories;
 		RequestStorageHelper<double> grams;
@@ -216,6 +229,8 @@ namespace Consonance
 
 		public CalorieDietEatEntry Edit (CalorieDietEatEntry toEdit)
 		{
+			toEdit.entryName = name;
+			toEdit.entryWhen = when;
 			toEdit.kcals = calories;
 			return toEdit;
 		}
@@ -241,6 +256,9 @@ namespace Consonance
 	}
 	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, FireInfo>
 	{
+		string IEntryCreation<CalorieDietBurnEntry, FireInfo>.name { get { return "Burn"; } }
+		string IInfoCreation<FireInfo>.name { get { return "Burner"; } }
+
 		#region IEntryCreation implementation
 		RequestStorageHelper<double> caloriesBurned;
 		RequestStorageHelper<TimeSpan> burnTime;
@@ -350,6 +368,8 @@ namespace Consonance
 
 		public CalorieDietBurnEntry Edit (CalorieDietBurnEntry toEdit)
 		{
+			toEdit.entryName = name;
+			toEdit.entryWhen = when;
 			toEdit.kcals = caloriesBurned;
 			return toEdit;
 		}
@@ -375,8 +395,10 @@ namespace Consonance
 	}
 
 	// hmmmm calling into presenter is a nasty....abstract class?
-	public class CalorieDietPresenter : IDietPresenter<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
+	public class CalorieDietPresenter : ITrackerPresenter<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
+
+
 		#region IDietPresenter implementation
 		public EntryLineVM GetRepresentation (CalorieDietEatEntry entry, FoodInfo entryInfo)
 		{
@@ -398,11 +420,12 @@ namespace Consonance
 				new KVPList<string, double> { { "kcal", entry.kcals } }
 			);
 		}
-		public DietInstanceVM GetRepresentation (CalorieDietInstance entry)
+		public TrackerInstanceVM GetRepresentation (CalorieDietInstance entry)
 		{
 			var ent = (entry as CalorieDietInstance);
-			return new DietInstanceVM(
+			return new TrackerInstanceVM(
 				ent.started, 
+				ent.hasEnded,
 				ent.ended,
 				ent.name, 
 				"",
@@ -419,7 +442,7 @@ namespace Consonance
 		}
 
 
-		public IEnumerable<TrackingInfoVM> DetermineEatTrackingForRange(CalorieDietInstance di, IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
+		public IEnumerable<TrackingInfoVM> DetermineInTrackingForRange(CalorieDietInstance di, IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
 		{
 			TrackingInfoVM ti = new TrackingInfoVM () {
 				valueName = "Calories Balance",
@@ -442,9 +465,9 @@ namespace Consonance
 			yield return ti;
 		}
 
-		public IEnumerable<TrackingInfoVM> DetermineBurnTrackingForRange(CalorieDietInstance di, IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
+		public IEnumerable<TrackingInfoVM> DetermineOutTrackingForRange(CalorieDietInstance di, IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
 		{
-			return DetermineEatTrackingForRange (di, eats, burns, startBound, endBound);
+			return DetermineInTrackingForRange (di, eats, burns, startBound, endBound);
 		}
 		#endregion
 	}

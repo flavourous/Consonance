@@ -18,17 +18,18 @@ namespace Consonance
 			Add (new KeyValuePair<T1, T2> (a, b));
 		}
 	}
-	public class DietInstanceVM : OriginatorVM
+	public class TrackerInstanceVM : OriginatorVM
 	{
 		public readonly DateTime start;
-		public readonly DateTime? end;
+		public readonly bool hasended;
+		public readonly DateTime end;
 		public readonly String name;
 		public readonly String desc;
 		public readonly KVPList<string,double> displayAmounts;
 
-		public DietInstanceVM(DateTime s, DateTime? e, String n, String d, KVPList<string,double>  t)
+		public TrackerInstanceVM(DateTime s, bool he, DateTime e, String n, String d, KVPList<string,double>  t)
 		{
-			start=s; end = e;
+			start=s; end = e; hasended = he;
 			name=n; desc=d;
 			displayAmounts = t;
 		}
@@ -68,12 +69,12 @@ namespace Consonance
 		public String name;
 	}
 
-	public interface IDietPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>
-		where DietInstType : DietInstance, new()
-		where EatType : BaseEatEntry, new()
-		where EatInfoType : FoodInfo, new()
-		where BurnType : BaseBurnEntry, new()
-		where BurnInfoType : FireInfo, new()
+	public interface ITrackerPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>
+		where DietInstType : TrackerInstance, new()
+		where EatType : BaseEntry, new()
+		where EatInfoType : BaseInfo, new()
+		where BurnType : BaseEntry, new()
+		where BurnInfoType : BaseInfo, new()
 	{
 		EntryLineVM GetRepresentation (EatType entry, EatInfoType entryInfo);
 		EntryLineVM GetRepresentation (BurnType entry, BurnInfoType entryInfo);
@@ -81,51 +82,51 @@ namespace Consonance
 		InfoLineVM GetRepresentation (EatInfoType info);
 		InfoLineVM GetRepresentation (BurnInfoType info);
 
-		DietInstanceVM GetRepresentation (DietInstType entry);
+		TrackerInstanceVM GetRepresentation (DietInstType entry);
 
 		// Deals with goal tracking
-		IEnumerable<TrackingInfoVM> DetermineEatTrackingForRange(DietInstType di, IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
-		IEnumerable<TrackingInfoVM> DetermineBurnTrackingForRange(DietInstType di, IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
+		IEnumerable<TrackingInfoVM> DetermineInTrackingForRange(DietInstType di, IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
+		IEnumerable<TrackingInfoVM> DetermineOutTrackingForRange(DietInstType di, IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
 	}
 
-	interface IAbstractedDiet
+	interface IAbstractedTracker
 	{
 		String dietName { get; }
-		IEnumerable<DietInstanceVM> Instances();
-		IEnumerable<EntryLineVM>  EatEntries (DietInstanceVM instance, DateTime start, DateTime end);
-		IEnumerable<EntryLineVM>  BurnEntries(DietInstanceVM instance, DateTime start, DateTime end);
-		IEnumerable<TrackingInfoVM> GetEatTracking (DietInstanceVM instance, DateTime start, DateTime end);
-		IEnumerable<TrackingInfoVM> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end);
-		void StartNewDiet();
-		void RemoveDiet (DietInstanceVM dvm);
-		void EditDiet (DietInstanceVM dvm);
-		IEnumerable<InfoLineVM> EatInfos (bool onlycomplete);
-		IEnumerable<InfoLineVM> BurnInfos (bool onlycomplete);
+		IEnumerable<TrackerInstanceVM> Instances();
+		IEnumerable<EntryLineVM>  InEntries (TrackerInstanceVM instance, DateTime start, DateTime end);
+		IEnumerable<EntryLineVM>  OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end);
+		IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime start, DateTime end);
+		IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime start, DateTime end);
+		void StartNewTracker();
+		void RemoveTracker (TrackerInstanceVM dvm);
+		void EditTracker (TrackerInstanceVM dvm);
+		IEnumerable<InfoLineVM> InInfos (bool onlycomplete);
+		IEnumerable<InfoLineVM> OutInfos (bool onlycomplete);
 		event DietVMChangeEventHandler ViewModelsChanged;
 	}
 	interface INotSoAbstractedDiet<IRO>
 	{
 		// entry ones
-		void AddEat (DietInstanceVM diet, IValueRequestBuilder<IRO> bld);
-		void RemoveEat (EntryLineVM evm);
-		void EditEat (EntryLineVM evm, IValueRequestBuilder<IRO> bld);
-		void AddEatInfo (IValueRequestBuilder<IRO> bld);
-		void RemoveEatInfo (InfoLineVM ivm);
-		void EditEatInfo (InfoLineVM ivm, IValueRequestBuilder<IRO> bld);
-		void AddBurn (DietInstanceVM diet, IValueRequestBuilder<IRO> bld);
-		void RemoveBurn (EntryLineVM evm);
-		void EditBurn (EntryLineVM evm, IValueRequestBuilder<IRO> bld);
-		void AddBurnInfo (IValueRequestBuilder<IRO> bld);
-		void RemoveBurnInfo (InfoLineVM ivm);
-		void EditBurnInfo (InfoLineVM ivm, IValueRequestBuilder<IRO> bld);
+		void AddIn (TrackerInstanceVM diet, IValueRequestBuilder<IRO> bld);
+		void RemoveIn (EntryLineVM evm);
+		void EditIn (EntryLineVM evm, IValueRequestBuilder<IRO> bld);
+		void AddInInfo (IValueRequestBuilder<IRO> bld);
+		void RemoveInInfo (InfoLineVM ivm);
+		void EditInInfo (InfoLineVM ivm, IValueRequestBuilder<IRO> bld);
+		void AddOut (TrackerInstanceVM diet, IValueRequestBuilder<IRO> bld);
+		void RemoveOut (EntryLineVM evm);
+		void EditOut (EntryLineVM evm, IValueRequestBuilder<IRO> bld);
+		void AddOutInfo (IValueRequestBuilder<IRO> bld);
+		void RemoveOutInfo (InfoLineVM ivm);
+		void EditOutInfo (InfoLineVM ivm, IValueRequestBuilder<IRO> bld);
 	}
 	enum DietVMChangeType { None, Instances, EatEntries, BurnEntries, EatInfos, BurnInfos };
 	class DietVMChangeEventArgs
 	{
 		public DietVMChangeType changeType;
 	}
-	delegate void DietVMChangeEventHandler(IAbstractedDiet sender, DietVMChangeEventArgs args);
-	delegate DietInstanceVM DVMPuller();
+	delegate void DietVMChangeEventHandler(IAbstractedTracker sender, DietVMChangeEventArgs args);
+	delegate TrackerInstanceVM DVMPuller();
 	/// <summary>
 	/// This contains all the code which the app would want to do to get viewmodels out of
 	/// implimentations, and retains the generic definitions therefore.
@@ -135,31 +136,31 @@ namespace Consonance
 	/// As such, it should obey a non-generic contract that the AppPresenter can easily consume and
 	/// query for data.
 	/// </summary>
-	class DietPresentationAbstractionHandler <IRO, DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDiet, INotSoAbstractedDiet<IRO>
-		where DietInstType : DietInstance, new()
-		where EatType : BaseEatEntry, new()
-		where EatInfoType : FoodInfo, new()
-		where BurnType : BaseBurnEntry, new()
-		where BurnInfoType : FireInfo, new()
+	class TrackerPresentationAbstractionHandler <IRO, DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedTracker, INotSoAbstractedDiet<IRO>
+		where DietInstType : TrackerInstance, new()
+		where EatType : BaseEntry, new()
+		where EatInfoType : BaseInfo, new()
+		where BurnType : BaseEntry, new()
+		where BurnInfoType : BaseInfo, new()
 	{
 		readonly IValueRequestBuilder<IRO> instanceBuilder;
 		readonly IUserInput getInput;
-		readonly IDietPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
-		readonly DietModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
+		readonly ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
+		readonly TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
 		readonly MyConn conn;
-		public DietPresentationAbstractionHandler(
+		public TrackerPresentationAbstractionHandler(
 			IValueRequestBuilder<IRO> instanceBuilder,
 			IUserInput getInput,
 			MyConn conn,
-			IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model,
-			IDietPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter
+			ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model,
+			ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter
 		)
 		{
 			// store objects
 			this.instanceBuilder = instanceBuilder;
 			this.getInput = getInput;
 			this.presenter = presenter;
-			this.modelHandler = new DietModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
+			this.modelHandler = new TrackerModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
 			this.conn = conn;
 			conn.MyTableChanged += HandleMyTableChanged;
 		}
@@ -183,9 +184,9 @@ namespace Consonance
 
 		public event DietVMChangeEventHandler ViewModelsChanged = delegate { };
 		public String dietName { get { return modelHandler.model.name; } }
-		public IEnumerable<DietInstanceVM> Instances()
+		public IEnumerable<TrackerInstanceVM> Instances()
 		{
-			foreach (var dt in modelHandler.GetDiets())
+			foreach (var dt in modelHandler.GetTrackers())
 			{
 				var rep = presenter.GetRepresentation (dt);
 				rep.sender = this;
@@ -193,9 +194,9 @@ namespace Consonance
 				yield return rep;
 			}
 		}
-		public IEnumerable<EntryLineVM> EatEntries(DietInstanceVM instance, DateTime start, DateTime end)
+		public IEnumerable<EntryLineVM> InEntries(TrackerInstanceVM instance, DateTime start, DateTime end)
 		{
-			var eatModels = modelHandler.foodhandler.Get (instance.originator as DietInstType, start, end);
+			var eatModels = modelHandler.inhandler.Get (instance.originator as DietInstType, start, end);
 			return ConvertMtoVM<EntryLineVM, EatType, EatInfoType> (
 				eatModels, 
 				(e,i) => {
@@ -206,15 +207,15 @@ namespace Consonance
 				ee => GetInfo<EatInfoType>(ee.infoinstanceid)
 			);
 		}
-		public IEnumerable<TrackingInfoVM> GetEatTracking (DietInstanceVM instance, DateTime start, DateTime end)
+		public IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime start, DateTime end)
 		{
-			var eatModels = modelHandler.foodhandler.Get (instance.originator as DietInstType, start, end);
-			var burnModels = modelHandler.firehandler.Get (instance.originator as DietInstType, start, end);
-			return presenter.DetermineEatTrackingForRange (instance.originator as DietInstType, eatModels, burnModels, start, end);
+			var eatModels = modelHandler.inhandler.Get (instance.originator as DietInstType, start, end);
+			var burnModels = modelHandler.outhandler.Get (instance.originator as DietInstType, start, end);
+			return presenter.DetermineInTrackingForRange (instance.originator as DietInstType, eatModels, burnModels, start, end);
 		}
-		public IEnumerable<EntryLineVM> BurnEntries(DietInstanceVM instance, DateTime start, DateTime end)
+		public IEnumerable<EntryLineVM> OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end)
 		{
-			var burnModels = modelHandler.firehandler.Get (instance.originator as DietInstType, start, end);
+			var burnModels = modelHandler.outhandler.Get (instance.originator as DietInstType, start, end);
 			return ConvertMtoVM<EntryLineVM, BurnType, BurnInfoType> (
 				burnModels, 
 				(e,i) => {
@@ -225,22 +226,22 @@ namespace Consonance
 				ee => GetInfo<BurnInfoType>(ee.infoinstanceid)
 			);
 		}
-		public IEnumerable<TrackingInfoVM> GetBurnTracking (DietInstanceVM instance, DateTime start, DateTime end)
+		public IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime start, DateTime end)
 		{
-			var eatModels = modelHandler.foodhandler.Get (instance.originator as DietInstType, start, end);
-			var burnModels = modelHandler.firehandler.Get (instance.originator as DietInstType, start, end);
-			return presenter.DetermineBurnTrackingForRange (instance.originator as DietInstType, eatModels, burnModels, start, end);
+			var eatModels = modelHandler.inhandler.Get (instance.originator as DietInstType, start, end);
+			var burnModels = modelHandler.outhandler.Get (instance.originator as DietInstType, start, end);
+			return presenter.DetermineOutTrackingForRange (instance.originator as DietInstType, eatModels, burnModels, start, end);
 		}
 		T GetInfo<T>(int? id) where T : BaseInfo, new()
 		{
 			if (!id.HasValue) return null;
 			return conn.Table<T> ().Where (e => e.id == id.Value).First();
 		}
-		public IEnumerable<InfoLineVM> EatInfos(bool complete)
+		public IEnumerable<InfoLineVM> InInfos(bool complete)
 		{
 			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
 			var fis = conn.Table<EatInfoType> ();
-			if(complete) fis=fis.Where (modelHandler.model.foodcreator.IsInfoComplete);
+			if(complete) fis=fis.Where (modelHandler.model.increator.IsInfoComplete);
 			foreach (var m in fis)
 			{
 				var vm = presenter.GetRepresentation (m);
@@ -248,11 +249,11 @@ namespace Consonance
 				yield return vm;
 			}
 		}
-		public IEnumerable<InfoLineVM> BurnInfos(bool complete)
+		public IEnumerable<InfoLineVM> OutInfos(bool complete)
 		{
 			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
 			var fis = conn.Table<BurnInfoType> ();
-			if (complete) fis = fis.Where (modelHandler.model.firecreator.IsInfoComplete);
+			if (complete) fis = fis.Where (modelHandler.model.outcreator.IsInfoComplete);
 			foreach (var m in fis)
 			{
 				var vm = presenter.GetRepresentation (m);
@@ -270,51 +271,51 @@ namespace Consonance
 			foreach (I i in input)
 				yield return convert (i);
 		}
-		public void StartNewDiet()
+		public void StartNewTracker()
 		{
 			PageIt (
-				new List<DietWizardPage<IRO>> (modelHandler.model.DietCreationPages<IRO> (instanceBuilder.requestFactory)),
-				() => modelHandler.StartNewDiet()
+				new List<TrackerWizardPage<IRO>> (modelHandler.model.CreationPages<IRO> (instanceBuilder.requestFactory)),
+				() => modelHandler.StartNewTracker()
 			);
 		}
-		public void EditDiet (DietInstanceVM dvm)
+		public void EditTracker (TrackerInstanceVM dvm)
 		{
 			PageIt (
-				new List<DietWizardPage<IRO>> (modelHandler.model.DietEditPages<IRO> (dvm.originator as DietInstType, instanceBuilder.requestFactory)),
-				() => modelHandler.EditDiet (dvm.originator as DietInstType)
+				new List<TrackerWizardPage<IRO>> (modelHandler.model.EditPages<IRO> (dvm.originator as DietInstType, instanceBuilder.requestFactory)),
+				() => modelHandler.EditTracker (dvm.originator as DietInstType)
 			);
 		}
-		void PageIt(List<DietWizardPage<IRO>> pages, Action complete, int page = 0)
+		void PageIt(List<TrackerWizardPage<IRO>> pages, Action complete, int page = 0)
 		{
-			instanceBuilder.GetValues(pages[page].title, new BindingList<IRO>(pages[page].valuerequests), b => {
+			instanceBuilder.GetValues(pages[page].title, pages[page].valuerequests, b => {
 				if(++page < pages.Count) PageIt(pages, complete, page);
 				else if(b) complete();
 			}, page, pages.Count);
 		}
-		public void RemoveDiet (DietInstanceVM dvm)
+		public void RemoveTracker (TrackerInstanceVM dvm)
 		{
 			var diet = dvm.originator as DietInstType;
 			int ct = 0;
-			if ((ct = modelHandler.firehandler.Count () + modelHandler.foodhandler.Count ()) > 0)
+			if ((ct = modelHandler.outhandler.Count () + modelHandler.inhandler.Count ()) > 0)
 				getInput.WarnConfirm (
 					"That instance still has "+ct+" entries, they will be removed if you continue.",
-					() => modelHandler.RemoveDiet (diet)
+					() => modelHandler.RemoveTracker (diet)
 				);
 		}
 
-		public void AddEat(DietInstanceVM to, IValueRequestBuilder<IRO> bld)
+		public void AddIn(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)
 		{
-			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.foodcreator, modelHandler.foodhandler, "Food", "Eat", EatInfos(false), bld);
+			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, InInfos(false), bld);
 		}
-		public void AddBurn(DietInstanceVM to, IValueRequestBuilder<IRO> bld)
+		public void AddOut(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)
 		{
-			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.firecreator, modelHandler.firehandler, "Burn", "Burn", BurnInfos(false), bld);
+			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, OutInfos(false), bld);
 		}
 
 
 
 		void Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
-			EntryHandler<DietInstType,T,I> handler, String infoName, String entryName,
+			EntryHandler<DietInstType,T,I> handler, 
 			IEnumerable<InfoLineVM> infos, IValueRequestBuilder<IRO> getValues, T editing = null) 
 				where T : BaseEntry, new()
 				where I : BaseInfo, new()
@@ -323,7 +324,7 @@ namespace Consonance
 			creator.ResetRequests();
 
 			// get a request object for infos
-			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + infoName);
+			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + handler.infoName);
 
 			// triggers code in factory
 			var fis = new List<InfoLineVM>(infos);
@@ -368,7 +369,7 @@ namespace Consonance
 			checkFields ();
 			infoRequest.changed += checkFields;
 
-			getValues.GetValues (entryName, requests, c => {
+			getValues.GetValues (handler.entryName, requests, c => {
 				if (c) editit ();
 				infoRequest.changed -= checkFields;
 			}, 0, 1);
@@ -387,13 +388,13 @@ namespace Consonance
 			//should respect ordering - doing all that so we dont remove ones that didnt change
 		}
 
-		public void RemoveEat (EntryLineVM toRemove)
+		public void RemoveIn (EntryLineVM toRemove)
 		{
-			modelHandler.foodhandler.Remove (toRemove.originator as EatType);
+			modelHandler.inhandler.Remove (toRemove.originator as EatType);
 		}
-		public void RemoveBurn (EntryLineVM toRemove)
+		public void RemoveOut (EntryLineVM toRemove)
 		{
-			modelHandler.firehandler.Remove (toRemove.originator as BurnType);
+			modelHandler.outhandler.Remove (toRemove.originator as BurnType);
 		}
 			
 		DietInstType getit(BaseEntry be)
@@ -402,26 +403,26 @@ namespace Consonance
 			return dis.Count() == 0 ? null : dis.First();
 		}
 
-		public void EditEat (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
+		public void EditIn (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
 			var eat = ed.originator as EatType;
-			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.foodcreator, modelHandler.foodhandler, "Food", "Eat", EatInfos(true),bld,eat);
+			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, InInfos(true),bld,eat);
 		}
-		public void EditBurn (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
+		public void EditOut (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
 			var burn = ed.originator as BurnType;
-			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.firecreator, modelHandler.firehandler, "Burn", "Burn", BurnInfos(true), bld,burn);
+			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, OutInfos(true), bld,burn);
 		}
 
-		public void AddEatInfo(IValueRequestBuilder<IRO> bld)
+		public void AddInInfo(IValueRequestBuilder<IRO> bld)
 		{
-			DoInfo<EatInfoType> ("Create a Food", modelHandler.model.foodcreator, modelHandler.foodhandler, bld);
+			DoInfo<EatInfoType> ("Create a Food", modelHandler.model.increator, modelHandler.inhandler, bld);
 		}
-		public void EditEatInfo(InfoLineVM ivm, IValueRequestBuilder<IRO> bld)
+		public void EditInInfo(InfoLineVM ivm, IValueRequestBuilder<IRO> bld)
 		{
-			DoInfo<EatInfoType> ("Edit Food", modelHandler.model.foodcreator, modelHandler.foodhandler, bld, ivm.originator as EatInfoType);
+			DoInfo<EatInfoType> ("Edit Food", modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
 		}
-		public void RemoveEatInfo(InfoLineVM ivm)
+		public void RemoveInInfo(InfoLineVM ivm)
 		{
-			modelHandler.foodhandler.Remove (ivm.originator as EatInfoType);
+			modelHandler.inhandler.Remove (ivm.originator as EatInfoType);
 		}
 
 		void DoInfo<I>(String title, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder<IRO> builder, I toEdit = null)  where I : BaseInfo, new()
@@ -438,17 +439,17 @@ namespace Consonance
 				1);
 		}
 
-		public void AddBurnInfo(IValueRequestBuilder<IRO> bld)
+		public void AddOutInfo(IValueRequestBuilder<IRO> bld)
 		{
-			DoInfo<BurnInfoType> ("Create a Fire", modelHandler.model.firecreator, modelHandler.firehandler, bld);
+			DoInfo<BurnInfoType> ("Create a Fire", modelHandler.model.outcreator, modelHandler.outhandler, bld);
 		}
-		public void EditBurnInfo(InfoLineVM ivm, IValueRequestBuilder<IRO> bld)
+		public void EditOutInfo(InfoLineVM ivm, IValueRequestBuilder<IRO> bld)
 		{
-			DoInfo<BurnInfoType> ("Edit Food", modelHandler.model.firecreator, modelHandler.firehandler, bld, ivm.originator as BurnInfoType);
+			DoInfo<BurnInfoType> ("Edit Food", modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
 		}
-		public void RemoveBurnInfo(InfoLineVM ivm)
+		public void RemoveOutInfo(InfoLineVM ivm)
 		{
-			modelHandler.firehandler.Remove (ivm.originator as BurnInfoType);
+			modelHandler.outhandler.Remove (ivm.originator as BurnInfoType);
 		}
 	}
 }

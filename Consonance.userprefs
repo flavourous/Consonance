@@ -1,17 +1,19 @@
 ﻿<Properties StartupItem="Consonance.AndroidView\Consonance.AndroidView.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance\DietModels.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.AndroidView\ValueRequestHandler.cs">
     <Files>
-      <File FileName="Consonance.AndroidView\MainActivity.cs" Line="254" Column="4" />
-      <File FileName="Consonance\DietPresenters.cs" Line="306" Column="16" />
-      <File FileName="Consonance\AppPresenter.cs" Line="278" Column="1" />
-      <File FileName="Consonance.AndroidView\ValueRequestHandler.cs" Line="171" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="132" Column="1" />
-      <File FileName="Consonance.AndroidView\Resources\menu\PlanEntryMenu.xml" Line="4" Column="32" />
-      <File FileName="Consonance.AndroidView\Resources\menu\BurnMenu.xml" Line="4" Column="1" />
-      <File FileName="Consonance.AndroidView\Resources\menu\EatMenu.xml" Line="4" Column="1" />
-      <File FileName="Consonance.AndroidView\ListAdapters.cs" Line="63" Column="17" />
-      <File FileName="Consonance\DietModels.cs" Line="235" Column="3" />
+      <File FileName="Consonance.AndroidView\MainActivity.cs" Line="371" Column="1" />
+      <File FileName="Consonance\AppPresenter.cs" Line="363" Column="3" />
+      <File FileName="Consonance.AndroidView\ValueRequestHandler.cs" Line="99" Column="1" />
+      <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="369" Column="3" />
+      <File FileName="Consonance.AndroidView\Resources\menu\PlanEntryMenu.xml" Line="1" Column="1" />
+      <File FileName="Consonance.AndroidView\Resources\menu\BurnMenu.xml" Line="4" Column="61" />
+      <File FileName="Consonance.AndroidView\Resources\menu\EatMenu.xml" Line="4" Column="5" />
+      <File FileName="Consonance.AndroidView\ListAdapters.cs" Line="27" Column="50" />
+      <File FileName="Consonance\DietModels.cs" Line="312" Column="4" />
+      <File FileName="Consonance.AndroidView\ManageInfoActivity.cs" Line="68" Column="20" />
+      <File FileName="..\..\..\..\Program Files (x86)\MSBuild\Xamarin\Android\Xamarin.Android.Common.targets" Line="1389" Column="3" />
+      <File FileName="c:\cygwin\home\David\Consonance\Consonance\DietPresenters.cs" Line="214" Column="4" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -19,13 +21,13 @@
           <Node name="Consonance" expanded="True">
             <Node name="Consonance" expanded="True">
               <Node name="Diets" expanded="True" />
-              <Node name="DietModels.cs" selected="True" />
             </Node>
             <Node name="Consonance.AndroidView" expanded="True">
               <Node name="Resources" expanded="True">
+                <Node name="drawable" expanded="True" />
                 <Node name="layout" expanded="True" />
-                <Node name="menu" expanded="True" />
               </Node>
+              <Node name="ValueRequestHandler.cs" selected="True" />
             </Node>
           </Node>
         </State>
@@ -38,7 +40,6 @@
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
       <Breakpoint file="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\MainActivity.cs" line="277" column="45" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="50" column="1" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>

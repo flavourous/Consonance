@@ -73,8 +73,8 @@ namespace Consonance.AndroidView
 		}
 
 		TabDescList tabs = new TabDescList () {
-			{ "Eat", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu },
-			{ "Burn", Resource.Layout.Burn, Resource.Menu.BurnMenu, Resource.Menu.BurnEntryMenu },
+			{ "In", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu },
+			{ "Out", Resource.Layout.Burn, Resource.Menu.BurnMenu, Resource.Menu.BurnEntryMenu },
 			{ "Plan", Resource.Layout.Plan, Resource.Menu.PlanMenu, Resource.Menu.PlanEntryMenu },
 		};
 		public void OnTabReselected (ActionBar.Tab tab, FragmentTransaction ft) { }
@@ -122,8 +122,8 @@ namespace Consonance.AndroidView
 		#region IView implementation
 
 		public event Action<DateTime> changeday = delegate { };
-		readonly LooseRequestCaller<DietInstanceVM> _plan = new LooseRequestCaller<DietInstanceVM>();
-		public ICollectionEditorLooseCommands<DietInstanceVM> plan { get { return _plan; } }
+		readonly LooseRequestCaller<TrackerInstanceVM> _plan = new LooseRequestCaller<TrackerInstanceVM>();
+		public ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get { return _plan; } }
 		public event Action<InfoManageType> manageInfo = delegate { };
 		public void ManageInfos (InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, Action finished)
 		{
@@ -143,8 +143,8 @@ namespace Consonance.AndroidView
 			}
 			get{ return _day; }
 		}
-		private DietInstanceVM _diet;
-		public DietInstanceVM currentDiet
+		private TrackerInstanceVM _diet;
+		public TrackerInstanceVM currentDiet
 		{
 			set
 			{
@@ -235,9 +235,9 @@ namespace Consonance.AndroidView
 			}
 		}
 		DAdapter planAdapter;
-		public void SetInstances (IEnumerable<DietInstanceVM> instanceitems)
+		public void SetInstances (IEnumerable<TrackerInstanceVM> instanceitems)
 		{
-			var itms = new List<DietInstanceVM> (instanceitems);
+			var itms = new List<TrackerInstanceVM> (instanceitems);
 			planAdapter = new DAdapter (this, itms);
 			if(ActionBar.SelectedNavigationIndex==2)ReloadLayoutForTab ();
 		}
@@ -373,12 +373,12 @@ namespace Consonance.AndroidView
 		public void ListContextSelected(IMenuItem item)
 		{
 			EntryLineVM evm = null;
-			DietInstanceVM dvm = null;
+			TrackerInstanceVM dvm = null;
 			var pos = (item.MenuInfo as AdapterView.AdapterContextMenuInfo).Position;
 			if(slv.Adapter is BaseAdapter<EntryLineVM>)
 				evm = (slv.Adapter as BaseAdapter<EntryLineVM>) [pos];
-			else if(slv.Adapter is BaseAdapter<DietInstanceVM>)
-				dvm = (slv.Adapter as BaseAdapter<DietInstanceVM>) [pos];
+			else if(slv.Adapter is BaseAdapter<TrackerInstanceVM>)
+				dvm = (slv.Adapter as BaseAdapter<TrackerInstanceVM>) [pos];
 			switch (item.ItemId) {
 			case Resource.Id.removeEatEntry:
 				planCommands._eat.OnRemove (evm);
@@ -391,6 +391,12 @@ namespace Consonance.AndroidView
 				break;
 			case Resource.Id.editPlanEntry:
 				_plan.OnEdit (dvm);
+				break;
+			case Resource.Id.editEatEntry:
+				planCommands._eat.OnEdit (evm, defaultBuilder);
+				break;
+			case Resource.Id.editBurnEntry:
+				planCommands._burn.OnEdit (evm, defaultBuilder);
 				break;
 			}
 		}

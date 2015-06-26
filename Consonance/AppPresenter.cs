@@ -16,9 +16,9 @@ namespace Consonance
 	class PlanCommandManager<IRO> 
 	{
 		INotSoAbstractedDiet<IRO> cdh;
-		DietInstanceVM cd;
-		readonly Func<DietInstanceVM> getCurrent;
-		public PlanCommandManager(IPlanCommands<IRO> commands, Func<DietInstanceVM> getCurrent)
+		TrackerInstanceVM cd;
+		readonly Func<TrackerInstanceVM> getCurrent;
+		public PlanCommandManager(IPlanCommands<IRO> commands, Func<TrackerInstanceVM> getCurrent)
 		{
 			// remember it
 			this.getCurrent = getCurrent;
@@ -39,18 +39,18 @@ namespace Consonance
 
 		}
 
-		void View_addeatitem (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddEat (cd,bld); }
-		void View_removeeatitem (EntryLineVM vm) 								{ if (!VerifyDiet ()) return; cdh.RemoveEat (vm); }
-		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditEat (vm,bld); }
-		void View_addeatinfo (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddEatInfo (bld); }
-		void View_removeeatinfo (InfoLineVM vm) 								{ if (!VerifyDiet ()) return; cdh.RemoveEatInfo (vm); }
-		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditEatInfo (vm,bld); }
-		void View_addburnitem (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddBurn (cd,bld); }
-		void View_removeburnitem (EntryLineVM vm)							 	{ if (!VerifyDiet ()) return; cdh.RemoveBurn (vm); }
-		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditBurn (vm,bld); }
-		void View_addburninfo (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddBurnInfo (bld); }
-		void View_removeburninfo (InfoLineVM vm)							 	{ if (!VerifyDiet ()) return; cdh.RemoveBurnInfo (vm); }
-		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditBurnInfo (vm,bld); }
+		void View_addeatitem (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddIn (cd,bld); }
+		void View_removeeatitem (EntryLineVM vm) 								{ if (!VerifyDiet ()) return; cdh.RemoveIn (vm); }
+		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditIn (vm,bld); }
+		void View_addeatinfo (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddInInfo (bld); }
+		void View_removeeatinfo (InfoLineVM vm) 								{ if (!VerifyDiet ()) return; cdh.RemoveInInfo (vm); }
+		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditInInfo (vm,bld); }
+		void View_addburnitem (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddOut (cd,bld); }
+		void View_removeburnitem (EntryLineVM vm)							 	{ if (!VerifyDiet ()) return; cdh.RemoveOut (vm); }
+		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditOut (vm,bld); }
+		void View_addburninfo (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddOutInfo (bld); }
+		void View_removeburninfo (InfoLineVM vm)							 	{ if (!VerifyDiet ()) return; cdh.RemoveOutInfo (vm); }
+		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditOutInfo (vm,bld); }
 
 		bool VerifyDiet()
 		{
@@ -137,7 +137,7 @@ namespace Consonance
 		void View_manageInfo (InfoManageType obj)
 		{
 			if (view.currentDiet == null) return;
-			var cdh = view.currentDiet.sender as IAbstractedDiet;
+			var cdh = view.currentDiet.sender as IAbstractedTracker;
 			ChangeTriggerList<InfoLineVM> lines = new ChangeTriggerList<InfoLineVM> ();
 
 			DietVMChangeEventHandler cdel = (sender, args) => {
@@ -161,20 +161,20 @@ namespace Consonance
 			
 		void PushInLinesAndFire(InfoManageType mt, ChangeTriggerList<InfoLineVM> bl)
 		{
-			var cdh = view.currentDiet.sender as IAbstractedDiet;
+			var cdh = view.currentDiet.sender as IAbstractedTracker;
 			bl.Clear ();
 			switch (mt) {
 			case InfoManageType.Eat:
-				bl.AddRange (cdh.EatInfos (false));
+				bl.AddRange (cdh.InInfos (false));
 				break;
 			case InfoManageType.Burn:
-				bl.AddRange (cdh.BurnInfos (false));
+				bl.AddRange (cdh.OutInfos (false));
 				break;
 			}
 			bl.OnChanged ();
 		}
 			
-		void View_selectdietinstance (DietInstanceVM obj)
+		void View_selectdietinstance (TrackerInstanceVM obj)
 		{
 			view.currentDiet = obj;
 			PushEatLines();
@@ -197,44 +197,45 @@ namespace Consonance
 
 		void Handleadddietinstance ()
 		{
-			List<IAbstractedDiet> saveDiets = new List<IAbstractedDiet> (dietHandlers);
+			List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
 			List<String> dietnames = new List<string> ();
 			foreach (var ad in saveDiets)
 				dietnames.Add (ad.dietName);
-			input.SelectString ("Select Diet Type", dietnames, -1, si => saveDiets[si].StartNewDiet());
+			input.SelectString ("Select Diet Type", dietnames, -1, 
+				si => saveDiets[si].StartNewTracker());
 		}
 
-		void Handleremovedietinstance (DietInstanceVM obj)
+		void Handleremovedietinstance (TrackerInstanceVM obj)
 		{
-			(obj.sender as IAbstractedDiet).RemoveDiet (obj);
+			(obj.sender as IAbstractedTracker).RemoveTracker (obj);
 		}
-		void View_editdietinstance (DietInstanceVM obj)
+		void View_editdietinstance (TrackerInstanceVM obj)
 		{
-			(obj.sender as IAbstractedDiet).EditDiet (obj);
+			(obj.sender as IAbstractedTracker).EditTracker (obj);
 		}
 
 		void PushEatLines()
 		{
-			var ad = view.currentDiet.sender as IAbstractedDiet;
-			var eatEntries = ad.EatEntries (view.currentDiet, ds, de);
+			var ad = view.currentDiet.sender as IAbstractedTracker;
+			var eatEntries = ad.InEntries (view.currentDiet, ds, de);
 			view.SetEatLines (eatEntries);
 		}
 		void PushBurnLines()
 		{
-			var ad = view.currentDiet.sender as IAbstractedDiet;
-			var burnEntries = ad.BurnEntries (view.currentDiet, ds, de);
+			var ad = view.currentDiet.sender as IAbstractedTracker;
+			var burnEntries = ad.OutEntries (view.currentDiet, ds, de);
 			view.SetBurnLines (burnEntries);
 		}
 		void PushTracking()
 		{
-			var ad = view.currentDiet.sender as IAbstractedDiet;
-			view.SetEatTrack (ad.GetEatTracking (view.currentDiet, ds, de));
-			view.SetBurnTrack (ad.GetBurnTracking (view.currentDiet, ds, de));
+			var ad = view.currentDiet.sender as IAbstractedTracker;
+			view.SetEatTrack (ad.GetInTracking (view.currentDiet, ds, de));
+			view.SetBurnTrack (ad.GetOutTracking (view.currentDiet, ds, de));
 		}
 
 		void PushDietInstances()
 		{
-			List<DietInstanceVM> build = new List<DietInstanceVM> ();
+			List<TrackerInstanceVM> build = new List<TrackerInstanceVM> ();
 			bool currentRemoved = view.currentDiet != null;
 			foreach (var dh in dietHandlers)
 				foreach (var d in dh.Instances ()) {
@@ -247,7 +248,7 @@ namespace Consonance
 			if (currentRemoved || view.currentDiet == null) {
 				// select the first one thats open today
 				foreach (var d in build) {
-					if (d.start <= DateTime.Now && (d.end ?? DateTime.MaxValue) >= DateTime.Now) {
+					if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
 						view.currentDiet = d;
 						PushEatLines ();
 						PushBurnLines ();
@@ -259,20 +260,20 @@ namespace Consonance
 
 		}
 			
-		List<IAbstractedDiet> dietHandlers = new List<IAbstractedDiet>();
-		void AddDietPair<VRO, D,E,Ei,B,Bi>(IDietModel<D,E,Ei,B,Bi> dietModel, IDietPresenter<D,E,Ei,B,Bi> dietPresenter, IValueRequestBuilder<VRO> defBuilder)
-			where D : DietInstance, new()
-			where E  : BaseEatEntry,new() 
-			where Ei : FoodInfo,new() 
-			where B  : BaseBurnEntry,new() 
-			where Bi : FireInfo,new() 
+		List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
+		void AddDietPair<VRO, D,E,Ei,B,Bi>(ITrackModel<D,E,Ei,B,Bi> dietModel, ITrackerPresenter<D,E,Ei,B,Bi> dietPresenter, IValueRequestBuilder<VRO> defBuilder)
+			where D : TrackerInstance, new()
+			where E  : BaseEntry,new() 
+			where Ei : BaseInfo,new() 
+			where B  : BaseEntry,new() 
+			where Bi : BaseInfo,new() 
 		{
-			var presentationHandler = new DietPresentationAbstractionHandler<VRO, D,E,Ei,B,Bi> (defBuilder, input, conn, dietModel, dietPresenter);
+			var presentationHandler = new TrackerPresentationAbstractionHandler<VRO, D,E,Ei,B,Bi> (defBuilder, input, conn, dietModel, dietPresenter);
 			dietHandlers.Add (presentationHandler);
 			presentationHandler.ViewModelsChanged += HandleViewModelsChanged;
 		}
 
-		void HandleViewModelsChanged (IAbstractedDiet sender, DietVMChangeEventArgs args)
+		void HandleViewModelsChanged (IAbstractedTracker sender, DietVMChangeEventArgs args)
 		{
 			// check its from the active diet
 			if (view.currentDiet == null || Object.ReferenceEquals (view.currentDiet.sender, sender)) {
@@ -305,11 +306,11 @@ namespace Consonance
 		void SetBurnTrack(IEnumerable<TrackingInfoVM> trackinfo);
 		void SetEatLines (IEnumerable<EntryLineVM> lineitems);
 		void SetBurnLines (IEnumerable<EntryLineVM> lineitems);
-		void SetInstances (IEnumerable<DietInstanceVM> instanceitems);
+		void SetInstances (IEnumerable<TrackerInstanceVM> instanceitems);
 		event Action<DateTime> changeday;
 		DateTime day { get; set; }
-		DietInstanceVM currentDiet { get; set; }
-		ICollectionEditorLooseCommands<DietInstanceVM> plan { get; }
+		TrackerInstanceVM currentDiet { get; set; }
+		ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get; }
 
 		event Action<InfoManageType> manageInfo;
 		// these fire to trigger managment of eat or burn infos
@@ -357,7 +358,7 @@ namespace Consonance
 		IValueRequest<T, InfoSelectValue> InfoLineVMRequestor(String name);
 		IValueRequest<T, DateTime> DateRequestor(String name);
 		IValueRequest<T, TimeSpan> TimeSpanRequestor(String name);
-		IValueRequest<T, double> DoubleRequestor(String name);
+		IValueRequest<T, double> DoubleRequestor(String name); 
 		IValueRequest<T, bool> BoolRequestor(String name);
 	}
 	public class InfoSelectValue
@@ -389,20 +390,24 @@ namespace Consonance
 			this.defaultValue = defaultValue;
 			name = requestName;
 		}
+		bool shouldReset = false;
 		public void Reset()
 		{
-			request.ClearListeners ();
-			request.value = defaultValue ();
+			if (!(shouldReset = request == null)) {
+				request.ClearListeners ();
+				request.value = defaultValue ();
+			} 
 		}
 		// will return cached instance if possible, but will do defaulting if specified and will
 		// always call ClearListeners, so that old registrations to the changed event are no longer called.
 		public T CGet<T>(Func<String,IValueRequest<T,V>> creator)
 		{
-			if (request == null) {
+			if (request == null)
 				request = creator (name);
-				request.changed += validate;
-			}
+
+			if (shouldReset) Reset ();
 			request.ClearListeners ();
+			request.changed += validate;
 			return (request as IValueRequest<T,V>).request;
 		}
 		public static implicit operator V (RequestStorageHelper<V> me)

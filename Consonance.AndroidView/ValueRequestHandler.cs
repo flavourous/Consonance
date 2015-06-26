@@ -61,7 +61,7 @@ namespace Consonance.AndroidView
 						requestArea.AddView(requests[e.NewIndex].inputView, e.NewIndex);
 						break;
 					case ListChangedType.ItemDeleted:
-						requestArea.RemoveViewAt(e.OldIndex);
+						requestArea.RemoveViewAt(e.NewIndex);
 						break;
 					}
 				};
@@ -133,31 +133,44 @@ namespace Consonance.AndroidView
 		public event Action changed = delegate { };
 		public void ClearListeners()
 		{
-			changed = delegate {
-			};
+			foreach (var d in changed.GetInvocationList())
+				changed -= (Action)d;
+			changed = delegate { };
 		}
-
+		protected void OnChanged()  {  changed(); }
 		public View inputView { get; private set;}
 		protected abstract int inputID {get;}
 	}
 	class StringRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, String>
 	{
-		public StringRequestWrapper(String n, Activity a) : base(n,a) { }
+		public StringRequestWrapper(String n, Activity a) : base(n,a) 
+		{
+			val.TextChanged += (sender, e) => OnChanged();
+		}
 		public string value 
 		{ 
-			get { return inputView.FindViewById<EditText> (Resource.Id.value).Text; }
-			set { inputView.FindViewById<EditText> (Resource.Id.value).Text = value; }
+			get { return val.Text; }
+			set { val.Text = value; }
 		}
+		EditText val { get { return inputView.FindViewById<EditText> (Resource.Id.value); } }
 		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
 	}
 	class DoubleRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, double>
 	{
-		public DoubleRequestWrapper (String n, Activity a) : base(n,a) { }
+		public DoubleRequestWrapper (String n, Activity a) : base(n,a) 
+		{
+			val.TextChanged += (sender, e) => OnChanged();
+		}
 		public double value 
 		{ 
-			get { return double.Parse(inputView.FindViewById<EditText> (Resource.Id.value).Text); }
-			set { inputView.FindViewById<EditText> (Resource.Id.value).Text = value.ToString(); }
+			get {
+				double ret = 0.0;
+				double.TryParse (val.Text, out ret);
+				return ret;
+			}
+			set { val.Text = value.ToString(); }
 		}
+		EditText val { get { return inputView.FindViewById<EditText> (Resource.Id.value); } }
 		protected override int inputID { get { return Resource.Layout.ValueRequests_Double; } }
 	}
 	class InfoSelectRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, InfoSelectValue>
@@ -165,7 +178,10 @@ namespace Consonance.AndroidView
 		public InfoSelectRequestWrapper (String n, Activity a) : base(n,a) 
 		{
 			var spinny = inputView.FindViewById<Spinner> (Resource.Id.values);
-			spinny.ItemSelected += (sender, e) => _value.selected = e.Position-1;
+			spinny.ItemSelected += (sender, e) => {
+				_value.selected = e.Position - 1;
+				OnChanged ();
+			};
 		}
 		InfoSelectValue _value;
 		public InfoSelectValue value 
@@ -197,22 +213,26 @@ namespace Consonance.AndroidView
 			picker = new DatePickerDialog (a, picker_callback, DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
 		}
 		void Gvt_Click (object sender, EventArgs e) { picker.Show (); }
-		void picker_callback(Object sender, DatePickerDialog.DateSetEventArgs e) { value = new DateTime (e.Year, e.MonthOfYear, e.DayOfMonth); }
+		void picker_callback(Object sender, DatePickerDialog.DateSetEventArgs e) { value = new DateTime (e.Year, e.MonthOfYear, e.DayOfMonth); OnChanged (); }
 		DateTime dateSet = DateTime.Now;
 		TextView vtv { get { return inputView.FindViewById<TextView> (Resource.Id.value); } }
 		public DateTime value { get { return dateSet; } set { dateSet = value; vtv.Text = value.ToString (); } }
 		protected override int inputID { get { return Resource.Layout.ValueRequests_DateTime; } }
 	}
+	class BoolRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, bool>
+	{
+		public BoolRequestWrapper(String n, Activity a) : base(n,a) 
+		{
+			cb.CheckedChange += (sender, e) => OnChanged ();
+		}
+		CheckBox cb { get { return inputView.FindViewById<CheckBox> (Resource.Id.name); } }
+		public bool value { get { return cb.Checked; } set { cb.Checked = value; } }
+		protected override int inputID { get { return Resource.Layout.ValueRequests_Bool; } }
+	}
 	class TimeSpanRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, TimeSpan>
 	{
 		public TimeSpanRequestWrapper (String n, Activity a) : base(n,a) { }
 		public TimeSpan value { get; set; }
-		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
-	}
-	class BoolRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, bool>
-	{
-		public BoolRequestWrapper(String n, Activity a) : base(n,a) { }
-		public bool value { get; set; }
 		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
 	}
 	class ValueRequestFactory : IValueRequestFactory<ValueRequestWrapper>

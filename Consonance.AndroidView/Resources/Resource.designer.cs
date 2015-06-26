@@ -93,14 +93,14 @@ namespace Consonance
 			// aapt resource value: 0x7f08001d
 			public const int add = 2131230749;
 			
-			// aapt resource value: 0x7f080024
-			public const int addBurned = 2131230756;
+			// aapt resource value: 0x7f080025
+			public const int addBurned = 2131230757;
 			
-			// aapt resource value: 0x7f080027
-			public const int addEaten = 2131230759;
+			// aapt resource value: 0x7f080029
+			public const int addEaten = 2131230761;
 			
-			// aapt resource value: 0x7f08002b
-			public const int addPlan = 2131230763;
+			// aapt resource value: 0x7f08002d
+			public const int addPlan = 2131230765;
 			
 			// aapt resource value: 0x7f080006
 			public const int burnTrackText = 2131230726;
@@ -165,8 +165,14 @@ namespace Consonance
 			// aapt resource value: 0x7f08001c
 			public const int edit = 2131230748;
 			
-			// aapt resource value: 0x7f08002a
-			public const int editPlanEntry = 2131230762;
+			// aapt resource value: 0x7f080024
+			public const int editBurnEntry = 2131230756;
+			
+			// aapt resource value: 0x7f080028
+			public const int editEatEntry = 2131230760;
+			
+			// aapt resource value: 0x7f08002c
+			public const int editPlanEntry = 2131230764;
 			
 			// aapt resource value: 0x7f08001f
 			public const int flb = 2131230751;
@@ -189,11 +195,11 @@ namespace Consonance
 			// aapt resource value: 0x7f08001a
 			public const int ll = 2131230746;
 			
-			// aapt resource value: 0x7f080025
-			public const int manageBurns = 2131230757;
+			// aapt resource value: 0x7f080026
+			public const int manageBurns = 2131230758;
 			
-			// aapt resource value: 0x7f080028
-			public const int manageFoods = 2131230760;
+			// aapt resource value: 0x7f08002a
+			public const int manageFoods = 2131230762;
 			
 			// aapt resource value: 0x7f080021
 			public const int name = 2131230753;
@@ -207,11 +213,11 @@ namespace Consonance
 			// aapt resource value: 0x7f080023
 			public const int removeBurnEntry = 2131230755;
 			
-			// aapt resource value: 0x7f080026
-			public const int removeEatEntry = 2131230758;
+			// aapt resource value: 0x7f080027
+			public const int removeEatEntry = 2131230759;
 			
-			// aapt resource value: 0x7f080029
-			public const int removePlanEntry = 2131230761;
+			// aapt resource value: 0x7f08002b
+			public const int removePlanEntry = 2131230763;
 			
 			// aapt resource value: 0x7f080018
 			public const int rl = 2131230744;
@@ -263,16 +269,19 @@ namespace Consonance
 			public const int Plan = 2130903048;
 			
 			// aapt resource value: 0x7f030009
-			public const int ValueRequests_DateTime = 2130903049;
+			public const int ValueRequests_Bool = 2130903049;
 			
 			// aapt resource value: 0x7f03000a
-			public const int ValueRequests_Double = 2130903050;
+			public const int ValueRequests_DateTime = 2130903050;
 			
 			// aapt resource value: 0x7f03000b
-			public const int ValueRequests_InfoSelect = 2130903051;
+			public const int ValueRequests_Double = 2130903051;
 			
 			// aapt resource value: 0x7f03000c
-			public const int ValueRequests_String = 2130903052;
+			public const int ValueRequests_InfoSelect = 2130903052;
+			
+			// aapt resource value: 0x7f03000d
+			public const int ValueRequests_String = 2130903053;
 			
 			static Layout()
 			{

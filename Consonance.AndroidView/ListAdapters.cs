@@ -27,10 +27,10 @@ namespace Consonance.AndroidView
 				view.FindViewById<TextView> (Resource.Id.burnitemtrack).Text = find[0].Value.ToString("F2");
 		}
 	}
-	class DAdapter : BaseAdapter<DietInstanceVM>{
+	class DAdapter : BaseAdapter<TrackerInstanceVM>{
 		readonly Activity context;
-		readonly List<DietInstanceVM> vms;
-		public DAdapter(Activity context, List<DietInstanceVM> vms)
+		readonly List<TrackerInstanceVM> vms;
+		public DAdapter(Activity context, List<TrackerInstanceVM> vms)
 		{
 			this.context = context;
 			this.vms = vms;
@@ -52,7 +52,7 @@ namespace Consonance.AndroidView
 				return vms.Count;
 			}
 		}
-		public override DietInstanceVM this [int index] { get { return vms [index]; } }
+		public override TrackerInstanceVM this [int index] { get { return vms [index]; } }
 	}
 	class LAdapter<T> : BaseAdapter<T>
 	{

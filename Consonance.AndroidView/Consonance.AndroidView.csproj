@@ -90,6 +90,7 @@
     <AndroidResource Include="Resources\layout\ManageInfoView.axml" />
     <AndroidResource Include="Resources\layout\ManageInfoLine.axml" />
     <AndroidResource Include="Resources\layout\ValueRequests_DateTime.axml" />
+    <AndroidResource Include="Resources\layout\ValueRequests_Bool.axml" />
   </ItemGroup>
   <Import Project="..\Consonance\Consonance.projitems" Label="Shared" Condition="Exists('..\Consonance\Consonance.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />

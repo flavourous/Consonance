@@ -36,13 +36,14 @@ namespace Consonance
 	}
 
 	// when we're doing a diet here, created by diet class
-	public class DietInstance
+	public class TrackerInstance
 	{
 		[PrimaryKey, AutoIncrement]
 		public int id {get;set;}
 		public string name{get;set;}
 		public DateTime started{get;set;}
-		public DateTime? ended{get;set;}
+		public DateTime ended{get;set;}
+		public bool hasEnded {get;set;}
 	}
 
 	public class BaseInfo 
@@ -84,29 +85,29 @@ namespace Consonance
 	#endregion
 
 	#region DIET_PLAN_INTERFACES
-	public interface IDietModel<D,Te,Tei,Tb,Tbi>
-		where D : DietInstance
-		where Te  : BaseEatEntry
-		where Tei : FoodInfo
-		where Tb  : BaseBurnEntry
-		where Tbi : FireInfo
+	public interface ITrackModel<D,Te,Tei,Tb,Tbi>
+		where D : TrackerInstance
+		where Te  : BaseEntry
+		where Tei : BaseInfo
+		where Tb  : BaseEntry
+		where Tbi : BaseInfo
 	{
 		// creates items
-		IEntryCreation<Te,Tei> foodcreator { get; }
-		IEntryCreation<Tb,Tbi> firecreator { get; }
+		IEntryCreation<Te,Tei> increator { get; }
+		IEntryCreation<Tb,Tbi> outcreator { get; }
 
 		// creator for dietinstance
 		String name { get; }
-		IEnumerable<DietWizardPage<T>> DietCreationPages<T>(IValueRequestFactory<T> factory);
-		IEnumerable<DietWizardPage<T>> DietEditPages<T>(D editing, IValueRequestFactory<T> factory);
-		D NewDiet();
-		void EditDiet (D toEdit);
+		IEnumerable<TrackerWizardPage<T>> CreationPages<T>(IValueRequestFactory<T> factory);
+		IEnumerable<TrackerWizardPage<T>> EditPages<T>(D editing, IValueRequestFactory<T> factory);
+		D New();
+		void Edit (D toEdit);
 	}
-	public class DietWizardPage<T>
+	public class TrackerWizardPage<T>
 	{
 		public readonly String title;
 		public readonly BindingList<T> valuerequests;
-		public DietWizardPage( String title, BindingList<T> req)
+		public TrackerWizardPage( String title, BindingList<T> req)
 		{
 			this.title = title;
 			valuerequests = req;
@@ -114,6 +115,8 @@ namespace Consonance
 	}
 	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
 	{
+		new String name { get; }
+
 		// ok you can clear stored data now
 		void ResetRequests();
 
@@ -135,6 +138,7 @@ namespace Consonance
 	}
 	public interface IInfoCreation<InfoType> where InfoType : class
 	{
+		String name { get; }
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
 		BindingList<T> InfoFields<T>(IValueRequestFactory<T> factory, InfoType willEdit=null);
 		// ok make me an info please here's that data.
@@ -148,57 +152,59 @@ namespace Consonance
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
 	delegate void EntryCallback(BaseEntry entry);
 
-	class DietModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType>
-		where DietInstType : DietInstance, new()
-		where EatType : BaseEatEntry, new()
-		where EatInfoType : FoodInfo, new()
-		where BurnType : BaseBurnEntry, new()
-		where BurnInfoType : FireInfo, new()
+	class TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType>
+		where DietInstType : TrackerInstance, new()
+		where EatType : BaseEntry, new()
+		where EatInfoType : BaseInfo, new()
+		where BurnType : BaseEntry, new()
+		where BurnInfoType : BaseInfo, new()
 	{
 		readonly MyConn conn;
-		public readonly IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
-		public readonly EntryHandler<DietInstType, EatType, EatInfoType> foodhandler;
-		public readonly EntryHandler<DietInstType, BurnType, BurnInfoType> firehandler;
-		public DietModelAccessLayer(MyConn conn, IDietModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
+		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
+		public readonly EntryHandler<DietInstType, EatType, EatInfoType> inhandler;
+		public readonly EntryHandler<DietInstType, BurnType, BurnInfoType> outhandler;
+		public TrackerModelAccessLayer(MyConn conn, ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
 		{
 			this.conn = conn;
 			this.model = model;
 			conn.CreateTable<DietInstType> ();
-			foodhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (conn, model.foodcreator);
-			firehandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (conn, model.firecreator);
+			inhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (conn, model.increator);
+			outhandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (conn, model.outcreator);
 		}
-		public DietInstType StartNewDiet()
+			
+	
+		public DietInstType StartNewTracker()
 		{
-			var di = model.NewDiet ();
+			var di = model.New ();
 			conn.Insert (di as DietInstType);
 			return di;
 		}
-		public void EditDiet(DietInstType diet)
+		public void EditTracker(DietInstType diet)
 		{
 			List<BaseEntry> orphans = new List<BaseEntry>();
-			orphans.AddRange (foodhandler.GetOrphans (diet));
-			orphans.AddRange (firehandler.GetOrphans (diet));
+			orphans.AddRange (inhandler.GetOrphans (diet));
+			orphans.AddRange (outhandler.GetOrphans (diet));
 			foreach (var e in orphans)
 				if (e.entryWhen < diet.started)
 					diet.started = e.entryWhen;
-			if (diet.ended.HasValue)
+			if (diet.hasEnded)
 				foreach (var e in orphans)
 					if (e.entryWhen > diet.ended)
 						diet.ended = e.entryWhen;
 			conn.Update (diet, typeof(DietInstType)); 
 		}
-		public void RemoveDiet(DietInstType rem)
+		public void RemoveTracker(DietInstType rem)
 		{
 			conn.Delete<EatType>("dietinstanceid = " + rem.id);
 			conn.Delete<BurnType>("dietinstanceid = " + rem.id);
 			conn.Delete<DietInstType> (rem.id);
 		}
-		public IEnumerable<DietInstType> GetDiets()
+		public IEnumerable<DietInstType> GetTrackers()
 		{
 			var tab = conn.Table<DietInstType> ();
 			return tab;
 		}
-		public IEnumerable<DietInstType> GetDiets(DateTime st, DateTime en)
+		public IEnumerable<DietInstType> GetTrackers(DateTime st, DateTime en)
 		{
 			//  | is i1/i2 \ is st/en		i1>st	i2>en	i1>en	i2>st		WANTED
 			// |    \    \     |		= 	false	true	false	true		true		
@@ -211,7 +217,7 @@ namespace Consonance
 			// what works is (i1>st ^ i2 > en) | (i1>en ^ i2>st)
 
 			return conn.Table<DietInstType> ().Where (
-				d => ((d.ended == null && (st >= d.started || en >= d.started))
+				d => ((!d.hasEnded && (st >= d.started || en >= d.started))
 					|| ((d.started >= st ^ d.ended >= en) || (d.started >= en ^ d.ended >= st))));
 		}
 
@@ -226,10 +232,13 @@ namespace Consonance
 	}
 
 	class EntryHandler<D, EntryType,EntryInfoType> : IInfoHandler<EntryInfoType>
-		where D : DietInstance, new()
+		where D : TrackerInstance, new()
 		where EntryType : BaseEntry, new()
 		where EntryInfoType : BaseInfo, new()
 	{
+		public String infoName { get { return (creator as IInfoCreation<EntryInfoType>).name; } }
+		public String entryName { get { return creator.name; } }
+
 		readonly SQLiteConnection conn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
 		public EntryHandler(SQLiteConnection conn, IEntryCreation<EntryType, EntryInfoType> creator)
@@ -248,14 +257,14 @@ namespace Consonance
 		{
 			return true;
 		}
-		void CheckOrphans(D diet, EntryType entry)
+		void CheckOrphans(D diet, EntryType entry) // FIXME SLOW
 		{
 			bool updateDiet = false;
 			if (diet.started > entry.entryWhen) {
 				updateDiet = true;
 				diet.started = entry.entryWhen;
 			}
-			if (diet.ended != null && diet.ended < entry.entryWhen) {
+			if (diet.hasEnded && diet.ended < entry.entryWhen) {
 				updateDiet = true;
 				diet.ended = entry.entryWhen;
 			}
@@ -309,7 +318,7 @@ namespace Consonance
 			return conn.Table<EntryType> ().Where (d => 
 				d.dietinstanceid == diet.id &&  (
 					d.entryWhen < diet.started || 
-					(diet.ended != null && d.entryWhen > diet.ended)
+					(diet.hasEnded && d.entryWhen > diet.ended)
 				)
 			);
 		}
