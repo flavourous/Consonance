@@ -231,9 +231,29 @@ namespace Consonance.AndroidView
 	}
 	class TimeSpanRequestWrapper : ValueRequestWrapper, IValueRequest<ValueRequestWrapper, TimeSpan>
 	{
-		public TimeSpanRequestWrapper (String n, Activity a) : base(n,a) { }
-		public TimeSpan value { get; set; }
-		protected override int inputID { get { return Resource.Layout.ValueRequests_String; } }
+		public TimeSpanRequestWrapper (String n, Activity a) : base(n,a) 
+		{
+			h.TextChanged+= H_TextChanged;
+			m.TextChanged+= H_TextChanged;
+		}
+		void H_TextChanged (object sender, Android.Text.TextChangedEventArgs e) { OnChanged (); }
+		EditText h { get { return inputView.FindViewById<EditText> (Resource.Id.value_h); } }
+		EditText m { get { return inputView.FindViewById<EditText> (Resource.Id.value_m); } }
+		public TimeSpan value { 
+			get 
+			{
+				int hr = 0, mn = 0;
+				int.TryParse (h.Text, out hr);
+				int.TryParse (m.Text, out mn);
+				return new TimeSpan (hr, mn, 0);
+			}
+			set 
+			{
+				h.Text = value.Hours.ToString ();
+				m.Text = value.Minutes.ToString ();
+			}
+		}
+		protected override int inputID { get { return Resource.Layout.ValueRequests_TimeSpan; } }
 	}
 	class ValueRequestFactory : IValueRequestFactory<ValueRequestWrapper>
 	{

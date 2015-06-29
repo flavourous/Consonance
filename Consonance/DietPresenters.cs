@@ -305,18 +305,18 @@ namespace Consonance
 
 		public void AddIn(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)
 		{
-			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, InInfos(false), bld);
+			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, presenter.GetRepresentation, bld);
 		}
 		public void AddOut(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)
 		{
-			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, OutInfos(false), bld);
+			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, presenter.GetRepresentation, bld);
 		}
 
 
 
 		void Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
 			EntryHandler<DietInstType,T,I> handler, 
-			IEnumerable<InfoLineVM> infos, IValueRequestBuilder<IRO> getValues, T editing = null) 
+			Func<I,InfoLineVM> rep, IValueRequestBuilder<IRO> getValues, T editing = null) 
 				where T : BaseEntry, new()
 				where I : BaseInfo, new()
 		{
@@ -327,8 +327,19 @@ namespace Consonance
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + handler.infoName);
 
 			// triggers code in factory
-			var fis = new List<InfoLineVM>(infos);
-			infoRequest.value = new InfoSelectValue () { choices = fis, selected = -1 };
+			var infos = conn.Table<I>();
+			var fis = new List<InfoLineVM>();
+			var isv = new InfoSelectValue () { choices = fis, selected = -1 };
+			if (editing != null && editing.infoinstanceid.HasValue) {
+				foreach(var fi in infos)
+				{
+					if (fi.id == editing.infoinstanceid.Value)
+						isv.selected = fis.Count;
+					fis.Add (rep(fi));
+				}
+			} else
+				fis.AddRange (ConvertMtoVM<InfoLineVM,I>(infos, rep));
+			infoRequest.value = isv;
 
 			// Set up for editing
 			int selectedInfo = -1;
@@ -405,11 +416,11 @@ namespace Consonance
 
 		public void EditIn (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
 			var eat = ed.originator as EatType;
-			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, InInfos(true),bld,eat);
+			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, presenter.GetRepresentation,bld,eat);
 		}
 		public void EditOut (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
 			var burn = ed.originator as BurnType;
-			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, OutInfos(true), bld,burn);
+			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, presenter.GetRepresentation, bld,burn);
 		}
 
 		public void AddInInfo(IValueRequestBuilder<IRO> bld)
