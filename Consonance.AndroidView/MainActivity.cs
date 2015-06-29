@@ -66,11 +66,17 @@ namespace Consonance.AndroidView
 	[Activity (Label = "Consonance", MainLauncher=true, Icon = "@drawable/icon")]
 	public class MainActivity : Activity, ActionBar.ITabListener, IView, IUserInput
 	{
+		readonly TrackerTrackView eatTracker, burnTracker;
 		readonly AndroidRequestBuilder defaultBuilder;
 		public MainActivity()
 		{
 			defaultBuilder = new AndroidRequestBuilder (this);
+			eatTracker = new TrackerTrackView (this);
+			burnTracker = new TrackerTrackView (this);
 		}
+
+		public void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { eatTracker.SetTrack (current, others); }
+		public void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { burnTracker.SetTrack (current, others); }
 
 		TabDescList tabs = new TabDescList () {
 			{ "In", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu },
@@ -96,16 +102,20 @@ namespace Consonance.AndroidView
 			if (ActionBar.SelectedNavigationIndex == 0) {
 				FindViewById<ListView> (Resource.Id.eatlist).Adapter = eatitems.apt;
 				FindViewById<TextView> (Resource.Id.eatlisttitletrack).Text = eatitems.name;
-				if(tabchanged) RegisterForContextMenu (FindViewById<ListView> (Resource.Id.eatlist));
+				if (tabchanged) {
+					RegisterForContextMenu (FindViewById<ListView> (Resource.Id.eatlist));
+					FindViewById<FrameLayout> (Resource.Id.eatTrackContainer).AddView (eatTracker);
+				}
 				useContext = Resource.Menu.EatEntryMenu;
-				FindViewById<TextView> (Resource.Id.eatTrackText).Text = eatTrackText;
 			}
 			if (ActionBar.SelectedNavigationIndex == 1) {
 				FindViewById<ListView> (Resource.Id.burnlist).Adapter = burnitems.apt;
 				FindViewById<TextView> (Resource.Id.burnlisttitletrack).Text = burnitems.name;
-				if(tabchanged) RegisterForContextMenu (FindViewById<ListView> (Resource.Id.burnlist));
+				if (tabchanged) {
+					RegisterForContextMenu (FindViewById<ListView> (Resource.Id.burnlist));
+					FindViewById<FrameLayout> (Resource.Id.burnTrackContainer).AddView (burnTracker);
+				}
 				useContext = Resource.Menu.BurnEntryMenu;
-				FindViewById<TextView> (Resource.Id.burnTrackText).Text = burnTrackText;
 			}
 			if (ActionBar.SelectedNavigationIndex == 2) {
 				var pl = FindViewById<ListView> (Resource.Id.planlist);
@@ -165,63 +175,9 @@ namespace Consonance.AndroidView
 			eatitems = SetLines (lineitems, Resource.Layout.EatEntryLine, ItemViewConfigs.Eat);
 			if(ActionBar.SelectedNavigationIndex==0) ReloadLayoutForTab ();
 		}
-		String eatTrackText;
-		public void SetEatTrack(IEnumerable<TrackingInfoVM> trackinfo)
-		{
-			List<String> elns = new List<string> ();
-			foreach(var ti in trackinfo)
-			{
-				double? inVal = 0.0;
-				if (ti.eatValues == null) inVal = null;
-				else foreach (var te in ti.eatValues)
-					inVal += te.value;
-
-				double? outVal = 0.0;
-				if (ti.burnValues == null) outVal = null;
-				else foreach (var te in ti.burnValues)
-					outVal += te.value;
-
-				if (!inVal.HasValue)
-					elns.Add (ti.valueName + " : " + ti.targetValue);
-				else if (!outVal.HasValue)
-					elns.Add (ti.valueName + " : " + inVal + "/" + ti.targetValue);
-				else 
-					elns.Add(String.Format("{0:0} eaten - {1:0} burned = {2:0} of {3:0} {4}",
-						inVal, outVal, inVal-outVal, ti.targetValue, ti.valueName));
-			}
-			eatTrackText = String.Join ("\n", elns);
-			if(ActionBar.SelectedNavigationIndex==0) ReloadLayoutForTab ();
-		}
 		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems)
 		{
 			burnitems = SetLines (lineitems, Resource.Layout.BurnEntryLine, ItemViewConfigs.Burn);
-			if(ActionBar.SelectedNavigationIndex==1) ReloadLayoutForTab ();
-		}
-		String burnTrackText;
-		public void SetBurnTrack(IEnumerable<TrackingInfoVM> trackinfo)
-		{
-			List<String> elns = new List<string> ();
-			foreach(var ti in trackinfo)
-			{
-				double? inVal = 0.0;
-				if (ti.eatValues == null) inVal = null;
-				else foreach (var te in ti.eatValues)
-					inVal += te.value;
-
-				double? outVal = 0.0;
-				if (ti.burnValues == null) outVal = null;
-				else foreach (var te in ti.burnValues)
-					outVal += te.value;
-
-				if (!outVal.HasValue)
-					elns.Add (ti.valueName + " : " + ti.targetValue);
-				else if (!inVal.HasValue)
-					elns.Add (ti.valueName + " : " + outVal + "/" + ti.targetValue);
-				else 
-					elns.Add(String.Format("{0:0} eaten - {1:0} burned = {2:0} of {3:0} {4}",
-						inVal, outVal, inVal-outVal, ti.targetValue, ti.valueName));
-			}
-			burnTrackText = String.Join ("\n", elns);
 			if(ActionBar.SelectedNavigationIndex==1) ReloadLayoutForTab ();
 		}
 		void SwitchHiglightDietInstance()
@@ -332,8 +288,8 @@ namespace Consonance.AndroidView
 			// init with nothing
 			SetEatLines (new EntryLineVM[0]);
 			SetBurnLines (new EntryLineVM[0]);
-			SetEatTrack (new TrackingInfoVM[0]);
-			SetBurnTrack (new TrackingInfoVM[0]);
+			SetEatTrack (new TrackerTracksVM(), new TrackerTracksVM[0]);
+			SetBurnTrack (new TrackerTracksVM(), new TrackerTracksVM[0]);
 			
 			foreach (var tab in tabs) {
 				ActionBar.Tab t = ActionBar.NewTab ();

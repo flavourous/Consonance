@@ -103,7 +103,7 @@ namespace Consonance
 			public const int addPlan = 2131230769;
 			
 			// aapt resource value: 0x7f080006
-			public const int burnTrackText = 2131230726;
+			public const int burnTrackContainer = 2131230726;
 			
 			// aapt resource value: 0x7f080007
 			public const int burnitemdatetime = 2131230727;
@@ -139,7 +139,7 @@ namespace Consonance
 			public const int dietitemname = 2131230731;
 			
 			// aapt resource value: 0x7f080013
-			public const int eatTrackText = 2131230739;
+			public const int eatTrackContainer = 2131230739;
 			
 			// aapt resource value: 0x7f080014
 			public const int eatitemdatetime = 2131230740;

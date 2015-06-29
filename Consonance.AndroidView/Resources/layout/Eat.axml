@@ -43,12 +43,6 @@
         p1:minHeight="25px"
         p1:layout_width="match_parent"
         p1:layout_height="150dp"
-        p1:id="@+id/flpEat"
-        p1:layout_alignParentBottom="true">
-        <TextView
-            p1:layout_width="match_parent"
-            p1:layout_height="match_parent"
-            p1:id="@+id/eatTrackText"
-            p1:gravity="center" />
-    </FrameLayout>
+        p1:id="@+id/eatTrackContainer"
+        p1:layout_alignParentBottom="true" />
 </RelativeLayout>

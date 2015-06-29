@@ -50,6 +50,12 @@ namespace Consonance
 		}
 	}
 
+	public class TrackerTracksVM
+	{
+		public String name;
+		public IEnumerable<TrackingInfoVM> tracks;
+	}
+
 	// The default behaviour is something like this:
 	// balance value if both not null.  if one is null, treat as a simple target. 
 	public class TrackingElementVM

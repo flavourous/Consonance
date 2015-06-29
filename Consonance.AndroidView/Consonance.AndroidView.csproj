@@ -58,6 +58,7 @@
     <Compile Include="ListAdapters.cs" />
     <Compile Include="ValueRequestHandler.cs" />
     <Compile Include="ManageInfoActivity.cs" />
+    <Compile Include="TrackerTrackView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />

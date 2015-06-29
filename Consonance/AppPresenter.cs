@@ -229,25 +229,43 @@ namespace Consonance
 		void PushTracking()
 		{
 			var ad = view.currentDiet.sender as IAbstractedTracker;
-			view.SetEatTrack (ad.GetInTracking (view.currentDiet, ds, de));
-			view.SetBurnTrack (ad.GetOutTracking (view.currentDiet, ds, de));
+			SetViewTrackerTracks (ti => ad.GetInTracking(ti,ds,de), view.SetEatTrack);
+			SetViewTrackerTracks (ti => ad.GetOutTracking(ti,ds,de), view.SetBurnTrack);
+		}
+		void SetViewTrackerTracks(Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
+		{
+			var v = processor (view.currentDiet);
+			viewSetter (
+				new TrackerTracksVM () { tracks = processor (view.currentDiet), name = view.currentDiet.name },
+				OtherOnes (view.currentDiet, lastBuild, processor)
+			);
+		}
+		IEnumerable<TrackerTracksVM> OtherOnes (TrackerInstanceVM curr, List<TrackerInstanceVM> last, Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor)
+		{
+			foreach (var d in last)
+				if (d != curr)
+					yield return new TrackerTracksVM () {
+						tracks = processor (d),
+						name = d.name
+					};
 		}
 
+		List<TrackerInstanceVM> lastBuild = new  List<TrackerInstanceVM>();
 		void PushDietInstances()
 		{
-			List<TrackerInstanceVM> build = new List<TrackerInstanceVM> ();
+			lastBuild.Clear ();
 			bool currentRemoved = view.currentDiet != null;
 			foreach (var dh in dietHandlers)
 				foreach (var d in dh.Instances ()) {
 					if (currentRemoved && Object.ReferenceEquals (d, view.currentDiet))
 						currentRemoved = false;
-					build.Add (d);
+					lastBuild.Add (d);
 				}
-			view.SetInstances (build);
+			view.SetInstances (lastBuild);
 			// change current diet if we have to.
 			if (currentRemoved || view.currentDiet == null) {
 				// select the first one thats open today
-				foreach (var d in build) {
+				foreach (var d in lastBuild) {
 					if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
 						view.currentDiet = d;
 						PushEatLines ();
@@ -302,8 +320,8 @@ namespace Consonance
 	/// </summary>
 	public interface IView
 	{
-		void SetEatTrack(IEnumerable<TrackingInfoVM> trackinfo);
-		void SetBurnTrack(IEnumerable<TrackingInfoVM> trackinfo);
+		void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others);
+		void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others);
 		void SetEatLines (IEnumerable<EntryLineVM> lineitems);
 		void SetBurnLines (IEnumerable<EntryLineVM> lineitems);
 		void SetInstances (IEnumerable<TrackerInstanceVM> instanceitems);
