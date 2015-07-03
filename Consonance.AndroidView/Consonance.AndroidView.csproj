@@ -59,6 +59,8 @@
     <Compile Include="ValueRequestHandler.cs" />
     <Compile Include="ManageInfoActivity.cs" />
     <Compile Include="TrackerTrackView.cs" />
+    <Compile Include="DroidUtils.cs" />
+    <Compile Include="TrackerTrackedDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -93,6 +95,8 @@
     <AndroidResource Include="Resources\layout\ValueRequests_DateTime.axml" />
     <AndroidResource Include="Resources\layout\ValueRequests_Bool.axml" />
     <AndroidResource Include="Resources\layout\ValueRequests_TimeSpan.axml" />
+    <AndroidResource Include="Resources\layout\TrackerInfo_Manage.axml" />
+    <AndroidResource Include="Resources\layout\TrackerInfo_Manage_Entry.axml" />
   </ItemGroup>
   <Import Project="..\Consonance\Consonance.projitems" Label="Shared" Condition="Exists('..\Consonance\Consonance.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />

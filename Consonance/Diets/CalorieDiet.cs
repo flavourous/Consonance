@@ -20,7 +20,6 @@ namespace Consonance
 
 	public class CalorieDiet : ITrackModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
-		public String name { get { return "Calorie Diet"; } }
 		RequestStorageHelper<String> dietName;
 		RequestStorageHelper<double> dietCalLim;
 		RequestStorageHelper<DateTime> dietStart;
@@ -397,6 +396,14 @@ namespace Consonance
 	// hmmmm calling into presenter is a nasty....abstract class?
 	public class CalorieDietPresenter : ITrackerPresenter<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
+		TrackerDialect dia = new TrackerDialect (
+			"Calorie Diet",
+			"Eat",
+			"Burn",
+			"Foods",
+			"Exercises"
+		);
+		public TrackerDialect dialect { get { return dia; } }
 
 
 		#region IDietPresenter implementation
@@ -424,6 +431,7 @@ namespace Consonance
 		{
 			var ent = (entry as CalorieDietInstance);
 			return new TrackerInstanceVM(
+				dialect,
 				ent.started, 
 				ent.hasEnded,
 				ent.ended,
@@ -460,8 +468,8 @@ namespace Consonance
 				kctot -= burn.kcals;
 			}
 
-			ti.eatValues = kcin.ToArray ();
-			ti.burnValues = kcout.ToArray ();
+			ti.inValues = kcin.ToArray ();
+			ti.outValues = kcout.ToArray ();
 			yield return ti;
 		}
 

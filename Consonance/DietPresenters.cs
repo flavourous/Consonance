@@ -7,6 +7,19 @@ using SQLite;
 namespace Consonance
 {
 	public class OriginatorVM {
+		public static bool OriginatorEquals(OriginatorVM first, OriginatorVM second)
+		{
+			if (first == null && second == null) 
+				return true;
+			if (first == null || second == null) 
+				return false;
+			Object fo = first.originator;
+			Object so = second.originator;
+			if (fo is BaseDB && so is BaseDB && (fo.GetType() == so.GetType()))  // also from same table though...
+				return (fo as BaseDB).id == (so as BaseDB).id;
+			else 
+				return Object.Equals (fo, so);
+		}
 		// Dear views, do not modify this object, or I will kill you.
 		public Object sender;
 		public Object originator;
@@ -26,13 +39,21 @@ namespace Consonance
 		public readonly String name;
 		public readonly String desc;
 		public readonly KVPList<string,double> displayAmounts;
+		public readonly TrackerDialect dialect;
 
-		public TrackerInstanceVM(DateTime s, bool he, DateTime e, String n, String d, KVPList<string,double>  t)
+		public TrackerInstanceVM(TrackerDialect td, DateTime s, bool he, DateTime e, String n, String d, KVPList<string,double>  t)
 		{
+			this.dialect = td;
 			start=s; end = e; hasended = he;
 			name=n; desc=d;
 			displayAmounts = t;
 		}
+
+		// Tracked property
+		Action<bool> _trackChanged = delegate { };
+		public Action<bool> trackChanged {set{ _trackChanged = value; }}
+		bool _tracked = true;
+		public bool tracked { get { return _tracked; } set { _tracked = value; _trackChanged (value); } }
 	}
 	public class EntryLineVM : OriginatorVM
 	{
@@ -52,8 +73,10 @@ namespace Consonance
 
 	public class TrackerTracksVM
 	{
-		public String name;
-		public IEnumerable<TrackingInfoVM> tracks;
+		public TrackerInstanceVM instance;
+		public String modelName { get { return (instance.sender as IAbstractedTracker).dialect.ModelName; } }
+		public String instanceName { get { return instance.name; } }
+		public IEnumerable<TrackingInfoVM> tracks = new TrackingInfoVM[0];
 	}
 
 	// The default behaviour is something like this:
@@ -66,8 +89,8 @@ namespace Consonance
 	public class TrackingInfoVM
 	{
 		public String valueName;
-		public TrackingElementVM[] eatValues;
-		public TrackingElementVM[] burnValues;
+		public TrackingElementVM[] inValues;
+		public TrackingElementVM[] outValues;
 		public double targetValue;
 	}
 	public class InfoLineVM : OriginatorVM
@@ -82,6 +105,8 @@ namespace Consonance
 		where BurnType : BaseEntry, new()
 		where BurnInfoType : BaseInfo, new()
 	{
+		TrackerDialect dialect { get; }
+
 		EntryLineVM GetRepresentation (EatType entry, EatInfoType entryInfo);
 		EntryLineVM GetRepresentation (BurnType entry, BurnInfoType entryInfo);
 
@@ -97,7 +122,7 @@ namespace Consonance
 
 	interface IAbstractedTracker
 	{
-		String dietName { get; }
+		TrackerDialect dialect  { get; }
 		IEnumerable<TrackerInstanceVM> Instances();
 		IEnumerable<EntryLineVM>  InEntries (TrackerInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<EntryLineVM>  OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end);
@@ -149,6 +174,7 @@ namespace Consonance
 		where BurnType : BaseEntry, new()
 		where BurnInfoType : BaseInfo, new()
 	{
+		public TrackerDialect dialect {get;private set;}
 		readonly IValueRequestBuilder<IRO> instanceBuilder;
 		readonly IUserInput getInput;
 		readonly ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
@@ -163,6 +189,7 @@ namespace Consonance
 		)
 		{
 			// store objects
+			this.dialect=presenter.dialect;
 			this.instanceBuilder = instanceBuilder;
 			this.getInput = getInput;
 			this.presenter = presenter;
@@ -189,7 +216,6 @@ namespace Consonance
 		}
 
 		public event DietVMChangeEventHandler ViewModelsChanged = delegate { };
-		public String dietName { get { return modelHandler.model.name; } }
 		public IEnumerable<TrackerInstanceVM> Instances()
 		{
 			foreach (var dt in modelHandler.GetTrackers())
@@ -302,11 +328,12 @@ namespace Consonance
 		{
 			var diet = dvm.originator as DietInstType;
 			int ct = 0;
-			if ((ct = modelHandler.outhandler.Count () + modelHandler.inhandler.Count ()) > 0)
+			if ((ct = modelHandler.outhandler.Count (diet) + modelHandler.inhandler.Count (diet)) > 0)
 				getInput.WarnConfirm (
-					"That instance still has "+ct+" entries, they will be removed if you continue.",
+					"That instance still has " + ct + " entries, they will be removed if you continue.",
 					() => modelHandler.RemoveTracker (diet)
 				);
+			else modelHandler.RemoveTracker (diet);
 		}
 
 		public void AddIn(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)

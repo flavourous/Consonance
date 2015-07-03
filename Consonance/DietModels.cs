@@ -17,10 +17,13 @@ namespace Consonance
 	// thier index from the prime table or insist manual assignment.
 
 	#region BASE_MODELS
-	public class BaseEntry 
+	public class BaseDB
 	{
 		[PrimaryKey, AutoIncrement]
 		public int id{ get;set; }
+	}
+	public class BaseEntry : BaseDB
+	{
 		public int dietinstanceid{get;set;}
 		public int? infoinstanceid{get;set;}
 		public DateTime entryWhen {get;set;}
@@ -36,20 +39,16 @@ namespace Consonance
 	}
 
 	// when we're doing a diet here, created by diet class
-	public class TrackerInstance
+	public class TrackerInstance : BaseDB
 	{
-		[PrimaryKey, AutoIncrement]
-		public int id {get;set;}
 		public string name{get;set;}
 		public DateTime started{get;set;}
 		public DateTime ended{get;set;}
 		public bool hasEnded {get;set;}
 	}
 
-	public class BaseInfo 
+	public class BaseInfo : BaseDB
 	{
-		[PrimaryKey, AutoIncrement]
-		public int id {get;set;}
 		public String name{ get; set; }
 	}
 
@@ -97,11 +96,22 @@ namespace Consonance
 		IEntryCreation<Tb,Tbi> outcreator { get; }
 
 		// creator for dietinstance
-		String name { get; }
 		IEnumerable<TrackerWizardPage<T>> CreationPages<T>(IValueRequestFactory<T> factory);
 		IEnumerable<TrackerWizardPage<T>> EditPages<T>(D editing, IValueRequestFactory<T> factory);
 		D New();
 		void Edit (D toEdit);
+	}
+	public class TrackerDialect
+	{
+		public readonly String InputEntryVerb, OutputEntrytVerb, InputInfoPlural, OutputInfoPlural, ModelName;
+		public TrackerDialect(String ModelName, String InputEntryVerb, String OutpuEntrytVerb, String InputInfoPlural, String OutputInfoPlural)
+		{
+			this.ModelName = ModelName;
+			this.InputEntryVerb = InputEntryVerb;
+			this.OutputEntrytVerb = OutpuEntrytVerb;
+			this.InputInfoPlural = InputInfoPlural;
+			this.OutputInfoPlural = OutputInfoPlural;
+		}
 	}
 	public class TrackerWizardPage<T>
 	{

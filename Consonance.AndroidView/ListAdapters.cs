@@ -42,7 +42,7 @@ namespace Consonance.AndroidView
 			if (view == null) // otherwise create a new one
 				view = context.LayoutInflater.Inflate (Resource.Layout.DietInstanceLine, null);
 			var vm = vms [position];
-			view.FindViewById<TextView> (Resource.Id.dietitemname).Text = vm.name;
+			view.FindViewById<TextView> (Resource.Id.dietitemname).Text = vm.name  + vm.tracked ? "[Tracked]" : "";
 			view.FindViewById<TextView> (Resource.Id.dietitemdatetime).Text = vm.start.ToShortDateString ();
 			view.FindViewById<TextView> (Resource.Id.dietitemmetric).Text = vm.displayAmounts [0].Key + ": " + vm.displayAmounts [0].Value.ToString ("F2");
 			return view;

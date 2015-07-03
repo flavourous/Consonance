@@ -13,12 +13,19 @@ namespace Consonance.AndroidView
 {
 	class TabDescList : List<TabDesc>
 	{
-		public void Add(String name, int layout, int menu, int contextmenu)
+		public void Add(String name, int layout, int menu, int contextmenu, MenuOverrideList mol)
 		{
-			this.Add(new TabDesc() { name=name, layout=layout, menu=menu, contextmenu=contextmenu });
+			this.Add(new TabDesc() { name=name, layout=layout, menu=menu, contextmenu=contextmenu, menuOverrides = mol });
 		}
 	}
-	class TabDesc { public String name; public int layout; public int menu; public int contextmenu; }
+	class TabDesc { public String name; public int layout; public int menu; public int contextmenu; public List<MenuOverride> menuOverrides; }
+	class MenuOverrideList : List<MenuOverride> {
+		public void Add(int index, String name)
+		{
+			this.Add (new MenuOverride () { index = index, name = name });
+		}
+	}
+	class MenuOverride { public int index; public String name; }
 
 
 	class BoundCommands : IPlanCommands<ValueRequestWrapper>
@@ -66,22 +73,17 @@ namespace Consonance.AndroidView
 	[Activity (Label = "Consonance", MainLauncher=true, Icon = "@drawable/icon")]
 	public class MainActivity : Activity, ActionBar.ITabListener, IView, IUserInput
 	{
-		readonly TrackerTrackView eatTracker, burnTracker;
-		readonly AndroidRequestBuilder defaultBuilder;
-		public MainActivity()
-		{
-			defaultBuilder = new AndroidRequestBuilder (this);
-			eatTracker = new TrackerTrackView (this);
-			burnTracker = new TrackerTrackView (this);
-		}
+		TrackerTrackView eatTracker, burnTracker;
+		AndroidRequestBuilder defaultBuilder;
 
 		public void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { eatTracker.SetTrack (current, others); }
 		public void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { burnTracker.SetTrack (current, others); }
 
-		TabDescList tabs = new TabDescList () {
-			{ "In", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu },
-			{ "Out", Resource.Layout.Burn, Resource.Menu.BurnMenu, Resource.Menu.BurnEntryMenu },
-			{ "Plan", Resource.Layout.Plan, Resource.Menu.PlanMenu, Resource.Menu.PlanEntryMenu },
+		List<TabDesc> tabs = new TabDescList
+		{
+			{ "In", Resource.Layout.Eat, Resource.Menu.EatMenu, Resource.Menu.EatEntryMenu, new MenuOverrideList { { 1, "In" } } },
+			{ "Out", Resource.Layout.Burn, Resource.Menu.BurnMenu, Resource.Menu.BurnEntryMenu, new MenuOverrideList { { 1, "Out" } } },
+			{ "Plan", Resource.Layout.Plan, Resource.Menu.PlanMenu, Resource.Menu.PlanEntryMenu, new MenuOverrideList() },
 		};
 		public void OnTabReselected (ActionBar.Tab tab, FragmentTransaction ft) { }
 		public void OnTabUnselected (ActionBar.Tab tab, FragmentTransaction ft) { }
@@ -104,7 +106,7 @@ namespace Consonance.AndroidView
 				FindViewById<TextView> (Resource.Id.eatlisttitletrack).Text = eatitems.name;
 				if (tabchanged) {
 					RegisterForContextMenu (FindViewById<ListView> (Resource.Id.eatlist));
-					FindViewById<FrameLayout> (Resource.Id.eatTrackContainer).AddView (eatTracker);
+					DroidUtils.PushView (eatTracker, FindViewById<FrameLayout> (Resource.Id.eatTrackContainer));
 				}
 				useContext = Resource.Menu.EatEntryMenu;
 			}
@@ -113,7 +115,7 @@ namespace Consonance.AndroidView
 				FindViewById<TextView> (Resource.Id.burnlisttitletrack).Text = burnitems.name;
 				if (tabchanged) {
 					RegisterForContextMenu (FindViewById<ListView> (Resource.Id.burnlist));
-					FindViewById<FrameLayout> (Resource.Id.burnTrackContainer).AddView (burnTracker);
+					DroidUtils.PushView (burnTracker, FindViewById<FrameLayout> (Resource.Id.burnTrackContainer));
 				}
 				useContext = Resource.Menu.BurnEntryMenu;
 			}
@@ -124,10 +126,14 @@ namespace Consonance.AndroidView
 				SwitchHiglightDietInstance();
 				if (tabchanged) {
 					RegisterForContextMenu (pl);
-					pl.ItemClick += (sender, e) => _plan.OnSelect (planAdapter [e.Position]);
+					pl.ItemClick += (sender, e) => {
+						var itm = planAdapter [e.Position];
+						_plan.OnSelect (itm);
+					};
 				}
 			}
 		}
+			
 
 		#region IView implementation
 
@@ -138,8 +144,9 @@ namespace Consonance.AndroidView
 		public void ManageInfos (InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, Action finished)
 		{
 			// launch that manage activity...and erm pass it some hooks?? 
-			var icom = (mt == InfoManageType.Eat ? planCommands.eatinfo : planCommands.burninfo) as BoundRequestCaller<InfoLineVM>;
-			ManageInfoActivity.SetSharedObjects(finished, toManage, icom);
+			var icom = (mt == InfoManageType.In ? planCommands.eatinfo : planCommands.burninfo) as BoundRequestCaller<InfoLineVM>;
+			var ipl = mt == InfoManageType.In ? currentDiet.dialect.InputInfoPlural : currentDiet.dialect.OutputInfoPlural;
+			ManageInfoActivity.SetSharedObjects(ipl, finished, toManage, icom);
 			StartActivity (new Intent(this, typeof(ManageInfoActivity)));
 		}
 
@@ -160,6 +167,7 @@ namespace Consonance.AndroidView
 			{
 				_diet = value;
 				SwitchHiglightDietInstance();
+				ChangeNames ();
 			}
 			get { return _diet; }
 		}
@@ -180,11 +188,19 @@ namespace Consonance.AndroidView
 			burnitems = SetLines (lineitems, Resource.Layout.BurnEntryLine, ItemViewConfigs.Burn);
 			if(ActionBar.SelectedNavigationIndex==1) ReloadLayoutForTab ();
 		}
+		void ChangeNames()
+		{
+			ActionBar.GetTabAt (0).SetText (currentDiet.dialect.InputEntryVerb);
+			ActionBar.GetTabAt (1).SetText(currentDiet.dialect.OutputEntrytVerb);
+			tabs[0].menuOverrides[0].name = currentDiet.dialect.InputInfoPlural;
+			tabs[1].menuOverrides[0].name = currentDiet.dialect.OutputInfoPlural;
+			InvalidateOptionsMenu ();
+		}
 		void SwitchHiglightDietInstance()
 		{
 			if (ActionBar.SelectedNavigationIndex == 2) {
 				for (int i = 0; i < planAdapter.Count; i++)
-					if (Object.ReferenceEquals (planAdapter [i], _diet)) {
+					if (OriginatorVM.OriginatorEquals(planAdapter [i], _diet)) {
 						var pl = FindViewById<ListView> (Resource.Id.planlist);
 						pl.SetItemChecked (i, true);
 					}
@@ -195,7 +211,7 @@ namespace Consonance.AndroidView
 		{
 			var itms = new List<TrackerInstanceVM> (instanceitems);
 			planAdapter = new DAdapter (this, itms);
-			if(ActionBar.SelectedNavigationIndex==2)ReloadLayoutForTab ();
+			if(ActionBar.SelectedNavigationIndex==2) ReloadLayoutForTab ();
 		}
 		delegate void MyViewConfiguror<VMType>(View view, VMType vm, String use);
 		SetRet SetLines (IEnumerable<EntryLineVM> lineitems, int vid, MyViewConfiguror<EntryLineVM> cfg)
@@ -260,10 +276,10 @@ namespace Consonance.AndroidView
 				_plan.OnAdd ();
 				break;
 			case Resource.Id.manageFoods:
-				manageInfo (InfoManageType.Eat);
+				manageInfo (InfoManageType.In);
 				break;
 			case Resource.Id.manageBurns:
-				manageInfo (InfoManageType.Burn);
+				manageInfo (InfoManageType.Out);
 				break;
 			default:
 				break;
@@ -273,8 +289,11 @@ namespace Consonance.AndroidView
 		public override bool OnPrepareOptionsMenu (IMenu menu)
 		{
 			if (ActionBar.SelectedNavigationIndex > -1) {
+				var st = tabs [ActionBar.SelectedNavigationIndex];
 				menu.Clear ();
-				MenuInflater.Inflate (tabs [ActionBar.SelectedNavigationIndex].menu, menu);
+				MenuInflater.Inflate (st.menu, menu);
+				foreach(var ovrd in st.menuOverrides)
+					menu.GetItem (ovrd.index).SetTitle (ovrd.name);
 			}
 			return base.OnPrepareOptionsMenu (menu);
 		}
@@ -283,13 +302,18 @@ namespace Consonance.AndroidView
 		{
 			base.OnCreate (bundle);
 
+			// stuff
+			defaultBuilder = new AndroidRequestBuilder (this);
+			eatTracker = new TrackerTrackView (this);
+			burnTracker = new TrackerTrackView (this);
+
 			Window.RequestFeature (WindowFeatures.ActionBar);
 
 			// init with nothing
 			SetEatLines (new EntryLineVM[0]);
 			SetBurnLines (new EntryLineVM[0]);
-			SetEatTrack (new TrackerTracksVM(), new TrackerTracksVM[0]);
-			SetBurnTrack (new TrackerTracksVM(), new TrackerTracksVM[0]);
+			SetEatTrack (null, new TrackerTracksVM[0]);
+			SetBurnTrack (null, new TrackerTracksVM[0]);
 			
 			foreach (var tab in tabs) {
 				ActionBar.Tab t = ActionBar.NewTab ();

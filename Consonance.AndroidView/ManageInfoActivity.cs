@@ -18,14 +18,16 @@ namespace Consonance.AndroidView
 	[Activity (Label = "ManageInfoActivity")]			
 	public class ManageInfoActivity : Activity
 	{
-		public static void SetSharedObjects(Action finished, ChangeTriggerList<InfoLineVM> toShow, BoundRequestCaller<InfoLineVM> icom)
+		public static void SetSharedObjects(String infoPlural, Action finished, ChangeTriggerList<InfoLineVM> toShow, BoundRequestCaller<InfoLineVM> icom)
 		{
+			SO.infoPlural = infoPlural;
 			SO.finished = finished;
 			SO.toShow = toShow;
 			SO.icom = icom;
 		}
 		static class SO
 		{
+			public static String infoPlural;
 			public static Action finished;
 			public static ChangeTriggerList<InfoLineVM> toShow;
 			public static BoundRequestCaller<InfoLineVM> icom;
@@ -75,6 +77,7 @@ namespace Consonance.AndroidView
 		{
 			// grab the intent...ugh
 			SO.toShow.Changed += Itnt_toShow_Changed;
+			Title = "Manage " + SO.infoPlural;
 			MakeLAD ();
 			base.OnStart ();
 		}

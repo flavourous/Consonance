@@ -31,6 +31,7 @@ namespace Consonance.AndroidView
 			gvDialog.RequestWindowFeature ((int)WindowFeatures.NoTitle);
 			gvDialog.SetCanceledOnTouchOutside (true);
 
+
 			// add elements //
 			{
 				// title
@@ -51,14 +52,14 @@ namespace Consonance.AndroidView
 				//init layout area
 				int i=0;
 				foreach (var req in requests)
-					requestArea.AddView (req.inputView,i++);
+					DroidUtils.PushView (req.inputView, requestArea, i++);
 
 				// handle requse object changes
 				ListChangedEventHandler leh = (object sender, ListChangedEventArgs e) => 
 				{
 					switch (e.ListChangedType) {
 					case ListChangedType.ItemAdded:
-						requestArea.AddView(requests[e.NewIndex].inputView, e.NewIndex);
+						DroidUtils.PushView(requests[e.NewIndex].inputView, requestArea, e.NewIndex);
 						break;
 					case ListChangedType.ItemDeleted:
 						requestArea.RemoveViewAt(e.NewIndex);
@@ -67,25 +68,28 @@ namespace Consonance.AndroidView
 				};
 				requests.ListChanged += leh;
 
+				// processing view
+				TextView proc = new TextView(parent) { Text = "Processing", Gravity = GravityFlags.Center, TextSize = 14 };
+				proc.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WrapContent,ViewGroup.LayoutParams.WrapContent);
+				proc.SetPadding(10,10,10,10);
+
+				// cancel event
+				bool success = false;
+				gvDialog.CancelEvent += (sender, e) => {
+					requests.ListChanged -= leh;
+					if(success) gvDialog.Window.SetContentView(proc);
+					completed(success);
+				};
+
 				// cancel button
 				Button cancel = new Button (parent) { Text = "Cancel" };
 				RelativeLayout.LayoutParams lp3 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.WrapContent, RelativeLayout.LayoutParams.WrapContent);
 				lp3.AddRule (LayoutRules.AlignParentLeft);
 				lp3.AddRule (LayoutRules.Below, 3);
-				cancel.Click += (sender, e) => {
-					requests.ListChanged -= leh;
-					completed(false);
-					gvDialog.Cancel ();
-					requestArea.RemoveAllViews();
-				};
+				cancel.Click += (sender, e) => gvDialog.Cancel ();
 				cancel.LayoutParameters = lp3;
 				cancel.Id = 2;
 				rootLayout.AddView (cancel);
-
-				// processing view
-				TextView proc = new TextView(parent) { Text = "Processing", Gravity = GravityFlags.Center, TextSize = 14 };
-				proc.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WrapContent,ViewGroup.LayoutParams.WrapContent);
-				proc.SetPadding(10,10,10,10);
 
 				// ok/finish/next button
 				Button ofn = new Button (parent) { Text = pages == 1 ? "Ok" : page == pages-1 ? "Finish" : "Next" };
@@ -94,11 +98,8 @@ namespace Consonance.AndroidView
 				lp4.AddRule (LayoutRules.Below, 3);
 				ofn.Click += (sender, e) => {
 					// set loading message and ping completed
-					requests.ListChanged -= leh;
-					gvDialog.Window.SetContentView(proc);
-					completed(true); // it can do values it self! probabbly this before view is closed... accessors dietcty acess view..
+					success=true;
 					gvDialog.Cancel (); // just d7ont complete the promise! ok they are good.
-					requestArea.RemoveAllViews();
 				};
 				ofn.LayoutParameters = lp4;
 				rootLayout.AddView (ofn);

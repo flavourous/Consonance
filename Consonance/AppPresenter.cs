@@ -144,11 +144,11 @@ namespace Consonance
 				switch(args.changeType)
 				{
 				case DietVMChangeType.EatInfos:
-					if(obj == InfoManageType.Eat)
+					if(obj == InfoManageType.In)
 						PushInLinesAndFire (obj, lines);
 					break;
 				case DietVMChangeType.BurnInfos:
-					if(obj == InfoManageType.Burn)
+					if(obj == InfoManageType.Out)
 						PushInLinesAndFire (obj, lines);
 					break;
 				}
@@ -164,10 +164,10 @@ namespace Consonance
 			var cdh = view.currentDiet.sender as IAbstractedTracker;
 			bl.Clear ();
 			switch (mt) {
-			case InfoManageType.Eat:
+			case InfoManageType.In:
 				bl.AddRange (cdh.InInfos (false));
 				break;
-			case InfoManageType.Burn:
+			case InfoManageType.Out:
 				bl.AddRange (cdh.OutInfos (false));
 				break;
 			}
@@ -200,7 +200,7 @@ namespace Consonance
 			List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
 			List<String> dietnames = new List<string> ();
 			foreach (var ad in saveDiets)
-				dietnames.Add (ad.dietName);
+				dietnames.Add (ad.dialect.ModelName);
 			input.SelectString ("Select Diet Type", dietnames, -1, 
 				si => saveDiets[si].StartNewTracker());
 		}
@@ -236,17 +236,20 @@ namespace Consonance
 		{
 			var v = processor (view.currentDiet);
 			viewSetter (
-				new TrackerTracksVM () { tracks = processor (view.currentDiet), name = view.currentDiet.name },
+				new TrackerTracksVM () { 
+					tracks = processor (view.currentDiet), 
+					instance = view.currentDiet
+				},
 				OtherOnes (view.currentDiet, lastBuild, processor)
 			);
 		}
 		IEnumerable<TrackerTracksVM> OtherOnes (TrackerInstanceVM curr, List<TrackerInstanceVM> last, Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor)
 		{
 			foreach (var d in last)
-				if (d != curr)
+				if (d != curr && d.tracked)
 					yield return new TrackerTracksVM () {
 						tracks = processor (d),
-						name = d.name
+						instance = d
 					};
 		}
 
@@ -257,10 +260,14 @@ namespace Consonance
 			bool currentRemoved = view.currentDiet != null;
 			foreach (var dh in dietHandlers)
 				foreach (var d in dh.Instances ()) {
-					if (currentRemoved && Object.ReferenceEquals (d, view.currentDiet))
+					if (currentRemoved && OriginatorVM.OriginatorEquals(d, view.currentDiet)) // that checks db id and table, if originator is correctly set.
 						currentRemoved = false;
 					lastBuild.Add (d);
 				}
+			foreach (var vm in lastBuild)
+				vm.trackChanged = v => {
+					PushTracking(); // lazy way.
+				};
 			view.SetInstances (lastBuild);
 			// change current diet if we have to.
 			if (currentRemoved || view.currentDiet == null) {
@@ -335,7 +342,7 @@ namespace Consonance
 		void ManageInfos(InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, Action finished); // which ends up calling this one
 		// and the plancommands get called by the view for stuff...
 	}
-	public enum InfoManageType { Eat, Burn };
+	public enum InfoManageType { In, Out };
 	public interface IPlanCommands<IRO>
 	{
 		ICollectionEditorBoundCommands<EntryLineVM, IRO> eat { get; }
