@@ -9,7 +9,7 @@
         android:layout_above="@+id/botbuts"
         android:choiceMode="multipleChoice" />
     <LinearLayout
-        android:orientation="Horizontal"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"

@@ -1,4 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/addPlan" android:title="Add" android:showAsAction="ifRoom"/>
+    <item android:id="@+id/managePlans" android:title="Manage" android:showAsAction="ifRoom"/>
 </menu>

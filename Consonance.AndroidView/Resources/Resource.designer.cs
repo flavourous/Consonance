@@ -93,14 +93,20 @@ namespace Consonance
 			// aapt resource value: 0x7f08001d
 			public const int add = 2131230749;
 			
-			// aapt resource value: 0x7f080029
-			public const int addBurned = 2131230761;
-			
 			// aapt resource value: 0x7f08002d
-			public const int addEaten = 2131230765;
+			public const int addBurned = 2131230765;
 			
 			// aapt resource value: 0x7f080031
-			public const int addPlan = 2131230769;
+			public const int addEaten = 2131230769;
+			
+			// aapt resource value: 0x7f080035
+			public const int addPlan = 2131230773;
+			
+			// aapt resource value: 0x7f080022
+			public const int botbuts = 2131230754;
+			
+			// aapt resource value: 0x7f080023
+			public const int btnclose = 2131230755;
 			
 			// aapt resource value: 0x7f080006
 			public const int burnTrackContainer = 2131230726;
@@ -165,14 +171,14 @@ namespace Consonance
 			// aapt resource value: 0x7f08001c
 			public const int edit = 2131230748;
 			
-			// aapt resource value: 0x7f080028
-			public const int editBurnEntry = 2131230760;
-			
 			// aapt resource value: 0x7f08002c
-			public const int editEatEntry = 2131230764;
+			public const int editBurnEntry = 2131230764;
 			
 			// aapt resource value: 0x7f080030
-			public const int editPlanEntry = 2131230768;
+			public const int editEatEntry = 2131230768;
+			
+			// aapt resource value: 0x7f080034
+			public const int editPlanEntry = 2131230772;
 			
 			// aapt resource value: 0x7f08001f
 			public const int flb = 2131230751;
@@ -195,20 +201,26 @@ namespace Consonance
 			// aapt resource value: 0x7f08001a
 			public const int ll = 2131230746;
 			
-			// aapt resource value: 0x7f08002a
-			public const int manageBurns = 2131230762;
-			
 			// aapt resource value: 0x7f08002e
-			public const int manageFoods = 2131230766;
+			public const int manageBurns = 2131230766;
+			
+			// aapt resource value: 0x7f080032
+			public const int manageFoods = 2131230770;
+			
+			// aapt resource value: 0x7f080036
+			public const int managePlans = 2131230774;
 			
 			// aapt resource value: 0x7f080021
-			public const int name = 2131230753;
+			public const int managetivm = 2131230753;
 			
-			// aapt resource value: 0x7f080024
-			public const int name_h = 2131230756;
+			// aapt resource value: 0x7f080025
+			public const int name = 2131230757;
 			
-			// aapt resource value: 0x7f080026
-			public const int name_m = 2131230758;
+			// aapt resource value: 0x7f080028
+			public const int name_h = 2131230760;
+			
+			// aapt resource value: 0x7f08002a
+			public const int name_m = 2131230762;
 			
 			// aapt resource value: 0x7f08001e
 			public const int plan = 2131230750;
@@ -216,29 +228,32 @@ namespace Consonance
 			// aapt resource value: 0x7f080020
 			public const int planlist = 2131230752;
 			
-			// aapt resource value: 0x7f080027
-			public const int removeBurnEntry = 2131230759;
-			
 			// aapt resource value: 0x7f08002b
-			public const int removeEatEntry = 2131230763;
+			public const int removeBurnEntry = 2131230763;
 			
 			// aapt resource value: 0x7f08002f
-			public const int removePlanEntry = 2131230767;
+			public const int removeEatEntry = 2131230767;
+			
+			// aapt resource value: 0x7f080033
+			public const int removePlanEntry = 2131230771;
 			
 			// aapt resource value: 0x7f080018
 			public const int rl = 2131230744;
 			
+			// aapt resource value: 0x7f080024
+			public const int time_cb = 2131230756;
+			
 			// aapt resource value: 0x7f080017
 			public const int value = 2131230743;
 			
-			// aapt resource value: 0x7f080023
-			public const int value_h = 2131230755;
+			// aapt resource value: 0x7f080027
+			public const int value_h = 2131230759;
 			
-			// aapt resource value: 0x7f080025
-			public const int value_m = 2131230757;
+			// aapt resource value: 0x7f080029
+			public const int value_m = 2131230761;
 			
-			// aapt resource value: 0x7f080022
-			public const int values = 2131230754;
+			// aapt resource value: 0x7f080026
+			public const int values = 2131230758;
 			
 			static Id()
 			{
@@ -284,22 +299,25 @@ namespace Consonance
 			public const int TrackerInfo_Manage = 2130903049;
 			
 			// aapt resource value: 0x7f03000a
-			public const int ValueRequests_Bool = 2130903050;
+			public const int TrackerInfo_Manage_Entry = 2130903050;
 			
 			// aapt resource value: 0x7f03000b
-			public const int ValueRequests_DateTime = 2130903051;
+			public const int ValueRequests_Bool = 2130903051;
 			
 			// aapt resource value: 0x7f03000c
-			public const int ValueRequests_Double = 2130903052;
+			public const int ValueRequests_DateTime = 2130903052;
 			
 			// aapt resource value: 0x7f03000d
-			public const int ValueRequests_InfoSelect = 2130903053;
+			public const int ValueRequests_Double = 2130903053;
 			
 			// aapt resource value: 0x7f03000e
-			public const int ValueRequests_String = 2130903054;
+			public const int ValueRequests_InfoSelect = 2130903054;
 			
 			// aapt resource value: 0x7f03000f
-			public const int ValueRequests_TimeSpan = 2130903055;
+			public const int ValueRequests_String = 2130903055;
+			
+			// aapt resource value: 0x7f030010
+			public const int ValueRequests_TimeSpan = 2130903056;
 			
 			static Layout()
 			{

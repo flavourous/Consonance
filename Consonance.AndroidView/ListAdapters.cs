@@ -27,7 +27,8 @@ namespace Consonance.AndroidView
 				view.FindViewById<TextView> (Resource.Id.burnitemtrack).Text = find[0].Value.ToString("F2");
 		}
 	}
-	class DAdapter : BaseAdapter<TrackerInstanceVM>{
+	class DAdapter : BaseAdapter<TrackerInstanceVM>, IEnumerable<TrackerInstanceVM>
+	{
 		readonly Activity context;
 		readonly List<TrackerInstanceVM> vms;
 		public DAdapter(Activity context, List<TrackerInstanceVM> vms)
@@ -42,7 +43,7 @@ namespace Consonance.AndroidView
 			if (view == null) // otherwise create a new one
 				view = context.LayoutInflater.Inflate (Resource.Layout.DietInstanceLine, null);
 			var vm = vms [position];
-			view.FindViewById<TextView> (Resource.Id.dietitemname).Text = vm.name  + vm.tracked ? "[Tracked]" : "";
+			view.FindViewById<TextView> (Resource.Id.dietitemname).Text = vm.name  + (vm.tracked ? "[Tracked]" : "");
 			view.FindViewById<TextView> (Resource.Id.dietitemdatetime).Text = vm.start.ToShortDateString ();
 			view.FindViewById<TextView> (Resource.Id.dietitemmetric).Text = vm.displayAmounts [0].Key + ": " + vm.displayAmounts [0].Value.ToString ("F2");
 			return view;
@@ -53,6 +54,41 @@ namespace Consonance.AndroidView
 			}
 		}
 		public override TrackerInstanceVM this [int index] { get { return vms [index]; } }
+
+		#region IEnumerable implementation
+		public IEnumerator<TrackerInstanceVM> GetEnumerator ()
+		{
+			return new DEn (this);
+		}
+		IEnumerator IEnumerable.GetEnumerator ()
+		{
+			return GetEnumerator ();
+		}
+		#endregion
+	}
+	class DEn : IEnumerator<TrackerInstanceVM>
+	{
+		readonly DAdapter dd;
+		int st = -1;
+		public DEn(DAdapter dd)
+		{
+			this.dd = dd;
+		}
+		#region IEnumerator implementation
+		public bool MoveNext ()
+		{
+			st++;
+			return st < dd.Count;
+		}
+		public void Reset ()
+		{
+			st = 0; 
+		}
+		TrackerInstanceVM current { get { return dd [st]; } }
+		object IEnumerator.Current { get { return current; } }
+		public TrackerInstanceVM Current { get { return current; } }
+		#endregion
+		public void Dispose () { }
 	}
 	class LAdapter<T> : BaseAdapter<T>
 	{

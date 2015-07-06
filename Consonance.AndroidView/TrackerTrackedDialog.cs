@@ -14,25 +14,44 @@ namespace Consonance.AndroidView
 		{
 		}
 
-		public void Show(IEnumerable<TrackerInstanceVM> manag)
+		protected override void OnCreate (Android.OS.Bundle savedInstanceState)
 		{
+			RequestWindowFeature ((int)WindowFeatures.NoTitle);
+			SetCanceledOnTouchOutside (true);
 			SetContentView (Resource.Layout.TrackerInfo_Manage);
-			LAdapter<TrackerInstanceVM> lad = 
-				new LAdapter<TrackerInstanceVM> (
-					Context, 
-					new List<TrackerInstanceVM> (manag),
-					Android.Resource.Layout.SimpleListItemMultipleChoice,
-					(v, vm) => {
-						v.FindViewById<CheckBox>(Resource.Id.time_cb).Checked = vm.tracked;
-					});
+			FindViewById<Button>(Resource.Id.btnclose).Click += (sender, e) => Cancel();
+			base.OnCreate (savedInstanceState);
+		}
+		protected override void OnStart ()
+		{
+			base.OnStart ();
 			var lv = FindViewById<ListView> (Resource.Id.managetivm);
 			lv.Adapter = lad;
-			lv.ItemClick += (object sender, AdapterView.ItemClickEventArgs e) => {
-				vm.tracked = !vm.tracked;
+		}
 
-				e.View.FindViewById<CheckBox>(Resource.Id.time_cb).Checked = vm.tracked;
-			};
-
+		LAdapter<TrackerInstanceVM> lad;
+		Action onClose = delegate { };
+		protected override void OnStop ()
+		{
+			onClose ();
+			base.OnStop ();
+		}
+		public void Show(Activity fromact, IEnumerable<TrackerInstanceVM> manag, TrackerInstanceVM current, Action onClose)
+		{
+			this.onClose = onClose;
+			lad = new LAdapter<TrackerInstanceVM> (
+					fromact, 
+					new List<TrackerInstanceVM> (manag),
+					Resource.Layout.TrackerInfo_Manage_Entry,
+					(v, vm) => {
+					var vcb = v.FindViewById<CheckBox>(Resource.Id.time_cb);
+						if(OriginatorVM.OriginatorEquals(current,vm)) 
+							vcb.Enabled = false;
+						vcb.Checked = vm.tracked;
+						vcb.Text = vm.name;
+						vcb.CheckedChange += (sender, e) => vm.tracked = vcb.Checked;
+					});
+			Show ();
 		}
 	}
 }

@@ -73,6 +73,37 @@ namespace Consonance.AndroidView
 	[Activity (Label = "Consonance", MainLauncher=true, Icon = "@drawable/icon")]
 	public class MainActivity : Activity, ActionBar.ITabListener, IView, IUserInput
 	{
+		TrackerTrackedDialog ttd;
+		BoundCommands planCommands = new BoundCommands ();
+		protected override void OnCreate (Bundle bundle)
+		{
+			base.OnCreate (bundle);
+
+			// stuff
+			ttd = new TrackerTrackedDialog(this);
+			defaultBuilder = new AndroidRequestBuilder (this);
+			eatTracker = new TrackerTrackView (this);
+			burnTracker = new TrackerTrackView (this);
+
+			Window.RequestFeature (WindowFeatures.ActionBar);
+			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
+
+			// init with nothing
+			SetEatLines (new EntryLineVM[0]);
+			SetBurnLines (new EntryLineVM[0]);
+			SetEatTrack (null, new TrackerTracksVM[0]);
+			SetBurnTrack (null, new TrackerTracksVM[0]);
+
+			foreach (var tab in tabs) {
+				ActionBar.Tab t = ActionBar.NewTab ();
+				t.SetText (tab.name);
+				t.SetTabListener (this);
+				ActionBar.AddTab (t);
+			}
+
+			Presenter.Singleton.PresentTo (this, this, planCommands, defaultBuilder);
+		}
+
 		TrackerTrackView eatTracker, burnTracker;
 		AndroidRequestBuilder defaultBuilder;
 
@@ -275,6 +306,9 @@ namespace Consonance.AndroidView
 			case Resource.Id.addPlan:
 				_plan.OnAdd ();
 				break;
+			case Resource.Id.managePlans:
+				ttd.Show (this, new List<TrackerInstanceVM> (planAdapter), currentDiet, ()=>planAdapter.NotifyDataSetChanged());
+				break;
 			case Resource.Id.manageFoods:
 				manageInfo (InfoManageType.In);
 				break;
@@ -296,34 +330,6 @@ namespace Consonance.AndroidView
 					menu.GetItem (ovrd.index).SetTitle (ovrd.name);
 			}
 			return base.OnPrepareOptionsMenu (menu);
-		}
-		BoundCommands planCommands = new BoundCommands ();
-		protected override void OnCreate (Bundle bundle)
-		{
-			base.OnCreate (bundle);
-
-			// stuff
-			defaultBuilder = new AndroidRequestBuilder (this);
-			eatTracker = new TrackerTrackView (this);
-			burnTracker = new TrackerTrackView (this);
-
-			Window.RequestFeature (WindowFeatures.ActionBar);
-
-			// init with nothing
-			SetEatLines (new EntryLineVM[0]);
-			SetBurnLines (new EntryLineVM[0]);
-			SetEatTrack (null, new TrackerTracksVM[0]);
-			SetBurnTrack (null, new TrackerTracksVM[0]);
-			
-			foreach (var tab in tabs) {
-				ActionBar.Tab t = ActionBar.NewTab ();
-				t.SetText (tab.name);
-				t.SetTabListener (this);
-				ActionBar.AddTab (t);
-			}
-
-			ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
-			Presenter.Singleton.PresentTo (this, this, planCommands, defaultBuilder);
 		}
 		ListView slv;
 		Action<IMenuItem> selectAction;
