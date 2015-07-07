@@ -40,7 +40,7 @@ namespace Consonance.AndroidView
 		{
 			this.onClose = onClose;
 			lad = new LAdapter<TrackerInstanceVM> (
-					fromact, 
+					fromact.LayoutInflater, 
 					new List<TrackerInstanceVM> (manag),
 					Resource.Layout.TrackerInfo_Manage_Entry,
 					(v, vm) => {

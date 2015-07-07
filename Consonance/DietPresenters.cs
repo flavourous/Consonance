@@ -31,6 +31,16 @@ namespace Consonance
 			Add (new KeyValuePair<T1, T2> (a, b));
 		}
 	}
+	public class TrackerDetailsVM
+	{
+		public readonly String name, description, category;
+		public TrackerDetailsVM(String name, String description, String category)
+		{
+			this.name = name;
+			this.description = description;
+			this.category = category;
+		}
+	}
 	public class TrackerInstanceVM : OriginatorVM
 	{
 		public readonly DateTime start;
@@ -74,7 +84,7 @@ namespace Consonance
 	public class TrackerTracksVM
 	{
 		public TrackerInstanceVM instance;
-		public String modelName { get { return (instance.sender as IAbstractedTracker).dialect.ModelName; } }
+		public String modelName { get { return (instance.sender as IAbstractedTracker).details.name; } }
 		public String instanceName { get { return instance.name; } }
 		public IEnumerable<TrackingInfoVM> tracks = new TrackingInfoVM[0];
 	}
@@ -106,6 +116,7 @@ namespace Consonance
 		where BurnInfoType : BaseInfo, new()
 	{
 		TrackerDialect dialect { get; }
+		TrackerDetailsVM details { get; }
 
 		EntryLineVM GetRepresentation (EatType entry, EatInfoType entryInfo);
 		EntryLineVM GetRepresentation (BurnType entry, BurnInfoType entryInfo);
@@ -122,6 +133,7 @@ namespace Consonance
 
 	interface IAbstractedTracker
 	{
+		TrackerDetailsVM details { get; }
 		TrackerDialect dialect  { get; }
 		IEnumerable<TrackerInstanceVM> Instances();
 		IEnumerable<EntryLineVM>  InEntries (TrackerInstanceVM instance, DateTime start, DateTime end);
@@ -174,7 +186,8 @@ namespace Consonance
 		where BurnType : BaseEntry, new()
 		where BurnInfoType : BaseInfo, new()
 	{
-		public TrackerDialect dialect {get;private set;}
+		public TrackerDetailsVM details { get; private set; }
+		public TrackerDialect dialect { get; private set; }
 		readonly IValueRequestBuilder<IRO> instanceBuilder;
 		readonly IUserInput getInput;
 		readonly ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
@@ -189,6 +202,7 @@ namespace Consonance
 		)
 		{
 			// store objects
+			this.details = presenter.details;
 			this.dialect=presenter.dialect;
 			this.instanceBuilder = instanceBuilder;
 			this.getInput = getInput;
@@ -338,17 +352,17 @@ namespace Consonance
 
 		public void AddIn(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)
 		{
-			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, presenter.GetRepresentation, bld);
+			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation, bld);
 		}
 		public void AddOut(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)
 		{
-			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, presenter.GetRepresentation, bld);
+			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld);
 		}
 
 
 
 		void Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
-			EntryHandler<DietInstType,T,I> handler, 
+			EntryHandler<DietInstType,T,I> handler, bool true_if_in,
 			Func<I,InfoLineVM> rep, IValueRequestBuilder<IRO> getValues, T editing = null) 
 				where T : BaseEntry, new()
 				where I : BaseInfo, new()
@@ -357,7 +371,8 @@ namespace Consonance
 			creator.ResetRequests();
 
 			// get a request object for infos
-			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + handler.infoName);
+			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
+			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + info_plural);
 
 			// triggers code in factory
 			var infos = conn.Table<I>();
@@ -413,7 +428,8 @@ namespace Consonance
 			checkFields ();
 			infoRequest.changed += checkFields;
 
-			getValues.GetValues (handler.entryName, requests, c => {
+			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntrytVerb;
+			getValues.GetValues (entryVerb, requests, c => {
 				if (c) editit ();
 				infoRequest.changed -= checkFields;
 			}, 0, 1);
@@ -449,11 +465,11 @@ namespace Consonance
 
 		public void EditIn (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
 			var eat = ed.originator as EatType;
-			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, presenter.GetRepresentation,bld,eat);
+			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation,bld,eat);
 		}
 		public void EditOut (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
 			var burn = ed.originator as BurnType;
-			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, presenter.GetRepresentation, bld,burn);
+			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld,burn);
 		}
 
 		public void AddInInfo(IValueRequestBuilder<IRO> bld)

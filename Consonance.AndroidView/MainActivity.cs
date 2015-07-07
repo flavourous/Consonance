@@ -73,6 +73,15 @@ namespace Consonance.AndroidView
 	[Activity (Label = "Consonance", MainLauncher=true, Icon = "@drawable/icon")]
 	public class MainActivity : Activity, ActionBar.ITabListener, IView, IUserInput
 	{
+		TrackerPlanChooser tpc;
+		public void ChoosePlan (string title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed)
+		{
+			if (tpc == null)
+				tpc = new TrackerPlanChooser (this);
+			tpc.Show ();
+			tpc.ChoosePlan (title, choose_from, initial, completed);
+		}
+
 		TrackerTrackedDialog ttd;
 		BoundCommands planCommands = new BoundCommands ();
 		protected override void OnCreate (Bundle bundle)
@@ -263,7 +272,7 @@ namespace Consonance.AndroidView
 					num = tkv.Value;
 					use = tkv.Key;
 				}
-			return new SetRet () { apt = new LAdapter<EntryLineVM> (this, ll, vid, (v,vm) => cfg(v,vm,use) ), name = use };
+			return new SetRet () { apt = new LAdapter<EntryLineVM> (this.LayoutInflater, ll, vid, (v,vm) => cfg(v,vm,use) ), name = use };
 		}
 
 		#endregion

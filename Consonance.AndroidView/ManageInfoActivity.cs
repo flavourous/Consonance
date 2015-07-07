@@ -96,7 +96,7 @@ namespace Consonance.AndroidView
 		{
 			var lv = FindViewById<ListView>(Resource.Id.infolist);
 			LAdapter<InfoLineVM> ld= new LAdapter<InfoLineVM>(
-				this, 
+				this.LayoutInflater, 
 				SO.toShow,
 				Resource.Layout.ManageInfoLine,
 				ConfigLine

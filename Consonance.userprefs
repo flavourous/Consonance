@@ -1,21 +1,22 @@
 ﻿<Properties StartupItem="Consonance.AndroidView\Consonance.AndroidView.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.AndroidView\MainActivity.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.AndroidView\TrackerPlanChooser.cs">
     <Files>
-      <File FileName="Consonance.AndroidView\MainActivity.cs" Line="101" Column="29" />
-      <File FileName="Consonance\AppPresenter.cs" Line="364" Column="3" />
-      <File FileName="Consonance.AndroidView\ValueRequestHandler.cs" Line="5" Column="22" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="429" Column="4" />
+      <File FileName="Consonance.AndroidView\MainActivity.cs" Line="81" Column="16" />
+      <File FileName="Consonance\AppPresenter.cs" Line="367" Column="2" />
+      <File FileName="Consonance.AndroidView\ValueRequestHandler.cs" Line="197" Column="24" />
+      <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="401" Column="1" />
       <File FileName="Consonance.AndroidView\Resources\menu\PlanEntryMenu.xml" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\Resources\menu\BurnMenu.xml" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\Resources\menu\EatMenu.xml" Line="1" Column="1" />
-      <File FileName="Consonance.AndroidView\ListAdapters.cs" Line="90" Column="2" />
-      <File FileName="Consonance\DietModels.cs" Line="334" Column="3" />
-      <File FileName="Consonance.AndroidView\ManageInfoActivity.cs" Line="81" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\DietPresenters.cs" Line="41" Column="48" />
-      <File FileName="Consonance.AndroidView\DroidUtils.cs" Line="17" Column="4" />
-      <File FileName="Consonance.AndroidView\TrackerTrackView.cs" Line="92" Column="16" />
-      <File FileName="Consonance.AndroidView\TrackerTrackedDialog.cs" Line="35" Column="4" />
+      <File FileName="Consonance.AndroidView\ListAdapters.cs" Line="10" Column="66" />
+      <File FileName="Consonance\DietModels.cs" Line="248" Column="2" />
+      <File FileName="Consonance.AndroidView\ManageInfoActivity.cs" Line="20" Column="3" />
+      <File FileName="c:\cygwin\home\David\Consonance\Consonance\DietPresenters.cs" Line="465" Column="3" />
+      <File FileName="Consonance.AndroidView\DroidUtils.cs" Line="1" Column="1" />
+      <File FileName="Consonance.AndroidView\TrackerTrackView.cs" Line="1" Column="1" />
+      <File FileName="Consonance.AndroidView\TrackerTrackedDialog.cs" Line="43" Column="6" />
+      <File FileName="Consonance.AndroidView\TrackerPlanChooser.cs" Line="32" Column="16" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -24,11 +25,12 @@
             <Node name="Consonance" expanded="True">
               <Node name="Diets" expanded="True" />
             </Node>
-            <Node name="Consonance.AndroidView" expanded="True" selected="True">
+            <Node name="Consonance.AndroidView" expanded="True">
               <Node name="Resources" expanded="True">
                 <Node name="drawable" expanded="True" />
                 <Node name="layout" expanded="True" />
               </Node>
+              <Node name="TrackerPlanChooser.cs" selected="True" />
             </Node>
           </Node>
         </State>
@@ -41,8 +43,8 @@
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
       <Breakpoint file="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\MainActivity.cs" line="277" column="45" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="170" column="34" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="308" column="35" />
+      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="167" column="34" />
+      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="302" column="35" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>

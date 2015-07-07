@@ -198,10 +198,10 @@ namespace Consonance
 		void Handleadddietinstance ()
 		{
 			List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
-			List<String> dietnames = new List<string> ();
+			List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM> ();
 			foreach (var ad in saveDiets)
-				dietnames.Add (ad.dialect.ModelName);
-			input.SelectString ("Select Diet Type", dietnames, -1, 
+				dietnames.Add (ad.details);
+			input.ChoosePlan("Select Diet Type", dietnames, -1, 
 				si => saveDiets[si].StartNewTracker());
 		}
 
@@ -367,6 +367,7 @@ namespace Consonance
 	{
 		// User Input
 		void SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
+		void ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed);
 		void WarnConfirm (String action, Promise confirmed);
 	}
 	public interface IValueRequestBuilder<IRO>

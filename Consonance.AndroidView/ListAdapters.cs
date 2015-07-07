@@ -92,13 +92,13 @@ namespace Consonance.AndroidView
 	}
 	class LAdapter<T> : BaseAdapter<T>
 	{
-		readonly Activity context;
+		readonly LayoutInflater layoutInflater;
 		readonly IReadOnlyList<T> vms;
 		readonly int uView;
 		readonly ViewConfiguror<T> uConfig;
-		public LAdapter(Activity context, IReadOnlyList<T> vms, int viewID, ViewConfiguror<T> config)
+		public LAdapter(LayoutInflater layoutInflater, IReadOnlyList<T> vms, int viewID, ViewConfiguror<T> config)
 		{
-			this.context = context;
+			this.layoutInflater = layoutInflater;
 			this.vms = vms;
 			uConfig = config;
 			uView = viewID;
@@ -110,7 +110,7 @@ namespace Consonance.AndroidView
 		{
 			View view = convertView; // re-use an existing view, if one is available
 			if (view == null || view.Id != uView) // otherwise create a new one
-				view = context.LayoutInflater.Inflate (uView, null);
+				view = layoutInflater.Inflate (uView, null);
 			uConfig (view, vms [position]);
 			return view;
 		}

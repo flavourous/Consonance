@@ -61,6 +61,7 @@
     <Compile Include="TrackerTrackView.cs" />
     <Compile Include="DroidUtils.cs" />
     <Compile Include="TrackerTrackedDialog.cs" />
+    <Compile Include="TrackerPlanChooser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\AndroidManifest.xml" />
@@ -97,6 +98,8 @@
     <AndroidResource Include="Resources\layout\ValueRequests_TimeSpan.axml" />
     <AndroidResource Include="Resources\layout\TrackerInfo_Manage.axml" />
     <AndroidResource Include="Resources\layout\TrackerInfo_Manage_Entry.axml" />
+    <AndroidResource Include="Resources\layout\ChooseTrackerPlanView.axml" />
+    <AndroidResource Include="Resources\layout\ChooseTrackerPlanItem.axml" />
   </ItemGroup>
   <Import Project="..\Consonance\Consonance.projitems" Label="Shared" Condition="Exists('..\Consonance\Consonance.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />

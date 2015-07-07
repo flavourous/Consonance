@@ -103,10 +103,9 @@ namespace Consonance
 	}
 	public class TrackerDialect
 	{
-		public readonly String InputEntryVerb, OutputEntrytVerb, InputInfoPlural, OutputInfoPlural, ModelName;
-		public TrackerDialect(String ModelName, String InputEntryVerb, String OutpuEntrytVerb, String InputInfoPlural, String OutputInfoPlural)
+		public readonly String InputEntryVerb, OutputEntrytVerb, InputInfoPlural, OutputInfoPlural;
+		public TrackerDialect(String InputEntryVerb, String OutpuEntrytVerb, String InputInfoPlural, String OutputInfoPlural)
 		{
-			this.ModelName = ModelName;
 			this.InputEntryVerb = InputEntryVerb;
 			this.OutputEntrytVerb = OutpuEntrytVerb;
 			this.InputInfoPlural = InputInfoPlural;
@@ -125,8 +124,6 @@ namespace Consonance
 	}
 	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
 	{
-		new String name { get; }
-
 		// ok you can clear stored data now
 		void ResetRequests();
 
@@ -148,7 +145,6 @@ namespace Consonance
 	}
 	public interface IInfoCreation<InfoType> where InfoType : class
 	{
-		String name { get; }
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
 		BindingList<T> InfoFields<T>(IValueRequestFactory<T> factory, InfoType willEdit=null);
 		// ok make me an info please here's that data.
@@ -246,9 +242,6 @@ namespace Consonance
 		where EntryType : BaseEntry, new()
 		where EntryInfoType : BaseInfo, new()
 	{
-		public String infoName { get { return (creator as IInfoCreation<EntryInfoType>).name; } }
-		public String entryName { get { return creator.name; } }
-
 		readonly SQLiteConnection conn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
 		public EntryHandler(SQLiteConnection conn, IEntryCreation<EntryType, EntryInfoType> creator)

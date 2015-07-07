@@ -118,9 +118,6 @@ namespace Consonance
 	}
 	public class CalorieDietEatCreation : IEntryCreation<CalorieDietEatEntry, FoodInfo>
 	{
-		string IEntryCreation<CalorieDietEatEntry, FoodInfo>.name { get { return "Eat"; } }
-		string IInfoCreation<FoodInfo>.name { get { return "Food"; } }
-
 		#region IEntryCreation implementation
 		RequestStorageHelper<double> calories;
 		RequestStorageHelper<double> grams;
@@ -255,9 +252,6 @@ namespace Consonance
 	}
 	public class CalorieDietBurnCreation : IEntryCreation<CalorieDietBurnEntry, FireInfo>
 	{
-		string IEntryCreation<CalorieDietBurnEntry, FireInfo>.name { get { return "Burn"; } }
-		string IInfoCreation<FireInfo>.name { get { return "Burner"; } }
-
 		#region IEntryCreation implementation
 		RequestStorageHelper<double> caloriesBurned;
 		RequestStorageHelper<TimeSpan> burnTime;
@@ -396,8 +390,14 @@ namespace Consonance
 	// hmmmm calling into presenter is a nasty....abstract class?
 	public class CalorieDietPresenter : ITrackerPresenter<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
+		TrackerDetailsVM tvm = new TrackerDetailsVM (
+			                        "Calorie Diet", 
+			                        "thing thing and stuff, thing thing and stuff, thing thing and stuff, thing thing and stuff, thing thing and stuff, ",
+			                        "Diet"
+		                        );
+		public TrackerDetailsVM details { get { return tvm; } }
+
 		TrackerDialect dia = new TrackerDialect (
-			"Calorie Diet",
 			"Eat",
 			"Burn",
 			"Foods",

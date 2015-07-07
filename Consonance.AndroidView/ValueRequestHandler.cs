@@ -194,7 +194,7 @@ namespace Consonance.AndroidView
 				List<InfoLineVM> quickHack = new List<InfoLineVM> { new InfoLineVM () { name = "None (Quick Entry)" } };
 				quickHack.AddRange (_value.choices);
 				var adapt = new LAdapter<InfoLineVM> (
-					act, 
+					act.LayoutInflater, 
 					quickHack, 
 					Resource.Layout.InfoComboVal,
 					(v, i) => v.FindViewById<TextView>(Resource.Id.value).Text = i.name
