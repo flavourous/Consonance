@@ -1,44 +1,23 @@
 ﻿<Properties StartupItem="Consonance.AndroidView\Consonance.AndroidView.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.AndroidView\TrackerPlanChooser.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.AndroidView\MainActivity.cs">
     <Files>
-      <File FileName="Consonance.AndroidView\MainActivity.cs" Line="81" Column="16" />
-      <File FileName="Consonance\AppPresenter.cs" Line="367" Column="2" />
-      <File FileName="Consonance.AndroidView\ValueRequestHandler.cs" Line="197" Column="24" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="401" Column="1" />
+      <File FileName="Consonance.AndroidView\MainActivity.cs" Line="76" Column="20" />
+      <File FileName="Consonance\AppPresenter.cs" Line="1" Column="1" />
+      <File FileName="Consonance.AndroidView\ValueRequestHandler.cs" Line="1" Column="1" />
+      <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\Resources\menu\PlanEntryMenu.xml" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\Resources\menu\BurnMenu.xml" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\Resources\menu\EatMenu.xml" Line="1" Column="1" />
-      <File FileName="Consonance.AndroidView\ListAdapters.cs" Line="10" Column="66" />
-      <File FileName="Consonance\DietModels.cs" Line="248" Column="2" />
-      <File FileName="Consonance.AndroidView\ManageInfoActivity.cs" Line="20" Column="3" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\DietPresenters.cs" Line="465" Column="3" />
+      <File FileName="Consonance.AndroidView\ListAdapters.cs" Line="1" Column="1" />
+      <File FileName="Consonance\DietModels.cs" Line="1" Column="1" />
+      <File FileName="Consonance.AndroidView\ManageInfoActivity.cs" Line="1" Column="1" />
+      <File FileName="c:\cygwin\home\David\Consonance\Consonance\DietPresenters.cs" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\DroidUtils.cs" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\TrackerTrackView.cs" Line="1" Column="1" />
-      <File FileName="Consonance.AndroidView\TrackerTrackedDialog.cs" Line="43" Column="6" />
-      <File FileName="Consonance.AndroidView\TrackerPlanChooser.cs" Line="32" Column="16" />
+      <File FileName="Consonance.AndroidView\TrackerTrackedDialog.cs" Line="1" Column="1" />
+      <File FileName="Consonance.AndroidView\TrackerPlanChooser.cs" Line="1" Column="1" />
     </Files>
-    <Pads>
-      <Pad Id="ProjectPad">
-        <State name="__root__">
-          <Node name="Consonance" expanded="True">
-            <Node name="Consonance" expanded="True">
-              <Node name="Diets" expanded="True" />
-            </Node>
-            <Node name="Consonance.AndroidView" expanded="True">
-              <Node name="Resources" expanded="True">
-                <Node name="drawable" expanded="True" />
-                <Node name="layout" expanded="True" />
-              </Node>
-              <Node name="TrackerPlanChooser.cs" selected="True" />
-            </Node>
-          </Node>
-        </State>
-      </Pad>
-      <Pad Id="MonoDevelop.Debugger.WatchPad">
-        <State />
-      </Pad>
-    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>

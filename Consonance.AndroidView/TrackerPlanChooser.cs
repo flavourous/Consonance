@@ -24,6 +24,7 @@ namespace Consonance.AndroidView
 
 		void Initialize ()
 		{
+			Window.RequestFeature(WindowFeatures.NoTitle);
 			SetContentView (Resource.Layout.ChooseTrackerPlanView);
 			FindViewById<Button> (Resource.Id.ok).Click += (sender, e) => {
 				completed (FindViewById<ListView> (Resource.Id.list).SelectedItemPosition);
@@ -36,9 +37,6 @@ namespace Consonance.AndroidView
 		{
 			var tv= v.FindViewById<TextView>(Resource.Id.value);
 			tv.Text = vm.name;
-			tv.Click += (sender, e) => {
-				v.FindViewById<TextView>(Resource.Id.description).Text = vm.description;
-			};
 		}
 		Promise<int> completed = delegate { };
 		public void ChoosePlan (string title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed)
@@ -53,7 +51,21 @@ namespace Consonance.AndroidView
 				);
 			var lv = FindViewById<ListView> (Resource.Id.list);
 			lv.Adapter = lad;
-			lv.SetSelection (initial);
+			Action<int> sdel = pos => {
+				FindViewById<Button>(Resource.Id.ok).Enabled = pos > -1;
+				if(pos > -1)
+				{
+					lv.SetItemChecked (pos, true);
+					FindViewById<TextView>(Resource.Id.description).Text = lad[pos].description;
+				}
+				else 
+				{
+					lv.SetItemChecked(lv.CheckedItemPosition,false);
+					FindViewById<TextView>(Resource.Id.description).Text = "Select a plan to see details";
+				}
+			};
+			lv.ItemClick += (s, e) => sdel (e.Position);
+			sdel (initial);
 		}
 	}
 }

@@ -3,12 +3,30 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Choose a plan" />
+    <android.view.View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_margin="5dp"
+        android:background="@android:color/holo_blue_bright" />
     <ListView
         android:id="@+id/list"
         android:layout_width="fill_parent"
-        android:layout_weight="0.5" />
+        android:layout_height="fill_parent"
+        android:layout_weight="0.5"
+        android:choiceMode="singleChoice"
+        android:listSelector="@drawable/DietInstanceLineSelector" />
+    <android.view.View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_margin="5dp"
+        android:background="@android:color/holo_blue_bright" />
     <TextView
         android:id="@+id/description"
+        android:layout_height="fill_parent"
         android:layout_width="fill_parent"
         android:layout_weight="0.5" />
     <RelativeLayout
