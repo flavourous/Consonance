@@ -93,7 +93,7 @@ namespace Consonance.AndroidView
 	class LAdapter<T> : BaseAdapter<T>
 	{
 		readonly LayoutInflater layoutInflater;
-		readonly IReadOnlyList<T> vms;
+		IReadOnlyList<T> vms;
 		readonly int uView;
 		readonly ViewConfiguror<T> uConfig;
 		public LAdapter(LayoutInflater layoutInflater, IReadOnlyList<T> vms, int viewID, ViewConfiguror<T> config)
@@ -102,6 +102,12 @@ namespace Consonance.AndroidView
 			this.vms = vms;
 			uConfig = config;
 			uView = viewID;
+		}
+
+		public void SwitchData(IEnumerable<T> newdata)
+		{
+			vms = new List<T> (newdata);
+			NotifyDataSetChanged();
 		}
 
 		#region implemented abstract members of BaseAdapter

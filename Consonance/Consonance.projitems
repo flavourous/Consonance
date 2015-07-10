@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)AppPresenter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Diets\CalorieDiet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DietPresenters.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InfoFindersManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Diets\" />

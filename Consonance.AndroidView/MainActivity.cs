@@ -181,12 +181,12 @@ namespace Consonance.AndroidView
 		readonly LooseRequestCaller<TrackerInstanceVM> _plan = new LooseRequestCaller<TrackerInstanceVM>();
 		public ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get { return _plan; } }
 		public event Action<InfoManageType> manageInfo = delegate { };
-		public void ManageInfos (InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, Action finished)
+		public void ManageInfos (InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, IFindList<InfoLineVM> finder, Action finished)
 		{
 			// launch that manage activity...and erm pass it some hooks?? 
 			var icom = (mt == InfoManageType.In ? planCommands.eatinfo : planCommands.burninfo) as BoundRequestCaller<InfoLineVM>;
 			var ipl = mt == InfoManageType.In ? currentDiet.dialect.InputInfoPlural : currentDiet.dialect.OutputInfoPlural;
-			ManageInfoActivity.SetSharedObjects(ipl, finished, toManage, icom);
+			ManageInfoActivity.SetSharedObjects(ipl, finished, toManage, finder, icom);
 			StartActivity (new Intent(this, typeof(ManageInfoActivity)));
 		}
 

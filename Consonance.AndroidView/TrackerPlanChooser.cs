@@ -27,7 +27,7 @@ namespace Consonance.AndroidView
 			Window.RequestFeature(WindowFeatures.NoTitle);
 			SetContentView (Resource.Layout.ChooseTrackerPlanView);
 			FindViewById<Button> (Resource.Id.ok).Click += (sender, e) => {
-				completed (FindViewById<ListView> (Resource.Id.list).SelectedItemPosition);
+				completed (FindViewById<ListView> (Resource.Id.list).CheckedItemPosition);
 				Cancel ();
 			};
 			FindViewById<Button> (Resource.Id.cancel).Click += (sender, e) => Cancel ();

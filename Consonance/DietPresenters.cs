@@ -108,7 +108,7 @@ namespace Consonance
 		public String name;
 	}
 
-	public interface ITrackerPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>
+	public interface ITrackerPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType> 
 		where DietInstType : TrackerInstance, new()
 		where EatType : BaseEntry, new()
 		where EatInfoType : BaseInfo, new()
@@ -118,11 +118,11 @@ namespace Consonance
 		TrackerDialect dialect { get; }
 		TrackerDetailsVM details { get; }
 
-		EntryLineVM GetRepresentation (EatType entry, EatInfoType entryInfo);
-		EntryLineVM GetRepresentation (BurnType entry, BurnInfoType entryInfo);
-
 		InfoLineVM GetRepresentation (EatInfoType info);
 		InfoLineVM GetRepresentation (BurnInfoType info);
+
+		EntryLineVM GetRepresentation (EatType entry, EatInfoType entryInfo);
+		EntryLineVM GetRepresentation (BurnType entry, BurnInfoType entryInfo);
 
 		TrackerInstanceVM GetRepresentation (DietInstType entry);
 
@@ -145,6 +145,8 @@ namespace Consonance
 		void EditTracker (TrackerInstanceVM dvm);
 		IEnumerable<InfoLineVM> InInfos (bool onlycomplete);
 		IEnumerable<InfoLineVM> OutInfos (bool onlycomplete);
+		IFindList<InfoLineVM> InFinder {get;}
+		IFindList<InfoLineVM> OutFinder {get;}
 		event DietVMChangeEventHandler ViewModelsChanged;
 	}
 	interface INotSoAbstractedDiet<IRO>
@@ -307,6 +309,10 @@ namespace Consonance
 				yield return vm;
 			}
 		}
+
+		public IFindList<InfoLineVM> InFinder { get { return InfoFindersManager.GetFinder<EatInfoType> (presenter.GetRepresentation, conn); } }
+		public IFindList<InfoLineVM> OutFinder { get { return InfoFindersManager.GetFinder<BurnInfoType> (presenter.GetRepresentation, conn); } }
+
 		IEnumerable<O> ConvertMtoVM<O,I1,I2>(IEnumerable<I1> input, Func<I1,I2,O> convert, Func<I1,I2> findSecondInput)
 		{
 			foreach (I1 i in input)

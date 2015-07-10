@@ -7,10 +7,25 @@ using System.IO;
 
 namespace Consonance
 {
-	public class ChangeTriggerList<T> : List<T>
+	public interface IChangeTrigger
 	{
+		event Action Changed;
+	}
+	// this one really used for mangeinfo data supply.
+	public class ChangeTriggerList<T> : List<T>, IChangeTrigger
+	{
+		#region IChangeTrigger implementation
 		public event Action Changed = delegate { };
 		public void OnChanged() { Changed (); }
+		#endregion
+	}
+
+	// can page te enumeration...etc...
+	public interface IFindList<T>
+	{
+		bool CanFind { get; } // can find some...
+		IEnumerable<T> Find (String filter); // look for em...
+		void Import(T item); // ok, import this one
 	}
 
 	class PlanCommandManager<IRO> 
@@ -139,24 +154,12 @@ namespace Consonance
 			if (view.currentDiet == null) return;
 			var cdh = view.currentDiet.sender as IAbstractedTracker;
 			ChangeTriggerList<InfoLineVM> lines = new ChangeTriggerList<InfoLineVM> ();
-
-			DietVMChangeEventHandler cdel = (sender, args) => {
-				switch(args.changeType)
-				{
-				case DietVMChangeType.EatInfos:
-					if(obj == InfoManageType.In)
-						PushInLinesAndFire (obj, lines);
-					break;
-				case DietVMChangeType.BurnInfos:
-					if(obj == InfoManageType.Out)
-						PushInLinesAndFire (obj, lines);
-					break;
-				}
-			};
+			DietVMChangeEventHandler cdel = (sender, args) => PushInLinesAndFire (obj, lines);
 			Action finished = () => cdh.ViewModelsChanged -= cdel;
 			cdh.ViewModelsChanged += cdel;
 			PushInLinesAndFire (obj, lines);
-			view.ManageInfos(obj, lines, finished);
+			IFindList<InfoLineVM> finder = obj == InfoManageType.In ? cdh.InFinder : cdh.OutFinder;
+			view.ManageInfos(obj, lines,  finder, finished);
 		}
 			
 		void PushInLinesAndFire(InfoManageType mt, ChangeTriggerList<InfoLineVM> bl)
@@ -339,7 +342,7 @@ namespace Consonance
 
 		event Action<InfoManageType> manageInfo;
 		// these fire to trigger managment of eat or burn infos
-		void ManageInfos(InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, Action finished); // which ends up calling this one
+		void ManageInfos(InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, IFindList<InfoLineVM> finder, Action finished); // which ends up calling this one
 		// and the plancommands get called by the view for stuff...
 	}
 	public enum InfoManageType { In, Out };
