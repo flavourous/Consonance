@@ -8,110 +8,171 @@ using Consonance;
 
 namespace Consonance.AndroidView
 {
+	interface IAndroidRequestSite 
+	{
+		void SetPage (int current, int total);
+		event Action<bool> completed;
+		void AddRequestView(View v);
+		void InsertRequestView(View v, int index);
+		void RemoveRequestViewAt(int index);
+		void ClearRequestViews();
+		void SetRequestTitle(String title);
+	}
+	class DialogRequestBuilder : IAndroidRequestSite
+	{
+		#region IAndroidRequestSite implementation
+
+		public event Action<bool> completed = delegate { };
+
+		public void SetPage (int current, int total)
+		{
+			ofn.Text = total == 1 ? "Ok" : current == total - 1 ? "Finish" : "Next";
+			if (current == 0) {
+				// do wrapping layout and show
+				gvDialog.SetContentView (rootLayout);
+				gvDialog.Window.SetLayout (ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+				gvDialog.Show ();
+			}
+		}
+
+		public void AddRequestView(View v)
+		{
+			requestArea.AddView (v);
+		}
+
+		public void InsertRequestView (View v, int index)
+		{
+			requestArea.AddView (v, index);
+		}
+
+		public void RemoveRequestViewAt (int index)
+		{
+			requestArea.RemoveViewAt (index);
+		}
+
+		public void ClearRequestViews ()
+		{
+			requestArea.RemoveAllViews ();
+		}
+
+		public void SetRequestTitle (string title)
+		{
+			ttv.Text = title;
+		}
+
+		#endregion
+
+		readonly TextView ttv;
+		readonly Dialog gvDialog;
+		readonly LinearLayout requestArea;
+		readonly Button cancel, ofn;
+		readonly RelativeLayout rootLayout;
+		public DialogRequestBuilder(Activity parent)
+		{
+			// root layout
+			rootLayout = new RelativeLayout(parent);
+			rootLayout.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
+
+			// init dialog
+			gvDialog = new Dialog (parent);
+			gvDialog.RequestWindowFeature ((int)WindowFeatures.NoTitle);
+			gvDialog.SetCanceledOnTouchOutside (true);
+
+			//title bit
+			// title
+			ttv = new TextView (parent) { TextSize = 16 };
+			RelativeLayout.LayoutParams lp1 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.MatchParent, RelativeLayout.LayoutParams.WrapContent);
+			ttv.Id = 1;
+			rootLayout.AddView (ttv);
+
+			// Value request area
+			requestArea = new LinearLayout(parent);
+			requestArea.Orientation = Orientation.Vertical;
+			RelativeLayout.LayoutParams lp2 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.MatchParent, RelativeLayout.LayoutParams.WrapContent);
+			lp2.AddRule (LayoutRules.Below, 1);
+			requestArea.LayoutParameters = lp2;
+			requestArea.Id = 3;
+			rootLayout.AddView (requestArea);
+
+			// processing view
+			TextView proc = new TextView(parent) { Text = "Processing", Gravity = GravityFlags.Center, TextSize = 14 };
+			proc.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WrapContent,ViewGroup.LayoutParams.WrapContent);
+			proc.SetPadding(10,10,10,10);
+
+			// cancel event
+			bool success = false;
+			gvDialog.CancelEvent += (sender, e) => {
+				if(success) gvDialog.Window.SetContentView(proc);
+				completed(success);
+			};
+
+			// cancel button
+			cancel = new Button (parent) { Text = "Cancel" };
+			RelativeLayout.LayoutParams lp3 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.WrapContent, RelativeLayout.LayoutParams.WrapContent);
+			lp3.AddRule (LayoutRules.AlignParentLeft);
+			lp3.AddRule (LayoutRules.Below, 3);
+			cancel.Click += (sender, e) => gvDialog.Cancel ();
+			cancel.LayoutParameters = lp3;
+			cancel.Id = 2;
+			rootLayout.AddView (cancel);
+
+			// ok/finish/next button
+			ofn = new Button (parent);
+			RelativeLayout.LayoutParams lp4 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.WrapContent, RelativeLayout.LayoutParams.WrapContent);
+			lp4.AddRule (LayoutRules.AlignParentRight);
+			lp4.AddRule (LayoutRules.Below, 3);
+			ofn.Click += (sender, e) => {
+				// set loading message and ping completed
+				success=true;
+				gvDialog.Cancel (); // just d7ont complete the promise! ok they are good.
+			};
+			ofn.LayoutParameters = lp4;
+			rootLayout.AddView (ofn);
+		}
+	}
 	class AndroidRequestBuilder : IValueRequestBuilder<ValueRequestWrapper>
 	{
-		readonly Activity parent;
-		public AndroidRequestBuilder(Activity parent)
-		{
-			this.parent = parent;
-			vrf = new ValueRequestFactory(parent);
-		}
-		#region IValueRequestBuilder<ValueRequestWrapper> implimentation
+		readonly IAndroidRequestSite site;
 		readonly ValueRequestFactory vrf;
+		Action<bool> site_completed = delegate{};
+		public AndroidRequestBuilder(IAndroidRequestSite site, Activity parent)
+		{
+			this.site = site;
+			vrf = new ValueRequestFactory(parent);
+			site.completed += b => site_completed(b);		
+		}
+
+		#region IValueRequestBuilder<ValueRequestWrapper> implimentation
 		public IValueRequestFactory<ValueRequestWrapper> requestFactory { get { return vrf; } }
 		//Promise<AddedItemVM> GetValuesPromise;
 		public void GetValues (String title, BindingList<ValueRequestWrapper> requests, Promise<bool> completed, int page, int pages)
 		{
-			// root layout
-			var rootLayout = new RelativeLayout(parent);
-			rootLayout.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
+			// init layout area
+			site.SetRequestTitle (title);
+			site.ClearRequestViews ();
+			foreach (var req in requests)
+				site.AddRequestView (req.inputView);
 
-			// init dialog
-			Dialog gvDialog = new Dialog (parent);
-			gvDialog.RequestWindowFeature ((int)WindowFeatures.NoTitle);
-			gvDialog.SetCanceledOnTouchOutside (true);
-
-
-			// add elements //
+			// handle requse object changes
+			ListChangedEventHandler leh = (object sender, ListChangedEventArgs e) => 
 			{
-				// title
-				TextView tv = new TextView (parent) { Text = title, TextSize = 16 };
-				RelativeLayout.LayoutParams lp1 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.MatchParent, RelativeLayout.LayoutParams.WrapContent);
-				tv.Id = 1;
-				rootLayout.AddView (tv);
-
-				// Value request area
-				LinearLayout requestArea = new LinearLayout(parent);
-				requestArea.Orientation = Orientation.Vertical;
-				RelativeLayout.LayoutParams lp2 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.MatchParent, RelativeLayout.LayoutParams.WrapContent);
-				lp2.AddRule (LayoutRules.Below, 1);
-				requestArea.LayoutParameters = lp2;
-				requestArea.Id = 3;
-				rootLayout.AddView (requestArea);
-
-				//init layout area
-				int i=0;
-				foreach (var req in requests)
-					DroidUtils.PushView (req.inputView, requestArea, i++);
-
-				// handle requse object changes
-				ListChangedEventHandler leh = (object sender, ListChangedEventArgs e) => 
-				{
-					switch (e.ListChangedType) {
-					case ListChangedType.ItemAdded:
-						DroidUtils.PushView(requests[e.NewIndex].inputView, requestArea, e.NewIndex);
-						break;
-					case ListChangedType.ItemDeleted:
-						requestArea.RemoveViewAt(e.NewIndex);
-						break;
-					}
-				};
-				requests.ListChanged += leh;
-
-				// processing view
-				TextView proc = new TextView(parent) { Text = "Processing", Gravity = GravityFlags.Center, TextSize = 14 };
-				proc.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WrapContent,ViewGroup.LayoutParams.WrapContent);
-				proc.SetPadding(10,10,10,10);
-
-				// cancel event
-				bool success = false;
-				gvDialog.CancelEvent += (sender, e) => {
-					requests.ListChanged -= leh;
-					if(success) gvDialog.Window.SetContentView(proc);
-					completed(success);
-				};
-
-				// cancel button
-				Button cancel = new Button (parent) { Text = "Cancel" };
-				RelativeLayout.LayoutParams lp3 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.WrapContent, RelativeLayout.LayoutParams.WrapContent);
-				lp3.AddRule (LayoutRules.AlignParentLeft);
-				lp3.AddRule (LayoutRules.Below, 3);
-				cancel.Click += (sender, e) => gvDialog.Cancel ();
-				cancel.LayoutParameters = lp3;
-				cancel.Id = 2;
-				rootLayout.AddView (cancel);
-
-				// ok/finish/next button
-				Button ofn = new Button (parent) { Text = pages == 1 ? "Ok" : page == pages-1 ? "Finish" : "Next" };
-				RelativeLayout.LayoutParams lp4 = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.WrapContent, RelativeLayout.LayoutParams.WrapContent);
-				lp4.AddRule (LayoutRules.AlignParentRight);
-				lp4.AddRule (LayoutRules.Below, 3);
-				ofn.Click += (sender, e) => {
-					// set loading message and ping completed
-					success=true;
-					gvDialog.Cancel (); // just d7ont complete the promise! ok they are good.
-				};
-				ofn.LayoutParameters = lp4;
-				rootLayout.AddView (ofn);
-			}
-
-			// do wrapping layout and show
-			gvDialog.SetContentView (rootLayout);
-			gvDialog.Window.SetLayout (ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
-			gvDialog.Show ();
+				switch (e.ListChangedType) {
+				case ListChangedType.ItemAdded:
+					site.InsertRequestView(requests[e.NewIndex].inputView, e.NewIndex);
+					break;
+				case ListChangedType.ItemDeleted:
+					site.RemoveRequestViewAt(e.NewIndex);
+					break;
+				}
+			};
+			requests.ListChanged += leh;
+			site_completed = s => {
+				requests.ListChanged -= leh;//unhook
+				completed (s);
+			};
+			site.SetPage (page, pages);
 		}
 		#endregion
-
 	}
 
 	public abstract class ValueRequestWrapper

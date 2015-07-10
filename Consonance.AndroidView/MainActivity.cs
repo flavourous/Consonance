@@ -90,7 +90,7 @@ namespace Consonance.AndroidView
 
 			// stuff
 			ttd = new TrackerTrackedDialog(this);
-			defaultBuilder = new AndroidRequestBuilder (this);
+			defaultBuilder = new AndroidRequestBuilder (new DialogRequestBuilder (this), this);
 			eatTracker = new TrackerTrackView (this);
 			burnTracker = new TrackerTrackView (this);
 

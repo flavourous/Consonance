@@ -38,7 +38,7 @@ namespace Consonance.AndroidView
 		readonly AndroidRequestBuilder defBuilder;
 		public ManageInfoActivity()
 		{
-			defBuilder = new AndroidRequestBuilder (this);
+			defBuilder = new AndroidRequestBuilder (new DialogRequestBuilder (this), this);
 		}
 		ListView ilv;
 		Button b_add,b_edit,b_delete, b_find;
@@ -89,7 +89,6 @@ namespace Consonance.AndroidView
 			Title = "Manage " + SO.infoPlural;
 			MakeLAD ();
 			base.OnStart ();
-
 		}
 		protected override void OnStop ()
 		{
