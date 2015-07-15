@@ -1,8 +1,8 @@
 ﻿<Properties StartupItem="Consonance.AndroidView\Consonance.AndroidView.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.AndroidView\MainActivity.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.AndroidView\Resources\Resource.designer.cs">
     <Files>
-      <File FileName="Consonance.AndroidView\MainActivity.cs" Line="76" Column="20" />
+      <File FileName="Consonance.AndroidView\MainActivity.cs" Line="1" Column="1" />
       <File FileName="Consonance\AppPresenter.cs" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\ValueRequestHandler.cs" Line="1" Column="1" />
       <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="1" Column="1" />
@@ -17,6 +17,8 @@
       <File FileName="Consonance.AndroidView\TrackerTrackView.cs" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\TrackerTrackedDialog.cs" Line="1" Column="1" />
       <File FileName="Consonance.AndroidView\TrackerPlanChooser.cs" Line="1" Column="1" />
+      <File FileName="c:\cygwin\home\David\Consonance\Consonance\InfoFindersManager.cs" Line="1" Column="1" />
+      <File FileName="Consonance.AndroidView\Resources\Resource.designer.cs" Line="33" Column="33" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

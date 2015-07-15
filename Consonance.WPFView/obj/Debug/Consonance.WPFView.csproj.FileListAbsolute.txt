@@ -1,9 +1,0 @@
-C:\cygwin\home\David\Consonance\WPFView\bin\Debug\Consonance.WPFView.exe.config
-C:\cygwin\home\David\Consonance\WPFView\obj\Debug\Consonance.WPFView.csprojResolveAssemblyReference.cache
-C:\cygwin\home\David\Consonance\WPFView\obj\Debug\MainWindow.baml
-C:\cygwin\home\David\Consonance\WPFView\obj\Debug\MainWindow.g.cs
-C:\cygwin\home\David\Consonance\WPFView\obj\Debug\App.g.cs
-C:\cygwin\home\David\Consonance\WPFView\obj\Debug\Consonance.WPFView_MarkupCompile.cache
-C:\cygwin\home\David\Consonance\WPFView\obj\Debug\Consonance.WPFView.g.resources
-C:\cygwin\home\David\Consonance\WPFView\obj\Debug\Consonance.WPFView.Properties.Resources.resources
-C:\cygwin\home\David\Consonance\WPFView\obj\Debug\Consonance.WPFView.csproj.GenerateResource.Cache
