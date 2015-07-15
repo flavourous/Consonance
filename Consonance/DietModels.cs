@@ -96,8 +96,8 @@ namespace Consonance
 		IEntryCreation<Tb,Tbi> outcreator { get; }
 
 		// creator for dietinstance
-		IEnumerable<TrackerWizardPage<T>> CreationPages<T>(IValueRequestFactory<T> factory);
-		IEnumerable<TrackerWizardPage<T>> EditPages<T>(D editing, IValueRequestFactory<T> factory);
+		IEnumerable<TrackerWizardPage> CreationPages(IValueRequestFactory factory);
+		IEnumerable<TrackerWizardPage> EditPages(D editing, IValueRequestFactory factory);
 		D New();
 		void Edit (D toEdit);
 	}
@@ -112,11 +112,11 @@ namespace Consonance
 			this.OutputInfoPlural = OutputInfoPlural;
 		}
 	}
-	public class TrackerWizardPage<T>
+	public class TrackerWizardPage
 	{
 		public readonly String title;
-		public readonly BindingList<T> valuerequests;
-		public TrackerWizardPage( String title, BindingList<T> req)
+		public readonly BindingList<Object> valuerequests;
+		public TrackerWizardPage( String title, BindingList<Object> req)
 		{
 			this.title = title;
 			valuerequests = req;
@@ -128,25 +128,25 @@ namespace Consonance
 		void ResetRequests();
 
 		// What named fields do I need to fully create an entry (eg eating a banana) - "kcal", "fat"
-		BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory); 
+		BindingList<Object> CreationFields (IValueRequestFactory factory); 
 		// Here's those values, give me the entry (ww points on eating a bananna) - broker wont attempt to remember a "item / info".
 		EntryType Create ();
 
 		// Ok, I've got info on this food (bananna, per 100g, only kcal info) - I still need "fat" and "grams"
-		BindingList<T> CalculationFields <T>(IValueRequestFactory<T> factory, InfoType info);
+		BindingList<Object> CalculationFields (IValueRequestFactory factory, InfoType info);
 		// right, heres the fat too, give me entry (broker will update that bananna info also)
 		EntryType Calculate(InfoType info, bool shouldComplete);
 
 		// and again for editing
-		BindingList<T> EditFields<T> (EntryType toEdit, IValueRequestFactory<T> factory); 
+		BindingList<Object> EditFields (EntryType toEdit, IValueRequestFactory factory); 
 		EntryType Edit (EntryType toEdit);
-		BindingList<T> EditFields <T>(EntryType toEdit, IValueRequestFactory<T> factory, InfoType info);
+		BindingList<Object> EditFields (EntryType toEdit, IValueRequestFactory factory, InfoType info);
 		EntryType Edit(EntryType toEdit, InfoType info, bool shouldComplete);
 	}
 	public interface IInfoCreation<InfoType> where InfoType : class
 	{
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
-		BindingList<T> InfoFields<T>(IValueRequestFactory<T> factory, InfoType willEdit=null);
+		BindingList<Object> InfoFields(IValueRequestFactory factory, InfoType willEdit=null);
 		// ok make me an info please here's that data.
 		InfoType MakeInfo (InfoType toEdit=null);
 		// ok is this info like complete for your diety? yes. ffs.

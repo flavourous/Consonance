@@ -4,18 +4,29 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:id="@+id/ll">
-    <RelativeLayout
+    <Spinner
         android:minHeight="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/filterContainer" />
+        android:id="@+id/modeSpinner" />
+    <LinearLayout
+        android:minHeight="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/valReqFrame" />
+    <Button
+        android:minHeight="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Search"
+        android:id="@+id/filterGo" />
     <ListView
         android:id="@+id/infolist"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:choiceMode="singleChoice"
-        android:layout_weight="0.5"
-        android:listSelector="@drawable/DietInstanceLineSelector" />
+        android:listSelector="@drawable/DietInstanceLineSelector"
+        android:layout_weight="1.0" />
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">

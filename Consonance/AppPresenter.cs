@@ -20,20 +20,13 @@ namespace Consonance
 		#endregion
 	}
 
-	// can page te enumeration...etc...
-	public interface IFindList<T>
-	{
-		bool CanFind { get; } // can find some...
-		IEnumerable<T> Find (String filter); // look for em...
-		void Import(T item); // ok, import this one
-	}
 
-	class PlanCommandManager<IRO> 
+	class PlanCommandManager
 	{
-		INotSoAbstractedDiet<IRO> cdh;
+		IAbstractedTracker cdh;
 		TrackerInstanceVM cd;
 		readonly Func<TrackerInstanceVM> getCurrent;
-		public PlanCommandManager(IPlanCommands<IRO> commands, Func<TrackerInstanceVM> getCurrent)
+		public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent)
 		{
 			// remember it
 			this.getCurrent = getCurrent;
@@ -54,18 +47,18 @@ namespace Consonance
 
 		}
 
-		void View_addeatitem (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddIn (cd,bld); }
-		void View_removeeatitem (EntryLineVM vm) 								{ if (!VerifyDiet ()) return; cdh.RemoveIn (vm); }
-		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditIn (vm,bld); }
-		void View_addeatinfo (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddInInfo (bld); }
-		void View_removeeatinfo (InfoLineVM vm) 								{ if (!VerifyDiet ()) return; cdh.RemoveInInfo (vm); }
-		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditInInfo (vm,bld); }
-		void View_addburnitem (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddOut (cd,bld); }
-		void View_removeburnitem (EntryLineVM vm)							 	{ if (!VerifyDiet ()) return; cdh.RemoveOut (vm); }
-		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditOut (vm,bld); }
-		void View_addburninfo (IValueRequestBuilder<IRO> bld) 					{ if (!VerifyDiet ()) return; cdh.AddOutInfo (bld); }
-		void View_removeburninfo (InfoLineVM vm)							 	{ if (!VerifyDiet ()) return; cdh.RemoveOutInfo (vm); }
-		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder<IRO> bld) 	{ if (!VerifyDiet ()) return; cdh.EditOutInfo (vm,bld); }
+		void View_addeatitem (IValueRequestBuilder bld) 					{ if (!VerifyDiet ()) return; cdh.AddIn (cd,bld); }
+		void View_removeeatitem (EntryLineVM vm) 							{ if (!VerifyDiet ()) return; cdh.RemoveIn (vm); }
+		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ if (!VerifyDiet ()) return; cdh.EditIn (vm,bld); }
+		void View_addeatinfo (IValueRequestBuilder bld) 					{ if (!VerifyDiet ()) return; cdh.AddInInfo (bld); }
+		void View_removeeatinfo (InfoLineVM vm) 							{ if (!VerifyDiet ()) return; cdh.RemoveInInfo (vm); }
+		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder bld) 		{ if (!VerifyDiet ()) return; cdh.EditInInfo (vm,bld); }
+		void View_addburnitem (IValueRequestBuilder bld) 					{ if (!VerifyDiet ()) return; cdh.AddOut (cd,bld); }
+		void View_removeburnitem (EntryLineVM vm)						 	{ if (!VerifyDiet ()) return; cdh.RemoveOut (vm); }
+		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ if (!VerifyDiet ()) return; cdh.EditOut (vm,bld); }
+		void View_addburninfo (IValueRequestBuilder bld) 					{ if (!VerifyDiet ()) return; cdh.AddOutInfo (bld); }
+		void View_removeburninfo (InfoLineVM vm)							{ if (!VerifyDiet ()) return; cdh.RemoveOutInfo (vm); }
+		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder bld) 	{ if (!VerifyDiet ()) return; cdh.EditOutInfo (vm,bld); }
 
 		bool VerifyDiet()
 		{
@@ -75,7 +68,7 @@ namespace Consonance
 				cdh = null;
 				return false;
 			}
-			cdh = cd.sender as INotSoAbstractedDiet<IRO>;
+			cdh = cd.sender as IAbstractedTracker;
 			return true;
 		}
 	}
@@ -126,7 +119,7 @@ namespace Consonance
 		IView view;
 		IUserInput input;
 		Object pcm_refholder;
-		public void PresentTo<VRO>(IView view, IUserInput input, IPlanCommands<VRO> commands, IValueRequestBuilder<VRO> defBuilder)
+		public void PresentTo(IView view, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
 			this.view = view;
 			this.input = input;
@@ -142,7 +135,7 @@ namespace Consonance
 			view.changeday += ChangeDay;
 			view.manageInfo += View_manageInfo;
 
-			pcm_refholder = new PlanCommandManager<VRO> (commands, () => view.currentDiet);
+			pcm_refholder = new PlanCommandManager (commands, () => view.currentDiet);
 
 			// setup view
 			PushDietInstances ();
@@ -289,14 +282,14 @@ namespace Consonance
 		}
 			
 		List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
-		void AddDietPair<VRO, D,E,Ei,B,Bi>(ITrackModel<D,E,Ei,B,Bi> dietModel, ITrackerPresenter<D,E,Ei,B,Bi> dietPresenter, IValueRequestBuilder<VRO> defBuilder)
+		void AddDietPair<D,E,Ei,B,Bi>(ITrackModel<D,E,Ei,B,Bi> dietModel, ITrackerPresenter<D,E,Ei,B,Bi> dietPresenter, IValueRequestBuilder defBuilder)
 			where D : TrackerInstance, new()
 			where E  : BaseEntry,new() 
 			where Ei : BaseInfo,new() 
 			where B  : BaseEntry,new() 
 			where Bi : BaseInfo,new() 
 		{
-			var presentationHandler = new TrackerPresentationAbstractionHandler<VRO, D,E,Ei,B,Bi> (defBuilder, input, conn, dietModel, dietPresenter);
+			var presentationHandler = new TrackerPresentationAbstractionHandler<D,E,Ei,B,Bi> (defBuilder, input, conn, dietModel, dietPresenter);
 			dietHandlers.Add (presentationHandler);
 			presentationHandler.ViewModelsChanged += HandleViewModelsChanged;
 		}
@@ -346,18 +339,18 @@ namespace Consonance
 		// and the plancommands get called by the view for stuff...
 	}
 	public enum InfoManageType { In, Out };
-	public interface IPlanCommands<IRO>
+	public interface IPlanCommands
 	{
-		ICollectionEditorBoundCommands<EntryLineVM, IRO> eat { get; }
-		ICollectionEditorBoundCommands<InfoLineVM, IRO> eatinfo { get; }
-		ICollectionEditorBoundCommands<EntryLineVM, IRO> burn { get; }
-		ICollectionEditorBoundCommands<InfoLineVM, IRO> burninfo { get; }
+		ICollectionEditorBoundCommands<EntryLineVM> eat { get; }
+		ICollectionEditorBoundCommands<InfoLineVM> eatinfo { get; }
+		ICollectionEditorBoundCommands<EntryLineVM> burn { get; }
+		ICollectionEditorBoundCommands<InfoLineVM> burninfo { get; }
 	}
-	public interface ICollectionEditorBoundCommands<T, IRO> 
+	public interface ICollectionEditorBoundCommands<T> 
 	{
-		event Action<IValueRequestBuilder<IRO>> add;
+		event Action<IValueRequestBuilder> add;
 		event Action<T> remove;
-		event Action<T, IValueRequestBuilder<IRO>> edit;
+		event Action<T, IValueRequestBuilder> edit;
 	}
 	public interface ICollectionEditorLooseCommands<T>
 	{
@@ -373,34 +366,31 @@ namespace Consonance
 		void ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed);
 		void WarnConfirm (String action, Promise confirmed);
 	}
-	public interface IValueRequestBuilder<IRO>
+	public interface IValueRequestBuilder
 	{
 		// get generic set of values on a page thing
-		void GetValues (String title, BindingList<IRO> requests, Promise<bool> completed, int page, int pages);
+		void GetValues (String title, BindingList<Object> requests, Promise<bool> completed, int page, int pages);
 
 		// VRO Factory Method
-		IValueRequestFactory<IRO> requestFactory { get; }
+		IValueRequestFactory requestFactory { get; }
 	}
-	public interface IValueRequestFactory<T>
+	public interface IValueRequestFactory
 	{
-		IValueRequest<T, String> StringRequestor(String name);
-		IValueRequest<T, InfoSelectValue> InfoLineVMRequestor(String name);
-		IValueRequest<T, DateTime> DateRequestor(String name);
-		IValueRequest<T, TimeSpan> TimeSpanRequestor(String name);
-		IValueRequest<T, double> DoubleRequestor(String name); 
-		IValueRequest<T, bool> BoolRequestor(String name);
+		IValueRequest<String> StringRequestor(String name);
+		IValueRequest<InfoSelectValue> InfoLineVMRequestor(String name);
+		IValueRequest<DateTime> DateRequestor(String name);
+		IValueRequest<TimeSpan> TimeSpanRequestor(String name);
+		IValueRequest<double> DoubleRequestor(String name); 
+		IValueRequest<bool> BoolRequestor(String name);
 	}
 	public class InfoSelectValue
 	{
 		public int selected;
 		public IReadOnlyList<InfoLineVM> choices;
 	}
-	public interface IValueRequest<T,V> : IRequest<V>
+	public interface IValueRequest<V>
 	{
-		T request { get; }  // used by view to encapsulate viewbuilding lookups
-	}
-	public interface IRequest<V>
-	{
+		Object request { get; }  // used by view to encapsulate viewbuilding lookups
 		V value { get; set; } // set by view when done, and set by view to indicate an initial value.
 		event Action changed; // so model domain can change the flags
 		void ClearListeners();
@@ -409,7 +399,7 @@ namespace Consonance
 	}
 	public class RequestStorageHelper<V>
 	{
-		public IRequest<V> request { get; private set; }
+		public IValueRequest<V> request { get; private set; }
 		readonly String name;
 		readonly Func<V> defaultValue = () => default(V);
 		readonly Action validate;
@@ -429,7 +419,7 @@ namespace Consonance
 		}
 		// will return cached instance if possible, but will do defaulting if specified and will
 		// always call ClearListeners, so that old registrations to the changed event are no longer called.
-		public T CGet<T>(Func<String,IValueRequest<T,V>> creator)
+		public Object CGet(Func<String,IValueRequest<V>> creator)
 		{
 			if (request == null)
 				request = creator (name);
@@ -437,7 +427,7 @@ namespace Consonance
 			if (shouldReset) Reset ();
 			request.ClearListeners ();
 			request.changed += validate;
-			return (request as IValueRequest<T,V>).request;
+			return request.request;
 		}
 		public static implicit operator V (RequestStorageHelper<V> me)
 		{

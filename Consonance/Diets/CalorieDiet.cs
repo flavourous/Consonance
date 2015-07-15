@@ -37,16 +37,16 @@ namespace Consonance
 		Action toValidate = delegate { };
 		void Validate() { toValidate (); }
 
-		public IEnumerable<TrackerWizardPage<T>> CreationPages<T>(IValueRequestFactory<T> factory) 
+		public IEnumerable<TrackerWizardPage> CreationPages(IValueRequestFactory factory) 
 		{
 			toValidate = ValidateCreate;
-			yield return GetIt<T> ("Create a simple calorie diet", factory);
+			yield return GetIt ("Create a simple calorie diet", factory);
 			Validate ();
 		}
-		public IEnumerable<TrackerWizardPage<T>> EditPages<T> (CalorieDietInstance editing, IValueRequestFactory<T> factory)
+		public IEnumerable<TrackerWizardPage> EditPages(CalorieDietInstance editing, IValueRequestFactory factory)
 		{
 			toValidate = ValidateEdit;
-			var eros = GetIt<T> ("Edit simple diet", factory, true);
+			var eros = GetIt ("Edit simple diet", factory, true);
 			dietName.request.value = editing.name;
 			dietCalLim.request.value = editing.callim;
 			dietEnded.request.value = editing.hasEnded;
@@ -61,12 +61,12 @@ namespace Consonance
 			dietCalLim.request.valid = dietCalLim > 0;
 			dietStart.request.valid = true;
 		}
-		TrackerWizardPage<T> GetIt<T>(String name, IValueRequestFactory<T> factory, bool edit = false)
+		TrackerWizardPage GetIt(String name, IValueRequestFactory factory, bool edit = false)
 		{
 			dietName.Reset ();
 			dietStart.Reset ();
 			dietCalLim.Reset ();
-			var ad = new BindingList<T> {
+			var ad = new BindingList<Object> {
 				dietName.CGet (factory.StringRequestor),
 				dietStart.CGet (factory.DateRequestor),
 				dietCalLim.CGet (factory.DoubleRequestor),
@@ -85,7 +85,7 @@ namespace Consonance
 					else ad.Remove(ded);
 				};
 			}
-			return new TrackerWizardPage<T> (name, ad);
+			return new TrackerWizardPage (name, ad);
 		}
 		void ValidateEdit()
 		{
@@ -142,10 +142,10 @@ namespace Consonance
 			when.Reset ();
 		}
 
-		public BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory)
+		public BindingList<Object> CreationFields (IValueRequestFactory factory)
 		{
 			toValidate = CheckCreationValidity;
-			return new BindingList<T> 
+			return new BindingList<Object> 
 			{
 				name.CGet(factory.StringRequestor),
 				when.CGet(factory.DateRequestor),
@@ -162,10 +162,10 @@ namespace Consonance
 		{
 			return Edit (new CalorieDietEatEntry());
 		}
-		public BindingList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FoodInfo info)
+		public BindingList<Object> CalculationFields (IValueRequestFactory factory, FoodInfo info)
 		{
 			toValidate = () => CheckCalculationValidity(info);
-			var needed = new BindingList<T> () {
+			var needed = new BindingList<Object> () {
 				when.CGet(factory.DateRequestor),				
 				grams.CGet (factory.DoubleRequestor),
 			};
@@ -185,10 +185,10 @@ namespace Consonance
 			name.request.value = grams.request.value + "g of " + info.name;
 			return Edit (new CalorieDietEatEntry (), info, shouldComplete);
 		}
-		public BindingList<T> InfoFields<T> (IValueRequestFactory<T> rf, FoodInfo willedit=null)
+		public BindingList<Object> InfoFields (IValueRequestFactory rf, FoodInfo willedit=null)
 		{
 			toValidate = CheckInfoValidity;
-			var ret = new BindingList<T> { 
+			var ret = new BindingList<Object> { 
 				name.CGet(rf.StringRequestor),
 				calories.CGet(rf.DoubleRequestor),
 				grams.CGet(rf.DoubleRequestor)
@@ -216,7 +216,7 @@ namespace Consonance
 		}
 		public Expression<Func<FoodInfo,bool>> IsInfoComplete {get{return info=>info.calories != null;}}
 
-		public BindingList<T> EditFields<T> (CalorieDietEatEntry toEdit, IValueRequestFactory<T> factory)
+		public BindingList<Object> EditFields (CalorieDietEatEntry toEdit, IValueRequestFactory factory)
 		{
 			var ret = CreationFields (factory);
 			calories.request.value = toEdit.kcals;
@@ -231,7 +231,7 @@ namespace Consonance
 			return toEdit;
 		}
 
-		public BindingList<T> EditFields<T> (CalorieDietEatEntry toEdit, IValueRequestFactory<T> factory, FoodInfo info)
+		public BindingList<Object> EditFields (CalorieDietEatEntry toEdit, IValueRequestFactory factory, FoodInfo info)
 		{
 			var ret = CalculationFields (factory, info);
 			calories.request.value = toEdit.kcals;
@@ -276,10 +276,10 @@ namespace Consonance
 			when.Reset ();
 		}
 
-		public BindingList<T> CreationFields<T> (IValueRequestFactory<T> factory)
+		public BindingList<Object> CreationFields (IValueRequestFactory factory)
 		{
 			toValidate = CheckCreationValidity;
-			return new BindingList<T> { 
+			return new BindingList<Object> { 
 				name.CGet(factory.StringRequestor),
 				when.CGet(factory.DateRequestor),				
 				caloriesBurned.CGet (factory.DoubleRequestor),
@@ -297,10 +297,10 @@ namespace Consonance
 			Edit (ret);
 			return ret;
 		}
-		public BindingList<T> CalculationFields <T>(IValueRequestFactory<T> factory, FireInfo info)
+		public BindingList<Object> CalculationFields (IValueRequestFactory factory, FireInfo info)
 		{
 			toValidate = () => CheckCalculationValidity (info);
-			var needs = new BindingList<T> {
+			var needs = new BindingList<Object> {
 				when.CGet(factory.DateRequestor),				
 				burnTime.CGet (factory.TimeSpanRequestor)
 			};
@@ -321,10 +321,10 @@ namespace Consonance
 			Edit (ret, info, shouldComplete);
 			return ret;
 		}
-		public BindingList<T> InfoFields<T> (IValueRequestFactory<T> factory, FireInfo willedit = null)
+		public BindingList<Object> InfoFields (IValueRequestFactory factory, FireInfo willedit = null)
 		{
 			toValidate = CheckInfoValidity;
-			var ret = new BindingList<T> { 
+			var ret = new BindingList<Object> { 
 				name.CGet(factory.StringRequestor),
 				caloriesBurned.CGet(factory.DoubleRequestor),  
 				burnTime.CGet(factory.TimeSpanRequestor)
@@ -352,9 +352,9 @@ namespace Consonance
 		}
 		public Expression<Func<FireInfo,bool>> IsInfoComplete { get { return f => f.calories != null;  } }
 
-		public BindingList<T> EditFields<T> (CalorieDietBurnEntry toEdit, IValueRequestFactory<T> factory)
+		public BindingList<Object> EditFields (CalorieDietBurnEntry toEdit, IValueRequestFactory factory)
 		{
-			var ret = CreationFields<T> (factory);
+			var ret = CreationFields (factory);
 			caloriesBurned.request.value = toEdit.kcals;
 			return ret;
 		}
@@ -367,9 +367,9 @@ namespace Consonance
 			return toEdit;
 		}
 
-		public BindingList<T> EditFields<T> (CalorieDietBurnEntry toEdit, IValueRequestFactory<T> factory, FireInfo info)
+		public BindingList<Object> EditFields (CalorieDietBurnEntry toEdit, IValueRequestFactory factory, FireInfo info)
 		{
-			var ret = CalculationFields<T> (factory, info);
+			var ret = CalculationFields (factory, info);
 			caloriesBurned.request.value = toEdit.kcals;
 			return ret;
 		}

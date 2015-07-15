@@ -28,20 +28,20 @@ namespace Consonance.AndroidView
 	class MenuOverride { public int index; public String name; }
 
 
-	class BoundCommands : IPlanCommands<ValueRequestWrapper>
+	class BoundCommands : IPlanCommands
 	{
 		#region IPlanCommands implementation
 		public readonly BoundRequestCaller<EntryLineVM> _eat = new BoundRequestCaller<EntryLineVM>();
-		public ICollectionEditorBoundCommands<EntryLineVM, ValueRequestWrapper> eat { get { return _eat; } }
+		public ICollectionEditorBoundCommands<EntryLineVM> eat { get { return _eat; } }
 
 		public readonly BoundRequestCaller<InfoLineVM> _eatinfo = new BoundRequestCaller<InfoLineVM>();
-		public ICollectionEditorBoundCommands<InfoLineVM, ValueRequestWrapper> eatinfo { get { return _eatinfo; } }
+		public ICollectionEditorBoundCommands<InfoLineVM> eatinfo { get { return _eatinfo; } }
 
 		public readonly BoundRequestCaller<EntryLineVM> _burn = new BoundRequestCaller<EntryLineVM>();
-		public ICollectionEditorBoundCommands<EntryLineVM, ValueRequestWrapper> burn { get { return _burn; } }
+		public ICollectionEditorBoundCommands<EntryLineVM> burn { get { return _burn; } }
 
 		public readonly BoundRequestCaller<InfoLineVM> _burninfo = new BoundRequestCaller<InfoLineVM>();
-		public ICollectionEditorBoundCommands<InfoLineVM, ValueRequestWrapper> burninfo { get { return _burninfo; } }
+		public ICollectionEditorBoundCommands<InfoLineVM> burninfo { get { return _burninfo; } }
 		#endregion
 	}
 
@@ -58,16 +58,16 @@ namespace Consonance.AndroidView
 		public void OnEdit(T t) { edit (t); }
 		public void OnSelect(T t) { select (t); }
 	}
-	public class BoundRequestCaller<T> : ICollectionEditorBoundCommands<T, ValueRequestWrapper>
+	public class BoundRequestCaller<T> : ICollectionEditorBoundCommands<T>
 	{
 		#region ICollectionEditorBoundCommands implementation
-		public event Action<IValueRequestBuilder<ValueRequestWrapper>> add;
+		public event Action<IValueRequestBuilder> add;
 		public event Action<T> remove;
-		public event Action<T, IValueRequestBuilder<ValueRequestWrapper>> edit;
+		public event Action<T, IValueRequestBuilder> edit;
 		#endregion
-		public void OnAdd(IValueRequestBuilder<ValueRequestWrapper> builder) { add (builder); }
+		public void OnAdd(IValueRequestBuilder builder) { add (builder); }
 		public void OnRemove(T t) { remove (t); }
-		public void OnEdit(T t,IValueRequestBuilder<ValueRequestWrapper> builder) { edit (t, builder); }
+		public void OnEdit(T t,IValueRequestBuilder builder) { edit (t, builder); }
 	}
 
 	[Activity (Label = "Consonance", MainLauncher=true, Icon = "@drawable/icon")]

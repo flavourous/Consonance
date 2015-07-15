@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace Consonance
 {
-	delegate InfoLineVM InfoPresenter<IType>(IType info);
 	static class InfoFindersManager
 	{
 		static Dictionary<Type,object> repo = new Dictionary<Type, object>();
@@ -15,7 +14,7 @@ namespace Consonance
 		{
 			repo [typeof(IType)] = finder;
 		}
-		public static IFindList<InfoLineVM> GetFinder<IType>(InfoPresenter<IType> creator, MyConn connection) where IType : BaseInfo
+		public static IFindList<InfoLineVM> GetFinder<IType>(Func<IType, InfoLineVM> creator, MyConn connection) where IType : BaseInfo
 		{
 			if(repo.ContainsKey(typeof(IType)))
 			{ 
@@ -26,12 +25,30 @@ namespace Consonance
 		}
 	}
 
+	// fuller interface for clients
+	public interface IFindList<T> : IFindData<T>
+	{
+		bool CanFind { get; }
+		void Import(T item);
+	}
+
+	// Internal interface for making finders
+	public interface IFindData<T>
+	{
+		String[] FindModes { get; }
+		Object[] UseFindMode (String mode, IValueRequestFactory factory); // dosent do requests, just pulls data.
+		IReadOnlyList<T> Find (); // pulls data from requestbuilder.
+	}
+
+
+
+
 	class FinderAdapter<IType> : IFindList<InfoLineVM>
 	{
-		readonly InfoPresenter<IType> creator;
+		readonly Func<IType, InfoLineVM> creator;
 		readonly IFindData<IType> searcher;
 		readonly MyConn conn;
-		public FinderAdapter(InfoPresenter<IType> creator, IFindData<IType> searcher, MyConn conn)
+		public FinderAdapter(Func<IType, InfoLineVM> creator, IFindData<IType> searcher, MyConn conn)
 		{
 			this.conn = conn;
 			this.creator=creator;
@@ -40,32 +57,31 @@ namespace Consonance
 
 		#region IFindList implementation
 		public bool CanFind { get { return true; } }
-		public IEnumerable<InfoLineVM> Find (string filter)
+		public IReadOnlyList<InfoLineVM> Find ()
 		{
-			// enumerate from the search gradually, so that it can page it or whatever it wants...
-			foreach (var sf in searcher.BeginSearch(filter)) {
-				var vm = creator (sf);
-				vm.originator = sf;
-				yield return vm;
-			}
+			return new ReadOnlyListConversionAdapter<IType, InfoLineVM> (searcher.Find (), m => {
+				var vm = creator (m);
+				vm.originator = m;
+				return vm;
+			});
 		}
 		public void Import (InfoLineVM item)
 		{
 			IType model = (IType)item.originator;
 			conn.Insert (model, typeof(IType));
 		}
+		public String[] FindModes { get { return searcher.FindModes; } }
+		public Object[] UseFindMode (String mode, IValueRequestFactory factory) { return searcher.UseFindMode (mode, factory); }
 		#endregion
 	}
-
-	interface IFindData<out T>
-	{
-		IEnumerable<T> BeginSearch (String filter);
-	}
+		
 
 	class EmptyFinder : IFindList<InfoLineVM>
 	{
 		#region IFindList implementation
-		public IEnumerable<InfoLineVM> Find (string filter) { yield break; }
+		public String[] FindModes { get{return new String[0];}}
+		public Object[] UseFindMode(String mode, IValueRequestFactory fact) { return new object[0]; }
+		public IReadOnlyList<InfoLineVM> Find () { return new List<InfoLineVM>(); }
 		public void Import (InfoLineVM item) { }
 		public bool CanFind { get { return false; } }
 		#endregion
@@ -74,15 +90,33 @@ namespace Consonance
 	class MockFoodInfoManager : IFindData<FoodInfo>
 	{
 		#region IFindData implementation
-		public IEnumerable<FoodInfo> BeginSearch (string filter)
+		public IReadOnlyList<FoodInfo> Find ()
 		{
 			Random rd = new Random ();
+			List<FoodInfo> ret = new List<FoodInfo> ();
 			for (int i = 0; i < 100; i++) {
-				yield return new FoodInfo () {
-					calories = rd.Next(10,400),
-					name = filter + " davey food " + i
-				};
+				ret.Add (new FoodInfo () {
+					calories = rd.Next (10, 400),
+					name = SomeFilteringDelegate () + " davey food " + i
+				});
 			}
+			return ret;
+		}
+		Func<String> SomeFilteringDelegate = () => "Unset Filter";
+		public String[] FindModes { get { return new String[] { "Text" }; } }
+		public Object[] UseFindMode (String mode, IValueRequestFactory factory)
+		{
+			List<Object> result = new List<object>();
+			int idx = new List<String> (FindModes).FindIndex (m => mode == m);
+			switch(idx)
+			{
+				case 0:
+					var sr = factory.StringRequestor ("Search Text");
+					result.Add (sr.request);
+					SomeFilteringDelegate = () => sr.value;
+					break;
+			}
+			return result.ToArray ();
 		}
 		#endregion
 	}

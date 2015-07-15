@@ -58,7 +58,7 @@ namespace Consonance.AndroidView
 		#region IEnumerable implementation
 		public IEnumerator<TrackerInstanceVM> GetEnumerator ()
 		{
-			return new DEn (this);
+			return new ListEnumerator<TrackerInstanceVM> (vms);
 		}
 		IEnumerator IEnumerable.GetEnumerator ()
 		{
@@ -66,30 +66,8 @@ namespace Consonance.AndroidView
 		}
 		#endregion
 	}
-	class DEn : IEnumerator<TrackerInstanceVM>
-	{
-		readonly DAdapter dd;
-		int st = -1;
-		public DEn(DAdapter dd)
-		{
-			this.dd = dd;
-		}
-		#region IEnumerator implementation
-		public bool MoveNext ()
-		{
-			st++;
-			return st < dd.Count;
-		}
-		public void Reset ()
-		{
-			st = 0; 
-		}
-		TrackerInstanceVM current { get { return dd [st]; } }
-		object IEnumerator.Current { get { return current; } }
-		public TrackerInstanceVM Current { get { return current; } }
-		#endregion
-		public void Dispose () { }
-	}
+		
+
 	class LAdapter<T> : BaseAdapter<T>
 	{
 		readonly LayoutInflater layoutInflater;
@@ -104,9 +82,9 @@ namespace Consonance.AndroidView
 			uView = viewID;
 		}
 
-		public void SwitchData(IEnumerable<T> newdata)
+		public void SwitchData(IReadOnlyList<T> newdata)
 		{
-			vms = new List<T> (newdata);
+			vms = newdata;
 			NotifyDataSetChanged();
 		}
 

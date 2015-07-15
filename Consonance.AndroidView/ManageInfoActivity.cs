@@ -35,16 +35,15 @@ namespace Consonance.AndroidView
 			public static BoundRequestCaller<InfoLineVM> icom;
 		}
 
-		readonly AndroidRequestBuilder defBuilder;
-		public ManageInfoActivity()
-		{
-			defBuilder = new AndroidRequestBuilder (new DialogRequestBuilder (this), this);
-		}
+		AndroidRequestBuilder defBuilder;
 		ListView ilv;
 		Button b_add,b_edit,b_delete, b_find;
 		protected override void OnCreate (Bundle bundle)
 		{
 			base.OnCreate (bundle);
+
+			// default builer
+			defBuilder = new AndroidRequestBuilder (new DialogRequestBuilder (this), this);
 
 			// Create your application here
 			SetContentView (Resource.Layout.ManageInfoView);
@@ -55,7 +54,8 @@ namespace Consonance.AndroidView
 			(b_delete=FindViewById<Button>(Resource.Id.delete)).Click += (sender, e) => SO.icom.OnRemove(si);
 			(b_find = FindViewById<Button> (Resource.Id.find)).Click += (sender, e) => {
 				// start the finder dialog
-				var fd = new FindMoreInfoDialog(this, SO.externalFindy);
+				var fd = new FindMoreInfoDialog(this);
+				fd.SetFinder(SO.externalFindy);
 				fd.Show();
 			}; 
 
@@ -125,65 +125,80 @@ namespace Consonance.AndroidView
 
 	class FindMoreInfoDialog : Dialog
 	{
-		readonly IFindList<InfoLineVM> finder;
-		readonly LAdapter<InfoLineVM> lads;
-		public FindMoreInfoDialog(Context c, IFindList<InfoLineVM> finder) : base(c)
+		IFindList<InfoLineVM> finder;
+		LAdapter<InfoLineVM> lads;
+		public FindMoreInfoDialog(Context c) : base(c) { }
+		public void SetFinder(IFindList<InfoLineVM> finder)
 		{
 			this.finder = finder;
+		}
+		protected override void OnCreate (Bundle savedInstanceState)
+		{
+			base.OnCreate (savedInstanceState);
+
+			Window.RequestFeature (WindowFeatures.NoTitle);
+			SetContentView (Resource.Layout.FindInfoView);
+
+			// set up adapter
 			lads = new LAdapter<InfoLineVM> (
 				LayoutInflater, 
 				new InfoLineVM[0],
 				Resource.Layout.ManageInfoLine,
 				ILVMConfig.ConfigLine
 			);
-		}
-
-
-
-		protected override void OnCreate (Bundle savedInstanceState)
-		{
-			// reuse the above layout plus hacks! lol
-			base.OnCreate (savedInstanceState);
-
-			SetContentView (Resource.Layout.FindInfoView);
-
-			// create and push in the filter view, we write below.
-			var fvContainer = FindViewById<RelativeLayout> (Resource.Id.filterContainer);
-			var filter = new FilteringView (Context);
-			filter.LayoutParameters = new RelativeLayout.LayoutParams (RelativeLayout.LayoutParams.MatchParent, RelativeLayout.LayoutParams.WrapContent);
-			fvContainer.AddView (filter);
-			filter.filterChanged += (obj) => lads.SwitchData(finder.Find(obj));
+			var ilv = FindViewById<ListView>(Resource.Id.infolist);
+			ilv.Adapter = lads;
 
 			// cant be clicked when not showing, so leave attached.
 			var b_import=FindViewById<Button>(Resource.Id.importitem);
-			var ilv = FindViewById<ListView>(Resource.Id.infolist);
 			b_import.Click += (sender, e) => {
-				var itm = lads[ilv.SelectedItemPosition];
+				var itm = lads[ilv.CheckedItemPosition];
 				finder.Import(itm);
-				Toast.MakeText(Context ,"Imported " + itm.name, ToastLength.Short);
+				Toast.MakeText(Context ,"Imported " + itm.name, ToastLength.Short).Show();
+			};
+
+			// go searcht button
+			var b_find = FindViewById<Button>(Resource.Id.filterGo);
+			b_find.Click += (sender, e) => {
+				lads.SwitchData(finder.Find());
 			};
 
 			// state
 			b_import.Enabled = false;
 			ilv.ItemClick += (sender, e) => {
 				if(e.Position > -1)
-					ilv.SetSelection(e.Position); //hacks	
+					ilv.SetItemChecked(e.Position, true); //hacks	
 				b_import.Enabled = e.Position > -1;
 			};
+
+			// mr factory
+			var factory = new ValueRequestFactory (Context);
+
+			// filter change delegate
+			Action msSel = delegate { };
+
+			// mode spinner
+			var modeSelector = FindViewById<Spinner> (Resource.Id.modeSpinner);
+			modeSelector.ItemSelected += (sender, e) => msSel ();
+			modeSelector.Adapter = new ArrayAdapter<String> (Context, Android.Resource.Layout.SimpleListItem1, finder.FindModes);
+
+			// filtercontainer
+			LinearLayout filterHost = FindViewById<LinearLayout>(Resource.Id.valReqFrame);
+
+			// changing method
+			msSel = () => {
+				filterHost.RemoveAllViews ();
+				foreach (var vr in finder.UseFindMode(finder.FindModes[modeSelector.SelectedItemPosition], factory)) {
+					var vrw = vr as ValueRequestWrapper;
+					filterHost.AddView (vrw.inputView);
+				}
+			};
+			// fire it now...
+			msSel ();	
 		
 		}
 
 	}
-
-	class FilteringView : LinearLayout
-	{
-		public event Action<String> filterChanged = delegate{ };
-		public FilteringView(Context c) : base(c)
-		{
-			var tv = new EditText (c);	
-			tv.LayoutParameters = new ViewGroup.LayoutParams (ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
-			tv.TextChanged += (sender, e) => filterChanged(tv.Text);
-		}
-	}
+		
 }
 

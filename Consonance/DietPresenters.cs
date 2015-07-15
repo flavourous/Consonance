@@ -148,22 +148,19 @@ namespace Consonance
 		IFindList<InfoLineVM> InFinder {get;}
 		IFindList<InfoLineVM> OutFinder {get;}
 		event DietVMChangeEventHandler ViewModelsChanged;
-	}
-	interface INotSoAbstractedDiet<IRO>
-	{
 		// entry ones
-		void AddIn (TrackerInstanceVM diet, IValueRequestBuilder<IRO> bld);
+		void AddIn (TrackerInstanceVM diet, IValueRequestBuilder bld);
 		void RemoveIn (EntryLineVM evm);
-		void EditIn (EntryLineVM evm, IValueRequestBuilder<IRO> bld);
-		void AddInInfo (IValueRequestBuilder<IRO> bld);
+		void EditIn (EntryLineVM evm, IValueRequestBuilder bld);
+		void AddInInfo (IValueRequestBuilder bld);
 		void RemoveInInfo (InfoLineVM ivm);
-		void EditInInfo (InfoLineVM ivm, IValueRequestBuilder<IRO> bld);
-		void AddOut (TrackerInstanceVM diet, IValueRequestBuilder<IRO> bld);
+		void EditInInfo (InfoLineVM ivm, IValueRequestBuilder bld);
+		void AddOut (TrackerInstanceVM diet, IValueRequestBuilder bld);
 		void RemoveOut (EntryLineVM evm);
-		void EditOut (EntryLineVM evm, IValueRequestBuilder<IRO> bld);
-		void AddOutInfo (IValueRequestBuilder<IRO> bld);
+		void EditOut (EntryLineVM evm, IValueRequestBuilder bld);
+		void AddOutInfo (IValueRequestBuilder bld);
 		void RemoveOutInfo (InfoLineVM ivm);
-		void EditOutInfo (InfoLineVM ivm, IValueRequestBuilder<IRO> bld);
+		void EditOutInfo (InfoLineVM ivm, IValueRequestBuilder bld);
 	}
 	enum DietVMChangeType { None, Instances, EatEntries, BurnEntries, EatInfos, BurnInfos };
 	class DietVMChangeEventArgs
@@ -181,7 +178,7 @@ namespace Consonance
 	/// As such, it should obey a non-generic contract that the AppPresenter can easily consume and
 	/// query for data.
 	/// </summary>
-	class TrackerPresentationAbstractionHandler <IRO, DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedTracker, INotSoAbstractedDiet<IRO>
+	class TrackerPresentationAbstractionHandler <DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedTracker
 		where DietInstType : TrackerInstance, new()
 		where EatType : BaseEntry, new()
 		where EatInfoType : BaseInfo, new()
@@ -190,13 +187,13 @@ namespace Consonance
 	{
 		public TrackerDetailsVM details { get; private set; }
 		public TrackerDialect dialect { get; private set; }
-		readonly IValueRequestBuilder<IRO> instanceBuilder;
+		readonly IValueRequestBuilder instanceBuilder;
 		readonly IUserInput getInput;
 		readonly ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
 		readonly TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
 		readonly MyConn conn;
 		public TrackerPresentationAbstractionHandler(
-			IValueRequestBuilder<IRO> instanceBuilder,
+			IValueRequestBuilder instanceBuilder,
 			IUserInput getInput,
 			MyConn conn,
 			ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model,
@@ -326,18 +323,18 @@ namespace Consonance
 		public void StartNewTracker()
 		{
 			PageIt (
-				new List<TrackerWizardPage<IRO>> (modelHandler.model.CreationPages<IRO> (instanceBuilder.requestFactory)),
+				new List<TrackerWizardPage> (modelHandler.model.CreationPages (instanceBuilder.requestFactory)),
 				() => modelHandler.StartNewTracker()
 			);
 		}
 		public void EditTracker (TrackerInstanceVM dvm)
 		{
 			PageIt (
-				new List<TrackerWizardPage<IRO>> (modelHandler.model.EditPages<IRO> (dvm.originator as DietInstType, instanceBuilder.requestFactory)),
+				new List<TrackerWizardPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory)),
 				() => modelHandler.EditTracker (dvm.originator as DietInstType)
 			);
 		}
-		void PageIt(List<TrackerWizardPage<IRO>> pages, Action complete, int page = 0)
+		void PageIt(List<TrackerWizardPage> pages, Action complete, int page = 0)
 		{
 			instanceBuilder.GetValues(pages[page].title, pages[page].valuerequests, b => {
 				if(++page < pages.Count) PageIt(pages, complete, page);
@@ -356,11 +353,11 @@ namespace Consonance
 			else modelHandler.RemoveTracker (diet);
 		}
 
-		public void AddIn(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)
+		public void AddIn(TrackerInstanceVM to, IValueRequestBuilder bld)
 		{
 			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation, bld);
 		}
-		public void AddOut(TrackerInstanceVM to, IValueRequestBuilder<IRO> bld)
+		public void AddOut(TrackerInstanceVM to, IValueRequestBuilder bld)
 		{
 			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld);
 		}
@@ -369,7 +366,7 @@ namespace Consonance
 
 		void Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
 			EntryHandler<DietInstType,T,I> handler, bool true_if_in,
-			Func<I,InfoLineVM> rep, IValueRequestBuilder<IRO> getValues, T editing = null) 
+			Func<I,InfoLineVM> rep, IValueRequestBuilder getValues, T editing = null) 
 				where T : BaseEntry, new()
 				where I : BaseInfo, new()
 		{
@@ -397,7 +394,7 @@ namespace Consonance
 
 			// Set up for editing
 			int selectedInfo = -1;
-			Func<IList<IRO>> flds = () => {
+			Func<IList<Object>> flds = () => {
 				if (selectedInfo < 0)
 					return editing == null ?
 						creator.CreationFields (getValues.requestFactory) :
@@ -422,12 +419,12 @@ namespace Consonance
 			};
 
 			// binfy
-			BindingList<IRO> requests = new BindingList<IRO> ();
+			BindingList<Object> requests = new BindingList<Object> ();
 			requests.Add (infoRequest.request);
 
 			Action checkFields = () => {
 				selectedInfo = infoRequest.value ==  null ? -1 : infoRequest.value.selected;
-				BindingList<IRO> nrq = new BindingList<IRO>(flds());
+				BindingList<Object> nrq = new BindingList<Object>(flds());
 				nrq.Insert (0, infoRequest.request);
 				CycleRequests(requests, nrq);
 			};
@@ -441,7 +438,7 @@ namespace Consonance
 			}, 0, 1);
 		}
 
-		void CycleRequests(BindingList<IRO> exist, BindingList<IRO> want)
+		void CycleRequests(BindingList<Object> exist, BindingList<Object> want)
 		{
 			//remove gone
 			for (int i = 0; i < exist.Count; i++)
@@ -469,20 +466,20 @@ namespace Consonance
 			return dis.Count() == 0 ? null : dis.First();
 		}
 
-		public void EditIn (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
+		public void EditIn (EntryLineVM ed,IValueRequestBuilder bld) {
 			var eat = ed.originator as EatType;
 			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation,bld,eat);
 		}
-		public void EditOut (EntryLineVM ed,IValueRequestBuilder<IRO> bld) {
+		public void EditOut (EntryLineVM ed,IValueRequestBuilder bld) {
 			var burn = ed.originator as BurnType;
 			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld,burn);
 		}
 
-		public void AddInInfo(IValueRequestBuilder<IRO> bld)
+		public void AddInInfo(IValueRequestBuilder bld)
 		{
 			DoInfo<EatInfoType> ("Create a Food", modelHandler.model.increator, modelHandler.inhandler, bld);
 		}
-		public void EditInInfo(InfoLineVM ivm, IValueRequestBuilder<IRO> bld)
+		public void EditInInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
 			DoInfo<EatInfoType> ("Edit Food", modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
 		}
@@ -491,12 +488,12 @@ namespace Consonance
 			modelHandler.inhandler.Remove (ivm.originator as EatInfoType);
 		}
 
-		void DoInfo<I>(String title, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder<IRO> builder, I toEdit = null)  where I : BaseInfo, new()
+		void DoInfo<I>(String title, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
 		{
 			bool editing = toEdit != null;
 			builder.GetValues (
 				title,
-				creator.InfoFields<IRO>(builder.requestFactory, toEdit),
+				creator.InfoFields(builder.requestFactory, toEdit),
 				success => {
 					if(editing) handler.Edit(toEdit);
 					else handler.Add();
@@ -505,11 +502,11 @@ namespace Consonance
 				1);
 		}
 
-		public void AddOutInfo(IValueRequestBuilder<IRO> bld)
+		public void AddOutInfo(IValueRequestBuilder bld)
 		{
 			DoInfo<BurnInfoType> ("Create a Fire", modelHandler.model.outcreator, modelHandler.outhandler, bld);
 		}
-		public void EditOutInfo(InfoLineVM ivm, IValueRequestBuilder<IRO> bld)
+		public void EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
 			DoInfo<BurnInfoType> ("Edit Food", modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
 		}
