@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Consonance.XamarinFormsView.ChoosePlanView">
+	<StackLayout Orientation="Vertical">
+		  <ListView ItemsSource="{Binding planItems}" Height="100" SelectedItem="{Binding chosen}">
+		    <ListView.ItemTemplate>
+		      <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+		    </ListView.ItemTemplate>
+		  </ListView>
+		  <Button Text="Import" Clicked="DoImport"/>
+	</StackLayout>
+</ContentPage>

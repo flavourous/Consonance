@@ -3,32 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Consonance;
-
 using Xamarin.Forms;
 
 namespace Consonance.XamarinFormsView
 {
-    public class App : Application, IView
+    public class App : Application
     {
         public App()
         {
+            var main = new MainView();
+            var navigator = new NavigationPage(main);
             // The root page of your application
-            MainPage = new MainView();
+            MainPage = navigator;
+
+            viewWrapper = new ViewWrapper(main);
+            planCommandWrapper = new PlanCommandsWrapper();
+            defaultBuilder = new ValueRequestBuilder();
+            userInputWrapper = new UserInputWrapper(navigator);
         }
 
+        readonly ViewWrapper viewWrapper;
+        readonly PlanCommandsWrapper planCommandWrapper;
+        readonly ValueRequestBuilder defaultBuilder;
+        readonly UserInputWrapper userInputWrapper;
         protected override void OnStart()
         {
             // Handle when your app starts
-        }
-
-        protected override void OnSleep()
-        {
-            // Handle when your app sleeps
-        }
-
-        protected override void OnResume()
-        {
-            // Handle when your app resumes
+            Presenter.Singleton.PresentTo(viewWrapper, userInputWrapper, planCommandWrapper, defaultBuilder);
         }
     }
+    
 }

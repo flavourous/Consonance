@@ -2,10 +2,35 @@
 <TabbedPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Consonance.XamarinFormsView.MainView">
-  <ContentPage Title="Tab1">
-    
+  <ContentPage Title="{Binding InTabName}">
+    <StackLayout Orientation="Vertical">
+      <Label Text="pagey"/>
+      <ListView ItemsSource="{Binding InItems}">
+        <ListView.ItemTemplate>
+          <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+        </ListView.ItemTemplate>
+      </ListView>
+    </StackLayout>
   </ContentPage>
-  <ContentPage Title="Tab2">
-    
+  <ContentPage Title="{Binding OutTabName}">
+    <StackLayout Orientation="Vertical">
+      <Label Text="pagey mores"/>
+      <ListView ItemsSource="{Binding OutItems}">
+        <ListView.ItemTemplate>
+          <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+        </ListView.ItemTemplate>
+      </ListView>
+    </StackLayout>
+  </ContentPage>
+  <ContentPage Title="Plan">
+    <StackLayout Orientation="Vertical">
+      <Label Text="pagey om nom"/>
+      <ListView ItemsSource="{Binding PlanItems}" ItemTapped="">
+        <ListView.ItemTemplate>
+          <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+        </ListView.ItemTemplate>
+      </ListView>
+      <Button Text="Add" Clicked="AddPlanClick"/>
+    </StackLayout>
   </ContentPage>
 </TabbedPage>

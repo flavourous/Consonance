@@ -26,6 +26,8 @@ namespace Consonance.XamarinFormsView.Droid
 		
 		public static void UpdateIdValues()
 		{
+			global::SQLite.Resource.String.ApplicationName = global::Consonance.XamarinFormsView.Droid.Resource.String.ApplicationName;
+			global::SQLite.Resource.String.Hello = global::Consonance.XamarinFormsView.Droid.Resource.String.Hello;
 		}
 		
 		public partial class Attribute
@@ -45,7 +47,7 @@ namespace Consonance.XamarinFormsView.Droid
 		{
 			
 			// aapt resource value: 0x7f020000
-			public const int icon = 2130837504;
+			public const int Icon = 2130837504;
 			
 			// aapt resource value: 0x7f020001
 			public const int monoandroidsplash = 2130837505;
@@ -60,11 +62,30 @@ namespace Consonance.XamarinFormsView.Droid
 			}
 		}
 		
+		public partial class String
+		{
+			
+			// aapt resource value: 0x7f030001
+			public const int ApplicationName = 2130903041;
+			
+			// aapt resource value: 0x7f030000
+			public const int Hello = 2130903040;
+			
+			static String()
+			{
+				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
+			}
+			
+			private String()
+			{
+			}
+		}
+		
 		public partial class Style
 		{
 			
-			// aapt resource value: 0x7f030000
-			public const int Mono_Android_Theme_Splash = 2130903040;
+			// aapt resource value: 0x7f040000
+			public const int Mono_Android_Theme_Splash = 2130968576;
 			
 			static Style()
 			{
