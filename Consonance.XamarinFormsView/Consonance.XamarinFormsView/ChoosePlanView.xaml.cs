@@ -14,11 +14,14 @@ namespace Consonance.XamarinFormsView
 		public ChoosePlanView ()
 		{
 			InitializeComponent ();
+            BindingContext = this;
 		}
 
-		public readonly BindingList<TrackerDetailsVM> planItems = new BindingList<TrackerDetailsVM> ();
-		TrackerDetailsVM chosen { get; set; }
-		public event Action<TrackerDetailsVM> import = delegate { };
-		public void DoImport(Object s, EventArgs e) { import (chosen); }
+		BindingList<TrackerDetailsVM> mPlanChoices = new BindingList<TrackerDetailsVM> ();
+        public BindingList<TrackerDetailsVM> PlanChoices { get { return mPlanChoices; } }
+		public TrackerDetailsVM choicey { get; set; }
+		public event Action<int> chosen = delegate { };
+        public void DoChoose(Object s, EventArgs e) { chosen(mPlanChoices.IndexOf(choicey)); }
+		public void DoCancel(Object s, EventArgs e) { Navigation.PopAsync(); }
 	}
 }

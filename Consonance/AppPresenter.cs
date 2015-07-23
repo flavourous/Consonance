@@ -385,8 +385,8 @@ namespace Consonance
 	}
 	public class InfoSelectValue
 	{
-		public int selected;
-		public IReadOnlyList<InfoLineVM> choices;
+		public int selected {get;set;}
+		public IReadOnlyList<InfoLineVM> choices {get;set;}
 	}
 	public interface IValueRequest<V>
 	{

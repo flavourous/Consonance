@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Xamarin.Forms;
 
 namespace Consonance.XamarinFormsView
 {
     class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>
     {
-        readonly MainView main;
-        public ViewWrapper(MainView main)
+		readonly MainTabs main;
+		public ViewWrapper(MainTabs main)
         {
             this.main = main;
         }

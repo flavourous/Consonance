@@ -3,11 +3,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Consonance.XamarinFormsView.ChoosePlanView">
 	<StackLayout Orientation="Vertical">
-		  <ListView ItemsSource="{Binding planItems}" Height="100" SelectedItem="{Binding chosen}">
+		  <ListView ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey}">
 		    <ListView.ItemTemplate>
-		      <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+	      		<DataTemplate>
+		              <ViewCell>
+			          		<Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+		              </ViewCell>
+        		</DataTemplate>
 		    </ListView.ItemTemplate>
 		  </ListView>
-		  <Button Text="Import" Clicked="DoImport"/>
+		  <StackLayout Orientation="Horizontal">
+		  	<Button Text="Cancel" Clicked="DoCancel"/>
+		  	<Button Text="Ok" Clicked="DoChoose"/>
+		  </StackLayout>
 	</StackLayout>
 </ContentPage>

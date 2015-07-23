@@ -15,21 +15,72 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)InputWrapper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)MainView.xaml.cs">
-      <DependentUpon>MainView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)PlanCommandsWrapper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ValueRequestBuilder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewWrapper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MainTabs.xaml.cs">
+      <DependentUpon>MainTabs.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestView.xaml.cs">
+      <DependentUpon>ValueRequestView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestTemplate.xaml.cs">
+      <DependentUpon>ValueRequestTemplate.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\StringRequest.xaml.cs">
+      <DependentUpon>StringRequest.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\DoubleRequest.xaml.cs">
+      <DependentUpon>DoubleRequest.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\TimeSpanRequest.xaml.cs">
+      <DependentUpon>TimeSpanRequest.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\InfoSelectRequest.xaml.cs">
+      <DependentUpon>InfoSelectRequest.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\BoolRequest.xaml.cs">
+      <DependentUpon>BoolRequest.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\DateTimeRequest.xaml.cs">
+      <DependentUpon>DateTimeRequest.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)ChoosePlanView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
-    <Page Include="$(MSBuildThisFileDirectory)MainView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestView.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)MainTabs.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestTemplate.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\StringRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\DoubleRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\TimeSpanRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\InfoSelectRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\BoolRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\DateTimeRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)ValueRequest\" />
+    <Folder Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\" />
   </ItemGroup>
 </Project>

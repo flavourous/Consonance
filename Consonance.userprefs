@@ -1,11 +1,9 @@
 ﻿<Properties StartupItem="Consonance.XamarinFormsView\Consonance.XamarinFormsView.Droid\Consonance.XamarinFormsView.Droid.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\MainView.xaml.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ChoosePlanView.xaml.cs">
     <Files>
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ChoosePlanView.xaml" Line="6" Column="93" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ChoosePlanView.xaml.cs" Line="19" Column="98" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\DietModels.cs" Line="5" Column="7" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\MainView.xaml.cs" Line="15" Column="35" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView.Droid\Properties\AndroidManifest.xml" Line="1" Column="1" />
+      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ChoosePlanView.xaml.cs" Line="16" Column="4" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -13,9 +11,12 @@
           <Node name="Consonance" expanded="True">
             <Node name="Consonance" expanded="True" />
             <Node name="Consonance.XamarinFormsView" expanded="True">
+              <Node name="ValueRequest" expanded="True" />
               <Node name="ChoosePlanView.xaml" expanded="True" />
-              <Node name="MainView.xaml" expanded="True">
-                <Node name="MainView.xaml.cs" selected="True" />
+            </Node>
+            <Node name="Consonance.XamarinFormsView.Droid" expanded="True">
+              <Node name="Properties" expanded="True">
+                <Node name="AndroidManifest.xml" selected="True" />
               </Node>
             </Node>
           </Node>
@@ -33,5 +34,9 @@
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>
     <Watch file="c:\cygwin\home\David\Consonance\Consonance\DietModels.cs" line="315" offsetX="270" offsetY="5024" expression="ent" liveUpdate="False" />
   </MonoDevelop.Ide.DebuggingService.PinnedWatches>
-  <MonoDevelop.Ide.ItemProperties.Consonance.AndroidView AndroidDesignerPreferredDevice="Nexus 4" />
+  <DisabledProjects>
+    <String>Consonance.AndroidView\Consonance.AndroidView.csproj</String>
+    <String>Consonance.XamarinFormsView\Consonance.XamarinFormsView.iOS\Consonance.XamarinFormsView.iOS.csproj</String>
+    <String>Consonance.XamarinFormsView\Consonance.XamarinFormsView.Console\Consonance.XamarinFormsView.Console.csproj</String>
+  </DisabledProjects>
 </Properties>

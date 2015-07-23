@@ -11,14 +11,14 @@ namespace Consonance.XamarinFormsView
     {
         public App()
         {
-            var main = new MainView();
+			var main = new MainTabs();
             var navigator = new NavigationPage(main);
             // The root page of your application
-            MainPage = navigator;
+			MainPage = navigator;
 
             viewWrapper = new ViewWrapper(main);
             planCommandWrapper = new PlanCommandsWrapper();
-            defaultBuilder = new ValueRequestBuilder();
+			defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
             userInputWrapper = new UserInputWrapper(navigator);
         }
 

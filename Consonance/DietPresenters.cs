@@ -33,7 +33,9 @@ namespace Consonance
 	}
 	public class TrackerDetailsVM
 	{
-		public readonly String name, description, category;
+        public String name { get; private set; }
+        public String description { get; private set; }
+        public String category { get; private set; }
 		public TrackerDetailsVM(String name, String description, String category)
 		{
 			this.name = name;
@@ -43,13 +45,13 @@ namespace Consonance
 	}
 	public class TrackerInstanceVM : OriginatorVM
 	{
-		public readonly DateTime start;
-		public readonly bool hasended;
-		public readonly DateTime end;
-		public readonly String name;
-		public readonly String desc;
-		public readonly KVPList<string,double> displayAmounts;
-		public readonly TrackerDialect dialect;
+        public DateTime start { get; private set; }
+        public bool hasended { get; private set; }
+        public DateTime end { get; private set; }
+        public String name { get; private set; }
+        public String desc { get; private set; }
+        public KVPList<string, double> displayAmounts { get; private set; }
+        public TrackerDialect dialect { get; private set; }
 
 		public TrackerInstanceVM(TrackerDialect td, DateTime s, bool he, DateTime e, String n, String d, KVPList<string,double>  t)
 		{
@@ -67,11 +69,11 @@ namespace Consonance
 	}
 	public class EntryLineVM : OriginatorVM
 	{
-		public readonly DateTime start;
-		public readonly TimeSpan duration;
-		public readonly String name;
-		public readonly String desc;
-		public readonly KVPList<string,double> displayAmounts;
+        public DateTime start { get; private set; }
+        public TimeSpan duration { get; private set; }
+        public String name { get; private set; }
+        public String desc { get; private set; }
+        public KVPList<string, double> displayAmounts { get; private set; }
 
 		public EntryLineVM(DateTime w, TimeSpan l, String n, String d, KVPList<string,double>  t)
 		{
