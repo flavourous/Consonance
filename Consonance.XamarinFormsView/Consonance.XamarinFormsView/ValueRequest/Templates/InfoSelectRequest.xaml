@@ -2,8 +2,12 @@
 <ContentView xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView" xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.InfoSelectRequest">
 <ContentView.Resources>
 	<ResourceDictionary>
-		<l:ISVConverter x:Key="isvconvert"/>
+		<l:SValConverter x:Key="svc"/>
 	</ResourceDictionary>
 </ContentView.Resources>
-	<Picker Title="{Binding name}" Items="{Binding value.choices, Mode=OneWay, Converter={StaticResource isvconvert}}" SelectedIndex="{Binding value.selected}"/>
+<StackLayout Orientation="Horizontal">
+<Label Text="{Binding name}"/>
+<Label Text="{Binding value, Converter={StaticResource svc}"/>
+<Button Text="Choose"/>
+</StackLayout>
 </ContentView>

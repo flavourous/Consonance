@@ -19,7 +19,7 @@ namespace Consonance.XamarinFormsView
             viewWrapper = new ViewWrapper(main);
             planCommandWrapper = new PlanCommandsWrapper();
 			defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
-            userInputWrapper = new UserInputWrapper(navigator);
+			userInputWrapper = new UserInputWrapper(navigator);
         }
 
         readonly ViewWrapper viewWrapper;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Collections.Generic;
@@ -142,9 +143,9 @@ namespace Consonance
 		IEnumerable<EntryLineVM>  OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime start, DateTime end);
-		void StartNewTracker();
+		Task StartNewTracker();
 		void RemoveTracker (TrackerInstanceVM dvm);
-		void EditTracker (TrackerInstanceVM dvm);
+		Task EditTracker (TrackerInstanceVM dvm);
 		IEnumerable<InfoLineVM> InInfos (bool onlycomplete);
 		IEnumerable<InfoLineVM> OutInfos (bool onlycomplete);
 		IFindList<InfoLineVM> InFinder {get;}
@@ -322,24 +323,24 @@ namespace Consonance
 			foreach (I i in input)
 				yield return convert (i);
 		}
-		public void StartNewTracker()
+		public async Task StartNewTracker()
 		{
-			PageIt (
+			await PageIt (
 				new List<TrackerWizardPage> (modelHandler.model.CreationPages (instanceBuilder.requestFactory)),
 				() => modelHandler.StartNewTracker()
 			);
 		}
-		public void EditTracker (TrackerInstanceVM dvm)
+		public async Task EditTracker (TrackerInstanceVM dvm)
 		{
-			PageIt (
+			await PageIt (
 				new List<TrackerWizardPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory)),
 				() => modelHandler.EditTracker (dvm.originator as DietInstType)
 			);
 		}
-		void PageIt(List<TrackerWizardPage> pages, Action complete, int page = 0)
+		async Task PageIt(List<TrackerWizardPage> pages, Action complete, int page = 0)
 		{
-			instanceBuilder.GetValues(pages[page].title, pages[page].valuerequests, b => {
-				if(++page < pages.Count) PageIt(pages, complete, page);
+			await instanceBuilder.GetValues(pages[page].title, pages[page].valuerequests, async b => {
+				if(++page < pages.Count) await PageIt(pages, complete, page);
 				else if(b) complete();
 			}, page, pages.Count);
 		}
@@ -350,7 +351,7 @@ namespace Consonance
 			if ((ct = modelHandler.outhandler.Count (diet) + modelHandler.inhandler.Count (diet)) > 0)
 				getInput.WarnConfirm (
 					"That instance still has " + ct + " entries, they will be removed if you continue.",
-					() => modelHandler.RemoveTracker (diet)
+					async () => modelHandler.RemoveTracker (diet)
 				);
 			else modelHandler.RemoveTracker (diet);
 		}
@@ -434,7 +435,7 @@ namespace Consonance
 			infoRequest.changed += checkFields;
 
 			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntrytVerb;
-			getValues.GetValues (entryVerb, requests, c => {
+			getValues.GetValues (entryVerb, requests, async c => {
 				if (c) editit ();
 				infoRequest.changed -= checkFields;
 			}, 0, 1);
@@ -496,7 +497,7 @@ namespace Consonance
 			builder.GetValues (
 				title,
 				creator.InfoFields(builder.requestFactory, toEdit),
-				success => {
+				async success => {
 					if(editing) handler.Edit(toEdit);
 					else handler.Add();
 				},

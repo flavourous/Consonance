@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -198,7 +199,7 @@ namespace Consonance
 			foreach (var ad in saveDiets)
 				dietnames.Add (ad.details);
 			input.ChoosePlan("Select Diet Type", dietnames, -1, 
-				si => saveDiets[si].StartNewTracker());
+				async si => await saveDiets[si].StartNewTracker());
 		}
 
 		void Handleremovedietinstance (TrackerInstanceVM obj)
@@ -316,8 +317,8 @@ namespace Consonance
 	}
 
 	public delegate bool Predicate();
-	public delegate void Promise();
-	public delegate void Promise<T>(T arg);
+	public delegate Task Promise();
+	public delegate Task Promise<T>(T arg);
 	/// <summary>
 	/// definition on the application view
 	/// </summary>
@@ -362,14 +363,14 @@ namespace Consonance
 	public interface IUserInput
 	{
 		// User Input
-		void SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
-		void ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed);
-		void WarnConfirm (String action, Promise confirmed);
+		Task SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
+		Task ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed);
+		Task WarnConfirm (String action, Promise confirmed);
 	}
 	public interface IValueRequestBuilder
 	{
 		// get generic set of values on a page thing
-		void GetValues (String title, BindingList<Object> requests, Promise<bool> completed, int page, int pages);
+		Task GetValues (String title, BindingList<Object> requests, Promise<bool> completed, int page, int pages);
 
 		// VRO Factory Method
 		IValueRequestFactory requestFactory { get; }

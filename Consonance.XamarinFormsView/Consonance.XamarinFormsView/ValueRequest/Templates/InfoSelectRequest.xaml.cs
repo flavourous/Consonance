@@ -10,7 +10,20 @@ namespace Consonance.XamarinFormsView
 		{
 			InitializeComponent ();
 		}
-
+	}
+	class SValConverter : IValueConverter
+	{
+		#region IValueConverter implementation
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			var isv = (value as InfoSelectValue);
+			return isv.selected < isv.choices.Count && isv.selected > -1 ? isv.choices [isv.selected].name : "None Selected";
+		}
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException ();
+		}
+		#endregion
 	}
 	class ISVConverter : IValueConverter
 	{

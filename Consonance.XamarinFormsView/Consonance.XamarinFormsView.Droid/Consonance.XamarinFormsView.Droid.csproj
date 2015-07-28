@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Consonance.XamarinFormsView.Droid</RootNamespace>
-    <AssemblyName>Consonance.XamarinFormsView.Droid</AssemblyName>
+    <AssemblyName>Consonance.XamarinFormsView</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <AndroidApplication>true</AndroidApplication>
     <AndroidResgenFile>Resources\Resource.Designer.cs</AndroidResgenFile>

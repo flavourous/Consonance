@@ -20,10 +20,11 @@ namespace Consonance.XamarinFormsView
 		public void AddRow(View forRow)
 		{
 			forRow.VerticalOptions = LayoutOptions.Start;
+			forRow.HorizontalOptions = LayoutOptions.StartAndExpand;
 			InputRows.Children.Add (forRow);
 			vlm.ListenForValid ((INotifyPropertyChanged)forRow.BindingContext);
 		}
-		public Action<bool> completed = delegate { };
+		public Promise<bool> completed = async delegate { };
 		ValidListenManager vlm = new ValidListenManager ("valid");
 		void OKClick(object sender, EventArgs args) { completed (true); }
 		void CancelClick(object sender, EventArgs args) { completed (false); }
