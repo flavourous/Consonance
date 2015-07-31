@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.InfoManageView">
+	<StackLayout Orientation="Vertical">
+      <Label Text="pagey infos"/>
+      <ListView ItemsSource="{Binding Items, Mode=OneWay}">
+        <ListView.ItemTemplate>
+          <DataTemplate>
+            <ViewCell>
+            	<ViewCell.ContextActions>
+	            	<MenuItem Clicked="OnItemEdit" Text="Edit" />
+	            	<MenuItem Clicked="OnItemDelete" Text="Delete" />
+         		</ViewCell.ContextActions>
+              <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+            </ViewCell>
+	        </DataTemplate>
+        </ListView.ItemTemplate>
+      </ListView>
+      <Button Text="Add" Clicked="OnItemAdd"/>
+      <Button Text="Find" Clicked="OnFindItems" IsEnabled="false"/>
+    </StackLayout>
+</ContentPage>

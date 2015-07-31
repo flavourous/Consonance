@@ -10,16 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)App.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ChoosePlanView.xaml.cs">
-      <DependentUpon>ChoosePlanView.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)InputWrapper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)PlanCommandsWrapper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ViewWrapper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)MainTabs.xaml.cs">
-      <DependentUpon>MainTabs.xaml</DependentUpon>
-    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestBuilder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestView.xaml.cs">
       <DependentUpon>ValueRequestView.xaml</DependentUpon>
@@ -45,16 +35,22 @@
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\DateTimeRequest.xaml.cs">
       <DependentUpon>DateTimeRequest.xaml</DependentUpon>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Wrappers\InputWrapper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wrappers\PlanCommandsWrapper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wrappers\ViewWrapper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\ChoosePlanView.xaml.cs">
+      <DependentUpon>ChoosePlanView.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Views\InfoManageView.xaml.cs">
+      <DependentUpon>InfoManageView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Views\MainTabs.xaml.cs">
+      <DependentUpon>MainTabs.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ChoosePlanView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
-    </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestView.xaml">
-      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)MainTabs.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestTemplate.xaml">
@@ -78,9 +74,21 @@
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\DateTimeRequest.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\ChoosePlanView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\InfoManageView.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\MainTabs.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)ValueRequest\" />
     <Folder Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Views\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Wrappers\" />
   </ItemGroup>
 </Project>

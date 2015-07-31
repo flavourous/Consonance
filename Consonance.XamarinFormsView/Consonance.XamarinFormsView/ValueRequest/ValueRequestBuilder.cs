@@ -61,9 +61,9 @@ namespace Consonance.XamarinFormsView
 			public String name { get; set; }
 			public ValueRequestVM(ContentView bound, String name)
 			{
+				this.name=name;
 				bound.BindingContext = this;
 				_request = bound;
-				this.name=name;
 			}
 
 			#region IValueRequest implementation

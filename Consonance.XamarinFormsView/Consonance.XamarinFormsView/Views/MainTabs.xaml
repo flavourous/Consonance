@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<TabbedPage 
+	xmlns="http://xamarin.com/schemas/2014/forms" 
+	xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView"
+	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+	x:Class="Consonance.XamarinFormsView.MainTabs">	
+	  <ContentPage Title="{Binding InTabName}">
+    <StackLayout Orientation="Vertical">
+      <Label Text="pagey"/>
+      <ListView ItemsSource="{Binding InItems, Mode=OneWay}">
+        <ListView.ItemTemplate>
+	        <DataTemplate >
+            <ViewCell>
+            	<ViewCell.ContextActions>
+	            	<MenuItem Clicked="OnInItemEdit" Text="Edit" />
+	            	<MenuItem Clicked="OnInItemDelete" Text="Delete" />
+         		</ViewCell.ContextActions>
+              <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+            </ViewCell>
+	        </DataTemplate>
+        </ListView.ItemTemplate>
+      </ListView>
+      <Button Text="Add" Clicked="AddInClick"/>
+      <Button Text="Manage" Clicked="InInfoManageClick"/>
+    </StackLayout>
+  </ContentPage>
+  <ContentPage Title="{Binding OutTabName}">
+    <StackLayout Orientation="Vertical">
+      <Label Text="pagey mores"/>
+      <ListView ItemsSource="{Binding OutItems, Mode=OneWay}">
+        <ListView.ItemTemplate>
+          <DataTemplate>
+            <ViewCell>
+            	<ViewCell.ContextActions>
+	            	<MenuItem Clicked="OnOutItemEdit" Text="Edit" />
+	            	<MenuItem Clicked="OnOutItemDelete" Text="Delete" />
+         		</ViewCell.ContextActions>
+              <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+            </ViewCell>
+	        </DataTemplate>
+        </ListView.ItemTemplate>
+      </ListView>
+      <Button Text="Add" Clicked="AddOutClick"/>
+      <Button Text="Manage" Clicked="OutInfoManageClick"/>
+    </StackLayout>
+  </ContentPage>
+  <ContentPage Title="Plan">
+    <StackLayout Orientation="Vertical">
+      <Label Text="pagey om nom"/>
+      <ListView ItemsSource="{Binding PlanItems, Mode=OneWay}" HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem}">
+        <ListView.ItemTemplate>
+          <DataTemplate>
+            <ViewCell>
+            	<ViewCell.ContextActions>
+	            	<MenuItem Clicked="OnPlanItemEdit" Text="Edit" />
+	            	<MenuItem Clicked="OnPlanItemDelete" Text="Delete" />
+         		</ViewCell.ContextActions>
+            	<StackLayout Orientation="Horizontal">
+	            	<StackLayout.Resources>
+		            	<ResourceDictionary>
+		            		<l:KVPListConverter x:Key="klc"/>
+		            	</ResourceDictionary>
+	            	</StackLayout.Resources>
+            		<Label Text="{Binding start}" VerticalOptions="Center" />
+            		<Label Text="{Binding name}" VerticalOptions="Center"/>
+            		<Label Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="EndAndExpand" VerticalOptions="Center"/>
+            	</StackLayout>
+            </ViewCell>
+	        </DataTemplate>
+        </ListView.ItemTemplate>
+      </ListView>
+      <Button Text="Add" Clicked="AddPlanClick"/>
+    </StackLayout>
+  </ContentPage>
+</TabbedPage>

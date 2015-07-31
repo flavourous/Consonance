@@ -5,9 +5,9 @@
 		<l:SValConverter x:Key="svc"/>
 	</ResourceDictionary>
 </ContentView.Resources>
-<StackLayout Orientation="Horizontal">
+<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
 <Label Text="{Binding name}"/>
-<Label Text="{Binding value, Converter={StaticResource svc}"/>
-<Button Text="Choose"/>
+<Label Text="{Binding value, Converter={StaticResource svc}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
+<Button Text="Choose" VerticalOptions="Center"/>
 </StackLayout>
 </ContentView>

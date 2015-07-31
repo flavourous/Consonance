@@ -128,7 +128,7 @@ namespace Consonance
 
 			// commanding...
 			view.plan.add += Handleadddietinstance;
-			view.plan.select += View_selectdietinstance;
+			view.plan.select += View_trackerinstanceselected;
 			view.plan.remove += Handleremovedietinstance;
 			view.plan.edit += View_editdietinstance;
 
@@ -136,7 +136,7 @@ namespace Consonance
 			view.changeday += ChangeDay;
 			view.manageInfo += View_manageInfo;
 
-			pcm_refholder = new PlanCommandManager (commands, () => view.currentDiet);
+			pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance);
 
 			// setup view
 			PushDietInstances ();
@@ -145,9 +145,9 @@ namespace Consonance
 
 		void View_manageInfo (InfoManageType obj)
 		{
-			if (view.currentDiet == null) return;
-			var cdh = view.currentDiet.sender as IAbstractedTracker;
-			ChangeTriggerList<InfoLineVM> lines = new ChangeTriggerList<InfoLineVM> ();
+			if (view.currentTrackerInstance == null) return;
+			var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
+			BindingList<InfoLineVM> lines = new BindingList<InfoLineVM> ();
 			DietVMChangeEventHandler cdel = (sender, args) => PushInLinesAndFire (obj, lines);
 			Action finished = () => cdh.ViewModelsChanged -= cdel;
 			cdh.ViewModelsChanged += cdel;
@@ -156,24 +156,26 @@ namespace Consonance
 			view.ManageInfos(obj, lines,  finder, finished);
 		}
 			
-		void PushInLinesAndFire(InfoManageType mt, ChangeTriggerList<InfoLineVM> bl)
+		void PushInLinesAndFire(InfoManageType mt, BindingList<InfoLineVM> bl)
 		{
-			var cdh = view.currentDiet.sender as IAbstractedTracker;
+			var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
 			bl.Clear ();
 			switch (mt) {
 			case InfoManageType.In:
-				bl.AddRange (cdh.InInfos (false));
+				foreach(var ii in cdh.InInfos (false))
+					bl.Add (ii);
 				break;
 			case InfoManageType.Out:
-				bl.AddRange (cdh.OutInfos (false));
+				foreach(var oi in cdh.OutInfos (false))
+					bl.Add(oi);
 				break;
 			}
-			bl.OnChanged ();
 		}
 			
-		void View_selectdietinstance (TrackerInstanceVM obj)
+		void View_trackerinstanceselected (TrackerInstanceVM obj)
 		{
-			view.currentDiet = obj;
+			// yeah, it was selected....
+			//view.currentTrackerInstance = obj;
 			PushEatLines();
 			PushBurnLines();
 			PushTracking();	
@@ -185,7 +187,7 @@ namespace Consonance
 			ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
 			de = ds.AddDays (1);
 			view.day = ds;
-			if (view.currentDiet != null) {
+			if (view.currentTrackerInstance != null) {
 				PushEatLines ();
 				PushBurnLines ();
 				PushTracking ();
@@ -213,31 +215,31 @@ namespace Consonance
 
 		void PushEatLines()
 		{
-			var ad = view.currentDiet.sender as IAbstractedTracker;
-			var eatEntries = ad.InEntries (view.currentDiet, ds, de);
+			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
+			var eatEntries = ad.InEntries (view.currentTrackerInstance, ds, de);
 			view.SetEatLines (eatEntries);
 		}
 		void PushBurnLines()
 		{
-			var ad = view.currentDiet.sender as IAbstractedTracker;
-			var burnEntries = ad.OutEntries (view.currentDiet, ds, de);
+			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
+			var burnEntries = ad.OutEntries (view.currentTrackerInstance, ds, de);
 			view.SetBurnLines (burnEntries);
 		}
 		void PushTracking()
 		{
-			var ad = view.currentDiet.sender as IAbstractedTracker;
+			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
 			SetViewTrackerTracks (ti => ad.GetInTracking(ti,ds,de), view.SetEatTrack);
 			SetViewTrackerTracks (ti => ad.GetOutTracking(ti,ds,de), view.SetBurnTrack);
 		}
 		void SetViewTrackerTracks(Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
 		{
-			var v = processor (view.currentDiet);
+			var v = processor (view.currentTrackerInstance);
 			viewSetter (
 				new TrackerTracksVM () { 
-					tracks = processor (view.currentDiet), 
-					instance = view.currentDiet
+					tracks = processor (view.currentTrackerInstance), 
+					instance = view.currentTrackerInstance
 				},
-				OtherOnes (view.currentDiet, lastBuild, processor)
+				OtherOnes (view.currentTrackerInstance, lastBuild, processor)
 			);
 		}
 		IEnumerable<TrackerTracksVM> OtherOnes (TrackerInstanceVM curr, List<TrackerInstanceVM> last, Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor)
@@ -254,10 +256,10 @@ namespace Consonance
 		void PushDietInstances()
 		{
 			lastBuild.Clear ();
-			bool currentRemoved = view.currentDiet != null;
+			bool currentRemoved = view.currentTrackerInstance != null;
 			foreach (var dh in dietHandlers)
 				foreach (var d in dh.Instances ()) {
-					if (currentRemoved && OriginatorVM.OriginatorEquals(d, view.currentDiet)) // that checks db id and table, if originator is correctly set.
+					if (currentRemoved && OriginatorVM.OriginatorEquals(d, view.currentTrackerInstance)) // that checks db id and table, if originator is correctly set.
 						currentRemoved = false;
 					lastBuild.Add (d);
 				}
@@ -267,11 +269,11 @@ namespace Consonance
 				};
 			view.SetInstances (lastBuild);
 			// change current diet if we have to.
-			if (currentRemoved || view.currentDiet == null) {
+			if (currentRemoved || view.currentTrackerInstance == null) {
 				// select the first one thats open today
 				foreach (var d in lastBuild) {
 					if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
-						view.currentDiet = d;
+						view.currentTrackerInstance = d;
 						PushEatLines ();
 						PushBurnLines ();
 						PushTracking ();
@@ -298,7 +300,7 @@ namespace Consonance
 		void HandleViewModelsChanged (IAbstractedTracker sender, DietVMChangeEventArgs args)
 		{
 			// check its from the active diet
-			if (view.currentDiet == null || Object.ReferenceEquals (view.currentDiet.sender, sender)) {
+			if (view.currentTrackerInstance == null || Object.ReferenceEquals (view.currentTrackerInstance.sender, sender)) {
 				switch (args.changeType) {
 				case DietVMChangeType.Instances:
 					PushDietInstances ();
@@ -331,12 +333,12 @@ namespace Consonance
 		void SetInstances (IEnumerable<TrackerInstanceVM> instanceitems);
 		event Action<DateTime> changeday;
 		DateTime day { get; set; }
-		TrackerInstanceVM currentDiet { get; set; }
+		TrackerInstanceVM currentTrackerInstance { get; set; }
 		ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get; }
 
 		event Action<InfoManageType> manageInfo;
 		// these fire to trigger managment of eat or burn infos
-		void ManageInfos(InfoManageType mt, ChangeTriggerList<InfoLineVM> toManage, IFindList<InfoLineVM> finder, Action finished); // which ends up calling this one
+		void ManageInfos(InfoManageType mt, BindingList<InfoLineVM> toManage, IFindList<InfoLineVM> finder, Action finished); // which ends up calling this one
 		// and the plancommands get called by the view for stuff...
 	}
 	public enum InfoManageType { In, Out };

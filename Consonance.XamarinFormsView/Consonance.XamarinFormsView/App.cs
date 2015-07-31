@@ -9,23 +9,28 @@ namespace Consonance.XamarinFormsView
 {
     public class App : Application
     {
+		readonly ViewWrapper viewWrapper;
+		readonly PlanCommandsWrapper planCommandWrapper;
+		readonly ValueRequestBuilder defaultBuilder;
+		readonly UserInputWrapper userInputWrapper;
+
         public App()
         {
+			// some pages.
+			var iman = new InfoManageView ();
 			var main = new MainTabs();
             var navigator = new NavigationPage(main);
-            // The root page of your application
+
+			// The root page of your application
 			MainPage = navigator;
 
-            viewWrapper = new ViewWrapper(main);
-            planCommandWrapper = new PlanCommandsWrapper();
+			// instantiate wrappers
+			viewWrapper = new ViewWrapper(main, iman);
 			defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
 			userInputWrapper = new UserInputWrapper(navigator);
+			planCommandWrapper = new PlanCommandsWrapper(defaultBuilder, main, iman);
         }
 
-        readonly ViewWrapper viewWrapper;
-        readonly PlanCommandsWrapper planCommandWrapper;
-        readonly ValueRequestBuilder defaultBuilder;
-        readonly UserInputWrapper userInputWrapper;
         protected override void OnStart()
         {
             // Handle when your app starts

@@ -19,8 +19,6 @@ namespace Consonance.XamarinFormsView
 		}
 		public void AddRow(View forRow)
 		{
-			forRow.VerticalOptions = LayoutOptions.Start;
-			forRow.HorizontalOptions = LayoutOptions.StartAndExpand;
 			InputRows.Children.Add (forRow);
 			vlm.ListenForValid ((INotifyPropertyChanged)forRow.BindingContext);
 		}

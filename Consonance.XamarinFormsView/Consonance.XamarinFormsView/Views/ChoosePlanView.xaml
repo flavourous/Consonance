@@ -3,11 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Consonance.XamarinFormsView.ChoosePlanView">
 	<StackLayout Orientation="Vertical">
-		  <ListView ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey}">
+		  <ListView HasUnevenRows="true" ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey}">
 		    <ListView.ItemTemplate>
 	      		<DataTemplate>
 		              <ViewCell>
-			          		<Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+			          		<Label Text="{Binding name}" HorizontalOptions="Fill" VerticalOptions="CenterAndExpand"/>
 		              </ViewCell>
         		</DataTemplate>
 		    </ListView.ItemTemplate>
