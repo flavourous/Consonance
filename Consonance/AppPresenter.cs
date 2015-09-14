@@ -103,7 +103,14 @@ namespace Consonance
 	{
 		// Singleton logic - lazily created
 		static Presenter singleton;
-		public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
+		//public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
+		public static Task PresentTo(IView view, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
+		{
+			return Task.Run (() => {
+				singleton = new Presenter();
+				singleton.PresentToImpl(view, input, commands, defBuilder);
+			});
+		}
 		MyConn conn;
 		private Presenter ()
 		{
@@ -121,7 +128,7 @@ namespace Consonance
 		IView view;
 		IUserInput input;
 		Object pcm_refholder;
-		public void PresentTo(IView view, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
+		void PresentToImpl(IView view, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
 			this.view = view;
 			this.input = input;

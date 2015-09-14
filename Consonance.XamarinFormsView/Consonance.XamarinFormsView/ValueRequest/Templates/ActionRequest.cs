@@ -13,7 +13,7 @@ namespace Consonance.XamarinFormsView
 		public void OnClicked()
 		{
 			// force binding update for action fire.
-			(BindingContext as ValueRequestVM<EventArgs>).value = new EventArgs ();
+			(BindingContext as IValueRequest<EventArgs>).value = new EventArgs ();
 		}
 	}
 }

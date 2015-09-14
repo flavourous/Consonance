@@ -34,7 +34,9 @@ namespace Consonance.XamarinFormsView
         protected override void OnStart()
         {
             // Handle when your app starts
-            Presenter.Singleton.PresentTo(viewWrapper, userInputWrapper, planCommandWrapper, defaultBuilder);
+
+			// just let go of this async loader method.
+			Presenter.PresentTo(viewWrapper, userInputWrapper, planCommandWrapper, defaultBuilder);
         }
     }
     

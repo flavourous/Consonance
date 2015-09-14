@@ -5,7 +5,6 @@
 	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
 	x:Class="Consonance.XamarinFormsView.ActionRequest">
 	<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
-		<Label Text="{Binding name}" VerticalOptions="Center"/>
-		<Entry Text="{Binding value}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" Keyboard="Numeric"/>
+		<Button Text="{Binding name}" VerticalOptions="Center" Clicked="OnClicked"/>
 	</StackLayout>
 </ContentView>
