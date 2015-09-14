@@ -46,21 +46,20 @@ namespace Consonance
 			commands.burninfo.add += View_addburninfo;
 			commands.burninfo.remove += View_removeburninfo;
 			commands.burninfo.edit += View_editburninfo;
-
 		}
 
-		void View_addeatitem (IValueRequestBuilder bld) 					{ if (!VerifyDiet ()) return; cdh.AddIn (cd,bld); }
-		void View_removeeatitem (EntryLineVM vm) 							{ if (!VerifyDiet ()) return; cdh.RemoveIn (vm); }
-		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ if (!VerifyDiet ()) return; cdh.EditIn (vm,bld); }
-		void View_addeatinfo (IValueRequestBuilder bld) 					{ if (!VerifyDiet ()) return; cdh.AddInInfo (bld); }
-		void View_removeeatinfo (InfoLineVM vm) 							{ if (!VerifyDiet ()) return; cdh.RemoveInInfo (vm); }
-		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder bld) 		{ if (!VerifyDiet ()) return; cdh.EditInInfo (vm,bld); }
-		void View_addburnitem (IValueRequestBuilder bld) 					{ if (!VerifyDiet ()) return; cdh.AddOut (cd,bld); }
-		void View_removeburnitem (EntryLineVM vm)						 	{ if (!VerifyDiet ()) return; cdh.RemoveOut (vm); }
-		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ if (!VerifyDiet ()) return; cdh.EditOut (vm,bld); }
-		void View_addburninfo (IValueRequestBuilder bld) 					{ if (!VerifyDiet ()) return; cdh.AddOutInfo (bld); }
-		void View_removeburninfo (InfoLineVM vm)							{ if (!VerifyDiet ()) return; cdh.RemoveOutInfo (vm); }
-		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder bld) 	{ if (!VerifyDiet ()) return; cdh.EditOutInfo (vm,bld); }
+		void View_addeatitem (IValueRequestBuilder bld) 					{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.AddIn (cd,bld); }); }
+		void View_removeeatitem (EntryLineVM vm) 							{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveIn (vm); });  }
+		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.EditIn (vm,bld); }); }
+		void View_addeatinfo (IValueRequestBuilder bld) 					{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.AddInInfo (bld); }); }
+		void View_removeeatinfo (InfoLineVM vm) 							{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveInInfo (vm); }); }
+		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder bld) 		{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.EditInInfo (vm,bld); }); }
+		void View_addburnitem (IValueRequestBuilder bld) 					{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.AddOut (cd,bld); }); }
+		void View_removeburnitem (EntryLineVM vm)						 	{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveOut (vm); }); }
+		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.EditOut (vm,bld); }); }
+		void View_addburninfo (IValueRequestBuilder bld) 					{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.AddOutInfo (bld); }); }
+		void View_removeburninfo (InfoLineVM vm)							{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveOutInfo (vm); }); }
+		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder bld) 	{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.EditOutInfo (vm,bld); }); }
 
 		bool VerifyDiet()
 		{
@@ -151,32 +150,38 @@ namespace Consonance
 			ChangeDay (DateTime.UtcNow);
 		}
 
-		async void View_manageInfo (InfoManageType obj)
+		void View_manageInfo (InfoManageType obj)
 		{
-			if (view.currentTrackerInstance == null) return;
-			var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
-			ObservableCollection<InfoLineVM> lines = new ObservableCollection<InfoLineVM> ();
-			DietVMChangeEventHandler cdel = (sender, args) => PushInLinesAndFire (obj, lines);
-			cdh.ViewModelsChanged += cdel;
-			PushInLinesAndFire (obj, lines);
-			await view.ManageInfos(obj, lines);
-			cdh.ViewModelsChanged -= cdel;
+			Task.Run (async () => {
+				if (view.currentTrackerInstance != null) {
+					var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
+					ObservableCollection<InfoLineVM> lines = new ObservableCollection<InfoLineVM> ();
+					DietVMChangeEventHandler cdel = (sender, args) => PushInLinesAndFire (obj, lines);
+					cdh.ViewModelsChanged += cdel;
+					PushInLinesAndFire (obj, lines);
+					await view.ManageInfos (obj, lines);
+					cdh.ViewModelsChanged -= cdel;
+				}
+				return Task.Yield ();
+			});
 		}
 
-		void PushInLinesAndFire(InfoManageType mt, ObservableCollection<InfoLineVM> bl)
+		Task PushInLinesAndFire(InfoManageType mt, ObservableCollection<InfoLineVM> bl)
 		{
-			var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
-			bl.Clear ();
-			switch (mt) {
-			case InfoManageType.In:
-				foreach(var ii in cdh.InInfos (false))
-					bl.Add (ii);
-				break;
-			case InfoManageType.Out:
-				foreach(var oi in cdh.OutInfos (false))
-					bl.Add(oi);
-				break;
-			}
+			return Task.Run (() => {
+				var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
+				bl.Clear ();
+				switch (mt) {
+				case InfoManageType.In:
+					foreach (var ii in cdh.InInfos (false))
+						bl.Add (ii);
+					break;
+				case InfoManageType.Out:
+					foreach (var oi in cdh.OutInfos (false))
+						bl.Add (oi);
+					break;
+				}
+			});
 		}
 			
 		void View_trackerinstanceselected (TrackerInstanceVM obj)
@@ -220,23 +225,29 @@ namespace Consonance
 			(obj.sender as IAbstractedTracker).EditTracker (obj);
 		}
 
-		void PushEatLines()
+		Task PushEatLines()
 		{
-			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-			var eatEntries = ad.InEntries (view.currentTrackerInstance, ds, de);
-			view.SetEatLines (eatEntries);
+			return Task.Run (() => {
+				var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
+				var eatEntries = ad.InEntries (view.currentTrackerInstance, ds, de);
+				view.SetEatLines (eatEntries);
+			});
 		}
-		void PushBurnLines()
+		Task PushBurnLines()
 		{
-			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-			var burnEntries = ad.OutEntries (view.currentTrackerInstance, ds, de);
-			view.SetBurnLines (burnEntries);
+			return Task.Run (() => {
+				var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
+				var burnEntries = ad.OutEntries (view.currentTrackerInstance, ds, de);
+				view.SetBurnLines (burnEntries);
+			});
 		}
-		void PushTracking()
+		Task PushTracking()
 		{
-			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-			SetViewTrackerTracks (ti => ad.GetInTracking(ti,ds,de), view.SetEatTrack);
-			SetViewTrackerTracks (ti => ad.GetOutTracking(ti,ds,de), view.SetBurnTrack);
+			return Task.Run (() => {
+				var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
+				SetViewTrackerTracks (ti => ad.GetInTracking (ti, ds, de), view.SetEatTrack);
+				SetViewTrackerTracks (ti => ad.GetOutTracking (ti, ds, de), view.SetBurnTrack);
+			});
 		}
 		void SetViewTrackerTracks(Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
 		{
@@ -260,35 +271,36 @@ namespace Consonance
 		}
 
 		List<TrackerInstanceVM> lastBuild = new  List<TrackerInstanceVM>();
-		void PushDietInstances()
+		async Task PushDietInstances()
 		{
-			lastBuild.Clear ();	
-			bool currentRemoved = view.currentTrackerInstance != null;
-			foreach (var dh in dietHandlers)
-				foreach (var d in dh.Instances ()) {
-					if (currentRemoved && OriginatorVM.OriginatorEquals(d, view.currentTrackerInstance)) // that checks db id and table, if originator is correctly set.
+			await new Task (() => {
+				lastBuild.Clear ();	
+				bool currentRemoved = view.currentTrackerInstance != null;
+				foreach (var dh in dietHandlers)
+					foreach (var d in dh.Instances ()) {
+						if (currentRemoved && OriginatorVM.OriginatorEquals (d, view.currentTrackerInstance)) // that checks db id and table, if originator is correctly set.
 						currentRemoved = false;
-					lastBuild.Add (d);
-				}
-			foreach (var vm in lastBuild)
-				vm.trackChanged = v => {
-					PushTracking(); // lazy way.
-				};
-			view.SetInstances (lastBuild);
-			// change current diet if we have to.
-			if (currentRemoved || view.currentTrackerInstance == null) {
-				// select the first one thats open today
-				foreach (var d in lastBuild) {
-					if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
-						view.currentTrackerInstance = d;
-						PushEatLines ();
-						PushBurnLines ();
-						PushTracking ();
-						break;
+						lastBuild.Add (d);
+					}
+				foreach (var vm in lastBuild)
+					vm.trackChanged = v => {
+						PushTracking (); // lazy way.
+					};
+				view.SetInstances (lastBuild);
+				// change current diet if we have to.
+				if (currentRemoved || view.currentTrackerInstance == null) {
+					// select the first one thats open today
+					foreach (var d in lastBuild) {
+						if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
+							view.currentTrackerInstance = d;
+							PushEatLines ();
+							PushBurnLines ();
+							PushTracking ();
+							break;
+						}
 					}
 				}
-			}
-
+			});
 		}
 			
 		List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
