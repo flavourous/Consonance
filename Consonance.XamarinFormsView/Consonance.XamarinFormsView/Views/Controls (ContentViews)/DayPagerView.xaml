@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.DayPagerView">
+	<ContentView.Content>
+	<StackLayout Orientation="Horizontal">
+		<Button Text="prev" Clicked="OnPrev"/>
+		<Label Text="{Binding day, StringFormat='{0}mm/dd/yyyy'}" HorizontalOptions="FillAndExpand"/>
+		<Button Text="next" Clicked="OnNext"/>
+	</StackLayout>
+	</ContentView.Content>
+</ContentView>

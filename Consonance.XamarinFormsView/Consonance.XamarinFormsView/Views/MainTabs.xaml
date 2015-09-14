@@ -4,8 +4,9 @@
 	xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView"
 	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
 	x:Class="Consonance.XamarinFormsView.MainTabs">	
-	  <ContentPage Title="{Binding InTabName}">
+  <ContentPage Title="{Binding InTabName}">
     <StackLayout Orientation="Vertical">
+	  <l:DayPagerView/> <!--auto inherits bindingcontext right?-->
       <ListView ItemsSource="{Binding InItems}" HasUnevenRows="true">
         <ListView.ItemTemplate>
 	        <DataTemplate >
@@ -25,6 +26,7 @@
   </ContentPage>
   <ContentPage Title="{Binding OutTabName}">
     <StackLayout Orientation="Vertical">
+      <l:DayPagerView/> <!--auto inherits bindingcontext right?-->
       <ListView ItemsSource="{Binding OutItems}" HasUnevenRows="true">
         <ListView.ItemTemplate>
           <DataTemplate>

@@ -64,6 +64,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\BarcodeRequest.cs">
       <DependentUpon>BarcodeRequest.xaml</DependentUpon>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Views\Controls %28ContentViews%29\DayPagerView.xaml.cs">
+      <DependentUpon>DayPagerView.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestView.xaml">
@@ -113,6 +116,9 @@
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\BarcodeRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\Controls %28ContentViews%29\DayPagerView.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
   </ItemGroup>
