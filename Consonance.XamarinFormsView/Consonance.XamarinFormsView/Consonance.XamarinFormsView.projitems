@@ -48,6 +48,22 @@
     <Compile Include="$(MSBuildThisFileDirectory)Views\MainTabs.xaml.cs">
       <DependentUpon>MainTabs.xaml</DependentUpon>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Views\InfoChooseView.xaml.cs">
+      <DependentUpon>InfoChooseView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Views\Controls %28ContentViews%29\EntryLineVM_Row.xaml.cs">
+      <DependentUpon>EntryLineVM_Row.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueConverters.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\InfoFindView.cs">
+      <DependentUpon>InfoFindView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\ActionRequest.cs">
+      <DependentUpon>ActionRequest.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\BarcodeRequest.cs">
+      <DependentUpon>BarcodeRequest.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\ValueRequestView.xaml">
@@ -84,11 +100,27 @@
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\MainTabs.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\InfoChooseView.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\Controls %28ContentViews%29\EntryLineVM_Row.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\InfoFindView.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\ActionRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\BarcodeRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)ValueRequest\" />
     <Folder Include="$(MSBuildThisFileDirectory)ValueRequest\Templates\" />
-    <Folder Include="$(MSBuildThisFileDirectory)Views\" />
     <Folder Include="$(MSBuildThisFileDirectory)Wrappers\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Views\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Views\Controls %28ContentViews%29\" />
   </ItemGroup>
 </Project>

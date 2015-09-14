@@ -185,7 +185,7 @@ namespace Consonance
 			name.request.value = grams.request.value + "g of " + info.name;
 			return Edit (new CalorieDietEatEntry (), info, shouldComplete);
 		}
-		public BindingList<Object> InfoFields (IValueRequestFactory rf, FoodInfo willedit=null)
+		public BindingList<Object> InfoFields (IValueRequestFactory rf)
 		{
 			toValidate = CheckInfoValidity;
 			var ret = new BindingList<Object> { 
@@ -193,13 +193,16 @@ namespace Consonance
 				calories.CGet(rf.DoubleRequestor),
 				grams.CGet(rf.DoubleRequestor)
 			};
-			if (willedit != null) {
-				name.request.value = willedit.name;
-				calories.request.value = willedit.calories ?? 0.0;
-				grams.request.value = willedit.per_hundred_grams * 100.0;
-			}
 			return ret;
 		}
+
+		public void FillRequestData (FoodInfo item)
+		{
+			name.request.value = item.name;
+			calories.request.value = item.calories ?? 0.0;
+			grams.request.value = item.per_hundred_grams * 100.0;
+		}
+
 		void CheckInfoValidity()
 		{
 			name.request.valid = !String.IsNullOrWhiteSpace (name);
@@ -321,7 +324,7 @@ namespace Consonance
 			Edit (ret, info, shouldComplete);
 			return ret;
 		}
-		public BindingList<Object> InfoFields (IValueRequestFactory factory, FireInfo willedit = null)
+		public BindingList<Object> InfoFields (IValueRequestFactory factory)
 		{
 			toValidate = CheckInfoValidity;
 			var ret = new BindingList<Object> { 
@@ -329,13 +332,16 @@ namespace Consonance
 				caloriesBurned.CGet(factory.DoubleRequestor),  
 				burnTime.CGet(factory.TimeSpanRequestor)
 			};
-			if (willedit != null) {
-				name.request.value = willedit.name;
-				caloriesBurned.request.value = willedit.calories ?? 0.0;
-				burnTime.request.value = TimeSpan.FromHours (willedit.per_hour);
-			}
 			return ret;
 		}
+
+		public void FillRequestData (FireInfo item)
+		{
+			name.request.value = item.name;
+			caloriesBurned.request.value = item.calories ?? 0.0;
+			burnTime.request.value = TimeSpan.FromHours (item.per_hour);
+		}
+
 		void CheckInfoValidity()
 		{
 			name.request.valid = !String.IsNullOrWhiteSpace (name);

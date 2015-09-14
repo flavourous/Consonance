@@ -108,7 +108,7 @@ namespace Consonance
 	}
 	public class InfoLineVM : OriginatorVM
 	{
-		public String name;
+		public String name { get; set; }
 	}
 
 	public interface ITrackerPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType> 
@@ -480,23 +480,25 @@ namespace Consonance
 
 		public void AddInInfo(IValueRequestBuilder bld)
 		{
-			DoInfo<EatInfoType> ("Create a Food", modelHandler.model.increator, modelHandler.inhandler, bld);
+			DoInfo<EatInfoType> ("Create a Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld);
 		}
 		public void EditInInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
-			DoInfo<EatInfoType> ("Edit Food", modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
+			DoInfo<EatInfoType> ("Edit Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
 		}
 		public void RemoveInInfo(InfoLineVM ivm)
 		{
 			modelHandler.inhandler.Remove (ivm.originator as EatInfoType);
 		}
 
-		void DoInfo<I>(String title, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
+		void DoInfo<I>(String title,IFindList<InfoLineVM> finder, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
 		{
 			bool editing = toEdit != null;
+			var vros = editing ? creator.InfoFields (builder.requestFactory) : new ValueRequestFactory_FinderAdapter<I> (finder, creator, builder.requestFactory, getInput).GetRequestObjects ();
+			if (editing) creator.FillRequestData (toEdit);
 			builder.GetValues (
 				title,
-				creator.InfoFields(builder.requestFactory, toEdit),
+				vros,
 				async success => {
 					if(editing) handler.Edit(toEdit);
 					else handler.Add();
@@ -507,11 +509,11 @@ namespace Consonance
 
 		public void AddOutInfo(IValueRequestBuilder bld)
 		{
-			DoInfo<BurnInfoType> ("Create a Fire", modelHandler.model.outcreator, modelHandler.outhandler, bld);
+			DoInfo<BurnInfoType> ("Create a Fire",OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
 		}
 		public void EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
-			DoInfo<BurnInfoType> ("Edit Food", modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
+			DoInfo<BurnInfoType> ("Edit Food",OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
 		}
 		public void RemoveOutInfo(InfoLineVM ivm)
 		{

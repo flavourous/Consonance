@@ -16,6 +16,5 @@
         </ListView.ItemTemplate>
       </ListView>
       <Button Text="Add" Clicked="OnItemAdd"/>
-      <Button Text="Find" Clicked="OnFindItems" IsEnabled="false"/>
     </StackLayout>
 </ContentPage>

@@ -7,11 +7,11 @@
 			</ResourceDictionary>
 		</StackLayout.Resources>
 		<Label Text="{Binding name}" VerticalOptions="Center"/>
-		<Entry Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=h}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
+		<Entry Keyboard="Numeric" Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=h}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 		<Label Text="h" VerticalOptions="Center"/>
-		<Entry Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=m}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
+		<Entry Keyboard="Numeric" Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=m}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 		<Label Text="m" VerticalOptions="Center"/>
-		<Entry Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=s}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
+		<Entry Keyboard="Numeric" Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=s}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 		<Label Text="s" VerticalOptions="Center"/>
 	</StackLayout>
 </ContentView>

@@ -1,12 +1,13 @@
 ﻿using System;
-using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Text;
 using Xamarin.Forms;
+using System.Threading.Tasks;
 
 namespace Consonance.XamarinFormsView
 {
-    class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>
+	class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>
     {
 		readonly MainTabs main;
 		readonly InfoManageView iman;
@@ -22,22 +23,36 @@ namespace Consonance.XamarinFormsView
 		public TrackerInstanceVM currentTrackerInstance { get { return main.SelectedPlanItem; } set { main.SelectedPlanItem=value; } }
         public void SetEatLines(IEnumerable<EntryLineVM> lineitems)
         {
-            main.InItems.Clear();
-            foreach (var itm in lineitems)
-                main.InItems.Add(itm);
+			Device.BeginInvokeOnMainThread (() => {
+				main.InItems.Clear ();
+				foreach (var itm in lineitems)
+					main.InItems.Add (itm);
+			});
         }
         public void SetBurnLines(IEnumerable<EntryLineVM> lineitems)
         {
-            main.OutItems.Clear();
-            foreach (var itm in lineitems)
-                main.OutItems.Add(itm);
+			Device.BeginInvokeOnMainThread (() => {
+				main.OutItems.Clear ();
+				foreach (var itm in lineitems)
+					main.OutItems.Add (itm);
+			});
         }
+		readonly Dictionary<TrackerInstanceVM, bool> toKeep_TI = new Dictionary<TrackerInstanceVM, bool> ();
         public void SetInstances(IEnumerable<TrackerInstanceVM> instanceitems)
-        {
-            main.PlanItems.Clear();
-            foreach (var itm in instanceitems)
-                main.PlanItems.Add(itm);
-        }
+		{
+			Device.BeginInvokeOnMainThread (() => {
+				main.PlanItems.Clear ();
+				foreach (var itm in instanceitems)
+				{
+					main.PlanItems.Add (itm);
+
+					// and since these have new refs but old origiginators, we can keep the old one selected...
+					if(OriginatorVM.OriginatorEquals(main.SelectedPlanItem, itm))
+						main.SelectedPlanItem = itm;
+				}
+
+			});
+		}
 
 		// plan commands
         public ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get { return this; } }
@@ -48,17 +63,15 @@ namespace Consonance.XamarinFormsView
 
 		// info managment
 		public event Action<InfoManageType> manageInfo = delegate { };
-		public void ManageInfos(InfoManageType mt, BindingList<InfoLineVM> toManage, IFindList<InfoLineVM> finder, Action finished) 
+		public Task ManageInfos(InfoManageType mt, ObservableCollection<InfoLineVM> toManage) 
 		{
+			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs>();
 			iman.Title = "Manage " + (mt == InfoManageType.In ? currentTrackerInstance.dialect.InputInfoPlural : currentTrackerInstance.dialect.OutputInfoPlural);
-			iman.finder = finder;
 			iman.Items = toManage;
 			iman.imt = mt;
-			iman.finished = async () => {
-				await main.Navigation.PopAsync();
-				finished();
-			};
+			iman.completedTask = tcs;
 			main.Navigation.PushAsync (iman);
+			return tcs.Task;
 		}
 
         // IView Unimplimented Properly //
@@ -67,4 +80,5 @@ namespace Consonance.XamarinFormsView
         public event Action<DateTime> changeday;
         public DateTime day { get; set; }
     }
+
 }

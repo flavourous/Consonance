@@ -8,6 +8,6 @@
 <StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
 <Label Text="{Binding name}"/>
 <Label Text="{Binding value, Converter={StaticResource svc}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
-<Button Text="Choose" VerticalOptions="Center"/>
+<Button Text="Choose" VerticalOptions="Center" Clicked="OnChoose"/>
 </StackLayout>
 </ContentView>

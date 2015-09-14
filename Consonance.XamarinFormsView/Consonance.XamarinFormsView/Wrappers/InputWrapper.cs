@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace Consonance.XamarinFormsView
 {
-    class UserInputWrapper : IUserInput
+	class UserInputWrapper : IUserInput
     {
 		readonly Page root;
 		INavigation nav { get { return root.Navigation; } }
@@ -16,6 +16,12 @@ namespace Consonance.XamarinFormsView
 			this.root = root;
 			pv.chosen += v => pv_callback(v);
         }
+
+		InfoFindView fv = new InfoFindView();
+		public Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd)
+		{
+			return fv.Choose (ifnd);
+		}
 
 		public async Task SelectString(string title, IReadOnlyList<string> strings, int initial, Promise<int> completed)
         {

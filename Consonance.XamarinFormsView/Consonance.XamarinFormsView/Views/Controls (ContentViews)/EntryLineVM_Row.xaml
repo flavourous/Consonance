@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView 
+	xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView"
+	xmlns="http://xamarin.com/schemas/2014/forms"
+	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+	x:Class="Consonance.XamarinFormsView.EntryLineVM_Row">
+	<ContentView.Resources>
+		<ResourceDictionary>
+			<l:KVPListConverter x:Key="klc"/>
+		</ResourceDictionary>
+	</ContentView.Resources>
+	<StackLayout Orientation="Horizontal">
+		<Label Text="{Binding start, StringFormat={0:hh:mm}}" VerticalOptions="Center"/>
+		<StackLayout Orientation="Vertical" VerticalOptions="Center">
+			<Label Text="{Binding name}"/>
+			<Label Text="{Binding desc}"/>
+		</StackLayout>
+		<Label Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
+	</StackLayout>
+</ContentView>

@@ -146,7 +146,9 @@ namespace Consonance
 	public interface IInfoCreation<InfoType> where InfoType : class
 	{
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
-		BindingList<Object> InfoFields(IValueRequestFactory factory, InfoType willEdit=null);
+		BindingList<Object> InfoFields(IValueRequestFactory factory);
+		// ok so those objects, put this data in them. im editing, for exmaple.
+		void FillRequestData (InfoType item); 
 		// ok make me an info please here's that data.
 		InfoType MakeInfo (InfoType toEdit=null);
 		// ok is this info like complete for your diety? yes. ffs.
@@ -187,6 +189,9 @@ namespace Consonance
 		}
 		public void EditTracker(DietInstType diet)
 		{
+			// actually call edit promise...
+			model.Edit(diet);
+
 			List<BaseEntry> orphans = new List<BaseEntry>();
 			orphans.AddRange (inhandler.GetOrphans (diet));
 			orphans.AddRange (outhandler.GetOrphans (diet));

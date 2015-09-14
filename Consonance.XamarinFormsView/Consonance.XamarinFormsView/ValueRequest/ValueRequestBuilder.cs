@@ -54,6 +54,8 @@ namespace Consonance.XamarinFormsView
 		public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return new ValueRequestVM<TimeSpan> (new ValueRequestTemplate (), name); }
 		public IValueRequest<double> DoubleRequestor (string name) { return new ValueRequestVM<double> (new ValueRequestTemplate (), name); }
 		public IValueRequest<bool> BoolRequestor (string name) { return new ValueRequestVM<bool> (new ValueRequestTemplate (), name); }
+		public IValueRequest<EventArgs> ActionRequestor (string name) { return new ValueRequestVM<EventArgs> (new ValueRequestTemplate (), name); }
+		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new ValueRequestVM<Barcode> (new ValueRequestTemplate (), name); }
 		#endregion
 
 		class ValueRequestVM<T> : IValueRequest<T>, INotifyPropertyChanged
@@ -73,7 +75,6 @@ namespace Consonance.XamarinFormsView
 			// Request will reference the view that this VM is bound to 
 			readonly ContentView _request;
 			public object request { get { return _request; } }
-
 
 			// This are all bindings for the view to use - the generic type T is actually only relevant for the factory.
 			#region INotifyPropertyChanged implementation

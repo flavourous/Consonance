@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
 using Xamarin.Forms;
@@ -17,8 +17,8 @@ namespace Consonance.XamarinFormsView
             BindingContext = this;
 		}
 
-		BindingList<TrackerDetailsVM> mPlanChoices = new BindingList<TrackerDetailsVM> ();
-        public BindingList<TrackerDetailsVM> PlanChoices { get { return mPlanChoices; } }
+		ObservableCollection<TrackerDetailsVM> mPlanChoices = new ObservableCollection<TrackerDetailsVM> ();
+		public ObservableCollection<TrackerDetailsVM> PlanChoices { get { return mPlanChoices; } }
 		public TrackerDetailsVM choicey { get; set; }
 		public event Action<int> chosen = delegate { };
         public void DoChoose(Object s, EventArgs e) { chosen(mPlanChoices.IndexOf(choicey)); }

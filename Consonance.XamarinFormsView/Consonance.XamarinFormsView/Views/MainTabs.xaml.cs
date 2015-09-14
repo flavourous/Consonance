@@ -1,7 +1,6 @@
 ﻿using System;
-using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
-
 using Xamarin.Forms;
 
 namespace Consonance.XamarinFormsView
@@ -11,6 +10,7 @@ namespace Consonance.XamarinFormsView
 		public MainTabs ()
 		{
 			InitializeComponent ();
+			//PlanItems.Add (new TrackerInstanceVM (new TrackerDialect ("a", "b", "c", "d"), DateTime.Now, false, DateTime.Now, "daveee", "test", new KVPList<string, double> ()));
 			BindingContext = this;
 		}
 
@@ -36,7 +36,6 @@ namespace Consonance.XamarinFormsView
 		public event Action InInfoManage = delegate { };
 		void InInfoManageClick(Object s, EventArgs e) { InInfoManage (); }
 
-
 		/// Out
 		public event Action AddOut = delegate { };
 		void AddOutClick(Object sender, EventArgs args) { AddOut(); }
@@ -58,43 +57,28 @@ namespace Consonance.XamarinFormsView
 		public String OutTabName { get { return mOutTabName; } set { mOutTabName = value; OnPropertyChanged("OutTabName"); } }
 
 		// List items
-        private BindingList<EntryLineVM> mInItems = new BindingList<EntryLineVM>();
-        public BindingList<EntryLineVM> InItems { get { return mInItems; } }
-        private BindingList<EntryLineVM> mOutItems = new BindingList<EntryLineVM>();
-        public BindingList<EntryLineVM> OutItems { get { return mOutItems; } }
-        private BindingList<TrackerInstanceVM> mPlanItems = new BindingList<TrackerInstanceVM>();
-        public BindingList<TrackerInstanceVM> PlanItems { get { return mPlanItems; } }
+		private ObservableCollection<EntryLineVM> mInItems = new ObservableCollection<EntryLineVM>();
+		public ObservableCollection<EntryLineVM> InItems { get { return mInItems; } }
+		private ObservableCollection<EntryLineVM> mOutItems = new ObservableCollection<EntryLineVM>();
+		public ObservableCollection<EntryLineVM> OutItems { get { return mOutItems; } }
+		private ObservableCollection<TrackerInstanceVM> mPlanItems = new ObservableCollection<TrackerInstanceVM>();
+		public ObservableCollection<TrackerInstanceVM> PlanItems { get { return mPlanItems; } }
 
 		public event Action<TrackerInstanceVM> PlanItemSelected = delegate { };
 		private TrackerInstanceVM mSelectedPlanItem;
 		public TrackerInstanceVM SelectedPlanItem {
 			get { return mSelectedPlanItem; }
 			set {
-				mSelectedPlanItem = value;
-				OnPropertyChanged ("SelectedPlanItem");
-				PlanItemSelected (value); 
+				if (value == mSelectedPlanItem) return; // block reentrency
+				var use =  PlanItems.Contains(value) ? value : null;
+				PlanList.SelectedItem = mSelectedPlanItem = use;
+				InTabName = value.dialect.InputEntryVerb;
+				OutTabName = value.dialect.OutputEntrytVerb;
+				PlanItemSelected (use); 
 			}
 		}
-
-
 	}
 
-	public class KVPListConverter : IValueConverter
-	{
-		#region IValueConverter implementation
-		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			List<String> kls = new List<string> ();
-			var kl = value as KVPList<String,double>;
-			foreach (var kv in kl)
-				kls.Add (kv.Key + ": " + kv.Value);
-			return String.Join ("\n", kls.ToArray ());
-		}
-		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			throw new NotImplementedException ();
-		}
-		#endregion
-	}
+
 }
 

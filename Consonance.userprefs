@@ -1,41 +1,25 @@
 ﻿<Properties StartupItem="Consonance.XamarinFormsView\Consonance.XamarinFormsView.Droid\Consonance.XamarinFormsView.Droid.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\InfoManageView.xaml">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\Controls (ContentViews)\EntryLineVM_Row.xaml">
     <Files>
-      <File FileName="Consonance\DietModels.cs" Line="1" Column="1" />
-      <File FileName="Consonance\DietPresenters.cs" Line="154" Column="3" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\AppPresenter.cs" Line="178" Column="40" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestTemplate.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\StringRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\DoubleRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\TimeSpanRequest.xaml.cs" Line="12" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\TimeSpanRequest.xaml" Line="7" Column="25" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView.Droid\obj\Debug\TimeSpanRequest.xaml.g.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\DateTimeRequest.xaml" Line="5" Column="38" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\InfoSelectRequest.xaml" Line="8" Column="72" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView.Droid\obj\Debug\DoubleRequest.xaml.g.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\DateTimeRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\BoolRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\InfoSelectRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\App.cs" Line="31" Column="51" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView.Droid\Consonance.XamarinFormsView.Droid.csproj" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView.Droid\obj\Debug\MainTabs.xaml.g.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestTemplate.xaml" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView.Droid\obj\Debug\InfoSelectRequest.xaml.g.cs" Line="1" Column="1" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestView.xaml.cs" Line="22" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestView.xaml" Line="13" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\BoolRequest.xaml" Line="5" Column="99" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestBuilder.cs" Line="51" Column="16" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\DoubleRequest.xaml" Line="3" Column="73" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\StringRequest.xaml" Line="5" Column="93" />
-      <File FileName="Consonance\InfoFindersManager.cs" Line="90" Column="2" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\MainTabs.xaml.cs" Line="48" Column="11" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Wrappers\ViewWrapper.cs" Line="40" Column="9" />
-      <File FileName="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\Wrappers\PlanCommandsWrapper.cs" Line="46" Column="48" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\InfoManageView.xaml.cs" Line="13" Column="39" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\MainTabs.xaml" Line="24" Column="55" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\InfoManageView.xaml" Line="19" Column="47" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\ChoosePlanView.xaml.cs" Line="19" Column="3" />
+      <File FileName="Consonance\Diets\CalorieDiet.cs" Line="21" Column="35" />
+      <File FileName="Consonance\DietModels.cs" Line="166" Column="2" />
+      <File FileName="Consonance\DietPresenters.cs" Line="78" Column="3" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\MainTabs.xaml.cs" Line="3" Column="1" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\MainTabs.xaml" Line="37" Column="24" />
+      <File FileName="Consonance\AppPresenter.cs" Line="53" Column="33" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Wrappers\ViewWrapper.cs" Line="50" Column="29" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\InfoSelectRequest.xaml" Line="11" Column="66" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\Templates\InfoSelectRequest.xaml.cs" Line="20" Column="32" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\InfoChooseView.xaml" Line="13" Column="49" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\InfoChooseView.xaml.cs" Line="21" Column="4" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\InfoManageView.xaml" Line="1" Column="1" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\InfoManageView.xaml.cs" Line="13" Column="1" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestBuilder.cs" Line="59" Column="8" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\Controls (ContentViews)\EntryLineVM_Row.xaml" Line="14" Column="63" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Views\Controls (ContentViews)\EntryLineVM_Row.xaml.cs" Line="1" Column="1" />
+      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueConverters.cs" Line="3" Column="34" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -46,10 +30,14 @@
             </Node>
             <Node name="Consonance.XamarinFormsView" expanded="True">
               <Node name="Views" expanded="True">
-                <Node name="InfoManageView.xaml" expanded="True" selected="True" />
+                <Node name="Controls (ContentViews)" expanded="True">
+                  <Node name="EntryLineVM_Row.xaml" expanded="True" selected="True" />
+                </Node>
                 <Node name="MainTabs.xaml" expanded="True" />
               </Node>
-              <Node name="Wrappers" expanded="True" />
+            </Node>
+            <Node name="Consonance.XamarinFormsView.Droid" expanded="True">
+              <Node name="References" expanded="True" />
             </Node>
           </Node>
         </State>
@@ -64,12 +52,6 @@
       <Breakpoint file="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\MainActivity.cs" line="277" column="45" />
       <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="167" column="34" />
       <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="302" column="35" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestTemplate.xaml.cs" line="14" column="36" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestTemplate.xaml.cs" line="15" column="36" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestTemplate.xaml.cs" line="16" column="36" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestTemplate.xaml.cs" line="17" column="36" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestTemplate.xaml.cs" line="18" column="36" />
-      <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueRequest\ValueRequestTemplate.xaml.cs" line="19" column="36" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>

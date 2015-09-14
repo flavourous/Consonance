@@ -1,5 +1,5 @@
 ﻿using System;
-using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xamarin.Forms;
@@ -8,14 +8,28 @@ namespace Consonance.XamarinFormsView
 {
 	public partial class InfoManageView : ContentPage
 	{
-		public Func<Task> finished;
-		public IFindList<InfoLineVM> finder;
-		public BindingList<InfoLineVM> Items;
+		ObservableCollection<InfoLineVM> _Items;
+		public ObservableCollection<InfoLineVM> Items
+		{
+			get { return _Items; }
+			set {
+				_Items = value;
+				OnPropertyChanged ("Items");
+			}
+		}
+		public TaskCompletionSource<EventArgs> completedTask;
 		public InfoManageType imt;
 		public InfoManageView ()
 		{
 			InitializeComponent ();
+			BindingContext = this;
 		}
+		protected override void OnDisappearing ()
+		{
+			completedTask.SetResult (new EventArgs ());
+			base.OnDisappearing ();
+		}
+
 
 		// info hooks
 		public event Action<InfoManageType> ItemAdd = delegate { };

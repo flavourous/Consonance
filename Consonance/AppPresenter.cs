@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -143,20 +144,19 @@ namespace Consonance
 			ChangeDay (DateTime.UtcNow);
 		}
 
-		void View_manageInfo (InfoManageType obj)
+		async void View_manageInfo (InfoManageType obj)
 		{
 			if (view.currentTrackerInstance == null) return;
 			var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
-			BindingList<InfoLineVM> lines = new BindingList<InfoLineVM> ();
+			ObservableCollection<InfoLineVM> lines = new ObservableCollection<InfoLineVM> ();
 			DietVMChangeEventHandler cdel = (sender, args) => PushInLinesAndFire (obj, lines);
-			Action finished = () => cdh.ViewModelsChanged -= cdel;
 			cdh.ViewModelsChanged += cdel;
 			PushInLinesAndFire (obj, lines);
-			IFindList<InfoLineVM> finder = obj == InfoManageType.In ? cdh.InFinder : cdh.OutFinder;
-			view.ManageInfos(obj, lines,  finder, finished);
+			await view.ManageInfos(obj, lines);
+			cdh.ViewModelsChanged -= cdel;
 		}
-			
-		void PushInLinesAndFire(InfoManageType mt, BindingList<InfoLineVM> bl)
+
+		void PushInLinesAndFire(InfoManageType mt, ObservableCollection<InfoLineVM> bl)
 		{
 			var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
 			bl.Clear ();
@@ -255,7 +255,7 @@ namespace Consonance
 		List<TrackerInstanceVM> lastBuild = new  List<TrackerInstanceVM>();
 		void PushDietInstances()
 		{
-			lastBuild.Clear ();
+			lastBuild.Clear ();	
 			bool currentRemoved = view.currentTrackerInstance != null;
 			foreach (var dh in dietHandlers)
 				foreach (var d in dh.Instances ()) {
@@ -338,8 +338,9 @@ namespace Consonance
 
 		event Action<InfoManageType> manageInfo;
 		// these fire to trigger managment of eat or burn infos
-		void ManageInfos(InfoManageType mt, BindingList<InfoLineVM> toManage, IFindList<InfoLineVM> finder, Action finished); // which ends up calling this one
+		Task ManageInfos(InfoManageType mt, ObservableCollection<InfoLineVM> toManage); // which ends up calling this one
 		// and the plancommands get called by the view for stuff...
+
 	}
 	public enum InfoManageType { In, Out };
 	public interface IPlanCommands
@@ -368,6 +369,7 @@ namespace Consonance
 		Task SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
 		Task ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed);
 		Task WarnConfirm (String action, Promise confirmed);
+		Task<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd);
 	}
 	public interface IValueRequestBuilder
 	{
@@ -377,6 +379,10 @@ namespace Consonance
 		// VRO Factory Method
 		IValueRequestFactory requestFactory { get; }
 	}
+	public class Barcode
+	{
+		public long value; // I think this works?
+	}
 	public interface IValueRequestFactory
 	{
 		IValueRequest<String> StringRequestor(String name);
@@ -385,6 +391,8 @@ namespace Consonance
 		IValueRequest<TimeSpan> TimeSpanRequestor(String name);
 		IValueRequest<double> DoubleRequestor(String name); 
 		IValueRequest<bool> BoolRequestor(String name);
+		IValueRequest<EventArgs> ActionRequestor(String name);
+		IValueRequest<Barcode> BarcodeRequestor (String name);
 	}
 	public class InfoSelectValue
 	{

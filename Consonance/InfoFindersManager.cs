@@ -8,7 +8,7 @@ namespace Consonance
 		static Dictionary<Type,object> repo = new Dictionary<Type, object>();
 		static InfoFindersManager()
 		{
-			AddFinder (new MockFoodInfoManager ());
+			AddFinder (new MockFoodInfoFinder ());
 		}
 		public static void AddFinder<IType>(IFindData<IType> finder)
 		{
@@ -36,13 +36,11 @@ namespace Consonance
 	public interface IFindData<T>
 	{
 		String[] FindModes { get; }
+		// returns IValueRequest Objects, which the view can reinsert.
 		Object[] UseFindMode (String mode, IValueRequestFactory factory); // dosent do requests, just pulls data.
 		IReadOnlyList<T> Find (); // pulls data from requestbuilder.
 	}
-
-
-
-
+		
 	class FinderAdapter<IType> : IFindList<InfoLineVM>
 	{
 		readonly Func<IType, InfoLineVM> creator;
@@ -87,7 +85,7 @@ namespace Consonance
 		#endregion
 	}
 
-	class MockFoodInfoManager : IFindData<FoodInfo>
+	class MockFoodInfoFinder : IFindData<FoodInfo>
 	{
 		#region IFindData implementation
 		public IReadOnlyList<FoodInfo> Find ()

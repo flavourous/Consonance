@@ -17,6 +17,8 @@ namespace Consonance.XamarinFormsView
 			{ typeof(DateTime), new DateTimeRequest() },
 			{ typeof(bool), new BoolRequest() },
 			{ typeof(InfoSelectValue), new InfoSelectRequest() },
+			{ typeof(EventArgs), new ActionRequest() },
+			{ typeof(Barcode), new BarcodeRequest() }
 		};
 		protected override void OnBindingContextChanged ()
 		{
