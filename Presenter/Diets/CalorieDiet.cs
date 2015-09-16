@@ -21,10 +21,10 @@ namespace Consonance
 	public class CalorieDiet : ITrackModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		RequestStorageHelper<String> dietName;
-		RequestStorageHelper<double> dietCalLim;
 		RequestStorageHelper<DateTime> dietStart;
 		RequestStorageHelper<bool> dietEnded;
 		RequestStorageHelper<DateTime> dietEnd;
+		RequestStorageHelper<double> dietCalLim;
 		public CalorieDiet()
 		{
 			dietName = new RequestStorageHelper<string> ("Diet Name",()=>"",Validate);

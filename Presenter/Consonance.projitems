@@ -16,8 +16,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)InfoFindersManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helper Classes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequestFactory_FinderAdapter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\SimpleTrackyHelpy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\Defaulters.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Diets\" />
+    <Folder Include="$(MSBuildThisFileDirectory)TrackerTemplates\" />
   </ItemGroup>
 </Project>

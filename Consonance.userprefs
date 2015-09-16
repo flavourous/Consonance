@@ -1,4 +1,4 @@
-﻿<Properties StartupItem="XForms\Droid\Consonance.XamarinFormsView.Droid.csproj">
+﻿<Properties StartupItem="XForms\Droid\Consonance.XamarinFormsView.Droid.csproj" RefactoringSettings.EnableRefactorings="True">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\Tpl\InfoSelectRequest.xaml">
     <Files>
