@@ -3,12 +3,47 @@ using System.ComponentModel;
 
 namespace Consonance
 {
+	class DefaultEntryRequests
+	{
+		readonly RequestStorageHelper<string> name;
+		readonly RequestStorageHelper<DateTime> when;
+		public DefaultEntryRequests()
+		{
+			name = new RequestStorageHelper<string> ("name",()=>"",Validate);
+			when = new RequestStorageHelper<DateTime>("when",()=>DateTime.Now,Validate);
+		}
+		void Validate()
+		{
+			when.request.valid = true;
+			name.request.valid = name.request.value.Length > 0;
+		}
+		public void Set(BaseEntry entry)
+		{
+			entry.entryName = name;
+			entry.entryWhen = when;
+		}
+		public void PushInDefaults(BaseEntry editing, IBindingList requestPackage, IValueRequestFactory fac)
+		{
+			// no reset here...for entries...
+			requestPackage.Add (name.CGet (fac.StringRequestor));
+			requestPackage.Add (when.CGet (fac.DateRequestor));
+			if (editing != null) {
+				name.request.value = editing.entryName;
+				when.request.value = editing.entryWhen;
+			}
+		}
+		public void ResetRequests()
+		{
+			when.Reset ();
+			name.Reset ();
+		}
+	}
 	class DefaultTrackerInstanceRequests 
 	{
-		RequestStorageHelper<String> dietName;
-		RequestStorageHelper<DateTime> dietStart;
-		RequestStorageHelper<bool> dietEnded;
-		RequestStorageHelper<DateTime> dietEnd;
+		readonly RequestStorageHelper<String> dietName;
+		readonly RequestStorageHelper<DateTime> dietStart;
+		readonly RequestStorageHelper<bool> dietEnded;
+		readonly RequestStorageHelper<DateTime> dietEnd;
 		public DefaultTrackerInstanceRequests(String typeName)
 		{
 			dietName = new RequestStorageHelper<string> (typeName + " Name", () => "", Validate);
@@ -17,7 +52,7 @@ namespace Consonance
 			dietEnd = new RequestStorageHelper<DateTime> ("End Date", () => DateTime.Now, Validate);
 		}
 		public bool editing = false;
-		bool Validate()
+		void Validate()
 		{
 			if (!editing) {
 				dietName.request.valid = !string.IsNullOrWhiteSpace (dietName);
@@ -52,7 +87,7 @@ namespace Consonance
 			dietStart.Reset ();
 			requestPackage.Add (dietName.CGet (fac.StringRequestor));
 			requestPackage.Add (dietStart.CGet (fac.DateRequestor));
-			if (editing) {
+			if (this.editing) {
 				dietEnd.Reset ();
 				dietEnded.Reset ();
 				var ded = dietEnd.CGet (fac.DateRequestor); 
@@ -65,10 +100,10 @@ namespace Consonance
 				};
 
 				// we're editing, lets setty
-				dietName = editing.name;
-				dietStart = editing.started;
-				dietEnded = editing.hasEnded;
-				dietEnd = editing.ended;
+				dietName.request.value = editing.name;
+				dietStart.request.value = editing.started;
+				dietEnded.request.value = editing.hasEnded;
+				dietEnd.request.value = editing.ended;
 			}
 		}
 	}

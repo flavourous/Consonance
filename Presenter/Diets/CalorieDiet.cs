@@ -164,6 +164,7 @@ namespace Consonance
 		}
 		public BindingList<Object> CalculationFields (IValueRequestFactory factory, FoodInfo info)
 		{
+			// fuck this is missing name!! oh well. it's not implied anywhere...hmm
 			toValidate = () => CheckCalculationValidity(info);
 			var needed = new BindingList<Object> () {
 				when.CGet(factory.DateRequestor),				
@@ -385,7 +386,7 @@ namespace Consonance
 			if (info.calories == null && shouldComplete)
 				info.calories = caloriesBurned;
 			toEdit.kcals = (info.calories ?? caloriesBurned) * (burnTime.request.value.TotalHours / info.per_hour);
-			toEdit.entryDur = TimeSpan.FromHours(burnTime.request.value.TotalHours);
+			toEdit.burn_duration = TimeSpan.FromHours(burnTime.request.value.TotalHours);
 			toEdit.entryName = name;
 			toEdit.entryWhen = when;
 			return toEdit;
@@ -417,7 +418,7 @@ namespace Consonance
 		{
 			return new EntryLineVM (
 				entry.entryWhen,
-				entry.entryDur,
+				TimeSpan.Zero,
 				entry.entryName, 
 				entryInfo == null ? "" : entryInfo.name, 
 				new KVPList<string, double> { { "kcal", entry.kcals } }
@@ -427,7 +428,7 @@ namespace Consonance
 		{
 			return new EntryLineVM (
 				entry.entryWhen, 
-				entry.entryDur,
+				entry.burn_duration.Value,
 				entry.entryName, 
 				entryInfo == null ? "" : entryInfo.name, 
 				new KVPList<string, double> { { "kcal", entry.kcals } }

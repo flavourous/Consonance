@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace Consonance
 {
@@ -17,7 +18,7 @@ namespace Consonance
 	/// <summary>
 	/// I helpy.  strings are used for reflection 
 	/// </summary>
-	public interface IReflectedHelpy
+	public interface IReflectedHelpy<MIn,MOut>
 	{
 		// all
 		String trackedMember { get; } // for simples same one across tracker and entries.
@@ -27,50 +28,56 @@ namespace Consonance
 		double Calcluate(double[] fieldValues); 
 
 		// Entries and infos
-		IReflectedHelpyQuants input { get; }
-		IReflectedHelpyQuants output { get; }
+		IReflectedHelpyQuants<MIn> input { get; }
+		IReflectedHelpyQuants<MOut> output { get; }
 	}
-	public interface IReflectedHelpyQuants
+	public interface IReflectedHelpyQuants<MT>
 	{
 		// these expect type double
-		String quantifier { get; }
+		String quantifier { get; } // this is the field that defines the quantity eg grams or minutes
 		// these expect double? cause is optional data.
-		String[] calculation { get; }
-		double Calcluate (double[] values);
+		String[] calculation { get; } // these are the fields we want to take from/store to the info
+		double Calcluate (MT amount, double[] values); // obvs
+		Func<String, IValueRequest<MT>> FindRequestor(IValueRequestFactory fact);
+		MT GetDefault();
 	}
-	public class SimpleTrackyHelpy<Inst, In, InInfo, Out, OutInfo> : ITrackModel<Inst, In, InInfo, Out, OutInfo>
-		where    Inst : TrackerInstance
-		where      In : BaseEntry
-		where  InInfo : BaseInfo
-		where     Out : BaseEntry
-		where OutInfo : BaseInfo
+	public class SimpleTrackyHelpy<Inst, In, InInfo, Out, OutInfo, MIn, MOut> : ITrackModel<Inst, In, InInfo, Out, OutInfo>
+		where    Inst : TrackerInstance, new()
+		where      In : BaseEntry, new()
+		where  InInfo : BaseInfo, new()
+		where     Out : BaseEntry, new()
+		where OutInfo : BaseInfo, new()
 	{
-		readonly HelpedCreation<In,InInfo> inc;
-		readonly HelpedCreation<Out,OutInfo> ouc;
-		readonly IReflectedHelpy helpy; 
+		readonly HelpedCreation<In,InInfo,MIn> inc;
+		readonly HelpedCreation<Out,OutInfo,MOut> ouc;
+		readonly IReflectedHelpy<MIn,MOut> helpy; 
 		readonly String name;
-		readonly IReadOnlyList<Flecter<double>> trackflectors; 
-		readonly Flecter<double> trackTargetFlector;
+		readonly IReadOnlyList<Flecter<Inst>> trackflectors; 
+		readonly Flecter<Inst> trackTargetFlector;
 		readonly IReadOnlyList<RequestStorageHelper<double>> flectyRequests;
 		readonly DefaultTrackerInstanceRequests defaultTrackerStuff;
-		public SimpleTrackyHelpy(String name, String typename, IReflectedHelpy helpy) 
+		public SimpleTrackyHelpy(String name, String typename, IReflectedHelpy<MIn,MOut> helpy) 
 		{
 			this.name = name;
 			defaultTrackerStuff = new DefaultTrackerInstanceRequests (typename);
 			this.helpy = helpy; 
-			inc = new HelpedCreation<In, InInfo> (helpy.input);
-			ouc = new HelpedCreation<Out, OutInfo> (helpy.output);
-			List<Flecter<double>> fls = new List<Flecter<double>> ();
+			inc = new HelpedCreation<In, InInfo, MIn> (helpy.trackedMember, helpy.input);
+			ouc = new HelpedCreation<Out, OutInfo, MOut> (helpy.trackedMember, helpy.output);
+			List<Flecter<Inst>> fls = new List<Flecter<Inst>> ();
 			List<RequestStorageHelper<double>> rqs = new List<RequestStorageHelper<double>> ();
-			foreach (var tf in helpy.trackedMember) {
-				fls.Add (new Flecter<double> (tf));
-				rqs.Add (new NameyStorage (tf));
+			foreach (var tf in helpy.instanceFields) {
+				fls.Add (new Flecter<Inst> (tf));
+				rqs.Add (new NameyStorage<double> (tf,()=>0.0, Validate));
 			}
 			this.trackflectors = fls;
 			this.flectyRequests = rqs;
-			this.trackTargetFlector = new Flecter<double> (helpy.trackedMember);
+			this.trackTargetFlector = new Flecter<Inst> (helpy.trackedMember);
 		}
-
+		void Validate()
+		{
+			foreach (var r in flectyRequests)
+				r.request.valid = true;
+		}
 		#region ITrackModel implementation
 		public IEntryCreation<In, InInfo> increator {get{ return inc; }}
 		public IEntryCreation<Out, OutInfo> outcreator { get { return ouc; }}
@@ -87,7 +94,7 @@ namespace Consonance
 			var rqs = new BindingList<object> ();
 			for (int i = 0; i < trackflectors.Count; i++) {
 				rqs.Add (flectyRequests [i].CGet (factory.DoubleRequestor));
-				flectyRequests [i].request.value = trackflectors [i].GetDouble ();
+				flectyRequests [i].request.value = trackflectors [i].GetDouble (editing);
 			}
 			defaultTrackerStuff.PushInDefaults (editing, rqs, factory);
 			yield return new TrackerWizardPage (name, rqs);
@@ -95,14 +102,14 @@ namespace Consonance
 		public Inst New ()
 		{
 			var ti = new Inst ();
-			defaultTrackerStuff.Set (ti);
-			List<double> vals = new List<double> (flectyRequests);
-			trackTargetFlector.SetDouble (ti, helpy.Calcluate (vals.ToArray ()));
+			Edit (ti);
+			return ti;
 		}
 		public void Edit (Inst toEdit)
 		{
 			defaultTrackerStuff.Set (toEdit);
-			List<double> vals = new List<double> (flectyRequests);
+			List<double> vals = new List<double> ();
+			foreach(var fr in flectyRequests) vals.Add (fr);
 			trackTargetFlector.SetDouble (toEdit, helpy.Calcluate (vals.ToArray ()));
 		}
 		#endregion
@@ -115,85 +122,164 @@ namespace Consonance
 		{
 			pi = typeof(T).GetProperty (name);
 		}
-		public double? GetNDouble(Object offof)
+		public double? GetNDouble(T offof)
 		{
 			return (double?)pi.GetValue (offof);
 		}
-		public double GetDouble(Object offof)
+		public double GetDouble(T offof)
 		{
 			return (double)pi.GetValue (offof);
 		}
-		public void SetDouble(Object onto, double value)
+		public void SetDouble(T onto, double value)
 		{
 			pi.SetValue (onto, value);
 		}
 	}
-	class NameyStorage : RequestStorageHelper<double>
+	class NameyStorage<T> : RequestStorageHelper<T>
 	{
-		public NameyStorage(String name) : base(name.Replace("_"," "), () => 0.0, () => true)
+		public NameyStorage(String name, Func<T> dval, Action Validate) : base(name.Replace("_"," "), dval, Validate)
 		{
 		}
 	}
-	class HelpedCreation<E,I> : IEntryCreation<E,I>
+	class HelpedCreation<E,I,MT> : IEntryCreation<E,I>
+		where E : BaseEntry, new()
+		where I : BaseInfo, new()
 	{
-		readonly IReflectedHelpyQuants quant;
-		public HelpedCreation(IReflectedHelpyQuants quant)
+		// for no-info requests
+		readonly RequestStorageHelper<double> trackedQuantity;
+		readonly Flecter<E> trackedQuantityFlecter;
+		// for info requests
+		readonly RequestStorageHelper<MT> measureQuantity;
+		readonly IReadOnlyList<RequestStorageHelper<double>> forMissingInfoQuantities; // pull these as needed
+		readonly IReadOnlyList<Flecter<I>> requiredInfoFlecters;
+		readonly IReflectedHelpyQuants<MT> quant;
+		readonly DefaultEntryRequests defaulter = new DefaultEntryRequests ();
+		public HelpedCreation(String trackedQuantityName, IReflectedHelpyQuants<MT> quant)
 		{
 			this.quant = quant;
+			// we need a direct request for no info creation - and posssssibly one of each for the ones on info that might not exist.
+			// also need one for info quantity.
+			trackedQuantity = new NameyStorage<double>(trackedQuantityName,()=>0.0,Validate); // it's same on tinfo and entries
+			trackedQuantityFlecter = new Flecter<E>(trackedQuantityName);
+			measureQuantity = new NameyStorage<MT>(quant.quantifier, quant.GetDefault, Validate);
+			List<RequestStorageHelper<double>> l = new List<RequestStorageHelper<double>> ();
+			List<Flecter<I>> f = new List<Flecter<I>> ();
+			foreach (var q in quant.calculation) {
+				l.Add (new NameyStorage<double> (q,()=>0.0,Validate));
+				f.Add (new Flecter<I> (q));
+			}
+			forMissingInfoQuantities = l;
+			requiredInfoFlecters = f;
 		}
-
+		void Validate()
+		{
+			foreach (var rq in forMissingInfoQuantities)
+				rq.request.valid = true;
+			measureQuantity.request.valid = true;
+		}
 		#region IEntryCreation implementation
 
 		public void ResetRequests ()
 		{
-			throw new NotImplementedException ();
+			trackedQuantity.Reset ();
+			measureQuantity.Reset ();
+			foreach (var mi in forMissingInfoQuantities)
+				mi.Reset ();
 		}
 
-		public System.ComponentModel.BindingList<object> CreationFields (IValueRequestFactory factory)
+		public BindingList<object> CreationFields (IValueRequestFactory factory)
 		{
-			throw new NotImplementedException ();
+			// we just need the amount...we can get the name and when etc from a defaulter...
+			var rp = new BindingList<object> () { trackedQuantity };
+			defaulter.PushInDefaults (null, rp, factory);
+			return rp;
 		}
 
 		public E Create ()
 		{
-			throw new NotImplementedException ();
+			var rv = new E ();
+			trackedQuantityFlecter.SetDouble (rv, trackedQuantity);
+			defaulter.Set (rv);
+			return rv;
 		}
 
-		public System.ComponentModel.BindingList<object> CalculationFields (IValueRequestFactory factory, I info)
+		public BindingList<object> CalculationFields (IValueRequestFactory factory, I info)
 		{
-			throw new NotImplementedException ();
+			var blo = new BindingList<Object> () { measureQuantity.CGet(quant.FindRequestor(factory)) };
+			ProcessRequestsForInfo (blo, factory, info);
+			defaulter.PushInDefaults (null, blo, factory);
+			return blo;
+		}
+
+		// I know these will change when info changes...but...the buisness modelling will re-call us in those cases.
+		void ProcessRequestsForInfo(BindingList<Object> requestoutput, IValueRequestFactory factory, I info)
+		{
+			for (int i = 0; i < forMissingInfoQuantities.Count; i++) {
+				var ival = requiredInfoFlecters [i].GetNDouble (info);
+				if (ival.HasValue)
+					forMissingInfoQuantities [i].request.value = ival.Value; // ok got it, set requestor for easy sames
+				else
+					requestoutput.Add (forMissingInfoQuantities [i].CGet (factory.DoubleRequestor)); // ash need this so adddyyy.
+			}
 		}
 
 		public E Calculate (I info, bool shouldComplete)
 		{
-			throw new NotImplementedException ();
+			var rv = new E ();
+			var amount = measureQuantity.request.value;
+			List<double> vals = new List<double> ();
+			foreach (var tv in forMissingInfoQuantities) vals.Add (tv);
+			double res = quant.Calcluate (amount, vals.ToArray ());
+			trackedQuantityFlecter.SetDouble (rv, res);
+			return rv;
 		}
 
-		public System.ComponentModel.BindingList<object> EditFields (E toEdit, IValueRequestFactory factory)
+		public BindingList<object> EditFields (E toEdit, IValueRequestFactory factory)
 		{
-			throw new NotImplementedException ();
+			// request objects
+			var rp = new BindingList<object> () { trackedQuantity };
+			defaulter.PushInDefaults (toEdit, rp, factory);
+
+			// init request objects - defaulter did both
+			trackedQuantity.request.value = trackedQuantityFlecter.GetDouble(toEdit);
+
+			// give it back
+			return rp;
 		}
 
 		public E Edit (E toEdit)
 		{
-			throw new NotImplementedException ();
+			// commit edit...simple one
+			defaulter.Set(toEdit);
+			trackedQuantityFlecter.SetDouble (toEdit, trackedQuantity);
+			return toEdit;
 		}
 
-		public System.ComponentModel.BindingList<object> EditFields (E toEdit, IValueRequestFactory factory, I info)
+		public BindingList<object> EditFields (E toEdit, IValueRequestFactory factory, I info)
 		{
-			throw new NotImplementedException ();
+			// requests for editing a calced one....hmmouch?
+			var blo = new BindingList<Object> () { measureQuantity.CGet(quant.FindRequestor(factory)) };
+			ProcessRequestsForInfo (blo, factory, info); // initially, no, we'll add none...but maybe subsequently.
+			defaulter.PushInDefaults (toEdit, blo, factory);
+			return blo;
 		}
 
 		public E Edit (E toEdit, I info, bool shouldComplete)
 		{
-			throw new NotImplementedException ();
+			defaulter.Set (toEdit);
+			var amount = measureQuantity.request.value;
+			List<double> vals = new List<double> ();
+			foreach (var tv in forMissingInfoQuantities) vals.Add (tv);
+			double res = quant.Calcluate (amount, vals.ToArray ());
+			trackedQuantityFlecter.SetDouble (toEdit, res);
+			return toEdit;
 		}
 
 		#endregion
 
 		#region IInfoCreation implementation
 
-		public System.ComponentModel.BindingList<object> InfoFields (IValueRequestFactory factory)
+		public BindingList<object> InfoFields (IValueRequestFactory factory)
 		{
 			throw new NotImplementedException ();
 		}
@@ -208,7 +294,7 @@ namespace Consonance
 			throw new NotImplementedException ();
 		}
 
-		public System.Linq.Expressions.Expression<Func<I, bool>> IsInfoComplete {
+		public Expression<Func<I, bool>> IsInfoComplete {
 			get {
 				throw new NotImplementedException ();
 			}

@@ -27,7 +27,6 @@ namespace Consonance
 		public int dietinstanceid{get;set;}
 		public int? infoinstanceid{get;set;}
 		public DateTime entryWhen {get;set;}
-		public TimeSpan entryDur { get; set; }
 		public String entryName{ get; set; }
 	}
 	public class BaseEatEntry : BaseEntry 
@@ -36,6 +35,7 @@ namespace Consonance
 	}
 	public class BaseBurnEntry : BaseEntry 
 	{ 
+		public TimeSpan? burn_duration { get; set; }
 	}
 
 	// when we're doing a diet here, created by diet class
