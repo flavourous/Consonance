@@ -393,8 +393,7 @@ namespace Consonance
 		}
 		#endregion
 	}
-
-	// hmmmm calling into presenter is a nasty....abstract class?
+		
 	public class CalorieDietPresenter : ITrackerPresenter<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>
 	{
 		TrackerDetailsVM tvm = new TrackerDetailsVM (

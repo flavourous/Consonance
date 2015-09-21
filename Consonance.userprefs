@@ -1,49 +1,27 @@
 ﻿<Properties StartupItem="XForms\Droid\Consonance.XamarinFormsView.Droid.csproj" RefactoringSettings.EnableRefactorings="True">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\Tpl\InfoSelectRequest.xaml">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Presenter\TrackerTemplates\SimpleTrackyHelpy.cs">
     <Files>
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\ChoosePlanView.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance\Diets\CalorieDiet.cs" Line="1" Column="1" />
-      <File FileName="Consonance\DietModels.cs" Line="1" Column="1" />
-      <File FileName="Consonance\DietPresenters.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\MainTabs.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\MainTabs.xaml" Line="1" Column="1" />
-      <File FileName="Consonance\AppPresenter.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Wr\ViewWrapper.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\InfoChooseView.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\InfoChooseView.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\InfoManageView.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\InfoManageView.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\ValueRequestBuilder.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\EntryLineVM_Row.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\EntryLineVM_Row.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\ValueConverters.cs" Line="1" Column="1" />
-      <File FileName="Consonance\InfoFindersManager.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Wr\PlanCommandsWrapper.cs" Line="1" Column="1" />
-      <File FileName="Consonance\ValueRequestFactory_FinderAdapter.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\ValueRequestView.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\ValueRequestView.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\InfoSelectRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\DoubleRequest.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\InfoSelectRequest.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\InfoFindView.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\InfoFindView.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\Wr\InputWrapper.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\ValueRequestTemplate.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\BarcodeRequest.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\BarcodeRequest.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\ActionRequest.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\ActionRequest.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\BoolRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\DateTimeRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\DateTimeRequest.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\ValueRequestTemplate.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\DayPagerView.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\V\DayPagerView.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\BoolRequest.xaml" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\App.cs" Line="1" Column="1" />
-      <File FileName="Consonance.XamarinFormsView\Consonance.XamarinFormsView\VR\Tpl\InfoSelectRequest.xaml" Line="1" Column="1" />
+      <File FileName="Presenter\TrackerTemplates\SimpleTrackyHelpy.cs" Line="77" Column="4" />
+      <File FileName="Presenter\Diets\CalorieDiet.cs" Line="356" Column="59" />
+      <File FileName="Presenter\DietPresenters.cs" Line="501" Column="10" />
+      <File FileName="Presenter\ValueRequestFactory_FinderAdapter.cs" Line="35" Column="58" />
     </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="Consonance" expanded="True">
+            <Node name="Consonance" expanded="True">
+              <Node name="Diets" expanded="True" />
+              <Node name="TrackerTemplates" expanded="True">
+                <Node name="SimpleTrackyHelpy.cs" selected="True" />
+              </Node>
+            </Node>
+            <Node name="Consonance.XamarinFormsView" expanded="True" />
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
