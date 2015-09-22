@@ -20,7 +20,7 @@ namespace Consonance
 	{
 		public double calories { get; set; } // burned...
 	}
-	public class CalorieDietInstance : TrackerInstance
+	public class CalorieDietInstance : SimplyTrackedInst
 	{
 		public double calories { get; set; } // limit...
 	}
@@ -58,14 +58,18 @@ namespace Consonance
 		// intance stuff...mainly...
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Diet"; } }
-		public String trackedMember { get { return "calories"; } }
+		public String trackedname { get { return "calories"; } }
 		public String[] instanceFields { get { return new[] { "Calorie Limit" }; } } // creating an instance
-		public double Calcluate(double[] fieldValues) { return fieldValues [0]; }
+		public SimpleTargetVal[] Calcluate(double[] fieldValues) 
+		{ 
+			return new[] { new SimpleTargetVal (1, fieldValues [0]) };
+		}
 
 		// entry stuff...
 		class HelpyIn : IReflectedHelpyQuants<FoodInfo,double>
 		{
 			#region IReflectedHelpyQuants implementation
+			public String trackedMember { get { return "calories"; } }
 			public string Convert (double quant) { return quant.ToString ("F1") + "g"; }
 			public double Default { get { return 0.0; } }
 			public double InfoFixedQuantity { get { return 100.0; } }
@@ -79,6 +83,7 @@ namespace Consonance
 		class HelpyOut : IReflectedHelpyQuants<FireInfo,TimeSpan>
 		{
 			#region IReflectedHelpyQuants implementation
+			public String trackedMember { get { return "calories"; } }
 			public string Convert (TimeSpan quant) { return quant.TotalHours.ToString("F1") + "h"; }
 			public TimeSpan Default { get { return TimeSpan.Zero; } }
 			public TimeSpan InfoFixedQuantity { get { return TimeSpan.FromHours(1.0); } }

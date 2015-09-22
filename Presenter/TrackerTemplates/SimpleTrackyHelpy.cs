@@ -18,28 +18,42 @@ namespace Consonance
 	/// <summary>
 	/// I helpy.  strings are used for reflection 
 	/// </summary>
-	public interface IReflectedHelpy<InInfo,OutInfo,MIn,MOut>
+	public interface IReflectedHelpy<InInfo,OutInfo,QuantityIn,QuantityOut>
 		where  InInfo : BaseInfo, new()
 		where  OutInfo : BaseInfo, new()
 	{
 		//Textual
 		String name {get;}
 		String typename {get;}
-
-		// all
-		String trackedMember { get; } // for simples same one across tracker and entries.
+		String trackedname {get;}
 
 		// instance
 		String[] instanceFields {get;} // for create/edit/andmemebernames
-		double Calcluate(double[] fieldValues); 
+		SimpleTargetVal[] Calcluate(double[] fieldValues); 
 
 		// Entries and infos
-		IReflectedHelpyQuants<InInfo,MIn> input { get; }
-		IReflectedHelpyQuants<OutInfo,MOut> output { get; }
+		IReflectedHelpyQuants<InInfo,QuantityIn> input { get; }
+		IReflectedHelpyQuants<OutInfo,QuantityOut> output { get; }
+	}
+	public class SimpleTargetVal
+	{
+		public readonly int dayspan;
+		public readonly double target;
+		public SimpleTargetVal(int dayspan, double target)
+		{
+			this.dayspan = dayspan;
+			this.target = target;
+		}
+	}
+	public class SimplyTrackedInst : TrackerInstance
+	{
+		public int[] daypattern {get;set;}
+		public double[] targets{get;set;}
 	}
 	public interface IReflectedHelpyQuants<I,MT>
 	{
 		// these expect type double
+		String trackedMember { get; }
 		String quantifier { get; } // this is the field that defines the quantity eg grams or minutes
 		// these expect double? cause is optional data.
 		String[] calculation { get; } // these are the fields we want to take from/store to the info
@@ -50,9 +64,8 @@ namespace Consonance
 		String Convert (MT quant);
 		Expression<Func<I, bool>> InfoComplete { get; }
 	}
-
 	public class SimpleTrackyHelpy<Inst, In, InInfo, Out, OutInfo, MIn, MOut> : ITrackModel<Inst, In, InInfo, Out, OutInfo>
-		where    Inst : TrackerInstance, new()
+		where    Inst : SimplyTrackedInst, new()
 		where      In : BaseEntry, new()
 		where  InInfo : BaseInfo, new()
 		where     Out : BaseEntry, new()
@@ -63,7 +76,6 @@ namespace Consonance
 		readonly IReflectedHelpy<InInfo,OutInfo, MIn,MOut> helpy; 
 		readonly String name;
 		readonly IReadOnlyList<Flecter<Inst, double>> trackflectors; 
-		readonly Flecter<Inst, double> trackTargetFlector;
 		readonly IReadOnlyList<RequestStorageHelper<double>> flectyRequests;
 		readonly DefaultTrackerInstanceRequests defaultTrackerStuff;
 		public SimpleTrackyHelpy(IReflectedHelpy<InInfo,OutInfo, MIn,MOut> helpy) 
@@ -71,8 +83,8 @@ namespace Consonance
 			this.name = helpy.name;
 			defaultTrackerStuff = new DefaultTrackerInstanceRequests (helpy.typename);
 			this.helpy = helpy; 
-			inc = new HelpedCreation<In, InInfo, MIn> (helpy.trackedMember, helpy.input);
-			ouc = new HelpedCreation<Out, OutInfo, MOut> (helpy.trackedMember, helpy.output);
+			inc = new HelpedCreation<In, InInfo, MIn> (helpy.input);
+			ouc = new HelpedCreation<Out, OutInfo, MOut> (helpy.output);
 			List<Flecter<Inst,double>> fls = new List<Flecter<Inst,double>> ();
 			List<RequestStorageHelper<double>> rqs = new List<RequestStorageHelper<double>> ();
 			foreach (var tf in helpy.instanceFields) {
@@ -81,7 +93,6 @@ namespace Consonance
 			}
 			this.trackflectors = fls;
 			this.flectyRequests = rqs;
-			this.trackTargetFlector = new Flecter<Inst,double> (helpy.trackedMember);
 		}
 		void Validate()
 		{
@@ -120,7 +131,14 @@ namespace Consonance
 			defaultTrackerStuff.Set (toEdit);
 			List<double> vals = new List<double> ();
 			foreach(var fr in flectyRequests) vals.Add (fr);
-			trackTargetFlector.Set (toEdit, helpy.Calcluate (vals.ToArray ()));
+			List<int> dp = new List<int> ();
+			List<double> tg = new List<double> ();
+			foreach (var tpat in helpy.Calcluate (vals.ToArray ())) {
+				dp.Add (tpat.dayspan);
+				tg.Add (tpat.target);
+			}
+			toEdit.daypattern = dp.ToArray ();
+			toEdit.targets = tg.ToArray ();
 		}
 		#endregion
 	}
@@ -169,14 +187,14 @@ namespace Consonance
 		readonly IReflectedHelpyQuants<I,MT> quant;
 		readonly DefaultEntryRequests defaulter = new DefaultEntryRequests ();
 		RequestStorageHelper<String> infoNameRequest;
-		public HelpedCreation(String trackedQuantityName, IReflectedHelpyQuants<I,MT> quant)
+		public HelpedCreation(IReflectedHelpyQuants<I,MT> quant)
 		{
 			this.IsInfoComplete = quant.InfoComplete;
 			this.quant = quant;
 			// we need a direct request for no info creation - and posssssibly one of each for the ones on info that might not exist.
 			// also need one for info quantity.
-			trackedQuantity = new NameyStorage<double>(trackedQuantityName,()=>0.0,Validate); // it's same on tinfo and entries
-			trackedQuantityFlecter = new Flecter<E,double>(trackedQuantityName);
+			trackedQuantity = new NameyStorage<double>(quant.trackedMember,()=>0.0,Validate); // it's same on tinfo and entries
+			trackedQuantityFlecter = new Flecter<E,double>(quant.trackedMember);
 			measureQuantityFlecter = new Flecter<I,MT> (quant.quantifier);
 			measureQuantity = new NameyStorage<MT>(quant.quantifier, () => quant.Default, Validate);
 			var l = new List<RequestStorageHelper<double>> ();
@@ -334,7 +352,7 @@ namespace Consonance
 	}
 
 	public class SimpleTrackyHelpyPresenter<Inst, In, InInfo, Out, OutInfo, MIn, MOut> : ITrackerPresenter<Inst, In, InInfo, Out, OutInfo>
-		where    Inst : TrackerInstance, new()
+		where    Inst : SimplyTrackedInst, new()
 		where      In : BaseEntry, new()
 		where  InInfo : BaseInfo, new()
 		where     Out : BaseEntry, new()
@@ -348,8 +366,7 @@ namespace Consonance
 		Flecter<OutInfo, double> OutQuant;
 		Flecter<In, double> InTrack;
 		Flecter<Out, double> OutTrack;
-		Flecter<Inst, double> InstTrack;
-		readonly String trackUnits, inQuantUnits, outQuantUnits;
+		readonly String inQuantUnits, outQuantUnits;
 		public SimpleTrackyHelpyPresenter(TrackerDetailsVM details, TrackerDialect dialect, IReflectedHelpy<InInfo,OutInfo,MIn,MOut> helpy)
 		{
 			this.helpy = helpy;
@@ -358,11 +375,10 @@ namespace Consonance
 
 			InQuant = new Flecter<InInfo, double> (helpy.input.quantifier);
 			OutQuant = new Flecter<OutInfo, double> (helpy.output.quantifier);
-			InTrack = new Flecter<In, double> (helpy.trackedMember);
-			OutTrack = new Flecter<Out, double> (helpy.trackedMember);
-			InstTrack = new Flecter<Inst, double> (helpy.trackedMember);
+			InTrack = new Flecter<In, double> (helpy.input.trackedMember);
+			OutTrack = new Flecter<Out, double> (helpy.output.trackedMember);
 
-			trackUnits = NameyStorage<EventArgs>.VariableMutation (helpy.trackedMember);
+
 			inQuantUnits = NameyStorage<EventArgs>.VariableMutation (helpy.input.quantifier);
 			outQuantUnits = NameyStorage<EventArgs>.VariableMutation (helpy.output.quantifier);
 		}
@@ -379,7 +395,7 @@ namespace Consonance
 				TimeSpan.Zero,
 				entry.entryName, 
 				info == null ? "" : QuantyGet (InQuant.Get (info), inQuantUnits, info.name), 
-				new KVPList<string, double> { { trackUnits, InTrack.Get (entry) } }
+				new KVPList<string, double> { { helpy.trackedname, InTrack.Get (entry) } }
 			);
 		}
 		public EntryLineVM GetRepresentation (Out entry, OutInfo info)
@@ -389,11 +405,17 @@ namespace Consonance
 				TimeSpan.Zero,
 				entry.entryName, 
 				info == null ? "" : QuantyGet (OutQuant.Get (info), outQuantUnits, info.name), 
-				new KVPList<string, double> { { trackUnits, OutTrack.Get (entry) } }
+				new KVPList<string, double> { { helpy.trackedname, OutTrack.Get (entry) } }
 			);
 		}
 		public TrackerInstanceVM GetRepresentation (Inst entry)
 		{
+			var kl = new KVPList<string, double> ();
+			for(int i=0;i<entry.daypattern.Length;i++) 
+				kl.Add(
+					helpy.trackedname + " over " + entry.daypattern[i] + " day" + (entry.daypattern[i] > 1 ? "s" : ""),
+					entry.targets[i]
+				);
 			return new TrackerInstanceVM(
 				dialect,
 				entry.started, 
@@ -401,7 +423,7 @@ namespace Consonance
 				entry.ended,
 				entry.name,
 				"",
-				new KVPList<string, double> { { trackUnits, InstTrack.Get(entry) } }
+				kl
 			);
 		}
 		public InfoLineVM GetRepresentation (InInfo info)
@@ -416,10 +438,23 @@ namespace Consonance
 
 		public IEnumerable<TrackingInfoVM> DetermineInTrackingForRange(Inst di, IEnumerable<In> inEntries, IEnumerable<Out> outEntries, DateTime startBound,  DateTime endBound)
 		{
+			// We will pull one here.  requests will span days at least, and in our helpy model here in this space, we specify day based patterns.
+			// Lets just figure out which part of the pattern we are on.
 			TrackingInfoVM ti = new TrackingInfoVM () {
-				valueName = trackUnits + " balance",
-				targetValue= InstTrack.Get(di)
+				valueName = helpy.trackedname + " balance",
+				//targetValue= InstTrack.Get(di)
 			};
+
+			// Hmm, index exception here surely? I think it works.
+			var daysSinceStart = (DateTime.Now - di.started).TotalDays;
+			int totalPatternLength = 0;
+			foreach (var dp in di.daypattern)
+				totalPatternLength += dp;
+			var daysSincePatternStarted = daysSinceStart % totalPatternLength;
+			int day_sum = 0, day_index;
+			for (day_index = 0; day_sum + di.daypattern [day_index] < daysSincePatternStarted; day_index++)
+				day_sum += di.daypattern [day_index];
+			ti.targetValue = di.targets [day_index];
 
 			double tot = 0.0;
 			List<TrackingElementVM> vin = new List<TrackingElementVM> (), vout = new List<TrackingElementVM> ();
