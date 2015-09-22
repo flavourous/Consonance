@@ -45,7 +45,9 @@ namespace Consonance
 		String[] calculation { get; } // these are the fields we want to take from/store to the info
 		double Calcluate (MT amount, double[] values); // obvs
 		Func<String, IValueRequest<MT>> FindRequestor(IValueRequestFactory fact);
-		MT GetDefault();
+		MT Default { get; }
+		MT InfoFixedQuantity { get; }
+		String Convert (MT quant);
 		Expression<Func<I, bool>> InfoComplete { get; }
 	}
 
@@ -143,9 +145,12 @@ namespace Consonance
 	{
 		public static String VariableMutation (String varName)
 		{
-			return varName.Replace("_"," ")
+			return varName.Replace ("_", " ");
 		}
 		public NameyStorage(String name, Func<T> dval, Action Validate) : base(VariableMutation(name), dval, Validate)
+		{
+		}
+		public NameyStorage(String name, String perQuant, Func<T> dval, Action Validate) : base(VariableMutation(name) +perQuant, dval, Validate)
 		{
 		}
 	}
@@ -173,11 +178,11 @@ namespace Consonance
 			trackedQuantity = new NameyStorage<double>(trackedQuantityName,()=>0.0,Validate); // it's same on tinfo and entries
 			trackedQuantityFlecter = new Flecter<E,double>(trackedQuantityName);
 			measureQuantityFlecter = new Flecter<I,MT> (quant.quantifier);
-			measureQuantity = new NameyStorage<MT>(quant.quantifier, quant.GetDefault, Validate);
+			measureQuantity = new NameyStorage<MT>(quant.quantifier, () => quant.Default, Validate);
 			var l = new List<RequestStorageHelper<double>> ();
 			var f = new List<Flecter<I,double?>> ();
 			foreach (var q in quant.calculation) {
-				l.Add (new NameyStorage<double> (q,()=>0.0,Validate));
+				l.Add (new NameyStorage<double> (q, " per " + quant.Convert (quant.InfoFixedQuantity), () => 0.0, Validate));
 				f.Add (new Flecter<I,double?> (q));
 			}
 			forMissingInfoQuantities = l;
@@ -299,7 +304,6 @@ namespace Consonance
 		public BindingList<object> InfoFields (IValueRequestFactory factory)
 		{
 			var rv = new BindingList<Object> () { infoNameRequest.CGet (factory.StringRequestor) };
-			rv.Add (measureQuantity.CGet (quant.FindRequestor (factory)));
 			foreach (var iv in forMissingInfoQuantities)
 				rv.Add (iv.CGet (factory.DoubleRequestor));
 			return rv;
@@ -310,7 +314,6 @@ namespace Consonance
 			// put the data in item into the requests please.
 			for (int i = 0; i < forMissingInfoQuantities.Count; i++) 
 				forMissingInfoQuantities [i].request.value = requiredInfoFlecters [i].Get (item).Value;
-			measureQuantity.request.value = measureQuantityFlecter.Get (item);
 			infoNameRequest.request.value = item.name;
 		}
 
@@ -319,7 +322,7 @@ namespace Consonance
 			// yeah...but a default for a reference type is null...
 			var ret = toEdit ?? new I();
 			ret.name = infoNameRequest;
-			measureQuantityFlecter.Set (toEdit, measureQuantity);
+			measureQuantityFlecter.Set (toEdit, quant.InfoFixedQuantity);
 			for (int i = 0; i < forMissingInfoQuantities.Count; i++)
 				requiredInfoFlecters [i].Set (ret, forMissingInfoQuantities [i]);
 			return ret;
@@ -369,7 +372,6 @@ namespace Consonance
 		{
 			return amt.ToString ("F1") + " " + unit + " of " + name;
 		}
-
 		public EntryLineVM GetRepresentation (In entry, InInfo info)
 		{
 			return new EntryLineVM (
@@ -377,7 +379,7 @@ namespace Consonance
 				TimeSpan.Zero,
 				entry.entryName, 
 				info == null ? "" : QuantyGet (InQuant.Get (info), inQuantUnits, info.name), 
-				new KVPList<string, double> { { trackUnits, InTrack.Get (info) } }
+				new KVPList<string, double> { { trackUnits, InTrack.Get (entry) } }
 			);
 		}
 		public EntryLineVM GetRepresentation (Out entry, OutInfo info)
@@ -387,7 +389,7 @@ namespace Consonance
 				TimeSpan.Zero,
 				entry.entryName, 
 				info == null ? "" : QuantyGet (OutQuant.Get (info), outQuantUnits, info.name), 
-				new KVPList<string, double> { { trackUnits, OutTrack.Get (info) } }
+				new KVPList<string, double> { { trackUnits, OutTrack.Get (entry) } }
 			);
 		}
 		public TrackerInstanceVM GetRepresentation (Inst entry)
@@ -437,7 +439,7 @@ namespace Consonance
 			yield return ti;
 		}
 
-		public IEnumerable<TrackingInfoVM> DetermineOutTrackingForRange(CalorieDietInstance di, IEnumerable<CalorieDietEatEntry> eats, IEnumerable<CalorieDietBurnEntry> burns, DateTime startBound,  DateTime endBound)
+		public IEnumerable<TrackingInfoVM> DetermineOutTrackingForRange(Inst di, IEnumerable<In> eats, IEnumerable<Out> burns, DateTime startBound,  DateTime endBound)
 		{
 			return DetermineInTrackingForRange (di, eats, burns, startBound, endBound);
 		}

@@ -131,7 +131,7 @@ namespace Consonance
 		{
 			this.view = view;
 			this.input = input;
-			AddDietPair ( new CalorieDiet (), new CalorieDietPresenter (), defBuilder);
+			AddDietPair ( CalorieDiets.SimpleCalorieDietModel, CalorieDiets.SimpleCalorieDietPresenter, defBuilder);
 
 			// commanding...
 			view.plan.add += Handleadddietinstance;
@@ -453,7 +453,6 @@ namespace Consonance
 		{
 			if (request == null)
 				request = creator (name);
-
 			if (shouldReset) Reset ();
 			request.ClearListeners ();
 			request.changed += validate;

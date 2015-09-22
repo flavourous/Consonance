@@ -54,13 +54,13 @@ namespace Consonance
 
 	public class FireInfo : BaseInfo 
 	{
-		public double per_hour {get;set;}
+		public TimeSpan duration {get;set;}
 		public double? calories {get;set;}
 	}
 	public class FoodInfo : BaseInfo
 	{
 		// Amount Info
-		public double per_hundred_grams { get; set; }
+		public double grams { get; set; }
 
 		// Nutrient Info
 		public double? calories { get; set; }
