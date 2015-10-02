@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using System.Text;
 using Xamarin.Forms;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.ComponentModel;
 
 namespace Consonance.XamarinFormsView
 {
-	class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>
+	class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, INotifyPropertyChanged
     {
 		readonly MainTabs main;
 		readonly InfoManageView iman;
@@ -15,12 +17,19 @@ namespace Consonance.XamarinFormsView
         {
             this.main = main;
 			this.iman = iman;
+			main.daypagerContext = this;
 			main.InInfoManage += () => manageInfo (InfoManageType.In);
 			main.OutInfoManage += () =>  manageInfo (InfoManageType.Out);
+			Debug.WriteLine ("viewwrapper injected");
         }
 
         // IView Properly //
-		public TrackerInstanceVM currentTrackerInstance { get { return main.SelectedPlanItem; } set { main.SelectedPlanItem=value; } }
+		public TrackerInstanceVM currentTrackerInstance 
+		{ 
+			get { return main.SelectedPlanItem; } 
+			set { Device.BeginInvokeOnMainThread (() => main.SelectedPlanItem = value); }
+		}
+		
         public void SetEatLines(IEnumerable<EntryLineVM> lineitems)
         {
 			Device.BeginInvokeOnMainThread (() => {
@@ -40,8 +49,8 @@ namespace Consonance.XamarinFormsView
 		readonly Dictionary<TrackerInstanceVM, bool> toKeep_TI = new Dictionary<TrackerInstanceVM, bool> ();
         public void SetInstances(IEnumerable<TrackerInstanceVM> instanceitems)
 		{
-			Device.BeginInvokeOnMainThread (() => {
-				main.PlanItems.Clear ();
+			Device.BeginInvokeOnMainThread(() => {
+				main.PlanItems.Clear (); // lets figure out why no get here after add....
 				foreach (var itm in instanceitems)
 				{
 					main.PlanItems.Add (itm);
@@ -50,10 +59,9 @@ namespace Consonance.XamarinFormsView
 					if(OriginatorVM.OriginatorEquals(main.SelectedPlanItem, itm))
 						main.SelectedPlanItem = itm;
 				}
-
 			});
 		}
-
+			
 		// plan commands
         public ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get { return this; } }
         public event Action add { add { main.AddPlan += value; } remove { main.AddPlan -= value; } }
@@ -70,15 +78,27 @@ namespace Consonance.XamarinFormsView
 			iman.Items = toManage;
 			iman.imt = mt;
 			iman.completedTask = tcs;
-			main.Navigation.PushAsync (iman);
+			Device.BeginInvokeOnMainThread (() => main.Navigation.PushAsync (iman));
 			return tcs.Task;
 		}
+
+		// dayyys
+		public void ChangeDay(DateTime day) { changeday(day); }
+		public event Action<DateTime> changeday = delegate { };
+		private DateTime mday;
+		public DateTime day { get { return mday; } set { mday = value; OnPropertyChanged ("day"); } }
+
+		#region INotifyPropertyChanged implementation
+		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+		public void OnPropertyChanged(String property)
+		{
+			PropertyChanged(this, new PropertyChangedEventArgs(property));
+		}
+		#endregion
 
         // IView Unimplimented Properly //
         public void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { }
         public void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { }
-        public event Action<DateTime> changeday;
-        public DateTime day { get; set; }
     }
 
 }

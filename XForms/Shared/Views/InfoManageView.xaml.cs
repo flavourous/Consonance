@@ -24,12 +24,11 @@ namespace Consonance.XamarinFormsView
 			InitializeComponent ();
 			BindingContext = this;
 		}
-		protected override void OnDisappearing ()
+		protected override bool OnBackButtonPressed ()
 		{
 			completedTask.SetResult (new EventArgs ());
-			base.OnDisappearing ();
+			return base.OnBackButtonPressed ();
 		}
-
 
 		// info hooks
 		public event Action<InfoManageType> ItemAdd = delegate { };

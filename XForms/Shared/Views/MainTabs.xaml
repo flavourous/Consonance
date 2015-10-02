@@ -6,7 +6,7 @@
 	x:Class="Consonance.XamarinFormsView.MainTabs">	
   <ContentPage Title="{Binding InTabName}">
     <StackLayout Orientation="Vertical">
-	  <l:DayPagerView/> <!--auto inherits bindingcontext right?-->
+	  <l:DayPagerView x:Name="daypagerIn"/>
       <ListView ItemsSource="{Binding InItems}" HasUnevenRows="true">
         <ListView.ItemTemplate>
 	        <DataTemplate >
@@ -26,7 +26,7 @@
   </ContentPage>
   <ContentPage Title="{Binding OutTabName}">
     <StackLayout Orientation="Vertical">
-      <l:DayPagerView/> <!--auto inherits bindingcontext right?-->
+      <l:DayPagerView x:Name="daypagerOut"/>
       <ListView ItemsSource="{Binding OutItems}" HasUnevenRows="true">
         <ListView.ItemTemplate>
           <DataTemplate>

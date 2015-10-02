@@ -13,10 +13,10 @@ namespace Consonance.XamarinFormsView
 		DateTime dayWrapper 
 		{
 			get { return (BindingContext as IView).day; }
-			set { (BindingContext as IView).day = value; }
+			set { (BindingContext as ViewWrapper).ChangeDay(value); }
 		}
-		void OnPrev() { dayWrapper = dayWrapper.AddDays (-1); }
-		void OnNext() { dayWrapper = dayWrapper.AddDays (+1); }
+		void OnPrev(Object s, EventArgs e) { dayWrapper = dayWrapper.AddDays (-1); }
+		void OnNext(Object s, EventArgs e) { dayWrapper = dayWrapper.AddDays (+1); }
 	}
 }
 

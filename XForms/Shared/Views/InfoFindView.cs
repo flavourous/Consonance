@@ -11,8 +11,8 @@ namespace Consonance.XamarinFormsView
 		public InfoFindView ()
 		{
 			InitializeComponent ();
+			BindingContext = this;
 		}
-		public ObservableCollection<String> SearchModes {get;set;}
 		public ObservableCollection<InfoLineVM> Items { get; set; }
 		ValueRequestFactory myFactory = new ValueRequestFactory();
 		TaskCompletionSource<InfoLineVM> tcs;
@@ -21,13 +21,14 @@ namespace Consonance.XamarinFormsView
 		{
 			this.finder = ifnd;
 			this.tcs = new TaskCompletionSource<InfoLineVM> ();
-			SearchModes = new ObservableCollection<String> (ifnd.FindModes);
-			OnPropertyChanged ("SearchModes");
+			smodes.Items.Clear ();
+			foreach (String s in ifnd.FindModes)
+				smodes.Items.Add (s);
 			return tcs.Task;
 		}
 		void UseMode(Object sender, EventArgs args)
 		{
-			String mode = SearchModes [smodes.SelectedIndex];
+			String mode = smodes.Items [smodes.SelectedIndex];
 			requestStack.Children.Clear ();
 			foreach (Object rview in finder.UseFindMode (mode, myFactory))
 				requestStack.Children.Add (rview as View);	

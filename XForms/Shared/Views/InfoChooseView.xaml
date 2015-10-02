@@ -11,5 +11,6 @@
         </ListView.ItemTemplate>
       </ListView>
       <Button Text="Choose" Clicked="OnChosen"/>
+      <Button Text="None" Clicked="OnNone"/>
     </StackLayout>
 </ContentPage>

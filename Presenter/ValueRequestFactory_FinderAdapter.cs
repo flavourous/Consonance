@@ -28,7 +28,7 @@ namespace Consonance
 		{
 			var flds = infoCreator.InfoFields(factory);
 			var ar = factory.ActionRequestor ("Searchy");
-			flds.Add (ar);
+			flds.Add (ar.request);
 			ar.changed += LaunchFinder;
 			return flds;
 		}

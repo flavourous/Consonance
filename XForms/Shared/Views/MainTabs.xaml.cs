@@ -13,6 +13,7 @@ namespace Consonance.XamarinFormsView
 			//PlanItems.Add (new TrackerInstanceVM (new TrackerDialect ("a", "b", "c", "d"), DateTime.Now, false, DateTime.Now, "daveee", "test", new KVPList<string, double> ()));
 			BindingContext = this;
 		}
+		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = value; } }
 
 		//////////////
 		// Commands //
@@ -64,6 +65,7 @@ namespace Consonance.XamarinFormsView
 		private ObservableCollection<TrackerInstanceVM> mPlanItems = new ObservableCollection<TrackerInstanceVM>();
 		public ObservableCollection<TrackerInstanceVM> PlanItems { get { return mPlanItems; } }
 
+		// Other bits
 		public event Action<TrackerInstanceVM> PlanItemSelected = delegate { };
 		private TrackerInstanceVM mSelectedPlanItem;
 		public TrackerInstanceVM SelectedPlanItem {

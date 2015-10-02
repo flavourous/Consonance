@@ -3,7 +3,7 @@
 	<ContentView.Content>
 	<StackLayout Orientation="Horizontal">
 		<Button Text="prev" Clicked="OnPrev"/>
-		<Label Text="{Binding day, StringFormat='{0}mm/dd/yyyy'}" HorizontalOptions="FillAndExpand"/>
+		<Label Text="{Binding day}" HorizontalOptions="FillAndExpand"/>
 		<Button Text="next" Clicked="OnNext"/>
 	</StackLayout>
 	</ContentView.Content>

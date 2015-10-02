@@ -314,14 +314,22 @@ namespace Consonance
 		public IFindList<InfoLineVM> OutFinder { get { return InfoFindersManager.GetFinder<BurnInfoType> (presenter.GetRepresentation, conn); } }
 
 		IEnumerable<O> ConvertMtoVM<O,I1,I2>(IEnumerable<I1> input, Func<I1,I2,O> convert, Func<I1,I2> findSecondInput)
+			where O : OriginatorVM
 		{
-			foreach (I1 i in input)
-				yield return convert (i,findSecondInput(i));
+			foreach (I1 i in input) {
+				var vm = convert (i, findSecondInput (i));
+				vm.originator = i;
+				yield return vm;
+			}
 		}
 		IEnumerable<O> ConvertMtoVM<O,I>(IEnumerable<I> input, Func<I,O> convert)
+			where O : OriginatorVM
 		{
-			foreach (I i in input)
-				yield return convert (i);
+			foreach (I i in input) {
+				var vm = convert (i);
+				vm.originator = i;
+				yield return vm;
+			}
 		}
 		public async Task StartNewTracker()
 		{
@@ -435,8 +443,8 @@ namespace Consonance
 			infoRequest.changed += checkFields;
 
 			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntrytVerb;
-			getValues.GetValues (entryVerb, requests, async c => {
-				if (c) editit ();
+			getValues.GetValues (entryVerb, requests, async success => {
+				if (success) editit ();
 				infoRequest.changed -= checkFields;
 			}, 0, 1);
 		}
@@ -500,8 +508,11 @@ namespace Consonance
 				title,
 				vros,
 				async success => {
-					if(editing) handler.Edit(toEdit);
-					else handler.Add();
+					if(success)
+					{
+						if(editing) handler.Edit(toEdit);
+						else handler.Add();
+					}
 				},
 				0,
 				1);

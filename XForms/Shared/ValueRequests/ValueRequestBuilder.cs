@@ -18,26 +18,57 @@ namespace Consonance.XamarinFormsView
 		}
 		public async Task GetValues(string title, BindingList<object> requests, Promise<bool> completed, int page, int pages)
 		{
-			// pile the template view into the container view! (and push pop etc)
-			vrv.ClearRows();
-			vrv.Title = title;
-			foreach (var ob in requests)
-				vrv.AddRow (ob as View);
+			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs> ();
+			Device.BeginInvokeOnMainThread (async () => {
+				// pile the template view into the container view! (and push pop etc)
+				vrv.ClearRows ();
+				vrv.Title = title;
+				foreach (var ob in requests)
+					vrv.AddRow (ob as View);
+				requests.ListChanged += Requests_ListChanged;
 
-			Promise<bool> cdel = async b =>  {
-				vrv.completed = async delegate { }; // no more pls.
-				if(page == pages-1 || !b) {
-					await nav.PopAsync();
-					pushed=false;
-				}
-				await completed(b);
-			};
-			vrv.completed = async b => await cdel (b);
-			if (!pushed) {
-				await nav.PushAsync (vrv);
-				pushed = true;
-			} 
+				Promise<bool> cdel = async b => {
+					vrv.completed = async delegate { await Task.Yield(); }; // no more pls.
+					if (page == pages - 1 || !b) {
+						requests.ListChanged -= Requests_ListChanged;
+						await nav.PopAsync ();
+						pushed = false;
+					}
+					await completed (b);
+				};
+				vrv.completed = async b => await cdel (b);
+				if (!pushed) {
+					await nav.PushAsync (vrv);
+					pushed = true;
+				} 
+				tcs.SetResult(new EventArgs());
+			});
+			await tcs.Task;
         }
+
+		void Requests_ListChanged (object sender, ListChangedEventArgs e)
+		{
+			BindingList<Object> requests = sender as BindingList<Object>;
+			switch (e.ListChangedType) {
+				case ListChangedType.Reset:
+					vrv.ClearRows ();
+				foreach (var ob in requests)
+					vrv.AddRow (ob as View);
+					break;
+				case ListChangedType.ItemAdded:
+					vrv.InsertRow (e.NewIndex, requests [e.NewIndex] as View);
+					break;
+				case ListChangedType.ItemChanged:
+				// do not #care
+					break;
+				case ListChangedType.ItemDeleted:
+					vrv.RemoveRow (e.NewIndex);
+					break;
+				case ListChangedType.ItemMoved:
+				// do not #care
+					break;
+			}
+		}
 
 		bool pushed = false;
 		readonly ValueRequestView vrv = new ValueRequestView();
@@ -58,41 +89,41 @@ namespace Consonance.XamarinFormsView
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new ValueRequestVM<Barcode> (new ValueRequestTemplate (), name); }
 		#endregion
 
-		class ValueRequestVM<T> : IValueRequest<T>, INotifyPropertyChanged
-		{
-			public String name { get; set; }
-			public ValueRequestVM(ContentView bound, String name)
-			{
-				this.name=name;
-				bound.BindingContext = this;
-				_request = bound;
-			}
 
-			#region IValueRequest implementation
-			public event Action changed = delegate { };
-			public void ClearListeners () { changed = delegate { }; }
-
-			// Request will reference the view that this VM is bound to 
-			readonly ContentView _request;
-			public object request { get { return _request; } }
-
-			// This are all bindings for the view to use - the generic type T is actually only relevant for the factory.
-			#region INotifyPropertyChanged implementation
-			public event PropertyChangedEventHandler PropertyChanged = delegate { };
-			void OnPropertyChanged(String n) { PropertyChanged (this, new PropertyChangedEventArgs (n)); } 
-			#endregion
-
-			private T mvalue;
-			public T value  { get { return mvalue; } set { mvalue = value; OnPropertyChanged("value"); } }
-
-			private bool menabled;
-			public bool enabled { get { return menabled; } set { menabled = value; OnPropertyChanged ("enabled"); } }
-
-			private bool mvalid;
-			public bool valid { get { return mvalid; } set { mvalid = value; OnPropertyChanged ("valid"); } }
-			#endregion
-		}
 	}
 
+	class ValueRequestVM<T> : IValueRequest<T>, INotifyPropertyChanged
+	{
+		public String name { get; set; }
+		public ValueRequestVM(ContentView bound, String name)
+		{
+			this.name=name;
+			bound.BindingContext = this;
+			_request = bound;
+		}
 
+		#region IValueRequest implementation
+		public event Action changed = delegate { };
+		public void ClearListeners () { changed = delegate { }; }
+
+		// Request will reference the view that this VM is bound to 
+		readonly ContentView _request;
+		public object request { get { return _request; } }
+
+		// This are all bindings for the view to use - the generic type T is actually only relevant for the factory.
+		#region INotifyPropertyChanged implementation
+		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+		public void OnPropertyChanged(String n) { PropertyChanged (this, new PropertyChangedEventArgs (n)); } 
+		#endregion
+
+		private T mvalue;
+		public T value  { get { return mvalue; } set { mvalue = value; OnPropertyChanged("value"); changed (); } }
+
+		private bool menabled;
+		public bool enabled { get { return menabled; } set { menabled = value; OnPropertyChanged ("enabled"); } }
+
+		private bool mvalid;
+		public bool valid { get { return mvalid; } set { mvalid = value; OnPropertyChanged ("valid"); } }
+		#endregion
+	}
 }

@@ -129,25 +129,28 @@ namespace Consonance
 		Object pcm_refholder;
 		void PresentToImpl(IView view, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
-			this.view = view;
-			this.input = input;
-			AddDietPair ( CalorieDiets.SimpleCalorieDietModel, CalorieDiets.SimpleCalorieDietPresenter, defBuilder);
+			// Start fast!
+			Task.Run (() => {
+				this.view = view;
+				this.input = input;
+				AddDietPair (CalorieDiets.SimpleCalorieDietModel, CalorieDiets.SimpleCalorieDietPresenter, defBuilder);
 
-			// commanding...
-			view.plan.add += Handleadddietinstance;
-			view.plan.select += View_trackerinstanceselected;
-			view.plan.remove += Handleremovedietinstance;
-			view.plan.edit += View_editdietinstance;
+				// commanding...
+				view.plan.add += Handleadddietinstance;
+				view.plan.select += View_trackerinstanceselected;
+				view.plan.remove += Handleremovedietinstance;
+				view.plan.edit += View_editdietinstance;
 
-			// more commanding...
-			view.changeday += ChangeDay;
-			view.manageInfo += View_manageInfo;
+				// more commanding...
+				view.changeday += ChangeDay;
+				view.manageInfo += View_manageInfo;
 
-			pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance);
+				pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance);
 
-			// setup view
-			PushDietInstances ();
-			ChangeDay (DateTime.UtcNow);
+				// setup view
+				PushDietInstances ();
+				ChangeDay (DateTime.UtcNow);
+			});
 		}
 
 		void View_manageInfo (InfoManageType obj)
@@ -162,92 +165,93 @@ namespace Consonance
 					await view.ManageInfos (obj, lines);
 					cdh.ViewModelsChanged -= cdel;
 				}
-				return Task.Yield ();
+				await Task.Yield ();
 			});
 		}
 
-		Task PushInLinesAndFire(InfoManageType mt, ObservableCollection<InfoLineVM> bl)
+		// THings like this are called from db, which is modified via task. or from inside ui events, which are all tasked.
+		void PushInLinesAndFire(InfoManageType mt, ObservableCollection<InfoLineVM> bl)
 		{
-			return Task.Run (() => {
-				var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
-				bl.Clear ();
-				switch (mt) {
-				case InfoManageType.In:
-					foreach (var ii in cdh.InInfos (false))
-						bl.Add (ii);
-					break;
-				case InfoManageType.Out:
-					foreach (var oi in cdh.OutInfos (false))
-						bl.Add (oi);
-					break;
-				}
-			});
+			var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
+			bl.Clear ();
+			switch (mt) {
+			case InfoManageType.In:
+				foreach (var ii in cdh.InInfos (false))
+					bl.Add (ii);
+				break;
+			case InfoManageType.Out:
+				foreach (var oi in cdh.OutInfos (false))
+					bl.Add (oi);
+				break;
+			}
 		}
 			
 		void View_trackerinstanceselected (TrackerInstanceVM obj)
 		{
-			// yeah, it was selected....
-			//view.currentTrackerInstance = obj;
-			PushEatLines();
-			PushBurnLines();
-			PushTracking();	
+			Task.Run (() => {
+				// yeah, it was selected....
+				//view.currentTrackerInstance = obj;
+				PushEatLines ();
+				PushBurnLines ();
+				PushTracking ();	
+			});
 		}
 
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
 		{
-			ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
-			de = ds.AddDays (1);
-			view.day = ds;
-			if (view.currentTrackerInstance != null) {
-				PushEatLines ();
-				PushBurnLines ();
-				PushTracking ();
-			}
+			Task.Run (() => {
+				ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
+				de = ds.AddDays (1);
+				view.day = ds;
+				if (view.currentTrackerInstance != null) {
+					PushEatLines ();
+					PushBurnLines ();
+					PushTracking ();
+				}
+			});
 		}
 
 		void Handleadddietinstance ()
 		{
-			List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
-			List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM> ();
-			foreach (var ad in saveDiets)
-				dietnames.Add (ad.details);
-			input.ChoosePlan("Select Diet Type", dietnames, -1, 
-				async si => await saveDiets[si].StartNewTracker());
+			Task.Run (async () => {
+				List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
+				List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM> ();
+				foreach (var ad in saveDiets)
+					dietnames.Add (ad.details);
+				await input.ChoosePlan ("Select Diet Type", dietnames, -1, 
+					async si => saveDiets [si].StartNewTracker ());
+			});
 		}
 
 		void Handleremovedietinstance (TrackerInstanceVM obj)
 		{
-			(obj.sender as IAbstractedTracker).RemoveTracker (obj);
+			Task.Run (async () =>
+				(obj.sender as IAbstractedTracker).RemoveTracker (obj));
 		}
 		void View_editdietinstance (TrackerInstanceVM obj)
 		{
-			(obj.sender as IAbstractedTracker).EditTracker (obj);
+			Task.Run (async () =>
+				(obj.sender as IAbstractedTracker).EditTracker (obj));
 		}
 
-		Task PushEatLines()
+		void PushEatLines()
 		{
-			return Task.Run (() => {
-				var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-				var eatEntries = ad.InEntries (view.currentTrackerInstance, ds, de);
-				view.SetEatLines (eatEntries);
-			});
+			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
+			var eatEntries = ad.InEntries (view.currentTrackerInstance, ds, de);
+			view.SetEatLines (eatEntries);
 		}
-		Task PushBurnLines()
+		void PushBurnLines()
 		{
-			return Task.Run (() => {
-				var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-				var burnEntries = ad.OutEntries (view.currentTrackerInstance, ds, de);
-				view.SetBurnLines (burnEntries);
-			});
+			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
+			var burnEntries = ad.OutEntries (view.currentTrackerInstance, ds, de);
+			view.SetBurnLines (burnEntries);
 		}
-		Task PushTracking()
+		void PushTracking()
 		{
-			return Task.Run (() => {
-				var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-				SetViewTrackerTracks (ti => ad.GetInTracking (ti, ds, de), view.SetEatTrack);
-				SetViewTrackerTracks (ti => ad.GetOutTracking (ti, ds, de), view.SetBurnTrack);
-			});
+			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
+			SetViewTrackerTracks (ti => ad.GetInTracking (ti, ds, de), view.SetEatTrack);
+			SetViewTrackerTracks (ti => ad.GetOutTracking (ti, ds, de), view.SetBurnTrack);
 		}
 		void SetViewTrackerTracks(Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
 		{
@@ -273,34 +277,32 @@ namespace Consonance
 		List<TrackerInstanceVM> lastBuild = new  List<TrackerInstanceVM>();
 		async Task PushDietInstances()
 		{
-			await new Task (() => {
-				lastBuild.Clear ();	
-				bool currentRemoved = view.currentTrackerInstance != null;
-				foreach (var dh in dietHandlers)
-					foreach (var d in dh.Instances ()) {
-						if (currentRemoved && OriginatorVM.OriginatorEquals (d, view.currentTrackerInstance)) // that checks db id and table, if originator is correctly set.
+			lastBuild.Clear ();	
+			bool currentRemoved = view.currentTrackerInstance != null;
+			foreach (var dh in dietHandlers)
+				foreach (var d in dh.Instances ()) {
+					if (currentRemoved && OriginatorVM.OriginatorEquals (d, view.currentTrackerInstance)) // that checks db id and table, if originator is correctly set.
 						currentRemoved = false;
-						lastBuild.Add (d);
-					}
-				foreach (var vm in lastBuild)
-					vm.trackChanged = v => {
-						PushTracking (); // lazy way.
-					};
-				view.SetInstances (lastBuild);
-				// change current diet if we have to.
-				if (currentRemoved || view.currentTrackerInstance == null) {
-					// select the first one thats open today
-					foreach (var d in lastBuild) {
-						if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
-							view.currentTrackerInstance = d;
-							PushEatLines ();
-							PushBurnLines ();
-							PushTracking ();
-							break;
-						}
+					lastBuild.Add (d);
+				}
+			foreach (var vm in lastBuild)
+				vm.trackChanged = v => {
+					PushTracking (); // lazy way.
+				};
+			view.SetInstances (lastBuild);
+			// change current diet if we have to.
+			if (currentRemoved || view.currentTrackerInstance == null) {
+				// select the first one thats open today
+				foreach (var d in lastBuild) {
+					if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
+						view.currentTrackerInstance = d;
+						PushEatLines ();
+						PushBurnLines ();
+						PushTracking ();
+						break;
 					}
 				}
-			});
+			}
 		}
 			
 		List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
@@ -451,7 +453,7 @@ namespace Consonance
 		// always call ClearListeners, so that old registrations to the changed event are no longer called.
 		public Object CGet(Func<String,IValueRequest<V>> creator)
 		{
-			if (request == null)
+			if (request == null)				
 				request = creator (name);
 			if (shouldReset) Reset ();
 			request.ClearListeners ();

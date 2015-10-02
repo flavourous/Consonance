@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Xamarin.Forms;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Consonance.XamarinFormsView
 {
@@ -14,10 +15,12 @@ namespace Consonance.XamarinFormsView
 		public async void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
 		{
 			var chooseview = new InfoChooseView ();
-			var isv = BindingContext.GetType ().GetProperty ("value").GetValue (BindingContext) as InfoSelectValue;
-			isv.selected = await chooseview.ChooseFrom (isv.choices);
-			OnPropertyChanged("value");
+			var vm = BindingContext as ValueRequestVM<InfoSelectValue>;
+			chooseview.name = vm.name;
 			await Navigation.PushAsync (chooseview);
+			var vv = vm.value;
+			vv.selected = await chooseview.ChooseFrom (vv.choices, vv.selected);
+			vm.value = vv; // so things fire...
 		}
 	}
 	class SValConverter : IValueConverter

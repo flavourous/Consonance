@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace Consonance
 {
@@ -45,10 +47,35 @@ namespace Consonance
 			this.target = target;
 		}
 	}
+	public static class SerialiserFactory
+	{
+		static BinaryFormatter bf = new BinaryFormatter ();
+		public static byte[] Serialize(Object graph)
+		{
+			MemoryStream ms = new MemoryStream ();
+			bf.Serialize (ms, graph);
+			return ms.ToArray ();
+		}
+		public static T Deserialize<T>(byte[] data)
+		{
+			return (T)bf.Deserialize (new MemoryStream (data));
+		}
+	}
 	public class SimplyTrackedInst : TrackerInstance
 	{
-		public int[] daypattern {get;set;}
-		public double[] targets{get;set;}
+		public byte[] blob_daypattern { get; set; }
+		public byte[] blob_targets { get; set; }
+		// sqlite doesnt understand arrays - have to blob this.
+		[SQLite.Ignore]
+		public int[] daypattern { 
+			get { return SerialiserFactory.Deserialize<int[]> (blob_daypattern); } 
+			set { blob_daypattern = SerialiserFactory.Serialize (value);}
+		}
+		[SQLite.Ignore]
+		public double[] targets {
+			get { return SerialiserFactory.Deserialize<double[]> (blob_targets); } 
+			set { blob_targets = SerialiserFactory.Serialize (value); }
+		}
 	}
 	public interface IReflectedHelpyQuants<I,MT>
 	{
@@ -193,25 +220,21 @@ namespace Consonance
 			this.quant = quant;
 			// we need a direct request for no info creation - and posssssibly one of each for the ones on info that might not exist.
 			// also need one for info quantity.
-			trackedQuantity = new NameyStorage<double>(quant.trackedMember,()=>0.0,Validate); // it's same on tinfo and entries
+			trackedQuantity = new NameyStorage<double>(quant.trackedMember,()=>0.0,() => trackedQuantity.request.valid = true); // it's same on tinfo and entries
 			trackedQuantityFlecter = new Flecter<E,double>(quant.trackedMember);
 			measureQuantityFlecter = new Flecter<I,MT> (quant.quantifier);
-			measureQuantity = new NameyStorage<MT>(quant.quantifier, () => quant.Default, Validate);
+			measureQuantity = new NameyStorage<MT>(quant.quantifier, () => quant.Default, ()=>measureQuantity.request.valid=true);
 			var l = new List<RequestStorageHelper<double>> ();
 			var f = new List<Flecter<I,double?>> ();
 			foreach (var q in quant.calculation) {
-				l.Add (new NameyStorage<double> (q, " per " + quant.Convert (quant.InfoFixedQuantity), () => 0.0, Validate));
+				NameyStorage<double> ns = null;
+				ns = new NameyStorage<double> (q, " per " + quant.Convert (quant.InfoFixedQuantity), () => 0.0, () => ns.request.valid = true);
+				l.Add (ns);
 				f.Add (new Flecter<I,double?> (q));
 			}
 			forMissingInfoQuantities = l;
 			requiredInfoFlecters = f;
-			infoNameRequest = new RequestStorageHelper<string> ("Name", () => "", ValidateInfo);
-		}
-		void Validate()
-		{
-			foreach (var rq in forMissingInfoQuantities)
-				rq.request.valid = true;
-			measureQuantity.request.valid = true;
+			infoNameRequest = new RequestStorageHelper<string> ("Name", () => "", () => infoNameRequest.request.valid = true);
 		}
 		#region IEntryCreation implementation
 
@@ -221,12 +244,13 @@ namespace Consonance
 			measureQuantity.Reset ();
 			foreach (var mi in forMissingInfoQuantities)
 				mi.Reset ();
+			defaulter.ResetRequests ();
 		}
 
 		public BindingList<object> CreationFields (IValueRequestFactory factory)
 		{
 			// we just need the amount...we can get the name and when etc from a defaulter...
-			var rp = new BindingList<object> () { trackedQuantity };
+			var rp = new BindingList<object> () { trackedQuantity.CGet(factory.DoubleRequestor) };
 			defaulter.PushInDefaults (null, rp, factory);
 			return rp;
 		}
@@ -251,11 +275,12 @@ namespace Consonance
 		void ProcessRequestsForInfo(BindingList<Object> requestoutput, IValueRequestFactory factory, I info)
 		{
 			for (int i = 0; i < forMissingInfoQuantities.Count; i++) {
+				var getit = forMissingInfoQuantities [i].CGet (factory.DoubleRequestor); // make sure cgot it.
 				var ival = requiredInfoFlecters [i].Get (info);
 				if (ival.HasValue)
 					forMissingInfoQuantities [i].request.value = ival.Value; // ok got it, set requestor for easy sames
 				else
-					requestoutput.Add (forMissingInfoQuantities [i].CGet (factory.DoubleRequestor)); // ash need this so adddyyy.
+					requestoutput.Add (getit); // ash need this so adddyyy.
 			}
 		}
 
@@ -264,16 +289,18 @@ namespace Consonance
 			var rv = new E ();
 			var amount = measureQuantity.request.value;
 			List<double> vals = new List<double> ();
-			foreach (var tv in forMissingInfoQuantities) vals.Add (tv);
+			foreach (var tv in forMissingInfoQuantities) 
+				vals.Add (tv);
 			double res = quant.Calcluate (amount, vals.ToArray ());
 			trackedQuantityFlecter.Set(rv, res);
+			defaulter.Set (rv);
 			return rv;
 		}
 
 		public BindingList<object> EditFields (E toEdit, IValueRequestFactory factory)
 		{
 			// request objects
-			var rp = new BindingList<object> () { trackedQuantity };
+			var rp = new BindingList<object> () { trackedQuantity.CGet(factory.DoubleRequestor) };
 			defaulter.PushInDefaults (toEdit, rp, factory);
 
 			// init request objects - defaulter did both
@@ -313,12 +340,7 @@ namespace Consonance
 
 		#endregion
 
-		#region IInfoCreation implementation
-		void ValidateInfo()
-		{
-			infoNameRequest.request.valid = !String.IsNullOrWhiteSpace (infoNameRequest);
-		}
-			
+		#region IInfoCreation implementation	
 		public BindingList<object> InfoFields (IValueRequestFactory factory)
 		{
 			var rv = new BindingList<Object> () { infoNameRequest.CGet (factory.StringRequestor) };
@@ -340,7 +362,7 @@ namespace Consonance
 			// yeah...but a default for a reference type is null...
 			var ret = toEdit ?? new I();
 			ret.name = infoNameRequest;
-			measureQuantityFlecter.Set (toEdit, quant.InfoFixedQuantity);
+			measureQuantityFlecter.Set (ret, quant.InfoFixedQuantity);
 			for (int i = 0; i < forMissingInfoQuantities.Count; i++)
 				requiredInfoFlecters [i].Set (ret, forMissingInfoQuantities [i]);
 			return ret;

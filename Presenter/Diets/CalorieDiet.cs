@@ -22,7 +22,7 @@ namespace Consonance
 	}
 	public class CalorieDietInstance : SimplyTrackedInst
 	{
-		public double calories { get; set; } // limit...
+		// targes get stored in another place.
 	}
 
 	// Diet factory methods
