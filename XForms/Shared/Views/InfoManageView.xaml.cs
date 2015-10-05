@@ -8,6 +8,29 @@ namespace Consonance.XamarinFormsView
 {
 	public partial class InfoManageView : ContentPage
 	{
+		private bool mchoiceEnabled;
+		public bool choiceEnabled {
+			get { return mchoiceEnabled; }
+			set {
+				mchoiceEnabled = value;
+				OnPropertyChanged ("choiceEnabled");
+			}
+		}
+		public bool manageEnabled {
+			set {
+				if (value) infoList.ItemTemplate = Resources ["dt_noact"] as DataTemplate;
+				else infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
+			}
+		}
+		private InfoLineVM mselectedItem;
+		public InfoLineVM selectedItem {
+			get { return mselectedItem; }
+			set {
+				mselectedItem = value;
+				OnPropertyChanged ("selectedItem");
+			}
+		}
+		public InfoLineVM initiallySelectedItem { get; set; }
 		ObservableCollection<InfoLineVM> _Items;
 		public ObservableCollection<InfoLineVM> Items
 		{
@@ -17,7 +40,7 @@ namespace Consonance.XamarinFormsView
 				OnPropertyChanged ("Items");
 			}
 		}
-		public TaskCompletionSource<EventArgs> completedTask;
+		public TaskCompletionSource<InfoLineVM> completedTask;
 		public InfoManageType imt;
 		public InfoManageView ()
 		{
@@ -26,9 +49,12 @@ namespace Consonance.XamarinFormsView
 		}
 		protected override bool OnBackButtonPressed ()
 		{
-			completedTask.SetResult (new EventArgs ());
+			completedTask.SetResult (initiallySelectedItem); // signals no selection change
 			return base.OnBackButtonPressed ();
 		}
+
+		void OnChoose(Object sender, EventArgs args) { completedTask.SetResult (selectedItem); Navigation.PopAsync (); }
+		void OnNothin(Object sender, EventArgs args) { completedTask.SetResult (null); Navigation.PopAsync (); }
 
 		// info hooks
 		public event Action<InfoManageType> ItemAdd = delegate { };

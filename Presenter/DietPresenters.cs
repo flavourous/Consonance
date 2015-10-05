@@ -387,45 +387,32 @@ namespace Consonance
 			// get a request object for infos
 			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + info_plural);
-
-			// triggers code in factory
-			var infos = conn.Table<I>();
-			var fis = new List<InfoLineVM>();
-			var isv = new InfoSelectValue () { choices = fis, selected = -1 };
-			if (editing != null && editing.infoinstanceid.HasValue) {
-				foreach(var fi in infos)
-				{
-					if (fi.id == editing.infoinstanceid.Value)
-						isv.selected = fis.Count;
-					fis.Add (rep(fi));
-				}
-			} else
-				fis.AddRange (ConvertMtoVM<InfoLineVM,I>(infos, rep));
-			infoRequest.value = isv;
-
+			infoRequest.value.choose += () => Task.Run (async () => {
+				var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;
+				using (var hk = new HookedInfoLines (diet as IAbstractedTracker, imt))
+					await getInput.InfoView (InfoCallType.AllowManage | InfoCallType.AllowSelect, imt, hk.lines, infoRequest.value.selected);
+			});
+		
 			// Set up for editing
-			int selectedInfo = -1;
 			Func<IList<Object>> flds = () => {
-				if (selectedInfo < 0)
+				var si = infoRequest.value.selected;
+				if (si == null)
 					return editing == null ?
 						creator.CreationFields (getValues.requestFactory) :
 						creator.EditFields (editing, getValues.requestFactory);						
 				else 
 					return editing == null ?
-						creator.CalculationFields (getValues.requestFactory, fis[selectedInfo].originator as I) :
-						creator.EditFields (editing, getValues.requestFactory, fis[selectedInfo].originator as I);
+						creator.CalculationFields (getValues.requestFactory, si.originator as I) :
+						creator.EditFields (editing, getValues.requestFactory, si.originator as I);
 			};
 			Action editit = () => {
-				if (selectedInfo < 0) {
-					if (editing == null)
-						handler.Add (diet);
-					else
-						handler.Edit (editing, diet);						
+				var si = infoRequest.value.selected;
+				if (si == null) {
+					if (editing == null) handler.Add (diet);
+					else handler.Edit (editing, diet);						
 				} else {
-					if (editing == null)
-						handler.Add (diet, fis[selectedInfo].originator as I);
-					else
-						handler.Edit (editing, diet, fis[selectedInfo].originator as I);
+					if (editing == null) handler.Add (diet, si.originator as I);
+					else handler.Edit (editing, diet, si.originator as I);
 				}
 			};
 
@@ -434,7 +421,6 @@ namespace Consonance
 			requests.Add (infoRequest.request);
 
 			Action checkFields = () => {
-				selectedInfo = infoRequest.value ==  null ? -1 : infoRequest.value.selected;
 				BindingList<Object> nrq = new BindingList<Object>(flds());
 				nrq.Insert (0, infoRequest.request);
 				CycleRequests(requests, nrq);

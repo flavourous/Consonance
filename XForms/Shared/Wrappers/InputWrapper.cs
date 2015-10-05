@@ -4,15 +4,35 @@ using System.Text;
 using Xamarin.Forms;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Collections.ObjectModel;
 
 namespace Consonance.XamarinFormsView
 {
 	class UserInputWrapper : IUserInput
     {
+		readonly InfoManageView iman;
+		public Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType mt, ObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
+		{
+			var tt = getCurrent ();
+			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM>();
+			iman.Title = mt == InfoManageType.In ? tt.dialect.InputInfoPlural : tt.dialect.OutputInfoPlural;
+			iman.choiceEnabled = (calltype | InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
+			iman.manageEnabled = (calltype | InfoCallType.AllowManage) == InfoCallType.AllowManage;
+			iman.Items = toManage;
+			iman.initiallySelectedItem  = iman.selectedItem = initiallySelected; // null works.
+			iman.imt = mt;
+			iman.completedTask = tcs;
+			Device.BeginInvokeOnMainThread (() => nav.PushAsync (iman));
+			return tcs.Task; // return result, or initial if it gave null (wich is null if it really was and no change)
+		}
+
+		readonly Func<IAbstractedTracker> getCurrent;
 		readonly Page root;
 		INavigation nav { get { return root.Navigation; } }
-		public UserInputWrapper(Page root)
+		public UserInputWrapper(Page root, InfoManageView iman, Func<IAbstractedTracker> getCurrent)
         {
+			this.getCurrent = getCurrent;
+			this.iman = iman;
 			this.root = root;
 			pv.chosen += v => pv_callback(v);
         }

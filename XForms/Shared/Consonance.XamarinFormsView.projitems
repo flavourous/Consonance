@@ -21,9 +21,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Views\MainTabs.xaml.cs">
       <DependentUpon>MainTabs.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Views\InfoChooseView.xaml.cs">
-      <DependentUpon>InfoChooseView.xaml</DependentUpon>
-    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Views\InfoFindView.cs">
       <DependentUpon>InfoFindView.xaml</DependentUpon>
     </Compile>
@@ -77,9 +74,6 @@
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\MainTabs.xaml">
-      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\InfoChooseView.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\InfoFindView.xaml">

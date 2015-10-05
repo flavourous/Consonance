@@ -1,20 +1,28 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.InfoManageView">
+	<ContentPage.Resources>
+		<ResourceDictionary>
+			<DataTemplate x:Key="dt_noact">
+				<ViewCell >
+				  <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+				</ViewCell>
+			</DataTemplate>
+			<DataTemplate x:Key="dt_act">
+				<ViewCell>
+					<ViewCell.ContextActions>
+				    	<MenuItem Clicked="OnItemEdit" Text="Edit" />
+				    	<MenuItem Clicked="OnItemDelete" Text="Delete" />
+					</ViewCell.ContextActions>
+				  <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+				</ViewCell>
+			</DataTemplate>
+		</ResourceDictionary>
+	</ContentPage.Resources>
 	<StackLayout Orientation="Vertical">
       <Label Text="pagey infos"/>
-      <ListView ItemsSource="{Binding Items, Mode=OneWay}">
-        <ListView.ItemTemplate>
-          <DataTemplate>
-            <ViewCell>
-            	<ViewCell.ContextActions>
-	            	<MenuItem Clicked="OnItemEdit" Text="Edit" />
-	            	<MenuItem Clicked="OnItemDelete" Text="Delete" />
-         		</ViewCell.ContextActions>
-              <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
-            </ViewCell>
-	        </DataTemplate>
-        </ListView.ItemTemplate>
-      </ListView>
-      <Button Text="Add" Clicked="OnItemAdd"/>
+      <ListView ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem}" x:Name="infoList"/>
+      <Button Text="Nothing" Clicked="OnNothing" IsVisible="{Binding choiceEnabled}" />
+      <Button Text="Choose" Clicked="OnChoose" IsVisible="{Binding choiceEnabled}"/>
+      <Button Text="Add" Clicked="OnItemAdd"  IsVisible="{Binding manageEnabled}" />
     </StackLayout>
 </ContentPage>

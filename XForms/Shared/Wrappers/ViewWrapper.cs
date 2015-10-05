@@ -12,11 +12,9 @@ namespace Consonance.XamarinFormsView
 	class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, INotifyPropertyChanged
     {
 		readonly MainTabs main;
-		readonly InfoManageView iman;
-		public ViewWrapper(MainTabs main, InfoManageView iman)
+		public ViewWrapper(MainTabs main)
         {
             this.main = main;
-			this.iman = iman;
 			main.daypagerContext = this;
 			main.InInfoManage += () => manageInfo (InfoManageType.In);
 			main.OutInfoManage += () =>  manageInfo (InfoManageType.Out);
@@ -71,16 +69,6 @@ namespace Consonance.XamarinFormsView
 
 		// info managment
 		public event Action<InfoManageType> manageInfo = delegate { };
-		public Task ManageInfos(InfoManageType mt, ObservableCollection<InfoLineVM> toManage) 
-		{
-			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs>();
-			iman.Title = "Manage " + (mt == InfoManageType.In ? currentTrackerInstance.dialect.InputInfoPlural : currentTrackerInstance.dialect.OutputInfoPlural);
-			iman.Items = toManage;
-			iman.imt = mt;
-			iman.completedTask = tcs;
-			Device.BeginInvokeOnMainThread (() => main.Navigation.PushAsync (iman));
-			return tcs.Task;
-		}
 
 		// dayyys
 		public void ChangeDay(DateTime day) { changeday(day); }

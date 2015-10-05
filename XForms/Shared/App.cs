@@ -25,9 +25,9 @@ namespace Consonance.XamarinFormsView
 			MainPage = navigator;
 
 			// instantiate wrappers
-			viewWrapper = new ViewWrapper(main, iman);
+			viewWrapper = new ViewWrapper(main);
 			defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
-			userInputWrapper = new UserInputWrapper(navigator);
+			userInputWrapper = new UserInputWrapper(navigator, iman, () => viewWrapper.currentTrackerInstance.sender as IAbstractedTracker);
 			planCommandWrapper = new PlanCommandsWrapper(defaultBuilder, main, iman);
         }
 

@@ -156,34 +156,11 @@ namespace Consonance
 		void View_manageInfo (InfoManageType obj)
 		{
 			Task.Run (async () => {
-				if (view.currentTrackerInstance != null) {
-					var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
-					ObservableCollection<InfoLineVM> lines = new ObservableCollection<InfoLineVM> ();
-					DietVMChangeEventHandler cdel = (sender, args) => PushInLinesAndFire (obj, lines);
-					cdh.ViewModelsChanged += cdel;
-					PushInLinesAndFire (obj, lines);
-					await view.ManageInfos (obj, lines);
-					cdh.ViewModelsChanged -= cdel;
-				}
 				await Task.Yield ();
+				if (view.currentTrackerInstance != null)
+					using (var hk = new HookedInfoLines (view.currentTrackerInstance.sender as IAbstractedTracker, obj))
+						await input.InfoView(InfoCallType.AllowManage, obj, hk.lines, null);
 			});
-		}
-
-		// THings like this are called from db, which is modified via task. or from inside ui events, which are all tasked.
-		void PushInLinesAndFire(InfoManageType mt, ObservableCollection<InfoLineVM> bl)
-		{
-			var cdh = view.currentTrackerInstance.sender as IAbstractedTracker;
-			bl.Clear ();
-			switch (mt) {
-			case InfoManageType.In:
-				foreach (var ii in cdh.InInfos (false))
-					bl.Add (ii);
-				break;
-			case InfoManageType.Out:
-				foreach (var oi in cdh.OutInfos (false))
-					bl.Add (oi);
-				break;
-			}
 		}
 			
 		void View_trackerinstanceselected (TrackerInstanceVM obj)
@@ -356,12 +333,7 @@ namespace Consonance
 		DateTime day { get; set; }
 		TrackerInstanceVM currentTrackerInstance { get; set; }
 		ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get; }
-
 		event Action<InfoManageType> manageInfo;
-		// these fire to trigger managment of eat or burn infos
-		Task ManageInfos(InfoManageType mt, ObservableCollection<InfoLineVM> toManage); // which ends up calling this one
-		// and the plancommands get called by the view for stuff...
-
 	}
 	public enum InfoManageType { In, Out };
 	public interface IPlanCommands
@@ -384,13 +356,15 @@ namespace Consonance
 		event Action<T> edit;
 		event Action<T> select;
 	}
+	public enum InfoCallType { AllowManage = 1, AllowSelect = 2 };
 	public interface IUserInput
 	{
 		// User Input
 		Task SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
 		Task ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed);
 		Task WarnConfirm (String action, Promise confirmed);
-		Task<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd);
+		Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType imt, ObservableCollection<InfoLineVM> toManage,InfoLineVM initiallySelected); // which ends up calling this one
+		Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd);
 	}
 	public interface IValueRequestBuilder
 	{
@@ -417,8 +391,9 @@ namespace Consonance
 	}
 	public class InfoSelectValue
 	{
-		public int selected {get;set;}
-		public IReadOnlyList<InfoLineVM> choices {get;set;}
+		public InfoLineVM selected {get;set;}
+		public event Action choose = delegate { };
+		public void OnChoose() { choose(); }
 	}
 	public interface IValueRequest<V>
 	{
