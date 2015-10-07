@@ -129,15 +129,15 @@ namespace Consonance
 		#region ITrackModel implementation
 		public IEntryCreation<In, InInfo> increator {get{ return inc; }}
 		public IEntryCreation<Out, OutInfo> outcreator { get { return ouc; }}
-		public IEnumerable<TrackerWizardPage> CreationPages (IValueRequestFactory factory)
+		public IEnumerable<GetValuesPage> CreationPages (IValueRequestFactory factory)
 		{
 			var rqs = new BindingList<object> ();
 			for (int i = 0; i < trackflectors.Count; i++)
 				rqs.Add (flectyRequests [i].CGet (factory.DoubleRequestor));
 			defaultTrackerStuff.PushInDefaults (null, rqs, factory);
-			yield return new TrackerWizardPage (name, rqs);
+			yield return new GetValuesPage (name, rqs);
 		}
-		public IEnumerable<TrackerWizardPage> EditPages (Inst editing, IValueRequestFactory factory)
+		public IEnumerable<GetValuesPage> EditPages (Inst editing, IValueRequestFactory factory)
 		{
 			var rqs = new BindingList<object> ();
 			for (int i = 0; i < trackflectors.Count; i++) {
@@ -145,7 +145,7 @@ namespace Consonance
 				flectyRequests [i].request.value = trackflectors [i].Get (editing);
 			}
 			defaultTrackerStuff.PushInDefaults (editing, rqs, factory);
-			yield return new TrackerWizardPage (name, rqs);
+			yield return new GetValuesPage (name, rqs);
 		}
 		public Inst New ()
 		{

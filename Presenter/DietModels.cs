@@ -96,8 +96,8 @@ namespace Consonance
 		IEntryCreation<Tb,Tbi> outcreator { get; }
 
 		// creator for dietinstance
-		IEnumerable<TrackerWizardPage> CreationPages(IValueRequestFactory factory);
-		IEnumerable<TrackerWizardPage> EditPages(D editing, IValueRequestFactory factory);
+		IEnumerable<GetValuesPage> CreationPages(IValueRequestFactory factory);
+		IEnumerable<GetValuesPage> EditPages(D editing, IValueRequestFactory factory);
 		D New();
 		void Edit (D toEdit);
 	}
@@ -112,11 +112,11 @@ namespace Consonance
 			this.OutputInfoPlural = OutputInfoPlural;
 		}
 	}
-	public class TrackerWizardPage
+	public class GetValuesPage
 	{
 		public readonly String title;
 		public readonly BindingList<Object> valuerequests;
-		public TrackerWizardPage( String title, BindingList<Object> req)
+		public GetValuesPage( String title, BindingList<Object> req)
 		{
 			this.title = title;
 			valuerequests = req;

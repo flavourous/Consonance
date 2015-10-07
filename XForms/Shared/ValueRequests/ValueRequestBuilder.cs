@@ -16,39 +16,43 @@ namespace Consonance.XamarinFormsView
 		{
 			this.nav = nav;
 		}
-		public async Task GetValues(string title, BindingList<object> requests, Promise<bool> completed, int page, int pages)
+		public ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
 		{
-			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs> ();
+			ValueRequestView vrv = new ValueRequestView ();
+			TaskCompletionSource<bool> tcs_all = new TaskCompletionSource<bool> ();
+			TaskCompletionSource<EventArgs> tcs_push = new TaskCompletionSource<EventArgs> ();
 			Device.BeginInvokeOnMainThread (async () => {
-				// pile the template view into the container view! (and push pop etc)
-				vrv.ClearRows ();
-				vrv.Title = title;
-				foreach (var ob in requests)
-					vrv.AddRow (ob as View);
-				requests.ListChanged += Requests_ListChanged;
+				bool success = false; 
+				TaskCompletionSource<bool> tcs_each = new TaskCompletionSource<bool> ();
+				Action<bool> each_handler = b => tcs_each.TrySetResult(b);
+				vrv.completed += each_handler;
+				ListChangedEventHandler leh = (s,e) => Requests_ListChanged(vrv, s as BindingList<object>, e);
+				await nav.PushAsync (vrv); // push first.
+				tcs_push.SetResult(new EventArgs());
+				foreach(var requests in requestPages)
+				{
+					// set rows from this request, and hook changes.
+					vrv.ClearRows ();
+					vrv.Title = requests.title;
+					foreach (var ob in requests.valuerequests)
+						vrv.AddRow (ob as View);
+					requests.valuerequests.ListChanged += leh;
 
-				Promise<bool> cdel = async b => {
-					vrv.completed = async delegate { await Task.Yield(); }; // no more pls.
-					if (page == pages - 1 || !b) {
-						requests.ListChanged -= Requests_ListChanged;
-						await nav.PopAsync ();
-						pushed = false;
-					}
-					await completed (b);
-				};
-				vrv.completed = async b => await cdel (b);
-				if (!pushed) {
-					await nav.PushAsync (vrv);
-					pushed = true;
-				} 
-				tcs.SetResult(new EventArgs());
+					success = await tcs_each.Task;
+					tcs_each = new TaskCompletionSource<bool> (); // re-create for following ones.
+
+					requests.valuerequests.ListChanged -= leh; // unhook changes from this iteration.
+
+					if(!success) break;
+				}
+				vrv.completed -= each_handler;
+				tcs_all.SetResult(success);
 			});
-			await tcs.Task;
+			return new ViewTask<bool> (tcs_all.Task, tcs_push.Task, () => nav.RemovePage (vrv));
         }
 
-		void Requests_ListChanged (object sender, ListChangedEventArgs e)
+		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)
 		{
-			BindingList<Object> requests = sender as BindingList<Object>;
 			switch (e.ListChangedType) {
 				case ListChangedType.Reset:
 					vrv.ClearRows ();
@@ -70,8 +74,6 @@ namespace Consonance.XamarinFormsView
 			}
 		}
 
-		bool pushed = false;
-		readonly ValueRequestView vrv = new ValueRequestView();
 		readonly ValueRequestFactory vrf = new ValueRequestFactory();
 		public IValueRequestFactory requestFactory { get { return vrf; } }
     }

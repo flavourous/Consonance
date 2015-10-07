@@ -34,7 +34,7 @@ namespace Consonance.XamarinFormsView
 			vlm.RemoveListen (vm);
 		}
 
-		public Promise<bool> completed = async delegate { };
+		public Action<bool> completed = delegate { };
 		ValidListenManager vlm = new ValidListenManager ("valid");
 		public void OKClick(object sender, EventArgs args) { completed (true); }
 		public void CancelClick(object sender, EventArgs args) { completed (false); }

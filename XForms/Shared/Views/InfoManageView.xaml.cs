@@ -16,8 +16,11 @@ namespace Consonance.XamarinFormsView
 				OnPropertyChanged ("choiceEnabled");
 			}
 		}
+		private bool mmanageEnabled;
 		public bool manageEnabled {
+			get { return mmanageEnabled; }
 			set {
+				mmanageEnabled = value;
 				if (value) infoList.ItemTemplate = Resources ["dt_noact"] as DataTemplate;
 				else infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
 			}
@@ -54,7 +57,7 @@ namespace Consonance.XamarinFormsView
 		}
 
 		void OnChoose(Object sender, EventArgs args) { completedTask.SetResult (selectedItem); Navigation.PopAsync (); }
-		void OnNothin(Object sender, EventArgs args) { completedTask.SetResult (null); Navigation.PopAsync (); }
+		void OnNothing(Object sender, EventArgs args) { completedTask.SetResult (null); Navigation.PopAsync (); }
 
 		// info hooks
 		public event Action<InfoManageType> ItemAdd = delegate { };

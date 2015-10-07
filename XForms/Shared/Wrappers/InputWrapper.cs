@@ -50,34 +50,30 @@ namespace Consonance.XamarinFormsView
 
 		public async Task SelectString(string title, IReadOnlyList<string> strings, int initial, Promise<int> completed)
         {
+			await Task.Yield ();
 			throw new NotImplementedException();
         }
 
-		Promise<int> pv_callback = async delegate { await Task.Yield(); };
+		Action<int> pv_callback = delegate { };
         readonly ChoosePlanView pv = new ChoosePlanView();
-		public Task ChoosePlan(string title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed)
-        {
+		public ViewTask<int> ChoosePlan(string title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial)
+		{
 			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs> ();
+			TaskCompletionSource<int> res = new TaskCompletionSource<int> ();
 			Device.BeginInvokeOnMainThread (async () => {
 				// make this async, which means it can await and continue nicely
-				pv_callback = async cv => {
-					pv_callback = async delegate { await Task.Yield(); }; // overwrite it, no double call
-					await completed (cv);
-					// if we are still on top of the stack, pop.
-					if (nav.NavigationStack [nav.NavigationStack.Count - 1] == pv)
-						await nav.PopAsync ();
-				//otherwise, pull ourselves outta the stack.
-				else
-						nav.RemovePage (pv);
+				pv_callback = cv => {
+					pv_callback = delegate { }; // overwrite it, no double call
+					res.SetResult (cv);
 				};
 				pv.PlanChoices.Clear ();
 				foreach (var pi in choose_from)
 					pv.PlanChoices.Add (pi);
 				await nav.PushAsync (pv);
-				tcs.SetResult(new EventArgs());
+				tcs.SetResult (new EventArgs ());
 			});
-			return tcs.Task;
-        }
+			return new ViewTask<int> (res.Task, tcs.Task, () => nav.RemovePage (pv));
+		}
 
 		public async Task WarnConfirm(string action, Promise confirmed)
         {

@@ -12,7 +12,7 @@ namespace Consonance.XamarinFormsView
 		{
 			InitializeComponent ();
 		}
-		public async void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
+		public void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
 		{
 			var vm = BindingContext as ValueRequestVM<InfoSelectValue>;
 			vm.value.OnChoose();

@@ -196,20 +196,20 @@ namespace Consonance
 				List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM> ();
 				foreach (var ad in saveDiets)
 					dietnames.Add (ad.details);
-				await input.ChoosePlan ("Select Diet Type", dietnames, -1, 
-					async si => saveDiets [si].StartNewTracker ());
+				var chooseViewTask = input.ChoosePlan ("Select Diet Type", dietnames, -1);
+				var addViewTask = saveDiets [await chooseViewTask.Result].StartNewTracker ();
+				await addViewTask.Pushed;
+				chooseViewTask.Pop();
 			});
 		}
 
 		void Handleremovedietinstance (TrackerInstanceVM obj)
 		{
-			Task.Run (async () =>
-				(obj.sender as IAbstractedTracker).RemoveTracker (obj));
+			Task.Run (() => (obj.sender as IAbstractedTracker).RemoveTracker (obj));
 		}
 		void View_editdietinstance (TrackerInstanceVM obj)
 		{
-			Task.Run (async () =>
-				(obj.sender as IAbstractedTracker).EditTracker (obj));
+			Task.Run (() => (obj.sender as IAbstractedTracker).EditTracker (obj));
 		}
 
 		void PushEatLines()
@@ -252,7 +252,7 @@ namespace Consonance
 		}
 
 		List<TrackerInstanceVM> lastBuild = new  List<TrackerInstanceVM>();
-		async Task PushDietInstances()
+		void PushDietInstances()
 		{
 			lastBuild.Clear ();	
 			bool currentRemoved = view.currentTrackerInstance != null;
@@ -356,12 +356,41 @@ namespace Consonance
 		event Action<T> edit;
 		event Action<T> select;
 	}
+	public class ViewTask
+	{
+		public readonly Task Result, Pushed;
+		readonly Action pop;
+		public ViewTask(Task Result, Task Pushed, Action pop)
+		{
+			this.Result = Result;
+			this.pop = pop;
+			this.Pushed = Pushed;
+		}
+		public void Pop() { pop (); }
+	}
+	public class ViewTask<TResult>
+	{
+		public readonly Task<TResult> Result;
+		public readonly Task Pushed;
+		readonly Action pop;
+		public ViewTask(Task<TResult> Result, Task Pushed, Action pop)
+		{
+			this.Result = Result;
+			this.pop = pop;
+			this.Pushed = Pushed;
+		}
+		public void Pop() { pop (); }
+		public static implicit operator ViewTask(ViewTask<TResult> me)
+		{
+			return new ViewTask (me.Result, me.Pushed, me.pop);
+		}
+	}
 	public enum InfoCallType { AllowManage = 1, AllowSelect = 2 };
 	public interface IUserInput
 	{
 		// User Input
 		Task SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
-		Task ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial, Promise<int> completed);
+		ViewTask<int> ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
 		Task WarnConfirm (String action, Promise confirmed);
 		Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType imt, ObservableCollection<InfoLineVM> toManage,InfoLineVM initiallySelected); // which ends up calling this one
 		Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd);
@@ -369,7 +398,7 @@ namespace Consonance
 	public interface IValueRequestBuilder
 	{
 		// get generic set of values on a page thing
-		Task GetValues (String title, BindingList<Object> requests, Promise<bool> completed, int page, int pages);
+		ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages);
 
 		// VRO Factory Method
 		IValueRequestFactory requestFactory { get; }
