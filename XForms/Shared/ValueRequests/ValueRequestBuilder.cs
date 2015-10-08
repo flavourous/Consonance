@@ -18,10 +18,11 @@ namespace Consonance.XamarinFormsView
 		}
 		public ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
 		{
-			ValueRequestView vrv = new ValueRequestView ();
+			ValueRequestView vrv = null;
 			TaskCompletionSource<bool> tcs_all = new TaskCompletionSource<bool> ();
 			TaskCompletionSource<EventArgs> tcs_push = new TaskCompletionSource<EventArgs> ();
 			Device.BeginInvokeOnMainThread (async () => {
+				vrv = new ValueRequestView ();
 				bool success = false; 
 				TaskCompletionSource<bool> tcs_each = new TaskCompletionSource<bool> ();
 				Action<bool> each_handler = b => tcs_each.TrySetResult(b);
@@ -48,7 +49,7 @@ namespace Consonance.XamarinFormsView
 				vrv.completed -= each_handler;
 				tcs_all.SetResult(success);
 			});
-			return new ViewTask<bool> (tcs_all.Task, tcs_push.Task, () => nav.RemovePage (vrv));
+			return new ViewTask<bool> (tcs_all.Task, tcs_push.Task, () => nav.RemoveOrPop (vrv));
         }
 
 		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)

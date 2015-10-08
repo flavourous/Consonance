@@ -72,7 +72,7 @@ namespace Consonance.XamarinFormsView
 				await nav.PushAsync (pv);
 				tcs.SetResult (new EventArgs ());
 			});
-			return new ViewTask<int> (res.Task, tcs.Task, () => nav.RemovePage (pv));
+			return new ViewTask<int> (res.Task, tcs.Task, () => nav.RemoveOrPop (pv));
 		}
 
 		public async Task WarnConfirm(string action, Promise confirmed)

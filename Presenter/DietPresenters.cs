@@ -336,8 +336,8 @@ namespace Consonance
 			var pages = new List<GetValuesPage> (modelHandler.model.CreationPages (instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
 			vt.Result.ContinueWith (rt => {
-				if (rt.Result) modelHandler.StartNewTracker ();
 				vt.Pop();
+				if (rt.Result) modelHandler.StartNewTracker ();
 			});
 			return vt;
 		}
@@ -346,8 +346,8 @@ namespace Consonance
 			var pages = new List<GetValuesPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
 			vt.Result.ContinueWith (rt => {
-				if (rt.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
 				vt.Pop();
+				if (rt.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
 			});
 			return vt;
 		}
@@ -428,8 +428,9 @@ namespace Consonance
 
 			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntrytVerb;
 			var gv = getValues.GetValues (new[]{ new GetValuesPage (entryVerb, requests) });
-			if (await gv.Result) editit ();
+			var result = await gv.Result; 
 			gv.Pop (); 
+			if(result) editit ();
 			infoRequest.changed -= checkFields;
 		}
 
@@ -489,11 +490,12 @@ namespace Consonance
 			var vros = editing ? creator.InfoFields (builder.requestFactory) : new ValueRequestFactory_FinderAdapter<I> (finder, creator, builder.requestFactory, getInput).GetRequestObjects ();
 			if (editing) creator.FillRequestData (toEdit);
 			var vr = builder.GetValues (new[]{ new GetValuesPage (title, vros) });
-			if (await vr.Result) {
+			var result = await vr.Result;
+			vr.Pop ();
+			if (result) {
 				if (editing) handler.Edit (toEdit);
 				else handler.Add ();
 			}
-			vr.Pop ();
 		}
 
 		public void AddOutInfo(IValueRequestBuilder bld)

@@ -4,9 +4,23 @@ using System.Linq;
 using System.Text;
 using Consonance;
 using Xamarin.Forms;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Consonance.XamarinFormsView
 {
+	public static class Extensions
+	{
+		public static void RemoveOrPop(this INavigation me, Page page)
+		{
+			Device.BeginInvokeOnMainThread (() => {
+				if (me.NavigationStack.Contains (page)) {
+					if (me.NavigationStack [me.NavigationStack.Count - 1] == page) me.PopAsync ();
+					else me.RemovePage (page);
+				}
+			});
+		}
+	}
     public class App : Application
     {
 		readonly ViewWrapper viewWrapper;
