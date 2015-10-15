@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xamarin.Forms;
+using System.Runtime.CompilerServices;
 
 namespace Consonance.XamarinFormsView
 {
@@ -21,8 +22,9 @@ namespace Consonance.XamarinFormsView
 			get { return mmanageEnabled; }
 			set {
 				mmanageEnabled = value;
-				if (value) infoList.ItemTemplate = Resources ["dt_noact"] as DataTemplate;
-				else infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
+				if (value) infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
+				else infoList.ItemTemplate = Resources ["dt_noact"] as DataTemplate;
+				OnPropertyChanged ("manageEnabled");
 			}
 		}
 		private InfoLineVM mselectedItem;
@@ -42,6 +44,11 @@ namespace Consonance.XamarinFormsView
 				_Items = value;
 				OnPropertyChanged ("Items");
 			}
+		}
+		protected override void OnPropertyChanged ([CallerMemberName] string propertyName = null)
+		{
+			Device.BeginInvokeOnMainThread (() =>
+				base.OnPropertyChanged (propertyName));
 		}
 		public TaskCompletionSource<InfoLineVM> completedTask;
 		public InfoManageType imt;

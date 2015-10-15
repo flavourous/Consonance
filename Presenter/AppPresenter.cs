@@ -227,8 +227,8 @@ namespace Consonance
 		void PushTracking()
 		{
 			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-			SetViewTrackerTracks (ti => ad.GetInTracking (ti, ds, de), view.SetEatTrack);
-			SetViewTrackerTracks (ti => ad.GetOutTracking (ti, ds, de), view.SetBurnTrack);
+			SetViewTrackerTracks (ti => ad.GetInTracking (ti, ds), view.SetEatTrack);
+			SetViewTrackerTracks (ti => ad.GetOutTracking (ti, ds), view.SetBurnTrack);
 		}
 		void SetViewTrackerTracks(Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
 		{
@@ -432,6 +432,7 @@ namespace Consonance
 		void ClearListeners();
 		bool enabled { set; } // so the model domain can communicate what fields should be in action (for combining quick and calculate entries)
 		bool valid { set; } // if we want to check the value set is ok
+		bool read_only { set; } // if we want to check the value set is ok
 	}
 	public class RequestStorageHelper<V>
 	{

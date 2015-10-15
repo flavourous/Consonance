@@ -32,10 +32,21 @@ namespace Consonance
 		// instance
 		String[] instanceFields {get;} // for create/edit/andmemebernames
 		SimpleTargetVal[] Calcluate(double[] fieldValues); 
+		SimpleTrackingRange[] AdditionalTrackingRanges { get; }
 
 		// Entries and infos
 		IReflectedHelpyQuants<InInfo,QuantityIn> input { get; }
 		IReflectedHelpyQuants<OutInfo,QuantityOut> output { get; }
+	}
+	public class SimpleTrackingRange
+	{
+		public readonly DateTime StartingOffset;
+		public readonly TimeSpan Range; 
+		public SimpleTrackingRange(DateTime s, TimeSpan r)
+		{
+			StartingOffset= s;
+			Range = r;
+		}
 	}
 	public class SimpleTargetVal
 	{
@@ -207,7 +218,8 @@ namespace Consonance
 		readonly RequestStorageHelper<double> trackedQuantity;
 		readonly Flecter<E, double> trackedQuantityFlecter;
 		// for info requests
-		readonly Flecter<I, MT> measureQuantityFlecter;
+		readonly Flecter<E, MT> measureQuantityFlecter_ent;
+		readonly Flecter<I, MT> measureQuantityFlecter_info; // the amount on the info
 		readonly RequestStorageHelper<MT> measureQuantity;
 		readonly IReadOnlyList<RequestStorageHelper<double>> forMissingInfoQuantities; // pull these as needed
 		readonly IReadOnlyList<Flecter<I, double?>> requiredInfoFlecters;
@@ -222,7 +234,8 @@ namespace Consonance
 			// also need one for info quantity.
 			trackedQuantity = new NameyStorage<double>(quant.trackedMember,()=>0.0,() => trackedQuantity.request.valid = true); // it's same on tinfo and entries
 			trackedQuantityFlecter = new Flecter<E,double>(quant.trackedMember);
-			measureQuantityFlecter = new Flecter<I,MT> (quant.quantifier);
+			measureQuantityFlecter_info = new Flecter<I,MT> (quant.quantifier);
+			measureQuantityFlecter_ent = new Flecter<E,MT> (quant.quantifier);
 			measureQuantity = new NameyStorage<MT>(quant.quantifier, () => quant.Default, ()=>measureQuantity.request.valid=true);
 			var l = new List<RequestStorageHelper<double>> ();
 			var f = new List<Flecter<I,double?>> ();
@@ -235,6 +248,23 @@ namespace Consonance
 			forMissingInfoQuantities = l;
 			requiredInfoFlecters = f;
 			infoNameRequest = new RequestStorageHelper<string> ("Name", () => "", () => infoNameRequest.request.valid = true);
+
+		}
+		// deal with displaying realtime calc data for calc creates and edit.
+		I calcInfo = null;
+		public void CalcChange(I info)
+		{
+			// Check the ClearListeners - it happens on reset and Cget.
+			if (info != null)  // so that mesquant is cgetted
+				measureQuantity.request.changed += MeasureQuantity_request_changed;
+			trackedQuantity.request.read_only = (calcInfo = info) != null;
+			MeasureQuantity_request_changed ();
+		}
+		void MeasureQuantity_request_changed ()
+		{
+			// update the calories field with a calc
+			if (calcInfo != null) 
+				trackedQuantity.request.value = CalcVal(calcInfo, measureQuantity.request.value);
 		}
 		#region IEntryCreation implementation
 
@@ -252,6 +282,7 @@ namespace Consonance
 			// we just need the amount...we can get the name and when etc from a defaulter...
 			var rp = new BindingList<object> () { trackedQuantity.CGet(factory.DoubleRequestor) };
 			defaulter.PushInDefaults (null, rp, factory);
+			CalcChange (null);
 			return rp;
 		}
 
@@ -265,9 +296,10 @@ namespace Consonance
 
 		public BindingList<object> CalculationFields (IValueRequestFactory factory, I info)
 		{
-			var blo = new BindingList<Object> () { measureQuantity.CGet(quant.FindRequestor(factory)) };
+			var blo = new BindingList<Object> () { trackedQuantity.CGet(factory.DoubleRequestor), measureQuantity.CGet(quant.FindRequestor(factory)) };
 			ProcessRequestsForInfo (blo, factory, info);
 			defaulter.PushInDefaults (null, blo, factory);
+			CalcChange (info);
 			return blo;
 		}
 
@@ -288,13 +320,18 @@ namespace Consonance
 		{
 			var rv = new E ();
 			var amount = measureQuantity.request.value;
-			List<double> vals = new List<double> ();
-			foreach (var tv in forMissingInfoQuantities) 
-				vals.Add (tv);
-			double res = quant.Calcluate (amount, vals.ToArray ());
+			var res = CalcVal (info, amount);
 			trackedQuantityFlecter.Set(rv, res);
+			measureQuantityFlecter_ent.Set (rv, amount);
 			defaulter.Set (rv);
 			return rv;
+		}
+		double CalcVal(I info, MT amount)
+		{
+			List<double> vals = new List<double> ();
+			foreach (var tv in forMissingInfoQuantities)
+				vals.Add (tv);
+			return quant.Calcluate (amount, vals.ToArray ());
 		}
 
 		public BindingList<object> EditFields (E toEdit, IValueRequestFactory factory)
@@ -307,6 +344,7 @@ namespace Consonance
 			trackedQuantity.request.value = trackedQuantityFlecter.Get(toEdit);
 
 			// give it back
+			CalcChange (null);
 			return rp;
 		}
 
@@ -321,9 +359,11 @@ namespace Consonance
 		public BindingList<object> EditFields (E toEdit, IValueRequestFactory factory, I info)
 		{
 			// requests for editing a calced one....hmmouch?
-			var blo = new BindingList<Object> () { measureQuantity.CGet(quant.FindRequestor(factory)) };
+			var blo = new BindingList<Object> () { trackedQuantity.CGet(factory.DoubleRequestor),  measureQuantity.CGet(quant.FindRequestor(factory)) };
+			measureQuantity.request.value = measureQuantityFlecter_ent.Get (toEdit);
 			ProcessRequestsForInfo (blo, factory, info); // initially, no, we'll add none...but maybe subsequently.
 			defaulter.PushInDefaults (toEdit, blo, factory);
+			CalcChange (info);
 			return blo;
 		}
 
@@ -331,10 +371,9 @@ namespace Consonance
 		{
 			defaulter.Set (toEdit);
 			var amount = measureQuantity.request.value;
-			List<double> vals = new List<double> ();
-			foreach (var tv in forMissingInfoQuantities) vals.Add (tv);
-			double res = quant.Calcluate (amount, vals.ToArray ());
+			double res = CalcVal (info, amount);
 			trackedQuantityFlecter.Set (toEdit, res);
+			measureQuantityFlecter_ent.Set (toEdit, amount);
 			return toEdit;
 		}
 
@@ -362,7 +401,7 @@ namespace Consonance
 			// yeah...but a default for a reference type is null...
 			var ret = toEdit ?? new I();
 			ret.name = infoNameRequest;
-			measureQuantityFlecter.Set (ret, quant.InfoFixedQuantity);
+			measureQuantityFlecter_info.Set (ret, quant.InfoFixedQuantity);
 			for (int i = 0; i < forMissingInfoQuantities.Count; i++)
 				requiredInfoFlecters [i].Set (ret, forMissingInfoQuantities [i]);
 			return ret;
@@ -457,18 +496,28 @@ namespace Consonance
 			return new InfoLineVM () { name = info.name };
 		}
 
-
-		public IEnumerable<TrackingInfoVM> DetermineInTrackingForRange(Inst di, IEnumerable<In> inEntries, IEnumerable<Out> outEntries, DateTime startBound,  DateTime endBound)
+		public IEnumerable<TrackingInfoVM> DetermineInTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
+			if(dayStart < di.started) yield break;
+
 			// We will pull one here.  requests will span days at least, and in our helpy model here in this space, we specify day based patterns.
 			// Lets just figure out which part of the pattern we are on.
 			TrackingInfoVM ti = new TrackingInfoVM () {
 				valueName = helpy.trackedname + " balance",
-				//targetValue= InstTrack.Get(di)
+				targetValue= FindTargetForDay(di, dayStart)
 			};
 
+			GetValsForRange (eats, burns, dayStart, dayStart.AddDays (1), out ti.inValues, out ti.outValues);
+			yield return ti;
+
+			foreach (var et in ExtraRanges(di,eats,burns,dayStart))
+				yield return et;
+		}
+			
+		double FindTargetForDay(Inst di, DateTime dayStart)
+		{
 			// Hmm, index exception here surely? I think it works.
-			var daysSinceStart = (DateTime.Now - di.started).TotalDays;
+			var daysSinceStart = (dayStart - di.started).TotalDays;
 			int totalPatternLength = 0;
 			foreach (var dp in di.daypattern)
 				totalPatternLength += dp;
@@ -476,29 +525,50 @@ namespace Consonance
 			int day_sum = 0, day_index;
 			for (day_index = 0; day_sum + di.daypattern [day_index] < daysSincePatternStarted; day_index++)
 				day_sum += di.daypattern [day_index];
-			ti.targetValue = di.targets [day_index];
+			return di.targets [day_index];
 
+		}
+
+		void GetValsForRange(EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime s, DateTime e, out TrackingElementVM[] invals,out TrackingElementVM[] outvals )
+		{
 			double tot = 0.0;
 			List<TrackingElementVM> vin = new List<TrackingElementVM> (), vout = new List<TrackingElementVM> ();
-			foreach (var ient in inEntries) {
+			foreach (var ient in eats(s, e)) {
 				var v = InTrack.Get (ient);
 				vin.Add (new TrackingElementVM () { value = v , name = ient.entryName });
 				tot += v;
 			}
-			foreach (var oent in outEntries) {
+			foreach (var oent in burns(s,e)) {
 				var v = OutTrack.Get (oent);
 				vout.Add (new TrackingElementVM () { value = v, name = oent.entryName });
 				tot -= v;
 			}
-
-			ti.inValues = vin.ToArray ();
-			ti.outValues = vout.ToArray ();
-			yield return ti;
+			invals = vin.ToArray ();
+			outvals = vout.ToArray ();
 		}
 
-		public IEnumerable<TrackingInfoVM> DetermineOutTrackingForRange(Inst di, IEnumerable<In> eats, IEnumerable<Out> burns, DateTime startBound,  DateTime endBound)
+		IEnumerable<TrackingInfoVM> ExtraRanges(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
-			return DetermineInTrackingForRange (di, eats, burns, startBound, endBound);
+			foreach (var er in helpy.AdditionalTrackingRanges) 
+			{
+				TrackingInfoVM ti = new TrackingInfoVM () {
+					valueName = helpy.trackedname + " balance",
+					targetValue = 0
+				};
+				double offsetInDays = (dayStart - er.StartingOffset).TotalDays % er.Range.TotalDays;
+				DateTime periodStart = er.StartingOffset > dayStart ?
+					er.StartingOffset.AddDays(-offsetInDays) : // move back to start
+					er.StartingOffset.AddDays(offsetInDays-er.Range.TotalDays); // move to end then go back
+				DateTime periodEnd = periodStart + er.Range;
+				GetValsForRange (eats, burns, periodStart, periodEnd, out ti.inValues, out ti.outValues);
+				for (DateTime dt = periodStart; dt <= periodEnd; dt.AddDays (1))
+					ti.targetValue += FindTargetForDay (di, dt);
+				yield return ti;
+			}
+		}
+		public IEnumerable<TrackingInfoVM> DetermineOutTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
+		{
+			return DetermineInTrackingForDay(di, eats, burns, dayStart);
 		}
 		#endregion
 	}

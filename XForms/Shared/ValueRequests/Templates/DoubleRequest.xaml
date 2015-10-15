@@ -4,8 +4,14 @@
 	xmlns="http://xamarin.com/schemas/2014/forms" 
 	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
 	x:Class="Consonance.XamarinFormsView.DoubleRequest">
+	<ContentView.Resources>
+		<ResourceDictionary>
+			<l:XorParam x:Key="convert_xor"/>
+		</ResourceDictionary>
+	</ContentView.Resources>
 	<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
 		<Label Text="{Binding name}" VerticalOptions="Center"/>
-		<Entry Text="{Binding value}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" Keyboard="Numeric"/>
+		<Entry Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=true}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" Keyboard="Numeric"/>
+		<Label Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=false}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 	</StackLayout>
 </ContentView>

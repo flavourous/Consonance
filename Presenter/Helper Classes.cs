@@ -15,6 +15,7 @@ namespace Consonance
 			this.imt = imt;
 			this.cdh = cdh;
 			this.lines = new ObservableCollection<InfoLineVM> ();
+			cdh.ViewModelsChanged += Cdh_ViewModelsChanged;;
 			PushInLinesAndFire ();
 		}
 

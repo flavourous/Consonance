@@ -31,11 +31,11 @@ namespace Consonance
 	}
 	public class BaseEatEntry : BaseEntry 
 	{
-		public double? info_grams { get; set; }		
+		public double? grams { get; set; }		
 	}
 	public class BaseBurnEntry : BaseEntry 
 	{ 
-		public TimeSpan? burn_duration { get; set; }
+		public TimeSpan? duration { get; set; }
 	}
 
 	// when we're doing a diet here, created by diet class

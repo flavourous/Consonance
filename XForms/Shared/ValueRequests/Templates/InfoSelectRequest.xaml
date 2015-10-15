@@ -1,8 +1,13 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ContentView xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView" xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.InfoSelectRequest">
-<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
-<Label Text="{Binding name}"/>
-<Label Text="{Binding value.selected.name}" HorizontalOptions="FillAndExpand" VerticalOptions="Center" x:Name="lblInfo"/>
-<Button Text="Choose" VerticalOptions="Center" Clicked="OnChoose"/>
-</StackLayout>
+	<ContentView.Resources>
+		<ResourceDictionary>
+			<l:InfoSelectRequestConverter x:Key="isvc"/>
+		</ResourceDictionary>
+	</ContentView.Resources>
+	<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
+		<Label Text="{Binding name}"/>
+		<Label Text="{Binding value, Converter={StaticResource isvc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center" x:Name="lblInfo"/>
+		<Button Text="Choose" VerticalOptions="Center" Clicked="OnChoose"/>
+	</StackLayout>
 </ContentView>

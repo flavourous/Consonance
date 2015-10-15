@@ -16,8 +16,8 @@ namespace Consonance.XamarinFormsView
 			var tt = getCurrent ();
 			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM>();
 			iman.Title = mt == InfoManageType.In ? tt.dialect.InputInfoPlural : tt.dialect.OutputInfoPlural;
-			iman.choiceEnabled = (calltype | InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
-			iman.manageEnabled = (calltype | InfoCallType.AllowManage) == InfoCallType.AllowManage;
+			iman.choiceEnabled = (calltype & InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
+			iman.manageEnabled = (calltype & InfoCallType.AllowManage) == InfoCallType.AllowManage;
 			iman.Items = toManage;
 			iman.initiallySelectedItem  = iman.selectedItem = initiallySelected; // null works.
 			iman.imt = mt;

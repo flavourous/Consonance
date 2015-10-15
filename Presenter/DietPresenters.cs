@@ -111,6 +111,7 @@ namespace Consonance
 		public String name { get; set; }
 	}
 
+	public delegate IEnumerable<T> EntryRetriever<T>(DateTime start, DateTime end);
 	public interface ITrackerPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType> 
 		where DietInstType : TrackerInstance, new()
 		where EatType : BaseEntry, new()
@@ -130,8 +131,8 @@ namespace Consonance
 		TrackerInstanceVM GetRepresentation (DietInstType entry);
 
 		// Deals with goal tracking
-		IEnumerable<TrackingInfoVM> DetermineInTrackingForRange(DietInstType di, IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
-		IEnumerable<TrackingInfoVM> DetermineOutTrackingForRange(DietInstType di, IEnumerable<EatType> eats, IEnumerable<BurnType> burns, DateTime startBound,  DateTime endBound);
+		IEnumerable<TrackingInfoVM> DetermineInTrackingForDay(DietInstType di, EntryRetriever<EatType> eats, EntryRetriever<BurnType> burns, DateTime dayStart);
+		IEnumerable<TrackingInfoVM> DetermineOutTrackingForDay(DietInstType di, EntryRetriever<EatType> eats, EntryRetriever<BurnType> burns, DateTime dayStart);
 	}
 
 	interface IAbstractedTracker
@@ -141,8 +142,8 @@ namespace Consonance
 		IEnumerable<TrackerInstanceVM> Instances();
 		IEnumerable<EntryLineVM>  InEntries (TrackerInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<EntryLineVM>  OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end);
-		IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime start, DateTime end);
-		IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime start, DateTime end);
+		IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime day);
+		IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime day);
 		ViewTask StartNewTracker();
 		void RemoveTracker (TrackerInstanceVM dvm);
 		ViewTask EditTracker (TrackerInstanceVM dvm);
@@ -255,11 +256,11 @@ namespace Consonance
 				ee => GetInfo<EatInfoType>(ee.infoinstanceid)
 			);
 		}
-		public IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime start, DateTime end)
+		public IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime day)
 		{
-			var eatModels = modelHandler.inhandler.Get (instance.originator as DietInstType, start, end);
-			var burnModels = modelHandler.outhandler.Get (instance.originator as DietInstType, start, end);
-			return presenter.DetermineInTrackingForRange (instance.originator as DietInstType, eatModels, burnModels, start, end);
+			EntryRetriever<EatType> eatModels = (s,e) => modelHandler.inhandler.Get (instance.originator as DietInstType, s, e);
+			EntryRetriever<BurnType> burnModels = (s,e) =>  modelHandler.outhandler.Get (instance.originator as DietInstType, s,e);
+			return presenter.DetermineInTrackingForDay (instance.originator as DietInstType, eatModels, burnModels, day);
 		}
 		public IEnumerable<EntryLineVM> OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end)
 		{
@@ -274,11 +275,11 @@ namespace Consonance
 				ee => GetInfo<BurnInfoType>(ee.infoinstanceid)
 			);
 		}
-		public IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime start, DateTime end)
+		public IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime day)
 		{
-			var eatModels = modelHandler.inhandler.Get (instance.originator as DietInstType, start, end);
-			var burnModels = modelHandler.outhandler.Get (instance.originator as DietInstType, start, end);
-			return presenter.DetermineOutTrackingForRange (instance.originator as DietInstType, eatModels, burnModels, start, end);
+			EntryRetriever<EatType> eatModels = (s,e) => modelHandler.inhandler.Get (instance.originator as DietInstType, s, e);
+			EntryRetriever<BurnType> burnModels = (s,e) =>  modelHandler.outhandler.Get (instance.originator as DietInstType, s,e);
+			return presenter.DetermineOutTrackingForDay (instance.originator as DietInstType, eatModels, burnModels, day);
 		}
 		T GetInfo<T>(int? id) where T : BaseInfo, new()
 		{
@@ -384,12 +385,26 @@ namespace Consonance
 			// get a request object for infos
 			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + info_plural);
-			infoRequest.value = new InfoSelectValue (); // has to....
-			infoRequest.value.choose += () => Task.Run (async () => {
+			Action chooseDelegate = null;
+			chooseDelegate = () => Task.Run (async () => {
 				var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;
-				using (var hk = new HookedInfoLines (diet as IAbstractedTracker, imt))
-					await getInput.InfoView (InfoCallType.AllowManage | InfoCallType.AllowSelect, imt, hk.lines, infoRequest.value.selected);
+				using (var hk = new HookedInfoLines (this, imt))
+				{
+					var res = await getInput.InfoView (InfoCallType.AllowManage | InfoCallType.AllowSelect, imt, hk.lines, infoRequest.value.selected);
+					infoRequest.value = new InfoSelectValue() { selected = res }; // like this fires changed
+					infoRequest.value.choose += chooseDelegate; // but re hook needed then!
+				}
 			});
+			InfoLineVM sinfo = null;
+			if(editing != null && editing.infoinstanceid.HasValue)
+			{
+				var imod = GetInfo<I> (editing.infoinstanceid);
+				sinfo = rep (imod);
+				sinfo.originator = imod; // dont forget to set this this time...
+			}
+
+			infoRequest.value = new InfoSelectValue () { selected = sinfo }; // has to....
+			infoRequest.value.choose += chooseDelegate;
 		
 			// Set up for editing
 			Func<IList<Object>> flds = () => {

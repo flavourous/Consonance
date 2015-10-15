@@ -54,11 +54,13 @@ namespace Consonance.XamarinFormsView
 
 		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)
 		{
-			switch (e.ListChangedType) {
+			// the object can be modified from other threads of course.
+			Device.BeginInvokeOnMainThread (() => {
+				switch (e.ListChangedType) {
 				case ListChangedType.Reset:
 					vrv.ClearRows ();
-				foreach (var ob in requests)
-					vrv.AddRow (ob as View);
+					foreach (var ob in requests)
+						vrv.AddRow (ob as View);
 					break;
 				case ListChangedType.ItemAdded:
 					vrv.InsertRow (e.NewIndex, requests [e.NewIndex] as View);
@@ -72,7 +74,8 @@ namespace Consonance.XamarinFormsView
 				case ListChangedType.ItemMoved:
 				// do not #care
 					break;
-			}
+				}
+			});
 		}
 
 		readonly ValueRequestFactory vrf = new ValueRequestFactory();
@@ -127,6 +130,9 @@ namespace Consonance.XamarinFormsView
 
 		private bool mvalid;
 		public bool valid { get { return mvalid; } set { mvalid = value; OnPropertyChanged ("valid"); } }
+
+		private bool mread_only;
+		public bool read_only { get { return mread_only; } set { mread_only = value; OnPropertyChanged ("read_only"); } }
 		#endregion
 	}
 }

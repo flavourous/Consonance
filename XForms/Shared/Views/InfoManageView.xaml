@@ -3,7 +3,7 @@
 	<ContentPage.Resources>
 		<ResourceDictionary>
 			<DataTemplate x:Key="dt_noact">
-				<ViewCell >
+				<ViewCell>
 				  <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
 				</ViewCell>
 			</DataTemplate>

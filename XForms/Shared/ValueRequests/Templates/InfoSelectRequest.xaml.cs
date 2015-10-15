@@ -18,5 +18,19 @@ namespace Consonance.XamarinFormsView
 			vm.value.OnChoose();
 		}
 	}
+	class InfoSelectRequestConverter : IValueConverter
+	{
+		#region IValueConverter implementation
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			var sv = value as InfoSelectValue;
+			return sv == null || sv.selected == null ? "None" : sv.selected.name;
+		}
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException ();
+		}
+		#endregion
+	}
 }
 

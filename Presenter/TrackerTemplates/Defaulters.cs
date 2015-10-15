@@ -14,8 +14,8 @@ namespace Consonance
 		}
 		void Validate()
 		{
-			when.request.valid = true;
-			name.request.valid = name.request.value.Length > 0;
+			if(when.request != null) when.request.valid = true;
+			if(name.request != null) name.request.valid = name.request.value.Length > 0;
 		}
 		public void Set(BaseEntry entry)
 		{
