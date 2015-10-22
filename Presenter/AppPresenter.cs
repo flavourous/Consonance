@@ -133,7 +133,8 @@ namespace Consonance
 			Task.Run (() => {
 				this.view = view;
 				this.input = input;
-				AddDietPair (CalorieDiets.SimpleCalorieDietModel, CalorieDiets.SimpleCalorieDietPresenter, defBuilder);
+				AddDietPair (CalorieDiets.simple.model, CalorieDiets.simple.presenter, defBuilder);
+				AddDietPair (CalorieDiets.scav.model, CalorieDiets.scav.presenter, defBuilder);
 
 				// commanding...
 				view.plan.add += Handleadddietinstance;

@@ -5,12 +5,6 @@ using System.Collections.Generic;
 
 namespace Consonance
 {
-	// Shorthands...
-	using CalModel = Consonance.ITrackModel<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>;
-	using CalPres = Consonance.ITrackerPresenter<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo>;
-	using SCM_Impl = SimpleTrackyHelpy<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo, double,TimeSpan>;
-	using SCP_Impl = SimpleTrackyHelpyPresenter<CalorieDietInstance, CalorieDietEatEntry, FoodInfo, CalorieDietBurnEntry, FireInfo, double,TimeSpan>;
-
 	// Models
 	public class CalorieDietEatEntry : BaseEatEntry
 	{
@@ -20,26 +14,24 @@ namespace Consonance
 	{
 		public double calories { get; set; } // burned...
 	}
-	public class CalorieDietInstance : SimplyTrackedInst
-	{
-		// targes get stored in another place.
-	}
+	// need seperate instance classes, otherwise get confused about which instances belong to which model/API
+	public class CalorieDietInstance_Simple : TrackerInstance { }
+	public class CalorieDietInstance_Scav : TrackerInstance{ }
+
+	// helper derrivative
+	public class CalHold<T> : SimpleTrackerHolder<T, CalorieDietEatEntry, FoodInfo, double, CalorieDietBurnEntry, FireInfo, TimeSpan>
+		where T : TrackerInstance, new()
+	{ public CalHold(IExtraRelfectedHelpy<FoodInfo,FireInfo, double, TimeSpan> helpy) : base(helpy) { } }
 
 	// Diet factory methods
 	public static class CalorieDiets
 	{
-		static readonly CalorieDiet_SimpleTemplate CalHelper = new CalorieDiet_SimpleTemplate();
-		public static CalModel SimpleCalorieDietModel { 
-			get { return new SCM_Impl (CalHelper); } 
-		}
-		public static CalPres SimpleCalorieDietPresenter { 
-			get { return new SCP_Impl (CalHelper.TrackerDetails, CalHelper.TrackerDialect, CalHelper); }
-		}
+		public static readonly CalHold<CalorieDietInstance_Simple> simple = new CalHold<CalorieDietInstance_Simple> (new CalorieDiet_SimpleTemplate ());
+		public static readonly CalHold<CalorieDietInstance_Scav> scav = new CalHold<CalorieDietInstance_Scav> (new CalorieDiet_Scavenger ());
 	}
 
 	// Implimentations
-
-	public class CalorieDiet_SimpleTemplate : IReflectedHelpy<FoodInfo, FireInfo, double, TimeSpan>
+	public class CalorieDiet_SimpleTemplate : IExtraRelfectedHelpy<FoodInfo, FireInfo, double, TimeSpan>
 	{
 		readonly IReflectedHelpyQuants<FoodInfo,double> _input = new CalDiet_HelpyIn();
 		public IReflectedHelpyQuants<FoodInfo,double> input { get { return _input; } }
@@ -53,14 +45,21 @@ namespace Consonance
 		public String typename { get { return "Diet"; } }
 		public String trackedname { get { return "calories"; } }
 		public String[] instanceFields { get { return new[] { "Calorie Limit" }; } } // creating an instance
-		public SimpleTargetVal[] Calcluate(double[] fieldValues) 
+		public HelpyOption [] instanceOptions { get { return new [] {
+				new HelpyOption () { defaultValue = true, optionName = "Track Daily" },
+				new HelpyOption () { defaultValue = false, optionName = "Track Weekly" }
+			}; } }
+		public SimpleTrackingTarget[] Calcluate(double[] fieldValues, bool[] options) 
 		{ 
-			return new[] { new SimpleTargetVal (1, fieldValues [0]) };
+			List<int> trange = new List<int> ();
+			List<SimpleTrackingTarget.RangeType> trt = new List<SimpleTrackingTarget.RangeType> ();
+			if (options [0]) { trange.Add (0); trt.Add (SimpleTrackingTarget.RangeType.DaysEitherSide); }
+			if (options [1]) { trange.Add (7); trt.Add (SimpleTrackingTarget.RangeType.DaysFromStart); }
+			return new[] { new SimpleTrackingTarget (new[] { 0 }, new[] { SimpleTrackingTarget.RangeType.DaysEitherSide }, new[] { 1 }, new[] { fieldValues [0] }) };
 		}
-		public SimpleTrackingRange[] AdditionalTrackingRanges { get { return new SimpleTrackingRange[0]; } }
 	}
 
-	public class CalorieDiet_Scavenger : IReflectedHelpy<FoodInfo, FireInfo, double, TimeSpan>
+	public class CalorieDiet_Scavenger : IExtraRelfectedHelpy<FoodInfo, FireInfo, double, TimeSpan>
 	{
 		readonly IReflectedHelpyQuants<FoodInfo,double> _input = new CalDiet_HelpyIn();
 		public IReflectedHelpyQuants<FoodInfo,double> input { get { return _input; } }
@@ -74,46 +73,23 @@ namespace Consonance
 		public String typename { get { return "Diet"; } }
 		public String trackedname { get { return "calories"; } }
 		public String[] instanceFields { get { return new[] { "Loose days", "Calories", "Strict days", "Calories" }; } } // creating an instance
-		public SimpleTargetVal[] Calcluate(double[] fieldValues) 
-		{ 
+		public HelpyOption [] instanceOptions { get{ return new HelpyOption[0]; } }
+		public SimpleTrackingTarget[] Calcluate(double[] fieldValues, bool[] options) 
+		{
 			return new[] { 
-				new SimpleTargetVal ((int)fieldValues [0], fieldValues [1]),
-				new SimpleTargetVal ((int)fieldValues [2], fieldValues [3])
+				new SimpleTrackingTarget (
+
+					// Range Tracking
+					new int[] { 0 }, 
+					new[] { SimpleTrackingTarget.RangeType.DaysEitherSide }, 
+
+					// Pattern Values
+					new int[] { (int)fieldValues [0], (int)fieldValues [2] }, 
+					new double[] { fieldValues [1], fieldValues [3] }) 
 			};
 		}
-		public SimpleTrackingRange[] AdditionalTrackingRanges { get { return new SimpleTrackingRange[0]; } }
 	}
-
-	public class CalorieDiet_WithWeeklyGoal : IReflectedHelpy<FoodInfo, FireInfo, double, TimeSpan>
-	{
-		readonly IReflectedHelpyQuants<FoodInfo,double> _input = new CalDiet_HelpyIn();
-		public IReflectedHelpyQuants<FoodInfo,double> input { get { return _input; } }
-		readonly IReflectedHelpyQuants<FireInfo,TimeSpan> _output = new CalDiet_HelpyOut();
-		public IReflectedHelpyQuants<FireInfo,TimeSpan> output { get { return _output; } }
-		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Calorie diet", "Simple calorie-control diet with a daily target.", "Diet");
-		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises");
-		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
-		public String name { get { return TrackerDetails.name; } }
-		public String typename { get { return "Diet"; } }
-		public String trackedname { get { return "calories"; } }
-		public String[] instanceFields { get { return new[] { "Calorie Limit" }; } } // creating an instance
-		public SimpleTargetVal[] Calcluate(double[] fieldValues) 
-		{ 
-			return new[] { new SimpleTargetVal (1, fieldValues [0]) };
-		}
-		public SimpleTrackingRange[] AdditionalTrackingRanges {
-			get { 
-				DateTime dd = DateTime.Now;
-				dd.AddDays (-(int)dd.DayOfWeek); // start monday
-				return new SimpleTrackingRange[] { 
-					new SimpleTrackingRange (dd, TimeSpan.FromDays (7))
-				};
-			}
-		}
-
-	}
-
+	
 	// entry stuff...
 	class CalDiet_HelpyIn : IReflectedHelpyQuants<FoodInfo,double>
 	{
@@ -142,7 +118,9 @@ namespace Consonance
 		public Func<string, IValueRequest<TimeSpan>> FindRequestor (IValueRequestFactory fact) { return fact.TimeSpanRequestor; }
 		public Expression<Func<FireInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
 		#endregion
-	}
+	}				
 }
+				
+								
 
 

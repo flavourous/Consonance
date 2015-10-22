@@ -473,7 +473,7 @@ namespace Consonance
 			
 		DietInstType getit(BaseEntry be)
 		{
-			var dis = conn.Table<DietInstType> ().Where ( inf => inf.id == be.dietinstanceid);
+			var dis = conn.Table<DietInstType> ().Where ( inf => inf.id == be.trackerinstanceid);
 			return dis.Count() == 0 ? null : dis.First();
 		}
 

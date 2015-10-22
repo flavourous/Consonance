@@ -2,9 +2,43 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
+using System.ComponentModel;
 
 namespace Consonance
 {
+	public static class EnumerableExtenstions
+	{
+		public static List<Out> MakeList<In,Out>(this IEnumerable<In> myself, Func<In, Out> creator)
+		{
+			return new List<Out>(from s in myself select creator(s));
+		}
+		public static BindingList<Out> MakeBindingList<In,Out>(this IEnumerable<In> myself, Func<In, Out> creator)
+		{
+			return new BindingList<Out>(new List<Out>(from s in myself select creator(s)));
+		}
+		public static TList MakeSomething<In,Out,TList>(this IEnumerable<In> myself, Func<In, Out> creator, Func<IEnumerable<Out>,TList> listCreator)
+		{
+			return listCreator(from s in myself select creator(s));
+		}
+	}
+	public static class SerialiserFactory
+	{
+		static BinaryFormatter bf = new BinaryFormatter ();
+		public static byte[] Serialize(Object graph)
+		{
+			MemoryStream ms = new MemoryStream ();
+			bf.Serialize (ms, graph);
+			return ms.ToArray ();
+		}
+		public static T Deserialize<T>(byte[] data)
+		{
+			return (T)bf.Deserialize (new MemoryStream (data));
+		}
+	}
 	class HookedInfoLines : IDisposable
 	{
 		readonly InfoManageType imt;

@@ -3,11 +3,37 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 
 namespace Consonance
 {
+	//and some helpers
+	// helper for indexing.
+	public interface IExtraRelfectedHelpy<A, B, C, D> : IReflectedHelpy<A, B, C, D>
+		where  A : BaseInfo, new()
+		where  B : BaseInfo, new()
+	{
+		TrackerDetailsVM TrackerDetails { get;}
+		TrackerDialect TrackerDialect {get;}
+	}
+	public class SimpleTrackerHolder<T,I,Ii, Im, O, Oi, Om> where T : TrackerInstance, new()
+		where I : BaseEntry, new()
+		where O : BaseEntry, new()
+		where Ii : BaseInfo, new()
+		where Oi : BaseInfo, new()
+	{
+		public readonly ITrackModel<T,I,Ii,O,Oi> model;
+		public readonly ITrackerPresenter<T,I,Ii,O,Oi> presenter;		
+		public SimpleTrackerHolder(IExtraRelfectedHelpy<Ii,Oi,Im,Om> helpy)
+		{
+			model = new SimpleTrackyHelpy<T, I,Ii, O, Oi, Im,Om> (helpy);
+			presenter = new SimpleTrackyHelpyPresenter<T, I,Ii, O, Oi, Im,Om> (helpy.TrackerDetails, helpy.TrackerDialect, helpy);
+		}
+	}
+
+
 	// & how to get it from entrymodels = use reflection provide string.
 	// Alright, from the top, what would you ideally wanna specify? for a simple situation...
 	//  - unit of measure to track (e.g. points) and it's probabbly gotta be a double. 
@@ -24,68 +50,36 @@ namespace Consonance
 		where  InInfo : BaseInfo, new()
 		where  OutInfo : BaseInfo, new()
 	{
-		//Textual
+		//Textual - not used for reflection or anything.
 		String name {get;}
 		String typename {get;}
 		String trackedname {get;}
 
 		// instance
-		String[] instanceFields {get;} // for create/edit/andmemebernames
-		SimpleTargetVal[] Calcluate(double[] fieldValues); 
-		SimpleTrackingRange[] AdditionalTrackingRanges { get; }
+		String[] instanceFields { get; } // for create/edit/andmemebernames
+		HelpyOption [] instanceOptions { get; } // boolean fields
+
+		// This has to represent any number of targets, in any number of patterns, for any period range.
+		SimpleTrackingTarget[] Calcluate(double[] fieldValues, bool[] optionValues); 
 
 		// Entries and infos
 		IReflectedHelpyQuants<InInfo,QuantityIn> input { get; }
 		IReflectedHelpyQuants<OutInfo,QuantityOut> output { get; }
 	}
-	public class SimpleTrackingRange
+	public class HelpyOption { public bool defaultValue; public String optionName; }
+	public class SimpleTrackingTarget
 	{
-		public readonly DateTime StartingOffset;
-		public readonly TimeSpan Range; 
-		public SimpleTrackingRange(DateTime s, TimeSpan r)
+		public enum RangeType { DaysFromStart = 1, DaysEitherSide = 2 }
+		public readonly int[] DayPattern; 
+		public readonly double[] DayTargets; 
+		public readonly int[] DayTargetRanges;
+		public readonly RangeType[] DayTargetRangeTypes; 
+		public SimpleTrackingTarget(int[] targetRanges, RangeType[] rangetypes, int[] targetPattern, double[] patternTarget)
 		{
-			StartingOffset= s;
-			Range = r;
-		}
-	}
-	public class SimpleTargetVal
-	{
-		public readonly int dayspan;
-		public readonly double target;
-		public SimpleTargetVal(int dayspan, double target)
-		{
-			this.dayspan = dayspan;
-			this.target = target;
-		}
-	}
-	public static class SerialiserFactory
-	{
-		static BinaryFormatter bf = new BinaryFormatter ();
-		public static byte[] Serialize(Object graph)
-		{
-			MemoryStream ms = new MemoryStream ();
-			bf.Serialize (ms, graph);
-			return ms.ToArray ();
-		}
-		public static T Deserialize<T>(byte[] data)
-		{
-			return (T)bf.Deserialize (new MemoryStream (data));
-		}
-	}
-	public class SimplyTrackedInst : TrackerInstance
-	{
-		public byte[] blob_daypattern { get; set; }
-		public byte[] blob_targets { get; set; }
-		// sqlite doesnt understand arrays - have to blob this.
-		[SQLite.Ignore]
-		public int[] daypattern { 
-			get { return SerialiserFactory.Deserialize<int[]> (blob_daypattern); } 
-			set { blob_daypattern = SerialiserFactory.Serialize (value);}
-		}
-		[SQLite.Ignore]
-		public double[] targets {
-			get { return SerialiserFactory.Deserialize<double[]> (blob_targets); } 
-			set { blob_targets = SerialiserFactory.Serialize (value); }
+			DayTargetRanges = targetRanges;
+			DayTargetRangeTypes = rangetypes;
+			DayPattern = targetPattern;
+			DayTargets = patternTarget;
 		}
 	}
 	public interface IReflectedHelpyQuants<I,MT>
@@ -103,7 +97,7 @@ namespace Consonance
 		Expression<Func<I, bool>> InfoComplete { get; }
 	}
 	public class SimpleTrackyHelpy<Inst, In, InInfo, Out, OutInfo, MIn, MOut> : ITrackModel<Inst, In, InInfo, Out, OutInfo>
-		where    Inst : SimplyTrackedInst, new()
+		where    Inst : TrackerInstance, new()
 		where      In : BaseEntry, new()
 		where  InInfo : BaseInfo, new()
 		where     Out : BaseEntry, new()
@@ -113,8 +107,13 @@ namespace Consonance
 		readonly HelpedCreation<Out,OutInfo,MOut> ouc;
 		readonly IReflectedHelpy<InInfo,OutInfo, MIn,MOut> helpy; 
 		readonly String name;
+
 		readonly IReadOnlyList<Flecter<Inst, double>> trackflectors; 
 		readonly IReadOnlyList<RequestStorageHelper<double>> flectyRequests;
+
+		readonly IReadOnlyList<Flecter<Inst, bool>> optionflectors;
+		readonly IReadOnlyList<RequestStorageHelper<bool>> optionRequests;
+
 		readonly DefaultTrackerInstanceRequests defaultTrackerStuff;
 		public SimpleTrackyHelpy(IReflectedHelpy<InInfo,OutInfo, MIn,MOut> helpy) 
 		{
@@ -123,14 +122,10 @@ namespace Consonance
 			this.helpy = helpy; 
 			inc = new HelpedCreation<In, InInfo, MIn> (helpy.input);
 			ouc = new HelpedCreation<Out, OutInfo, MOut> (helpy.output);
-			List<Flecter<Inst,double>> fls = new List<Flecter<Inst,double>> ();
-			List<RequestStorageHelper<double>> rqs = new List<RequestStorageHelper<double>> ();
-			foreach (var tf in helpy.instanceFields) {
-				fls.Add (new Flecter<Inst,double> (tf));
-				rqs.Add (new NameyStorage<double> (tf,()=>0.0, Validate));
-			}
-			this.trackflectors = fls;
-			this.flectyRequests = rqs;
+			this.trackflectors = helpy.instanceFields.MakeList(s => new Flecter<Inst,double> (s));
+			this.flectyRequests = helpy.instanceFields.MakeList(s => new NameyStorage<double>(s, ()=>0.0, Validate));
+			this.optionflectors = helpy.instanceOptions.MakeList(s => new Flecter<Inst,bool> (s.optionName));
+			this.optionRequests = helpy.instanceOptions.MakeList(s => new NameyStorage<bool>(s.optionName, ()=>s.defaultValue, Validate));
 		}
 		void Validate()
 		{
@@ -142,19 +137,17 @@ namespace Consonance
 		public IEntryCreation<Out, OutInfo> outcreator { get { return ouc; }}
 		public IEnumerable<GetValuesPage> CreationPages (IValueRequestFactory factory)
 		{
-			var rqs = new BindingList<object> ();
-			for (int i = 0; i < trackflectors.Count; i++)
-				rqs.Add (flectyRequests [i].CGet (factory.DoubleRequestor));
+			var rqs = flectyRequests.MakeBindingList (f => f.CGet (factory.DoubleRequestor));
+			foreach(var s in optionRequests) rqs.Add (s);
 			defaultTrackerStuff.PushInDefaults (null, rqs, factory);
 			yield return new GetValuesPage (name, rqs);
 		}
 		public IEnumerable<GetValuesPage> EditPages (Inst editing, IValueRequestFactory factory)
 		{
-			var rqs = new BindingList<object> ();
-			for (int i = 0; i < trackflectors.Count; i++) {
-				rqs.Add (flectyRequests [i].CGet (factory.DoubleRequestor));
-				flectyRequests [i].request.value = trackflectors [i].Get (editing);
-			}
+			var rqs = flectyRequests.MakeBindingList (f => f.CGet (factory.DoubleRequestor));
+			for (int i = 0; i < flectyRequests.Count; i++) flectyRequests [i].request.value = trackflectors [i].Get (editing);
+			foreach(var s in optionRequests) rqs.Add (s.CGet(factory.BoolRequestor));
+			for (int i = 0; i < optionRequests.Count; i++) optionRequests [i].request.value = optionflectors[i].Get (editing);
 			defaultTrackerStuff.PushInDefaults (editing, rqs, factory);
 			yield return new GetValuesPage (name, rqs);
 		}
@@ -167,16 +160,8 @@ namespace Consonance
 		public void Edit (Inst toEdit)
 		{
 			defaultTrackerStuff.Set (toEdit);
-			List<double> vals = new List<double> ();
-			foreach(var fr in flectyRequests) vals.Add (fr);
-			List<int> dp = new List<int> ();
-			List<double> tg = new List<double> ();
-			foreach (var tpat in helpy.Calcluate (vals.ToArray ())) {
-				dp.Add (tpat.dayspan);
-				tg.Add (tpat.target);
-			}
-			toEdit.daypattern = dp.ToArray ();
-			toEdit.targets = tg.ToArray ();
+			for (int i = 0; i < flectyRequests.Count; i++) trackflectors [i].Set (toEdit, flectyRequests [i]);
+			for (int i = 0; i < optionRequests.Count; i++) optionflectors[i].Set (toEdit, optionRequests [i]);
 		}
 		#endregion
 	}
@@ -413,7 +398,7 @@ namespace Consonance
 	}
 
 	public class SimpleTrackyHelpyPresenter<Inst, In, InInfo, Out, OutInfo, MIn, MOut> : ITrackerPresenter<Inst, In, InInfo, Out, OutInfo>
-		where    Inst : SimplyTrackedInst, new()
+		where    Inst : TrackerInstance, new()
 		where      In : BaseEntry, new()
 		where  InInfo : BaseInfo, new()
 		where     Out : BaseEntry, new()
@@ -439,10 +424,14 @@ namespace Consonance
 			InTrack = new Flecter<In, double> (helpy.input.trackedMember);
 			OutTrack = new Flecter<Out, double> (helpy.output.trackedMember);
 
-
 			inQuantUnits = NameyStorage<EventArgs>.VariableMutation (helpy.input.quantifier);
 			outQuantUnits = NameyStorage<EventArgs>.VariableMutation (helpy.output.quantifier);
+
+			fvalues = helpy.instanceFields.MakeList (s => new Flecter<Inst,double> (s));
+			foptions = helpy.instanceOptions.MakeList (s => new Flecter<Inst,bool> (s.optionName));
 		}
+		IReadOnlyList<Flecter<Inst, bool>> foptions;
+		IReadOnlyList<Flecter<Inst, double>> fvalues;
 
 		#region IDietPresenter implementation
 		String QuantyGet(double amt, String unit, String name)
@@ -469,14 +458,32 @@ namespace Consonance
 				new KVPList<string, double> { { helpy.trackedname, OutTrack.Get (entry) } }
 			);
 		}
+
+		SimpleTrackingTarget[] GetTargets(Inst entry)
+		{
+			var vals = fvalues.MakeList(f => f.Get (entry));
+			var opts = foptions.MakeList(f => f.Get (entry));
+			return helpy.Calcluate (vals.ToArray (), opts.ToArray ());
+		}
+		// Cases:
+		//
+		//   targets->patterns->values
+		//   special 1: 1target,1pattern (say noms per timespans)
+		//   special 2: n targerts, 1pattern each (each line say noms per timespan)
+		//   special 3: 1 target, n patterns (1line, say noms with pattern: timespan@value, timespan@value then timespan@value)
+		//   general: ntargets wit n patterns.  Select each line from special 1 or special 3;
+		//
 		public TrackerInstanceVM GetRepresentation (Inst entry)
 		{
+			
 			var kl = new KVPList<string, double> ();
-			for(int i=0;i<entry.daypattern.Length;i++) 
-				kl.Add(
-					helpy.trackedname + " over " + entry.daypattern[i] + " day" + (entry.daypattern[i] > 1 ? "s" : ""),
-					entry.targets[i]
-				);
+			foreach (var target in GetTargets(entry)) {
+				if (target.DayPattern.Length == 1)
+					kl.Add (helpy.trackedname + " per " + TimeSpan.FromDays (target.DayPattern [0]).ToString (), target.DayTargets [0]);
+				else
+					for (int i = 0; i < target.DayPattern.Length; i++)
+						kl.Add (helpy.trackedname + " for " + TimeSpan.FromDays (target.DayPattern [0]).ToString (), target.DayTargets [0]);	
+			}
 			return new TrackerInstanceVM(
 				dialect,
 				entry.started, 
@@ -499,34 +506,81 @@ namespace Consonance
 		public IEnumerable<TrackingInfoVM> DetermineInTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
 			if(dayStart < di.started) yield break;
+			var targets = GetTargets (di);
+			for (var ti=0; ti < targets.Length; ti++) {
+				var trg = targets [ti];
+				for (int tr=0; tr < trg.DayTargetRanges.Length; tr++) {
+					TimeSpan spantime = TimeSpan.FromDays (tr);
+					String rangeString = trg.DayTargetRanges.Length == 1 && trg.DayTargetRanges [0] == 1 ? " balance" : " " + spantime.ToString () + " balance";
 
-			// We will pull one here.  requests will span days at least, and in our helpy model here in this space, we specify day based patterns.
-			// Lets just figure out which part of the pattern we are on.
-			TrackingInfoVM ti = new TrackingInfoVM () {
-				valueName = helpy.trackedname + " balance",
-				targetValue= FindTargetForDay(di, dayStart)
-			};
+					// use method to get target info
+					var targetInfo = FindTargetForDay (di, trg, tr, dayStart);
 
-			GetValsForRange (eats, burns, dayStart, dayStart.AddDays (1), out ti.inValues, out ti.outValues);
-			yield return ti;
+					TrackingInfoVM info = new TrackingInfoVM () {
+						valueName = helpy.trackedname + rangeString,
+						targetValue = targetInfo.target
+					};
 
-			foreach (var et in ExtraRanges(di,eats,burns,dayStart))
-				yield return et;
+					GetValsForRange (eats, burns, targetInfo.begin, targetInfo.end, out info.inValues, out info.outValues);
+					yield return info;
+				}
+			}
 		}
 			
-		double FindTargetForDay(Inst di, DateTime dayStart)
+		struct DayTargetReturn {
+			public readonly DateTime begin;
+			public readonly DateTime end;
+			public readonly double target;
+			public DayTargetReturn(DateTime begin, DateTime end, double target)
+			{
+				this.begin=begin;
+				this.end=end;
+				this.target=target;
+			}
+		}
+		DayTargetReturn FindTargetForDay(Inst di, SimpleTrackingTarget trg, int ridx, DateTime dayStart)
 		{
-			// Hmm, index exception here surely? I think it works.
-			var daysSinceStart = (dayStart - di.started).TotalDays;
-			int totalPatternLength = 0;
-			foreach (var dp in di.daypattern)
-				totalPatternLength += dp;
-			var daysSincePatternStarted = daysSinceStart % totalPatternLength;
-			int day_sum = 0, day_index;
-			for (day_index = 0; day_sum + di.daypattern [day_index] < daysSincePatternStarted; day_index++)
-				day_sum += di.daypattern [day_index];
-			return di.targets [day_index];
+			var r = trg.DayTargetRanges [ridx];
+			var t = trg.DayTargetRangeTypes [ridx];
 
+			// find the total length of the pattern
+			int totalPatternLength = 0;
+			foreach (var dp in trg.DayPattern)
+				totalPatternLength += dp;
+			
+			// easier to unwrap i think.
+			double[] unwrapped = new double[totalPatternLength];
+			int c = 0;
+			for (int i = 0; i < trg.DayTargets.Length; i++)
+				for (int j = 0; j < trg.DayPattern [i]; j++)
+					unwrapped [c++] = trg.DayTargets [i];
+
+			//total days since started (big number)
+			var daysSinceStart = (dayStart - di.started).TotalDays;
+
+			// get the number of days into a pattern (could concieveably be negative)
+			var daysSincePatternStarted = (int)(daysSinceStart % totalPatternLength);
+			if (daysSincePatternStarted < 0) daysSincePatternStarted += totalPatternLength;
+
+			// ok which way?
+			double targ =0;
+			DateTime useStart = DateTime.MinValue, useEnd = DateTime.MinValue;
+			switch (t) {
+			case SimpleTrackingTarget.RangeType.DaysFromStart:
+				useStart = dayStart.AddDays (-daysSincePatternStarted);
+				useEnd = dayStart.AddDays (r);
+				for (int ds = 0; ds < r; ds++)
+					targ += unwrapped [ds % totalPatternLength];
+				break;
+			case SimpleTrackingTarget.RangeType.DaysEitherSide:
+				useStart = dayStart.AddDays (-r);
+				useEnd = dayStart.AddDays (r);
+				var rs = daysSincePatternStarted + r;
+				for (int ds = daysSincePatternStarted - r; ds <= rs; ds++)
+					targ += unwrapped [Math.Abs(ds % totalPatternLength)];
+				break;
+			}
+			return new DayTargetReturn (useStart, useEnd, targ);
 		}
 
 		void GetValsForRange(EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime s, DateTime e, out TrackingElementVM[] invals,out TrackingElementVM[] outvals )
@@ -546,26 +600,7 @@ namespace Consonance
 			invals = vin.ToArray ();
 			outvals = vout.ToArray ();
 		}
-
-		IEnumerable<TrackingInfoVM> ExtraRanges(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
-		{
-			foreach (var er in helpy.AdditionalTrackingRanges) 
-			{
-				TrackingInfoVM ti = new TrackingInfoVM () {
-					valueName = helpy.trackedname + " balance",
-					targetValue = 0
-				};
-				double offsetInDays = (dayStart - er.StartingOffset).TotalDays % er.Range.TotalDays;
-				DateTime periodStart = er.StartingOffset > dayStart ?
-					er.StartingOffset.AddDays(-offsetInDays) : // move back to start
-					er.StartingOffset.AddDays(offsetInDays-er.Range.TotalDays); // move to end then go back
-				DateTime periodEnd = periodStart + er.Range;
-				GetValsForRange (eats, burns, periodStart, periodEnd, out ti.inValues, out ti.outValues);
-				for (DateTime dt = periodStart; dt <= periodEnd; dt.AddDays (1))
-					ti.targetValue += FindTargetForDay (di, dt);
-				yield return ti;
-			}
-		}
+			
 		public IEnumerable<TrackingInfoVM> DetermineOutTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
 			return DetermineInTrackingForDay(di, eats, burns, dayStart);

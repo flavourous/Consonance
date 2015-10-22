@@ -20,14 +20,37 @@ namespace Consonance
 	public class BaseDB
 	{
 		[PrimaryKey, AutoIncrement]
-		public int id{ get;set; }
+		public int id{ get; set; }
 	}
 	public class BaseEntry : BaseDB
 	{
-		public int dietinstanceid{get;set;}
-		public int? infoinstanceid{get;set;}
-		public DateTime entryWhen {get;set;}
+		public BaseEntry() {
+		}
+		public BaseEntry Clone()
+		{
+			var ret = new BaseEntry ();
+			ret.trackerinstanceid = trackerinstanceid;
+			ret.infoinstanceid = infoinstanceid;
+			ret.entryName = entryName;
+			ret.entryWhen = entryWhen;
+			ret.repeatEnd = repeatEnd;
+			ret.repeatSpan = repeatSpan;
+			ret.repeatStart = repeatStart;
+			return ret;
+		}
+
+		// keys
+		public int trackerinstanceid{ get; set; }
+		public int? infoinstanceid{ get; set; }
+
+		// entry data
 		public String entryName{ get; set; }
+		public DateTime entryWhen { get; set; }
+
+		// repetition info
+		public DateTime? repeatStart { get; set; }
+		public TimeSpan? repeatSpan { get; set; }
+		public DateTime? repeatEnd { get; set; }
 	}
 	public class BaseEatEntry : BaseEntry 
 	{
@@ -231,7 +254,6 @@ namespace Consonance
 				d => ((!d.hasEnded && (st >= d.started || en >= d.started))
 					|| ((d.started >= st ^ d.ended >= en) || (d.started >= en ^ d.ended >= st))));
 		}
-
 	}
 
 
@@ -282,7 +304,7 @@ namespace Consonance
 		public void Add (D diet, EntryInfoType info)
 		{
 			EntryType ent = creator.Calculate (info, ShouldComplete());
-			ent.dietinstanceid = diet.id;
+			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = info.id;
 			CheckOrphans (diet, ent);
 			conn.Insert (ent as EntryType);
@@ -290,7 +312,7 @@ namespace Consonance
 		public void Add (D diet)
 		{
 			EntryType ent = creator.Create ();
-			ent.dietinstanceid = diet.id;
+			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = null;
 			CheckOrphans (diet, ent);
 			conn.Insert (ent as EntryType);
@@ -298,7 +320,7 @@ namespace Consonance
 		public void Edit(EntryType ent, D diet, EntryInfoType info)
 		{
 			creator.Edit(ent, info, ShouldComplete());
-			ent.dietinstanceid = diet.id;
+			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = info.id;
 			CheckOrphans (diet, ent);
 			conn.Update (ent as EntryType);
@@ -306,7 +328,7 @@ namespace Consonance
 		public void Edit(EntryType ent, D diet)
 		{
 			creator.Edit (ent);
-			ent.dietinstanceid = diet.id;
+			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = null;
 			CheckOrphans (diet, ent);
 			conn.Update (ent as EntryType);
@@ -319,14 +341,35 @@ namespace Consonance
 		}
 		public IEnumerable<EntryType> Get (D diet, DateTime start, DateTime end)
 		{
-			return conn.Table<EntryType> ().Where (d => d.dietinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
+			// Get the noraml and repeating ones, then repeat the repeating ones
+			var normalQuery = conn.Table<EntryType> ().Where 
+				(d => d.trackerinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
+			var repeatersQuery = conn.Table<EntryType> ().Where
+				(d => d.trackerinstanceid == diet.id && d.repeatSpan != null &&
+					(d.repeatStart != null && d.repeatStart <= end) &&
+					(d.repeatEnd == null || d.repeatEnd >= start)
+				);
+			foreach (var ent in normalQuery) yield return ent;
+			foreach (var ent in repeatersQuery) {
+				//  we will return N entries, with changed entryWhens, all with the same id
+				DateTime begin = ent.repeatStart.Value;
+				TimeSpan rspan = ent.repeatSpan.Value;
+				DateTime finish = ent.repeatEnd.Value;
+				if (begin < start) // oh ok, we gotta % the first drop into our range.
+					begin = start.AddDays(rspan.TotalDays - (start-begin).TotalDays % rspan.TotalDays);
+				while (begin < end) {
+					var clone =  ent.Clone ();
+					clone.entryWhen = begin;
+					begin += rspan;
+				}
+			}
 		}
-		public IEnumerable<EntryType> GetOrphans(D diet)
+		public IEnumerable<EntryType> GetOrphans(D trackerInstance)
 		{
 			return conn.Table<EntryType> ().Where (d => 
-				d.dietinstanceid == diet.id &&  (
-					d.entryWhen < diet.started || 
-					(diet.hasEnded && d.entryWhen > diet.ended)
+				d.trackerinstanceid == trackerInstance.id &&  (
+					d.entryWhen < trackerInstance.started || 
+					(trackerInstance.hasEnded && d.entryWhen > trackerInstance.ended)
 				)
 			);
 		}
@@ -336,7 +379,7 @@ namespace Consonance
 		}
 		public int Count (D diet)
 		{
-			return conn.Table<EntryType> ().Where(e=>e.dietinstanceid==diet.id).Count ();
+			return conn.Table<EntryType> ().Where(e=>e.trackerinstanceid==diet.id).Count ();
 		}
 
 		#endregion

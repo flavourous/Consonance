@@ -29,7 +29,7 @@ namespace Consonance.XamarinFormsView
 		readonly UserInputWrapper userInputWrapper;
 
         public App()
-        {
+		{
 			// some pages.
 			var iman = new InfoManageView ();
 			var main = new MainTabs();
