@@ -407,7 +407,7 @@ namespace Consonance
 			infoRequest.value.choose += chooseDelegate;
 		
 			// Set up for editing
-			Func<IList<Object>> flds = () => {
+			Func<BindingList<Object>> flds = () => {
 				var si = infoRequest.value.selected;
 				if (si == null)
 					return editing == null ?
@@ -430,36 +430,23 @@ namespace Consonance
 			};
 
 			// binfy
-			BindingList<Object> requests = new BindingList<Object> ();
-			requests.Add (infoRequest.request);
+			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntrytVerb;
+			var requests = new GetValuesPage (entryVerb);
+			requests.valuerequests.Add (infoRequest.request);
 
 			Action checkFields = () => {
-				BindingList<Object> nrq = new BindingList<Object>(flds());
+				var nrq = flds();
 				nrq.Insert (0, infoRequest.request);
-				CycleRequests(requests, nrq);
+				requests.SetList(nrq);
 			};
 			checkFields ();
 			infoRequest.changed += checkFields;
 
-			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntrytVerb;
-			var gv = getValues.GetValues (new[]{ new GetValuesPage (entryVerb, requests) });
+			var gv = getValues.GetValues (new[]{ requests });
 			var result = await gv.Result; 
 			gv.Pop (); 
 			if(result) editit ();
 			infoRequest.changed -= checkFields;
-		}
-
-		void CycleRequests(BindingList<Object> exist, BindingList<Object> want)
-		{
-			//remove gone
-			for (int i = 0; i < exist.Count; i++)
-				if (!want.Contains (exist [i]))
-					exist.RemoveAt (i);
-			//add new
-			for (int i = 0; i < want.Count; i++)
-				if (!exist.Contains (want [i]))
-					exist.Insert (i, want [i]);
-			//should respect ordering - doing all that so we dont remove ones that didnt change
 		}
 
 		public void RemoveIn (EntryLineVM toRemove)

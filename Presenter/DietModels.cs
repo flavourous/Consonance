@@ -22,23 +22,8 @@ namespace Consonance
 		[PrimaryKey, AutoIncrement]
 		public int id{ get; set; }
 	}
-	public class BaseEntry : BaseDB
+	public class BaseEntry : BaseDB, ICloneable
 	{
-		public BaseEntry() {
-		}
-		public BaseEntry Clone()
-		{
-			var ret = new BaseEntry ();
-			ret.trackerinstanceid = trackerinstanceid;
-			ret.infoinstanceid = infoinstanceid;
-			ret.entryName = entryName;
-			ret.entryWhen = entryWhen;
-			ret.repeatEnd = repeatEnd;
-			ret.repeatSpan = repeatSpan;
-			ret.repeatStart = repeatStart;
-			return ret;
-		}
-
 		// keys
 		public int trackerinstanceid{ get; set; }
 		public int? infoinstanceid{ get; set; }
@@ -48,10 +33,27 @@ namespace Consonance
 		public DateTime entryWhen { get; set; }
 
 		// repetition info
-		public DateTime? repeatStart { get; set; }
-		public TimeSpan? repeatSpan { get; set; }
+		public RecurranceType repeatType { get; set; }
+		public int repeatData { get; set; }
+		public DateTime repeatStart { get; set; }
 		public DateTime? repeatEnd { get; set; }
+
+		// clone
+		#region ICloneable implementation
+		public virtual object Clone () { return MemberwiseClone (); }
+		#endregion
+
+		// Helper
+		public Object CloneWithDate(DateTime dt)
+		{
+			var ret = (BaseEntry)Clone ();
+			ret.entryWhen = dt;
+			return ret;
+		}
 	}
+	[Flags]
+	public enum RecurranceType { None = 0, DayOfMonth = 1, EveryNDays = 2 }
+
 	public class BaseEatEntry : BaseEntry 
 	{
 		public double? grams { get; set; }		
@@ -138,12 +140,25 @@ namespace Consonance
 	public class GetValuesPage
 	{
 		public readonly String title;
-		public readonly BindingList<Object> valuerequests;
-		public GetValuesPage( String title, BindingList<Object> req)
+		BindingList<Object> boundrequests = new BindingList<object>();
+		public IList<Object> valuerequests { get { return boundrequests; } }
+		public ListChangedEventHandler valuerequestsChanegd = delegate { };
+		void Newlist_ListChanged (object sender, ListChangedEventArgs e)
+		{
+			valuerequestsChanegd (sender, e);
+		}
+		public GetValuesPage(String title)
 		{
 			this.title = title;
-			valuerequests = req;
+			boundrequests.ListChanged += Newlist_ListChanged;
 		}
+		public void SetList(BindingList<Object> newlist)
+		{
+			newlist.ListChanged += Newlist_ListChanged;
+			boundrequests = newlist;
+			Newlist_ListChanged (boundrequests, new ListChangedEventArgs (ListChangedType.Reset, -1));
+		}
+
 	}
 	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
 	{
@@ -343,24 +358,33 @@ namespace Consonance
 		{
 			// Get the noraml and repeating ones, then repeat the repeating ones
 			var normalQuery = conn.Table<EntryType> ().Where 
-				(d => d.trackerinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end);
+				(d => d.trackerinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end && d.repeatType == RecurranceType.None);
 			var repeatersQuery = conn.Table<EntryType> ().Where
-				(d => d.trackerinstanceid == diet.id && d.repeatSpan != null &&
-					(d.repeatStart != null && d.repeatStart <= end) &&
-					(d.repeatEnd == null || d.repeatEnd >= start)
+				(d => d.trackerinstanceid == diet.id && d.repeatType != RecurranceType.None &&
+					d.repeatStart <= end &&	(d.repeatEnd == null || d.repeatEnd >= start)
 				);
 			foreach (var ent in normalQuery) yield return ent;
 			foreach (var ent in repeatersQuery) {
 				//  we will return N entries, with changed entryWhens, all with the same id
-				DateTime begin = ent.repeatStart.Value;
-				TimeSpan rspan = ent.repeatSpan.Value;
-				DateTime finish = ent.repeatEnd.Value;
-				if (begin < start) // oh ok, we gotta % the first drop into our range.
-					begin = start.AddDays(rspan.TotalDays - (start-begin).TotalDays % rspan.TotalDays);
-				while (begin < end) {
-					var clone =  ent.Clone ();
-					clone.entryWhen = begin;
-					begin += rspan;
+				DateTime begin = ent.repeatStart;
+				DateTime finish = (ent.repeatEnd.HasValue && ent.repeatEnd.Value < end) ? ent.repeatEnd.Value : end;
+				Func<DateTime, DateTime> inc = null;
+				switch (ent.repeatType) {
+					case RecurranceType.EveryNDays:
+						if (begin < start) // oh ok, we gotta % the first drop into our range.
+							begin = start.AddDays (ent.repeatData - (start - begin).TotalDays % ent.repeatData);
+						inc = b => b.AddDays (ent.repeatData);
+						break;
+					case RecurranceType.DayOfMonth:
+						if(begin.Day > ent.repeatData)
+							begin.AddMonths (1);
+						begin.AddDays(ent.repeatData - begin.Day);
+						inc = b => b.AddMonths (1);
+						break;
+				}
+				while (begin < end) {					
+					yield return (EntryType)ent.CloneWithDate (begin);
+					begin = inc (begin);
 				}
 			}
 		}

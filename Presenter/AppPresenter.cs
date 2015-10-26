@@ -415,9 +415,24 @@ namespace Consonance
 		IValueRequest<DateTime> DateRequestor(String name);
 		IValueRequest<TimeSpan> TimeSpanRequestor(String name);
 		IValueRequest<double> DoubleRequestor(String name); 
+		IValueRequest<int> IntRequestor(String name); 
 		IValueRequest<bool> BoolRequestor(String name);
 		IValueRequest<EventArgs> ActionRequestor(String name);
 		IValueRequest<Barcode> BarcodeRequestor (String name);
+		IValueRequest<OptionGroupValue> OptionGroupRequestor(String name);
+	}
+	public class OptionGroupValue 
+	{
+		public readonly IReadOnlyList<String> OptionNames;
+		public int SelectedOption = 0;
+		public OptionGroupValue(IEnumerable<String> options)
+		{
+			OptionNames = new List<String> (options);
+		}
+		public static implicit operator int(OptionGroupValue other)
+		{
+			return other.SelectedOption;
+		}
 	}
 	public class InfoSelectValue
 	{

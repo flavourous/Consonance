@@ -37,12 +37,12 @@ namespace Consonance.XamarinFormsView
 					vrv.Title = requests.title;
 					foreach (var ob in requests.valuerequests)
 						vrv.AddRow (ob as View);
-					requests.valuerequests.ListChanged += leh;
+					requests.valuerequestsChanegd = leh;
 
 					success = await tcs_each.Task;
 					tcs_each = new TaskCompletionSource<bool> (); // re-create for following ones.
 
-					requests.valuerequests.ListChanged -= leh; // unhook changes from this iteration.
+					requests.valuerequestsChanegd = delegate { }; // unhook changes from this iteration.
 
 					if(!success) break;
 				}
@@ -94,8 +94,6 @@ namespace Consonance.XamarinFormsView
 		public IValueRequest<EventArgs> ActionRequestor (string name) { return new ValueRequestVM<EventArgs> (new ValueRequestTemplate (), name); }
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new ValueRequestVM<Barcode> (new ValueRequestTemplate (), name); }
 		#endregion
-
-
 	}
 
 	class ValueRequestVM<T> : IValueRequest<T>, INotifyPropertyChanged

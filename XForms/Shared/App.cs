@@ -30,6 +30,10 @@ namespace Consonance.XamarinFormsView
 
         public App()
 		{
+			var wtf = new DateTime (2015, 0, 31);
+			var wtf2 = wtf.AddMonths (1);
+			throw new NotImplementedException (String.Format ("Hei so {0} + 1 month is {1}", wtf, wtf2));
+
 			// some pages.
 			var iman = new InfoManageView ();
 			var main = new MainTabs();

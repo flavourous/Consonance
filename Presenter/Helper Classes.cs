@@ -24,6 +24,26 @@ namespace Consonance
 		{
 			return listCreator(from s in myself select creator(s));
 		}
+		public static void RemoveAll<T>(this IList<T> list, params T[] items)
+		{
+			foreach (var t in items)
+				list.Remove (t);
+		}
+		public static void AddAll<T>(this IList<T> list, bool allowDuplicates, params T[] items)
+		{
+			foreach (var t in items)
+				if(allowDuplicates || !list.Contains(t))
+					list.Add (t);
+		}
+		public static void Ensure<T>(this IList<T> list, int index, params T[] items)
+		{
+			foreach (var t in items)
+				if (list [index] != t) {
+					list.Remove (t);
+					list.Insert (index, t);
+					index++;
+				}
+		}
 	}
 	public static class SerialiserFactory
 	{
