@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 namespace Consonance
 {
+	
 	// Models
 	public class CalorieDietEatEntry : BaseEatEntry
 	{
@@ -15,8 +16,19 @@ namespace Consonance
 		public double calories { get; set; } // burned...
 	}
 	// need seperate instance classes, otherwise get confused about which instances belong to which model/API
-	public class CalorieDietInstance_Simple : TrackerInstance { }
-	public class CalorieDietInstance_Scav : TrackerInstance{ }
+	public class CalorieDietInstance_Simple : TrackerInstance 
+	{
+		public double calorieLimit {get;set;}
+		public bool trackWeekly {get;set;}
+		public bool trackDaily {get;set;}
+	}
+	public class CalorieDietInstance_Scav : TrackerInstance
+	{
+		public double strictCalorieLimit {get;set;}
+		public double looseCalorieLimit {get;set;}
+		public int nStrictDays {get;set;}
+		public int nLooseDays {get;set;}
+	}
 
 	// helper derrivative
 	public class CalHold<T> : SimpleTrackerHolder<T, CalorieDietEatEntry, FoodInfo, double, CalorieDietBurnEntry, FireInfo, TimeSpan>
@@ -44,18 +56,17 @@ namespace Consonance
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Diet"; } }
 		public String trackedname { get { return "calories"; } }
-		public String[] instanceFields { get { return new[] { "Calorie Limit" }; } } // creating an instance
-		public HelpyOption [] instanceOptions { get { return new [] {
-				new HelpyOption () { defaultValue = true, optionName = "Track Daily" },
-				new HelpyOption () { defaultValue = false, optionName = "Track Weekly" }
-			}; } }
-		public SimpleTrackingTarget[] Calcluate(double[] fieldValues, bool[] options) 
+		public InstanceValue [] instanceValueFields { get { return new[] { 
+				InstanceValue.FromType (0.0, "Calorie Limit", "calorieLimit", f => f.DoubleRequestor),
+				InstanceValue.FromType (true, "Track Daily", "trackDaily", f => f.BoolRequestor),
+				InstanceValue.FromType (false, "Track Weekly", "trackWeekly", f => f.BoolRequestor)
+			}; } } // creating an instance
+		public SimpleTrackingTarget[] Calcluate(object[] fieldValues) 
 		{ 
-			List<int> trange = new List<int> ();
-			List<SimpleTrackingTarget.RangeType> trt = new List<SimpleTrackingTarget.RangeType> ();
-			if (options [0]) { trange.Add (0); trt.Add (SimpleTrackingTarget.RangeType.DaysEitherSide); }
-			if (options [1]) { trange.Add (7); trt.Add (SimpleTrackingTarget.RangeType.DaysFromStart); }
-			return new[] { new SimpleTrackingTarget (new[] { 0 }, new[] { SimpleTrackingTarget.RangeType.DaysEitherSide }, new[] { 1 }, new[] { fieldValues [0] }) };
+			List<SimpleTrackingTarget> targs = new List<SimpleTrackingTarget> ();
+			if ((bool)fieldValues [1]) targs.Add(new SimpleTrackingTarget (new[] { 0 }, new[] { SimpleTrackingTarget.RangeType.DaysEitherSide }, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			if ((bool)fieldValues [2]) targs.Add (new SimpleTrackingTarget (new[] { 7 }, new[] { SimpleTrackingTarget.RangeType.DaysFromStart }, new[] { 1 }, new[] { (double)fieldValues [0]*7 }) );
+			return targs.ToArray ();
 		}
 	}
 
@@ -72,20 +83,23 @@ namespace Consonance
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Diet"; } }
 		public String trackedname { get { return "calories"; } }
-		public String[] instanceFields { get { return new[] { "Loose days", "Calories", "Strict days", "Calories" }; } } // creating an instance
-		public HelpyOption [] instanceOptions { get{ return new HelpyOption[0]; } }
-		public SimpleTrackingTarget[] Calcluate(double[] fieldValues, bool[] options) 
+		public InstanceValue[] instanceValueFields { get { return new[] { 
+					InstanceValue.FromType(0, "Loose days", "nLooseDays", f=>f.IntRequestor ), 
+					InstanceValue.FromType(0.0, "Calories", "looseCalorieLimit", f=>f.DoubleRequestor ), 
+					InstanceValue.FromType(0, "Strict days", "nStrictDays", f=>f.IntRequestor ), 
+					InstanceValue.FromType(0.0, "Calories", "strictCalorieLimit", f=>f.DoubleRequestor ) 
+			}; } } // creating an instance
+		public SimpleTrackingTarget[] Calcluate(object[] fieldValues) 
 		{
 			return new[] { 
 				new SimpleTrackingTarget (
-
 					// Range Tracking
 					new int[] { 0 }, 
 					new[] { SimpleTrackingTarget.RangeType.DaysEitherSide }, 
 
 					// Pattern Values
 					new int[] { (int)fieldValues [0], (int)fieldValues [2] }, 
-					new double[] { fieldValues [1], fieldValues [3] }) 
+					new double[] { (double)fieldValues [1], (double)fieldValues [3] }) 
 			};
 		}
 	}
@@ -96,9 +110,8 @@ namespace Consonance
 		#region IReflectedHelpyQuants implementation
 		public String trackedMember { get { return "calories"; } }
 		public string Convert (double quant) { return quant.ToString ("F1") + "g"; }
-		public double Default { get { return 0.0; } }
 		public double InfoFixedQuantity { get { return 100.0; } }
-		public string quantifier { get { return "grams"; } }
+		public InstanceValue quantifier { get { return InstanceValue.FromType (0.0, "Grams", "grams", f => f.DoubleRequestor); } }
 		public string[] calculation { get { return new[] { "calories" }; } }
 		public double Calcluate (double amount, double[] values) { return amount * values [0] / InfoFixedQuantity; }
 		public Func<string, IValueRequest<double>> FindRequestor (IValueRequestFactory fact) { return fact.DoubleRequestor; }
@@ -110,9 +123,8 @@ namespace Consonance
 		#region IReflectedHelpyQuants implementation
 		public String trackedMember { get { return "calories"; } }
 		public string Convert (TimeSpan quant) { return quant.TotalHours.ToString("F1") + "h"; }
-		public TimeSpan Default { get { return TimeSpan.Zero; } }
 		public TimeSpan InfoFixedQuantity { get { return TimeSpan.FromHours(1.0); } }
-		public string quantifier { get { return "duration"; } }
+		public InstanceValue quantifier { get { return InstanceValue.FromType(TimeSpan.Zero,"Duration", "duration",f=>f.TimeSpanRequestor); } }
 		public string[] calculation { get { return new[] { "calories" }; } }
 		public double Calcluate (TimeSpan amount, double[] values) { return (amount.TotalHours/InfoFixedQuantity.TotalHours) * values [0]; }
 		public Func<string, IValueRequest<TimeSpan>> FindRequestor (IValueRequestFactory fact) { return fact.TimeSpanRequestor; }
@@ -120,7 +132,3 @@ namespace Consonance
 		#endregion
 	}				
 }
-				
-								
-
-

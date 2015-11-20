@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\Defaulters.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Trackers\CalorieDiet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Trackers\Budgeting.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Trackers\DietCommon.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)TrackerTemplates\" />

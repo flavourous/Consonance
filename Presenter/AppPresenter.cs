@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using SQLite;
 using System.IO;
+using System.Threading;
+using System.Text;
 
 namespace Consonance
 {
@@ -48,18 +50,18 @@ namespace Consonance
 			commands.burninfo.edit += View_editburninfo;
 		}
 
-		void View_addeatitem (IValueRequestBuilder bld) 					{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.AddIn (cd,bld); }); }
-		void View_removeeatitem (EntryLineVM vm) 							{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveIn (vm); });  }
-		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.EditIn (vm,bld); }); }
-		void View_addeatinfo (IValueRequestBuilder bld) 					{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.AddInInfo (bld); }); }
-		void View_removeeatinfo (InfoLineVM vm) 							{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveInInfo (vm); }); }
-		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder bld) 		{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.EditInInfo (vm,bld); }); }
-		void View_addburnitem (IValueRequestBuilder bld) 					{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.AddOut (cd,bld); }); }
-		void View_removeburnitem (EntryLineVM vm)						 	{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveOut (vm); }); }
-		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.EditOut (vm,bld); }); }
-		void View_addburninfo (IValueRequestBuilder bld) 					{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.AddOutInfo (bld); }); }
-		void View_removeburninfo (InfoLineVM vm)							{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveOutInfo (vm); }); }
-		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder bld) 	{ Task.Run(() => { if (!VerifyDiet ()) return; cdh.EditOutInfo (vm,bld); }); }
+		void View_addeatitem (IValueRequestBuilder bld) 					{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.AddIn (cd,bld); }); }
+		void View_removeeatitem (EntryLineVM vm) 							{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveIn (vm); });  }
+		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.EditIn (vm,bld); }); }
+		void View_addeatinfo (IValueRequestBuilder bld) 					{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.AddInInfo (bld); }); }
+		void View_removeeatinfo (InfoLineVM vm) 							{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveInInfo (vm); }); }
+		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder bld) 		{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.EditInInfo (vm,bld); }); }
+		void View_addburnitem (IValueRequestBuilder bld) 					{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.AddOut (cd,bld); }); }
+		void View_removeburnitem (EntryLineVM vm)						 	{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveOut (vm); }); }
+		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.EditOut (vm,bld); }); }
+		void View_addburninfo (IValueRequestBuilder bld) 					{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.AddOutInfo (bld); }); }
+		void View_removeburninfo (InfoLineVM vm)							{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveOutInfo (vm); }); }
+		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder bld) 	{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.EditOutInfo (vm,bld); }); }
 
 		bool VerifyDiet()
 		{
@@ -96,19 +98,34 @@ namespace Consonance
 					NotifyTableChangedAction.Delete
 				)
 			);
+			
 		}
+	}
+	static class PTask
+	{
+		public static ITasks taskops;
+		public static Task Run (Func<Task> asyncMethod){ return taskops.RunTask(asyncMethod); }
+		public static Task Run (Action syncMethod){ return taskops.RunTask(syncMethod); }
+		public static Task<T> Runk<T> (Func<Task<T>> asyncMethod){ return taskops.RunTask(asyncMethod); }
+		public static Task<T> Run<T> (Func<T> syncMethod) { return taskops.RunTask(syncMethod); }
 	}
 	public class Presenter
 	{
 		// Singleton logic - lazily created
 		static Presenter singleton;
 		//public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
-		public static Task PresentTo(IView view, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
+		public static async Task PresentTo(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
-			return Task.Run (() => {
-				singleton = new Presenter();
-				singleton.PresentToImpl(view, input, commands, defBuilder);
-			});
+			TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs e) => 
+			{
+				view.UIThread (() => {
+					throw e.Exception.InnerException;
+				});
+			};
+			PTask.taskops = platform.TaskOps;
+
+			singleton = new Presenter ();
+			await singleton.PresentToImpl (view, platform, input, commands, defBuilder);
 		}
 		MyConn conn;
 		private Presenter ()
@@ -116,7 +133,7 @@ namespace Consonance
 			var datapath = Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData);
 			if (!Directory.Exists (datapath))
 				Directory.CreateDirectory (datapath);
-			var maindbpath = Path.Combine (datapath, "manydiet_changetest.db");
+			var maindbpath = Path.Combine (datapath, "manydiet.db");
 			#if DEBUG
 			//File.Delete (maindbpath); // fresh install 
 			#endif
@@ -127,14 +144,15 @@ namespace Consonance
 		IView view;
 		IUserInput input;
 		Object pcm_refholder;
-		void PresentToImpl(IView view, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
+		Task PresentToImpl(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
 			// Start fast!
-			Task.Run (() => {
+			return PTask.Run (() => {
 				this.view = view;
 				this.input = input;
 				AddDietPair (CalorieDiets.simple.model, CalorieDiets.simple.presenter, defBuilder);
 				AddDietPair (CalorieDiets.scav.model, CalorieDiets.scav.presenter, defBuilder);
+				AddDietPair (Budgets.simpleBudget.model, Budgets.simpleBudget.presenter, defBuilder);
 
 				// commanding...
 				view.plan.add += Handleadddietinstance;
@@ -156,7 +174,7 @@ namespace Consonance
 
 		void View_manageInfo (InfoManageType obj)
 		{
-			Task.Run (async () => {
+			PTask.Run (async () => {
 				await Task.Yield ();
 				if (view.currentTrackerInstance != null)
 					using (var hk = new HookedInfoLines (view.currentTrackerInstance.sender as IAbstractedTracker, obj))
@@ -166,8 +184,8 @@ namespace Consonance
 			
 		void View_trackerinstanceselected (TrackerInstanceVM obj)
 		{
-			Task.Run (() => {
-				// yeah, it was selected....
+			PTask.Run (() => {
+				// yeah, it was selected....cant stack overflow here...
 				//view.currentTrackerInstance = obj;
 				PushEatLines ();
 				PushBurnLines ();
@@ -178,7 +196,7 @@ namespace Consonance
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
 		{
-			Task.Run (() => {
+			PTask.Run (() => {
 				ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
 				de = ds.AddDays (1);
 				view.day = ds;
@@ -192,25 +210,28 @@ namespace Consonance
 
 		void Handleadddietinstance ()
 		{
-			Task.Run (async () => {
+			PTask.Run (async () => {
 				List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
 				List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM> ();
 				foreach (var ad in saveDiets)
 					dietnames.Add (ad.details);
 				var chooseViewTask = input.ChoosePlan ("Select Diet Type", dietnames, -1);
-				var addViewTask = saveDiets [await chooseViewTask.Result].StartNewTracker ();
-				await addViewTask.Pushed;
-				chooseViewTask.Pop();
+				chooseViewTask.Completed.ContinueWith(async index =>
+				{
+					var addViewTask = saveDiets [index.Result].StartNewTracker ();
+					await addViewTask.Pushed;
+					chooseViewTask.Pop();
+				});
 			});
 		}
 
 		void Handleremovedietinstance (TrackerInstanceVM obj)
 		{
-			Task.Run (() => (obj.sender as IAbstractedTracker).RemoveTracker (obj));
+			PTask.Run (() => (obj.sender as IAbstractedTracker).RemoveTracker (obj));
 		}
 		void View_editdietinstance (TrackerInstanceVM obj)
 		{
-			Task.Run (() => (obj.sender as IAbstractedTracker).EditTracker (obj));
+			PTask.Run (() => (obj.sender as IAbstractedTracker).EditTracker (obj));
 		}
 
 		void PushEatLines()
@@ -264,16 +285,17 @@ namespace Consonance
 					lastBuild.Add (d);
 				}
 			foreach (var vm in lastBuild)
-				vm.trackChanged = v => {
-					PushTracking (); // lazy way.
-				};
+				vm.trackChanged = v => PushTracking (); // lazy way.
+			Debug.WriteLine("Setting Trackers");
 			view.SetInstances (lastBuild);
 			// change current diet if we have to.
 			if (currentRemoved || view.currentTrackerInstance == null) {
+				Debug.WriteLine("Attempting to default to a tracker instance, lastbuild has " + lastBuild.Count);
 				// select the first one thats open today
 				foreach (var d in lastBuild) {
 					if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
 						view.currentTrackerInstance = d;
+						Debug.WriteLine("Selecting tracker defaultly");
 						PushEatLines ();
 						PushBurnLines ();
 						PushTracking ();
@@ -298,12 +320,13 @@ namespace Consonance
 
 		void HandleViewModelsChanged (IAbstractedTracker sender, DietVMChangeEventArgs args)
 		{
-			// check its from the active diet
+			// we want these from any registered tracker
+			if(args.changeType == DietVMChangeType.Instances)
+				PushDietInstances ();
+			
+			// check its from the active tracker
 			if (view.currentTrackerInstance == null || Object.ReferenceEquals (view.currentTrackerInstance.sender, sender)) {
 				switch (args.changeType) {
-				case DietVMChangeType.Instances:
-					PushDietInstances ();
-					break;
 				case DietVMChangeType.EatEntries:
 					PushEatLines ();
 					PushTracking ();
@@ -335,8 +358,20 @@ namespace Consonance
 		TrackerInstanceVM currentTrackerInstance { get; set; }
 		ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get; }
 		event Action<InfoManageType> manageInfo;
+		void UIThread (Action a);
 	}
 	public enum InfoManageType { In, Out };
+	public interface IPlatform
+	{
+		ITasks TaskOps { get; }
+	}
+	public interface ITasks
+	{
+		Task RunTask (Func<Task> asyncMethod);
+		Task RunTask (Action syncMethod);
+		Task<T> RunTask<T> (Func<Task<T>> asyncMethod);
+		Task<T> RunTask<T> (Func<T> syncMethod);
+	}
 	public interface IPlanCommands
 	{
 		ICollectionEditorBoundCommands<EntryLineVM> eat { get; }
@@ -357,35 +392,27 @@ namespace Consonance
 		event Action<T> edit;
 		event Action<T> select;
 	}
-	public class ViewTask
+	interface IViewTask 
 	{
-		public readonly Task Result, Pushed;
-		readonly Action pop;
-		public ViewTask(Task Result, Task Pushed, Action pop)
-		{
-			this.Result = Result;
-			this.pop = pop;
-			this.Pushed = Pushed;
-		}
-		public void Pop() { pop (); }
+		Task Completed {get;}
+		Task Pushed {get;}
+		void Pop();
 	}
-	public class ViewTask<TResult>
+	public class ViewTask<TResult> : IViewTask
 	{
-		public readonly Task<TResult> Result;
-		public readonly Task Pushed;
-		readonly Action pop;
-		public ViewTask(Task<TResult> Result, Task Pushed, Action pop)
-		{
-			this.Result = Result;
-			this.pop = pop;
-			this.Pushed = Pushed;
-		}
+		Task IViewTask.Completed { get { return Completed; } }
+		public Task<TResult> Completed {get;private set;}
+		public Task Pushed {get;private set;}
 		public void Pop() { pop (); }
-		public static implicit operator ViewTask(ViewTask<TResult> me)
+		readonly Action pop;
+		public ViewTask(Action pop, Task pushed, Task<TResult> completed)
 		{
-			return new ViewTask (me.Result, me.Pushed, me.pop);
+			this.Pushed = pushed;
+			this.pop = pop;
+			this.Completed = completed;
 		}
 	}
+	[Flags]
 	public enum InfoCallType { AllowManage = 1, AllowSelect = 2 };
 	public interface IUserInput
 	{
@@ -424,14 +451,27 @@ namespace Consonance
 	public class OptionGroupValue 
 	{
 		public readonly IReadOnlyList<String> OptionNames;
-		public int SelectedOption = 0;
+		public int SelectedOption { get; set; }
 		public OptionGroupValue(IEnumerable<String> options)
 		{
+			SelectedOption = 0;
 			OptionNames = new List<String> (options);
 		}
 		public static implicit operator int(OptionGroupValue other)
 		{
 			return other.SelectedOption;
+		}
+		public override string ToString ()
+		{
+			StringBuilder sb = new StringBuilder();
+			for(int i=0;i<OptionNames.Count;i++)
+			{
+				if (i == SelectedOption) sb.Append ("[");
+				sb.Append (OptionNames [i]);
+				if (i == SelectedOption) sb.Append ("]");
+				if (i != OptionNames.Count-1) sb.Append (" | ");
+			}
+			return sb.ToString ();
 		}
 	}
 	public class InfoSelectValue
@@ -439,6 +479,11 @@ namespace Consonance
 		public InfoLineVM selected {get;set;}
 		public event Action choose = delegate { };
 		public void OnChoose() { choose(); }
+
+		public override string ToString ()
+		{
+			return string.Format ("Selected={0}", selected == null ? "None" : selected.name);
+		}
 	}
 	public interface IValueRequest<V>
 	{
@@ -450,8 +495,26 @@ namespace Consonance
 		bool valid { set; } // if we want to check the value set is ok
 		bool read_only { set; } // if we want to check the value set is ok
 	}
-	public class RequestStorageHelper<V>
+	public interface IRequestStorageHelper
 	{
+		void Reset();
+		event Action requestChanged;
+		bool requestValid {set;}
+		Object requestValue { get; set; }
+		object CGet (IValueRequestFactory fact, Func<IValueRequestFactory, Func<String, Object>> FindRequestDelegate);
+	}
+	public class RequestStorageHelper<V> : IRequestStorageHelper
+	{
+		#region IRequestStorageHelper implementation
+		public event Action requestChanged { add { request.changed += value; } remove{ request.changed -= value; } }
+		public Object requestValue { get { return request.value; } set { request.value = (V)value; } }
+		public object CGet (IValueRequestFactory fact, Func<IValueRequestFactory, Func<String, Object>> FindRequestDelegate)
+		{
+			return CGet ((Func<String, IValueRequest<V>>)FindRequestDelegate (fact));
+		}
+		public bool requestValid { set { request.valid = value; } }
+		#endregion
+
 		public IValueRequest<V> request { get; private set; }
 		readonly String name;
 		readonly Func<V> defaultValue = () => default(V);
@@ -462,7 +525,7 @@ namespace Consonance
 			this.defaultValue = defaultValue;
 			name = requestName;
 		}
-		bool shouldReset = false;
+		bool shouldReset = true; // initiailisation
 		public void Reset()
 		{
 			if (!(shouldReset = request == null)) {

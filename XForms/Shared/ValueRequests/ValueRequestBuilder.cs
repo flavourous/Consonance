@@ -21,7 +21,7 @@ namespace Consonance.XamarinFormsView
 			ValueRequestView vrv = null;
 			TaskCompletionSource<bool> tcs_all = new TaskCompletionSource<bool> ();
 			TaskCompletionSource<EventArgs> tcs_push = new TaskCompletionSource<EventArgs> ();
-			Device.BeginInvokeOnMainThread (async () => {
+			ViewWrapper.InvokeOnMainThread (async () => {
 				vrv = new ValueRequestView ();
 				bool success = false; 
 				TaskCompletionSource<bool> tcs_each = new TaskCompletionSource<bool> ();
@@ -55,7 +55,7 @@ namespace Consonance.XamarinFormsView
 		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)
 		{
 			// the object can be modified from other threads of course.
-			Device.BeginInvokeOnMainThread (() => {
+			ViewWrapper.InvokeOnMainThread (() => {
 				switch (e.ListChangedType) {
 				case ListChangedType.Reset:
 					vrv.ClearRows ();
@@ -93,6 +93,8 @@ namespace Consonance.XamarinFormsView
 		public IValueRequest<bool> BoolRequestor (string name) { return new ValueRequestVM<bool> (new ValueRequestTemplate (), name); }
 		public IValueRequest<EventArgs> ActionRequestor (string name) { return new ValueRequestVM<EventArgs> (new ValueRequestTemplate (), name); }
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new ValueRequestVM<Barcode> (new ValueRequestTemplate (), name); }
+		public IValueRequest<int> IntRequestor (string name){ return new ValueRequestVM<int> (new ValueRequestTemplate (), name); }
+		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return new ValueRequestVM<OptionGroupValue> (new ValueRequestTemplate (), name); }
 		#endregion
 	}
 

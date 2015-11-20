@@ -10,10 +10,9 @@ namespace Consonance
 
 		// recurrance
 		readonly RequestStorageHelper<OptionGroupValue> recurranceMode;
-		readonly RequestStorageHelper<DateTime> recurrStart;
 		readonly RequestStorageHelper<int> recurrDayOfMonth;
 		readonly RequestStorageHelper<TimeSpan> recurrNSpan;
-		readonly RequestStorageHelper<bool> recurrEnded;
+		readonly RequestStorageHelper<bool> recurrForever;
 		readonly RequestStorageHelper<DateTime> recurrEnd;
 
 		public DefaultEntryRequests()
@@ -23,11 +22,10 @@ namespace Consonance
 			var ogv = new OptionGroupValue (new[] { "None", "Day of month", "Per days" });
 
 			recurranceMode = new RequestStorageHelper<OptionGroupValue>("Repeat", () => ogv, ValidateRecurr);
-			recurrStart= new RequestStorageHelper<DateTime> ("Starting", () => DateTime.Now, ValidateRecurr);
 			recurrDayOfMonth = new RequestStorageHelper<int> ("Day of month", () => 1, ValidateRecurr);
 			recurrNSpan= new RequestStorageHelper<TimeSpan>("Repeat this often", () => TimeSpan.FromDays(7), ValidateRecurr);
-			recurrEnded = new RequestStorageHelper<bool> ("Repeat forever", () => true, ValidateRecurr);
-			recurrEnd= new RequestStorageHelper<DateTime>("Stop repeating by", () => DateTime.Now.AddDays(14), validate recurr);
+			recurrForever = new RequestStorageHelper<bool> ("Repeat forever", () => true, ValidateRecurr);
+			recurrEnd= new RequestStorageHelper<DateTime>("Stop repeating by", () => DateTime.Now.AddDays(14), ValidateRecurr);
 		}
 		void Validate()
 		{
@@ -36,16 +34,15 @@ namespace Consonance
 		}
 		void ValidateRecurr()
 		{
-			recurrStart.request.valid = !recurrEnded || recurrStart < recurrEnd;
-			recurrEnd.request.valid = recurrStart < recurrEnd;
-			recurrEnded.request.valid = true;
+			recurrEnd.request.valid = when.request.value < recurrEnd.request.value;
+			recurrForever.request.valid = true;
 			recurranceMode.request.valid = true;
-			switch (recurranceMode) {
+			switch ((RecurranceType)recurranceMode.request.value.SelectedOption) {
 			case RecurranceType.EveryNDays:
 				recurrNSpan.request.valid = (int)recurrNSpan.request.value.TotalDays > 0;
 				break;
 			case RecurranceType.DayOfMonth:
-				recurrDayOfMonth > 0 && recurrDayOfMonth <= 27; // 27 days in july...sooooyeah.
+				recurrDayOfMonth.request.valid = (int)recurrDayOfMonth > 0 && (int)recurrDayOfMonth <= 27; // 27 days in july...sooooyeah.
 				break;
 			}
 		}
@@ -53,86 +50,90 @@ namespace Consonance
 		{
 			entry.entryName = name;
 			entry.entryWhen = when;
-			entry.repeatType = recurranceMode;
-			entry.repeatStart = recurrStart;
-			if (recurranceMode == RecurranceType.DayOfMonth) entry.repeatData = recurrDayOfMonth;
-			if (recurranceMode == RecurranceType.EveryNDays) entry.repeatData = recurrNSpan.request.value.TotalDays;
-			entry.repeatEnd = recurrEnded ? recurrEnd : null;
+			entry.repeatType = (RecurranceType) recurranceMode.request.value.SelectedOption;
+			if (entry.repeatType == RecurranceType.DayOfMonth) entry.repeatData = (int)recurrDayOfMonth;
+			if (entry.repeatType == RecurranceType.EveryNDays) entry.repeatData = (int)recurrNSpan.request.value.TotalDays;
+			entry.repeatEnd = recurrEnd;
+			entry.repeatForever = recurrForever;
 		}
 		public void PushInDefaults(BaseEntry editing, IBindingList requestPackage, IValueRequestFactory fac)
 		{
 			// no reset here...for entries...event registration clearing is automatic though.
-			requestPackage.Add (name.CGet (fac.StringRequestor));
-			requestPackage.Add (when.CGet (fac.DateRequestor));
+			var nr = name.CGet (fac.StringRequestor);
+			var wr = when.CGet (fac.DateRequestor);
 
 			// set up recurrance stuff....off by default, so lets add the repeat mode button
 			var rMode = recurranceMode.CGet(fac.OptionGroupRequestor);
-			requestPackage.Add(rMode);
 
 			// NOTE dont forget, this package will be added to after/before.  Gotta remember starting index and insert there each time etc.
-			int firstItem = requestPackage.Count;
+			int firstItem = -1;
 			requestPackage.ListChanged += (sender, e) => firstItem = requestPackage.Contains (rMode) ? requestPackage.IndexOf (rMode) + 1 : firstItem;
 
 			// and we need to preload the others for maybe adding later.
-			var rStart = recurrStart.CGet(fac.DateRequestor);
-
-			var rEnded = recurrEnded.CGet (fac.BoolRequestor);
+			var rRepForever = recurrForever.CGet (fac.BoolRequestor);
 			var rEnd = recurrEnd.CGet (fac.DateRequestor);
 
-			var rDaySpan = recurrNSpan.CGet (fac.IntRequestor);
+			var rDaySpan = recurrNSpan.CGet (fac.TimeSpanRequestor);
 			var rMonthDay = recurrDayOfMonth.CGet (fac.IntRequestor);
 
 			Action aEnded = () => {
-				if (rEnded && requestPackage.Contains (rEnd))
-					requestPackage.Insert (requestPackage.IndexOf (rEnd) + 1, rEnded);
-				else
-					requestPackage.Remove (rEnded);
+				if (!(bool)recurrForever)
+				{
+					if(requestPackage.Contains (rRepForever) && !requestPackage.Contains (rEnd))
+						requestPackage.Insert (requestPackage.IndexOf (rRepForever) + 1, rEnd);
+				}
+				else requestPackage.Remove (rEnd);
 			};
 
+			// push in reqs
+			requestPackage.Add(nr, wr, rMode);
+
 			// ok how are we set up?
-			recurranceMode.request.changed += () => {
+			Action rModeChanged = () => {
 				// ... so  when one is chosen we should set things up.
-				switch(recurranceMode)
+				switch((RecurranceType)recurranceMode.request.value.SelectedOption)
 				{
 				case RecurranceType.None:
-					requestPackage.RemoveAll(rStart,rEnded,rEnd,rDaySpan, rMonthDay); // fails nicely.
+					requestPackage.RemoveAll(rRepForever,rEnd,rDaySpan, rMonthDay); // fails nicely.
 					break;
 				case RecurranceType.EveryNDays:
 					requestPackage.RemoveAll(rMonthDay);
-					requestPackage.Ensure(firstItem, rStart, rDaySpan, rEnded);
+					requestPackage.Ensure(firstItem, rDaySpan, rRepForever);
 					aEnded();
 					break;
 				case RecurranceType.DayOfMonth:
 					requestPackage.RemoveAll(rDaySpan);
-					requestPackage.Ensure(firstItem, rStart, rMonthDay, rEnded);
+					requestPackage.Ensure(firstItem, rMonthDay, rRepForever);
 					aEnded();
 					break;
 				}
 			};
+
 			// this changes too! but it can only itself change while mode != none (or I hope so)
-			recurrEnded.request.changed += aEnded;
+			recurrForever.request.changed += aEnded;
+			recurranceMode.request.changed += rModeChanged;
 
 			// set exiting data
 			if (editing != null) {
 				name.request.value = editing.entryName;
 				when.request.value = editing.entryWhen;
-				recurrEnded = editing.repeatEnd.HasValue;
-				if (editing.repeatEnd.HasValue) recurrEnd = editing.repeatEnd.Value;
-				recurrStart = editing.repeatStart;
-				recurranceMode = editing.repeatType;
-				if (recurranceMode == RecurranceType.DayOfMonth) recurrDayOfMonth = editing.repeatData;
-				if (recurranceMode == RecurranceType.EveryNDays) recurrNSpan = TimeSpan.FromDays (editing.repeatData);
+				recurrForever.request.value = editing.repeatForever;
+				recurrEnd.request.value = editing.repeatEnd;
+				recurranceMode.request.value.SelectedOption = (int)editing.repeatType;
+				if (editing.repeatType == RecurranceType.DayOfMonth) recurrDayOfMonth.request.value = editing.repeatData;
+				if (editing.repeatType == RecurranceType.EveryNDays) recurrNSpan.request.value = TimeSpan.FromDays (editing.repeatData);
 			}
+
+			rModeChanged (); //  needed because we could be on a non-initialiation call from CreationFields for example.
 		}
 		public void ResetRequests()
 		{
 			when.Reset ();
 			name.Reset ();
 			recurranceMode.Reset ();
-			recurrStart.Reset ();
 			recurrDayOfMonth.Reset ();
 			recurrNSpan.Reset ();
-			recurrEnded.Reset ();
+			recurrForever.Reset ();
 			recurrEnd.Reset ();
 		}
 	}
@@ -180,26 +181,34 @@ namespace Consonance
 				if (dietEnded) thisone.ended = dietEnd;
 			}
 		}
+		public void Reset()
+		{
+			dietName.Reset ();
+			dietStart.Reset ();
+			dietEnd.Reset ();
+			dietEnded.Reset ();
+		}
 		public void PushInDefaults(TrackerInstance editing, IBindingList requestPackage, IValueRequestFactory fac)
 		{
 			// switchy state 
 			this.editing = editing != null;
 
+			// get them ready
+			var cName = dietName.CGet (fac.StringRequestor);
+			var cWhen = dietStart.CGet (fac.DateRequestor);
+			var cEndWhen = dietEnd.CGet (fac.DateRequestor); 
+			var cHasEnded = dietEnded.CGet (fac.BoolRequestor);
+
 			// CGet method will clear listners to changed, so no need for unhooking madness..tis stateful.
-			dietName.Reset();
-			dietStart.Reset ();
-			requestPackage.Add (dietName.CGet (fac.StringRequestor));
-			requestPackage.Add (dietStart.CGet (fac.DateRequestor));
+			requestPackage.Add (cName);
+			requestPackage.Add (cWhen);
 			if (this.editing) {
-				dietEnd.Reset ();
-				dietEnded.Reset ();
-				var ded = dietEnd.CGet (fac.DateRequestor); 
-				if(editing.hasEnded) requestPackage.Add(ded);
-				requestPackage.Add (dietEnded.CGet (fac.BoolRequestor));
+				requestPackage.Add (cHasEnded);
+				if(editing.hasEnded) requestPackage.Add(cEndWhen);
 				// lets hook this
 				dietEnded.request.changed += () => {
-					if(dietEnded) requestPackage.Add(ded);
-					else requestPackage.Remove(ded);
+					if(dietEnded) requestPackage.Add(cEndWhen);
+					else requestPackage.Remove(cEndWhen);
 				};
 
 				// we're editing, lets setty

@@ -64,6 +64,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Wrappers\InputWrapper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Wrappers\PlanCommandsWrapper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Wrappers\ViewWrapper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequests\Templates\IntRequest.xaml.cs">
+      <DependentUpon>IntRequest.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ValueRequests\Templates\OptionGroupValueRequest.xaml.cs">
+      <DependentUpon>OptionGroupValueRequest.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\ChoosePlanView.xaml">
@@ -113,6 +119,12 @@
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequests\Templates\BarcodeRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequests\Templates\IntRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ValueRequests\Templates\OptionGroupValueRequest.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
   </ItemGroup>

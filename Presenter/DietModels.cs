@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 using SQLite;
+using System.Diagnostics;
 
 namespace Consonance
 {
@@ -32,11 +33,11 @@ namespace Consonance
 		public String entryName{ get; set; }
 		public DateTime entryWhen { get; set; }
 
-		// repetition info
+		// repetition info (starts at when)
 		public RecurranceType repeatType { get; set; }
 		public int repeatData { get; set; }
-		public DateTime repeatStart { get; set; }
-		public DateTime? repeatEnd { get; set; }
+		public bool repeatForever { get; set; }
+		public DateTime repeatEnd { get; set; }
 
 		// clone
 		#region ICloneable implementation
@@ -54,15 +55,6 @@ namespace Consonance
 	[Flags]
 	public enum RecurranceType { None = 0, DayOfMonth = 1, EveryNDays = 2 }
 
-	public class BaseEatEntry : BaseEntry 
-	{
-		public double? grams { get; set; }		
-	}
-	public class BaseBurnEntry : BaseEntry 
-	{ 
-		public TimeSpan? duration { get; set; }
-	}
-
 	// when we're doing a diet here, created by diet class
 	public class TrackerInstance : BaseDB
 	{
@@ -77,35 +69,7 @@ namespace Consonance
 		public String name{ get; set; }
 	}
 
-	public class FireInfo : BaseInfo 
-	{
-		public TimeSpan duration {get;set;}
-		public double? calories {get;set;}
-	}
-	public class FoodInfo : BaseInfo
-	{
-		// Amount Info
-		public double grams { get; set; }
 
-		// Nutrient Info
-		public double? calories { get; set; }
-		public double? carbohydrate { get; set; }
-		public double? protein { get; set; }
-		public double? fat { get; set; }
-		public double? saturated_fat { get; set; }
-		public double? polyunsaturated_fat { get; set; }
-		public double? monounsaturated_fat { get; set; }
-		public double? trans_fat { get; set; }
-		public double? cholesterol { get; set; }
-		public double? sodium { get; set; }
-		public double? potassium { get; set; }
-		public double? fiber { get; set; }
-		public double? sugar { get; set; }
-		public double? vitamin_a { get; set; }
-		public double? vitamin_c { get; set; }
-		public double? calcium { get; set; }
-		public double? iron { get; set; }
-	}
 	#endregion
 
 	#region DIET_PLAN_INTERFACES
@@ -221,6 +185,7 @@ namespace Consonance
 	
 		public DietInstType StartNewTracker()
 		{
+			PDebug.WriteWithShortType ("Comitting model for new tracker", GetType ());
 			var di = model.New ();
 			conn.Insert (di as DietInstType);
 			return di;
@@ -244,8 +209,8 @@ namespace Consonance
 		}
 		public void RemoveTracker(DietInstType rem)
 		{
-			conn.Delete<EatType>("dietinstanceid = " + rem.id);
-			conn.Delete<BurnType>("dietinstanceid = " + rem.id);
+			conn.Delete<EatType>("trackerinstanceid = " + rem.id);
+			conn.Delete<BurnType>("trackerinstanceid = " + rem.id);
 			conn.Delete<DietInstType> (rem.id);
 		}
 		public IEnumerable<DietInstType> GetTrackers()
@@ -361,28 +326,34 @@ namespace Consonance
 				(d => d.trackerinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end && d.repeatType == RecurranceType.None);
 			var repeatersQuery = conn.Table<EntryType> ().Where
 				(d => d.trackerinstanceid == diet.id && d.repeatType != RecurranceType.None &&
-					d.repeatStart <= end &&	(d.repeatEnd == null || d.repeatEnd >= start)
+					d.entryWhen <= end &&	(d.repeatForever || d.repeatEnd >= start)
 				);
 			foreach (var ent in normalQuery) yield return ent;
-			foreach (var ent in repeatersQuery) {
+			List<EntryType> ents = new List<EntryType>(repeatersQuery);
+			foreach (var entl in ents) {
+				EntryType ent = entl;
 				//  we will return N entries, with changed entryWhens, all with the same id
-				DateTime begin = ent.repeatStart;
-				DateTime finish = (ent.repeatEnd.HasValue && ent.repeatEnd.Value < end) ? ent.repeatEnd.Value : end;
+				DateTime begin = ent.entryWhen; // this is fixed in the switch
+				DateTime finish = (!ent.repeatForever && ent.repeatEnd < end) ? ent.repeatEnd: end;
 				Func<DateTime, DateTime> inc = null;
 				switch (ent.repeatType) {
-					case RecurranceType.EveryNDays:
-						if (begin < start) // oh ok, we gotta % the first drop into our range.
+				case RecurranceType.EveryNDays:
+					if (begin < start) // oh ok, we gotta % the first drop into our range.
 							begin = start.AddDays (ent.repeatData - (start - begin).TotalDays % ent.repeatData);
-						inc = b => b.AddDays (ent.repeatData);
-						break;
-					case RecurranceType.DayOfMonth:
-						if(begin.Day > ent.repeatData)
-							begin.AddMonths (1);
-						begin.AddDays(ent.repeatData - begin.Day);
-						inc = b => b.AddMonths (1);
-						break;
+					inc = b => b.AddDays (ent.repeatData);
+					break;
+				case RecurranceType.DayOfMonth:
+						// align to next occurance of day after the when
+					var buse = start > begin ? start : begin;
+					if (buse.Day > ent.repeatData)
+						buse = buse.AddMonths (1);
+					buse = buse.AddDays (ent.repeatData - buse.Day);
+					inc = b => b.AddMonths (1);
+					begin = buse;
+					break;
 				}
-				while (begin < end) {					
+				if (inc == null) break; // srsly I saw it happen.
+				while (begin < end) {
 					yield return (EntryType)ent.CloneWithDate (begin);
 					begin = inc (begin);
 				}

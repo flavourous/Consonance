@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace Consonance
 {
@@ -24,25 +25,41 @@ namespace Consonance
 		{
 			return listCreator(from s in myself select creator(s));
 		}
-		public static void RemoveAll<T>(this IList<T> list, params T[] items)
+		public static void RemoveAll(this IList list, params Object[] items)
 		{
 			foreach (var t in items)
 				list.Remove (t);
 		}
-		public static void AddAll<T>(this IList<T> list, bool allowDuplicates, params T[] items)
+		public static void AddAll<T>(this IList<T> list, IEnumerable<T> items)
 		{
 			foreach (var t in items)
-				if(allowDuplicates || !list.Contains(t))
+				list.Add (t);
+		}
+		public static void AddAll<T>(this IList<T> list, params T[] items)
+		{
+			foreach (var t in items)
 					list.Add (t);
 		}
-		public static void Ensure<T>(this IList<T> list, int index, params T[] items)
+		public static void Add(this IList list, params Object[] items)
+		{
+			for (int i = 0; i < items.Length; i++)
+				list.Add (items [i]);
+		}
+		public static void Ensure(this IList list, int index, params Object[] items)
 		{
 			foreach (var t in items)
-				if (list [index] != t) {
+				if (list.Count >= index || !Object.Equals (list [index], t)) {
 					list.Remove (t);
 					list.Insert (index, t);
 					index++;
 				}
+		}
+	}
+	public static class PDebug
+	{
+		public static void WriteWithShortType(String s, Type t)
+		{
+			Debug.WriteLine (t.Name.Substring(0,t.Name.IndexOf("`")) + "<" + t.GenericTypeArguments[0].Name + ",...>"+ ": " + s);
 		}
 	}
 	public static class SerialiserFactory

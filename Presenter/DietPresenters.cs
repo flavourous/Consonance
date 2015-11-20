@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 using SQLite;
+using System.Diagnostics;
 
 namespace Consonance
 {
@@ -144,9 +145,9 @@ namespace Consonance
 		IEnumerable<EntryLineVM>  OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime day);
 		IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime day);
-		ViewTask StartNewTracker();
+		IViewTask StartNewTracker();
 		void RemoveTracker (TrackerInstanceVM dvm);
-		ViewTask EditTracker (TrackerInstanceVM dvm);
+		IViewTask EditTracker (TrackerInstanceVM dvm);
 		IEnumerable<InfoLineVM> InInfos (bool onlycomplete);
 		IEnumerable<InfoLineVM> OutInfos (bool onlycomplete);
 		IFindList<InfoLineVM> InFinder {get;}
@@ -228,8 +229,10 @@ namespace Consonance
 				changeType = DietVMChangeType.EatInfos;
 			if (e.Table.MappedType.Equals (typeof(BurnInfoType)))
 				changeType = DietVMChangeType.BurnInfos;
-			if (changeType != DietVMChangeType.None)
+			if (changeType != DietVMChangeType.None) {
+				Debug.WriteLine ("DataChange - " + changeType.ToString(), GetType ().ToString ().Replace ("Consonance.", ""));	
 				ViewModelsChanged (this, new DietVMChangeEventArgs () { changeType = changeType });
+			}
 		}
 
 		public event DietVMChangeEventHandler ViewModelsChanged = delegate { };
@@ -332,21 +335,22 @@ namespace Consonance
 				yield return vm;
 			}
 		}
-		public ViewTask StartNewTracker()
+		public IViewTask StartNewTracker()
 		{
+			PDebug.WriteWithShortType("Starting new tracker", GetType ());
 			var pages = new List<GetValuesPage> (modelHandler.model.CreationPages (instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
-			vt.Result.ContinueWith (rt => {
+			vt.Completed.ContinueWith(async rt => {
 				vt.Pop();
 				if (rt.Result) modelHandler.StartNewTracker ();
 			});
 			return vt;
 		}
-		public ViewTask EditTracker (TrackerInstanceVM dvm)
+		public IViewTask EditTracker (TrackerInstanceVM dvm)
 		{
 			var pages = new List<GetValuesPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
-			vt.Result.ContinueWith (rt => {
+			vt.Completed.ContinueWith(rt => {
 				vt.Pop();
 				if (rt.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
 			});
@@ -359,7 +363,7 @@ namespace Consonance
 			if ((ct = modelHandler.outhandler.Count (diet) + modelHandler.inhandler.Count (diet)) > 0)
 				getInput.WarnConfirm (
 					"That instance still has " + ct + " entries, they will be removed if you continue.",
-					async () => await Task.Run(() => modelHandler.RemoveTracker (diet))
+					async () => await PTask.Run(() => modelHandler.RemoveTracker (diet))
 				);
 			else modelHandler.RemoveTracker (diet);
 		}
@@ -386,7 +390,7 @@ namespace Consonance
 			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + info_plural);
 			Action chooseDelegate = null;
-			chooseDelegate = () => Task.Run (async () => {
+			chooseDelegate = () => PTask.Run (async () => {
 				var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;
 				using (var hk = new HookedInfoLines (this, imt))
 				{
@@ -443,10 +447,11 @@ namespace Consonance
 			infoRequest.changed += checkFields;
 
 			var gv = getValues.GetValues (new[]{ requests });
-			var result = await gv.Result; 
-			gv.Pop (); 
-			if(result) editit ();
-			infoRequest.changed -= checkFields;
+			gv.Completed.ContinueWith(result => {
+				gv.Pop (); 
+				if (result.Result) editit ();
+				infoRequest.changed -= checkFields;
+			});
 		}
 
 		public void RemoveIn (EntryLineVM toRemove)
@@ -475,38 +480,41 @@ namespace Consonance
 
 		public void AddInInfo(IValueRequestBuilder bld)
 		{
-			DoInfo<EatInfoType> ("Create a Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld).Wait();
+			DoInfo<EatInfoType> ("Create a Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld);
 		}
 		public void EditInInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
-			DoInfo<EatInfoType> ("Edit Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType).Wait();
+			DoInfo<EatInfoType> ("Edit Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
 		}
 		public void RemoveInInfo(InfoLineVM ivm)
 		{
 			modelHandler.inhandler.Remove (ivm.originator as EatInfoType);
 		}
 
-		async Task DoInfo<I>(String title,IFindList<InfoLineVM> finder, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
+		void DoInfo<I>(String title,IFindList<InfoLineVM> finder, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
 		{
 			bool editing = toEdit != null;
 			var vros = editing ? creator.InfoFields (builder.requestFactory) : new ValueRequestFactory_FinderAdapter<I> (finder, creator, builder.requestFactory, getInput).GetRequestObjects ();
+			var gvp = new GetValuesPage (title);
+			gvp.SetList (vros);
 			if (editing) creator.FillRequestData (toEdit);
-			var vr = builder.GetValues (new[]{ new GetValuesPage (title, vros) });
-			var result = await vr.Result;
-			vr.Pop ();
-			if (result) {
-				if (editing) handler.Edit (toEdit);
-				else handler.Add ();
-			}
+			var vr = builder.GetValues (new[]{ gvp });
+			vr.Completed.ContinueWith(result => {
+				vr.Pop ();
+				if (result.Result) {
+					if (editing) handler.Edit (toEdit);
+					else handler.Add ();
+				}
+			});
 		}
 
 		public void AddOutInfo(IValueRequestBuilder bld)
 		{
-			DoInfo<BurnInfoType> ("Create a Fire",OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld).Wait();
+			DoInfo<BurnInfoType> ("Create a Fire",OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
 		}
 		public void EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
-			DoInfo<BurnInfoType> ("Edit Food", OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType).Wait ();
+			DoInfo<BurnInfoType> ("Edit Food", OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
 		}
 		public void RemoveOutInfo(InfoLineVM ivm)
 		{

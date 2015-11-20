@@ -47,7 +47,7 @@ namespace Consonance.XamarinFormsView
 		}
 		protected override void OnPropertyChanged ([CallerMemberName] string propertyName = null)
 		{
-			Device.BeginInvokeOnMainThread (() =>
+			ViewWrapper.InvokeOnMainThread (() =>
 				base.OnPropertyChanged (propertyName));
 		}
 		public TaskCompletionSource<InfoLineVM> completedTask;

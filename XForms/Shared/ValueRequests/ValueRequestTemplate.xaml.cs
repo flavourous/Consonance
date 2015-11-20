@@ -6,26 +6,44 @@ namespace Consonance.XamarinFormsView
 {
 	public partial class ValueRequestTemplate : ContentView
 	{
-		readonly Dictionary<Type, View> templateSelector;
+		#if DEBUG
+		static bool testingComplete = false;
+		#endif
+		static readonly Dictionary<Type, Func<View>> templateSelector= new Dictionary<Type, Func<View>> {
+			{ typeof(String), () => new StringRequest () },
+			{ typeof(double), () => new DoubleRequest () },
+			{ typeof(TimeSpan), () => new TimeSpanRequest () },
+			{ typeof(DateTime), () => new DateTimeRequest () },
+			{ typeof(bool), () => new BoolRequest () },
+			{ typeof(InfoSelectValue), () => new InfoSelectRequest () },
+			{ typeof(EventArgs), () => new ActionRequest () },
+			{ typeof(Barcode), () => new BarcodeRequest () },
+			{ typeof(int), () => new IntRequest () },
+			{ typeof(OptionGroupValue), () => new OptionGroupValueRequest () }
+		};
 		public ValueRequestTemplate ()
 		{
 			InitializeComponent ();
-			templateSelector = new Dictionary<Type, View> {
-				{ typeof(String), new StringRequest () },
-				{ typeof(double), new DoubleRequest () },
-				{ typeof(TimeSpan), new TimeSpanRequest () },
-				{ typeof(DateTime), new DateTimeRequest () },
-				{ typeof(bool), new BoolRequest () },
-				{ typeof(InfoSelectValue), new InfoSelectRequest () },
-				{ typeof(EventArgs), new ActionRequest () },
-				{ typeof(Barcode), new BarcodeRequest () }
-			};
+			#if DEBUG
+			if(!testingComplete)
+			{
+				foreach(var kv in templateSelector)
+				{
+					try { var view = kv.Value(); }
+					catch(Exception e) {
+						Console.WriteLine("Creating "+kv.Key.ToString()+" template failed");
+						Console.WriteLine(e.ToString());
+					}
+				}
+				testingComplete = true;
+			}
+			#endif
 		}
 		protected override void OnBindingContextChanged ()
 		{
 			if (BindingContext == null || BindingContext.GetType ().GetGenericArguments ().Length == 0)
 				Content = new Frame ();
-			else Content = templateSelector [BindingContext.GetType ().GetGenericArguments () [0]];
+			else Content = templateSelector [BindingContext.GetType ().GetGenericArguments () [0]]();
 			base.OnBindingContextChanged ();
 		}
 	}

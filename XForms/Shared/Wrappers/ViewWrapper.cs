@@ -11,6 +11,16 @@ namespace Consonance.XamarinFormsView
 {
 	class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, INotifyPropertyChanged
     {
+		public static void InvokeOnMainThread(Action act)
+		{
+			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs> ();
+			Device.BeginInvokeOnMainThread (() => {
+				act();
+				tcs.SetResult(new EventArgs());
+			});
+			tcs.Task.Wait ();
+		}
+
 		readonly MainTabs main;
 		public ViewWrapper(MainTabs main)
         {
@@ -21,16 +31,21 @@ namespace Consonance.XamarinFormsView
 			Debug.WriteLine ("viewwrapper injected");
         }
 
+		public void UIThread (Action a)
+		{
+			InvokeOnMainThread (a);
+		}
+
         // IView Properly //
 		public TrackerInstanceVM currentTrackerInstance 
 		{ 
 			get { return main.SelectedPlanItem; } 
-			set { Device.BeginInvokeOnMainThread (() => main.SelectedPlanItem = value); }
+			set { ViewWrapper.InvokeOnMainThread (() => main.SelectedPlanItem = value); }
 		}
 		
         public void SetEatLines(IEnumerable<EntryLineVM> lineitems)
         {
-			Device.BeginInvokeOnMainThread (() => {
+			ViewWrapper.InvokeOnMainThread (() => {
 				main.InItems.Clear ();
 				foreach (var itm in lineitems)
 					main.InItems.Add (itm);
@@ -38,7 +53,7 @@ namespace Consonance.XamarinFormsView
         }
         public void SetBurnLines(IEnumerable<EntryLineVM> lineitems)
         {
-			Device.BeginInvokeOnMainThread (() => {
+			ViewWrapper.InvokeOnMainThread (() => {
 				main.OutItems.Clear ();
 				foreach (var itm in lineitems)
 					main.OutItems.Add (itm);
@@ -47,7 +62,7 @@ namespace Consonance.XamarinFormsView
 		readonly Dictionary<TrackerInstanceVM, bool> toKeep_TI = new Dictionary<TrackerInstanceVM, bool> ();
         public void SetInstances(IEnumerable<TrackerInstanceVM> instanceitems)
 		{
-			Device.BeginInvokeOnMainThread(() => {
+			ViewWrapper.InvokeOnMainThread(() => {
 				main.PlanItems.Clear (); // lets figure out why no get here after add....
 				foreach (var itm in instanceitems)
 				{

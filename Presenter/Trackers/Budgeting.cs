@@ -1,8 +1,101 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace Consonance
 {
-	// well, there may be daily targets, but ther may be no daily targets, and many, different, other length targets.  need to
-	// refactor properly the simple tracky helper.  additional tracking ranges is dumb. remove and do properly.
+	// Models
+	public class SimpleBudgetEatEntry : BaseEntry
+	{
+		public double amount { get; set; } // eaten..
+		public int? quantity { get; set; } // burned...
+	}
+	public class SimpleBudgetBurnEntry : BaseEntry
+	{
+		public double amount { get; set; } // burned...
+		public int? quantity { get; set; } // burned...
+	}
+	// need seperate instance classes, otherwise get confused about which instances belong to which model/API
+	public class SimpleBudgetInstance_Simple : TrackerInstance 
+	{
+		public double budget {get;set;} // could easily be zero
+	}
+
+	public class ExpenditureInfo : BaseInfo
+	{
+		public double amount { get; set; } // burned...
+		public int? quantity { get; set; } // burned...
+	}
+	public class IncomeInfo : BaseInfo
+	{
+		public double amount { get; set; } // burned...
+		public int? quantity { get; set; } // burned...		
+	}
+
+	public class SBH : SimpleTrackerHolder<SimpleBudgetInstance_Simple, SimpleBudgetEatEntry, IncomeInfo, int, SimpleBudgetBurnEntry, ExpenditureInfo, int>
+	{
+		public SBH(IExtraRelfectedHelpy<IncomeInfo, ExpenditureInfo, int, int> h) : base(h) {
+		}
+	}
+
+	// Diet factory methods
+	public static class Budgets
+	{
+		public static SBH simpleBudget = new SBH (new SimpleBudget_SimpleTemplate ());
+	}
+
+	// Implimentations
+	public class SimpleBudget_SimpleTemplate : IExtraRelfectedHelpy<IncomeInfo, ExpenditureInfo, int, int>
+	{
+		readonly IReflectedHelpyQuants<IncomeInfo,int> _input = new SimpleBudget_HelpyIn();
+		public IReflectedHelpyQuants<IncomeInfo,int> input { get { return _input; } }
+		readonly IReflectedHelpyQuants<ExpenditureInfo,int> _output = new SimpleBudget_HelpyOut();
+		public IReflectedHelpyQuants<ExpenditureInfo,int> output { get { return _output; } }
+		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Finance budget", "Track spending goals and other finances.", "Finance");
+		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Earn", "Spend", "Incomes", "Expenses");
+		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
+		public String name { get { return TrackerDetails.name; } }
+		public String typename { get { return "Finance"; } }
+		public String trackedname { get { return "amount"; } }
+		public InstanceValue [] instanceValueFields { get { return new[] { 
+					InstanceValue.FromType(0.0, "Target", "budget", f=>f.DoubleRequestor)
+				}; } } // creating an instance
+		public SimpleTrackingTarget[] Calcluate(object[] fieldValues) 
+		{ 
+			List<SimpleTrackingTarget> targs = new List<SimpleTrackingTarget> ();
+			targs.Add (new SimpleTrackingTarget (new[] { 1 }, new[] { SimpleTrackingTarget.RangeType.DaysFromStart }, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			return targs.ToArray ();
+		}
+	}
+
+	// entry stuff...
+	class SimpleBudget_HelpyIn : IReflectedHelpyQuants<IncomeInfo,int>
+	{
+		#region IReflectedHelpyQuants implementation
+		public String trackedMember { get { return "amount"; } }
+		public string Convert (int quant) { return quant.ToString (); }
+		public int InfoFixedQuantity { get { return 1; } }
+		public InstanceValue quantifier { get { return InstanceValue.FromType (1, "Quantity", "quantity", f => f.IntRequestor); } }
+		public string[] calculation { get { return new[] { "amount" }; } }
+		public double Calcluate (int amount, double[] values) { return amount * values [0] / InfoFixedQuantity; }
+		public Func<string, IValueRequest<int>> FindRequestor (IValueRequestFactory fact) { return fact.IntRequestor; }
+		public Expression<Func<IncomeInfo, bool>> InfoComplete { get { return fi => true; } }
+		#endregion
+	}
+	class SimpleBudget_HelpyOut : IReflectedHelpyQuants<ExpenditureInfo,int>
+	{
+		#region IReflectedHelpyQuants implementation
+		public String trackedMember { get { return "amount"; } }
+		public string Convert (int quant) { return quant.ToString (); }
+		public int InfoFixedQuantity { get { return 1; } }
+		public InstanceValue quantifier { get { return InstanceValue.FromType (1, "Quantity", "quantity", f => f.IntRequestor); } }
+		public string[] calculation { get { return new[] { "amount" }; } }
+		public double Calcluate (int amount, double[] values) { return amount * values [0]; }
+		public Func<string, IValueRequest<int>> FindRequestor (IValueRequestFactory fact) { return fact.IntRequestor; }
+		public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get { return fi => true; } }
+		#endregion
+	}				
+
 }
 

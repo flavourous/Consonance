@@ -1,25 +1,57 @@
-﻿<Properties StartupItem="XForms\Droid\Consonance.XamarinFormsView.Droid.csproj" RefactoringSettings.EnableRefactorings="True">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Presenter\TrackerTemplates\SimpleTrackyHelpy.cs">
+﻿<Properties StartupItem="Consonance.ConsoleView\Consonance.ConsoleView.csproj" RefactoringSettings.EnableRefactorings="True">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Console" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Consonance.ConsoleView\Program.cs">
     <Files>
-      <File FileName="Presenter\TrackerTemplates\SimpleTrackyHelpy.cs" Line="77" Column="4" />
-      <File FileName="Presenter\Diets\CalorieDiet.cs" Line="356" Column="59" />
-      <File FileName="Presenter\DietPresenters.cs" Line="501" Column="10" />
-      <File FileName="Presenter\ValueRequestFactory_FinderAdapter.cs" Line="35" Column="58" />
+      <File FileName="Presenter\TrackerTemplates\SimpleTrackyHelpy.cs" Line="1" Column="1" />
+      <File FileName="Presenter\DietPresenters.cs" Line="498" Column="24" />
+      <File FileName="Presenter\ValueRequestFactory_FinderAdapter.cs" Line="1" Column="1" />
+      <File FileName="Presenter\DietModels.cs" Line="1" Column="1" />
+      <File FileName="c:\w\Consonance\Presenter\TrackerTemplates\Defaulters.cs" Line="1" Column="1" />
+      <File FileName="Presenter\Helper Classes.cs" Line="1" Column="1" />
+      <File FileName="Presenter\AppPresenter.cs" Line="109" Column="22" />
+      <File FileName="c:\w\Consonance\XForms\Shared\ValueRequests\ValueRequestBuilder.cs" Line="1" Column="1" />
+      <File FileName="Presenter\Trackers\CalorieDiet.cs" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Wrappers\ViewWrapper.cs" Line="1" Column="1" />
+      <File FileName="XForms\Shared\App.cs" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\InfoManageView.xaml.cs" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Wrappers\InputWrapper.cs" Line="62" Column="20" />
+      <File FileName="Consonance.ConsoleView\Program.cs" Line="16" Column="12" />
+      <File FileName="Consonance.ConsoleView\CView.cs" Line="7" Column="3" />
+      <File FileName="Consonance.ConsoleView\CInput.cs" Line="21" Column="17" />
+      <File FileName="Consonance.ConsoleView\CValueRequestBuilder.cs" Line="17" Column="41" />
+      <File FileName="Consonance.ConsoleView\CPlanCommands.cs" Line="20" Column="11" />
+      <File FileName="Consonance.ConsoleView\IConsolePager.cs" Line="104" Column="2" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
           <Node name="Consonance" expanded="True">
             <Node name="Consonance" expanded="True">
-              <Node name="Diets" expanded="True" />
-              <Node name="TrackerTemplates" expanded="True">
-                <Node name="SimpleTrackyHelpy.cs" selected="True" />
-              </Node>
+              <Node name="Trackers" expanded="True" />
+              <Node name="TrackerTemplates" expanded="True" />
             </Node>
-            <Node name="Consonance.XamarinFormsView" expanded="True" />
+            <Node name="Consonance.ConsoleView" expanded="True" selected="True">
+              <Node name="Properties" expanded="True" />
+            </Node>
+            <Node name="Consonance.XamarinFormsView" expanded="True">
+              <Node name="ValueRequests" expanded="True" />
+              <Node name="Views" expanded="True">
+                <Node name="ChoosePlanView.xaml" expanded="True" />
+                <Node name="InfoManageView.xaml" expanded="True" />
+              </Node>
+              <Node name="Wrappers" expanded="True" />
+            </Node>
+            <Node name="Consonance.XamarinFormsView.Droid" expanded="True">
+              <Node name="References" expanded="True">
+                <Node name="From Packages" expanded="True" />
+              </Node>
+              <Node name="ComponentReferenceFolder" expanded="True" />
+            </Node>
           </Node>
         </State>
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State />
       </Pad>
     </Pads>
   </MonoDevelop.Ide.Workbench>
@@ -28,6 +60,10 @@
       <Breakpoint file="E:\cygwin\home\Flavourous\Consonance\Consonance.AndroidView\MainActivity.cs" line="277" column="45" />
       <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="167" column="34" />
       <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="305" column="35" />
+      <Breakpoint file="C:\w\Consonance\Presenter\TrackerTemplates\SimpleTrackyHelpy.cs" line="441" column="28" />
+      <Breakpoint file="C:\w\Consonance\Presenter\AppPresenter.cs" line="159" column="3" />
+      <Breakpoint file="C:\w\Consonance\Presenter\AppPresenter.cs" line="117" column="1" />
+      <Breakpoint file="C:\w\Consonance\Consonance.ConsoleView\Program.cs" line="17" column="12" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>
