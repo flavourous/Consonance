@@ -248,9 +248,8 @@ namespace Consonance
 		}
 		void PushTracking()
 		{
-			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-			SetViewTrackerTracks (ti => ad.GetInTracking (ti, ds), view.SetEatTrack);
-			SetViewTrackerTracks (ti => ad.GetOutTracking (ti, ds), view.SetBurnTrack);
+			SetViewTrackerTracks (ti => (ti.sender as IAbstractedTracker).GetInTracking (ti, ds), view.SetEatTrack);
+			SetViewTrackerTracks (ti => (ti.sender as IAbstractedTracker).GetOutTracking (ti, ds), view.SetBurnTrack);
 		}
 		void SetViewTrackerTracks(Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
 		{

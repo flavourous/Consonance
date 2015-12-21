@@ -2,11 +2,14 @@
 using Consonance;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace Consonance.ConsoleView
 {
 	class CView : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, IConsolePage
 	{
+		public bool allowDefaultActions { get { return true; } }
 		readonly CPlanCommands pc;
 		public CView(CPlanCommands pc)
 		{
@@ -17,31 +20,64 @@ namespace Consonance.ConsoleView
 		public bool pageChanged { get; set; }
 		public string pageData 
 		{ 
-			get 
-			{
+			get {
 				pdb.Clear ();
 				pdb.AppendFormat ("Main Page\n=================================\n");
-				pdb.AppendFormat ("Date: {0}\n\n", day.ToShortDateString());
+				pdb.AppendFormat ("Date: {0}\n\n", day.ToShortDateString ());
 
 				int maxRows = Math.Min (10, ManyMax (inlines.Count, outlines.Count, instances.Count));
 				int colWid = 20;
-				if(currentTrackerInstance != null)
+				if (currentTrackerInstance != null)
 					pdb.Append (RowString (colWid, "Index", currentTrackerInstance.dialect.InputEntryVerb, currentTrackerInstance.dialect.OutputEntrytVerb, "Plan"));
-				else pdb.Append (RowString (colWid, "Index", "In", "Out", "Plan"));
+				else
+					pdb.Append (RowString (colWid, "Index", "In", "Out", "Plan"));
 				pdb.AppendLine ();
-				pdb.AppendLine (RowString (colWid, new String ('=', colWid + 4),  new String ('=', colWid + 4), new String ('=', colWid + 4), new String ('=', colWid + 4)));
+				pdb.AppendLine (RowString (colWid, new String ('=', colWid + 4), new String ('=', colWid + 4), new String ('=', colWid + 4), new String ('=', colWid + 4)));
 				int i = 0;
 				for (; i < maxRows; i++) {
-					pdb.Append (RowString (colWid, i.ToString(),
+					pdb.Append (RowString (colWid, i.ToString (),
 						i < inlines.Count ? inlines [i].name : "", 
 						i < outlines.Count ? outlines [i].name : "", 
-						i < instances.Count ? (OriginatorVM.OriginatorEquals(instances [i], currentTrackerInstance) ? "X " : "") + instances [i].name : ""));
-					pdb.AppendLine();
+						i < instances.Count ? (OriginatorVM.OriginatorEquals (instances [i], currentTrackerInstance) ? "X " : "") + instances [i].name : ""));
+					pdb.AppendLine ();
 				}
-				if (i == 0) pdb.AppendLine ("Nothing here!");
-				pdb.AppendLine ();
+				if (i == 0)
+					pdb.AppendLine ("Nothing here!");
+				pdb.AppendLine ("\n============================================");
+				String pad = " == ";
+				if (inTracks.Count == 0)
+					pdb.AppendLine ("No input tracking");
+				else {	
+					pdb.AppendLine (" :: input Screen Tracking :: ");
+					foreach (var tt in inTracks) {
+						pdb.AppendLine (pad + TTS (tt) + pad);
+						pad = "";
+					}
+				}
+				if (inTracks.Count == 0)
+					pdb.AppendLine ("No output tracking");
+				else 
+				{
+					pdb.AppendLine (" :: output Screen Tracking :: ");
+					pad = " == ";
+					foreach (var tt in outTracks) {
+						pdb.AppendLine (pad + TTS (tt) + pad);
+						pad = "";
+					}
+				}
 				return pdb.ToString ();
-			} 
+			}
+		}
+		String TTS(TrackerTracksVM tt)
+		{
+			StringBuilder sb = new StringBuilder ();
+			sb.AppendFormat ("{0} - ", tt.instanceName);
+			foreach (var t in tt.tracks) {
+				double bal = (from v in t.inValues select v.value).Sum ();
+				bal -= (from v in t.outValues select v.value).Sum ();
+				sb.AppendFormat ("{0}: {1}/{2}   ", t.valueName, bal, t.targetValue);
+			}
+			return sb.ToString();
 		}
 		int ManyMax(params int[] vals)
 		{
@@ -150,14 +186,28 @@ namespace Consonance.ConsoleView
 		#endregion
 
 		// Data incoming
-		public void SetEatTrack (TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { }
-		public void SetBurnTrack (TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { }
 		IReadOnlyList<EntryLineVM> inlines = new List<EntryLineVM>(), outlines= new List<EntryLineVM>();
 		public void SetEatLines (IEnumerable<EntryLineVM> lineitems) { inlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
 		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems) { outlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
-		IReadOnlyList<TrackerInstanceVM> instances= new List<TrackerInstanceVM>();
 
+		IReadOnlyList<TrackerInstanceVM> instances= new List<TrackerInstanceVM>();
 		public void SetInstances (IEnumerable<TrackerInstanceVM> instanceitems) { instances = new List<TrackerInstanceVM> (instanceitems); pageChanged = true; }
+
+		IReadOnlyList<TrackerTracksVM> inTracks = new List<TrackerTracksVM>(), outTracks= new List<TrackerTracksVM>();
+		public void SetEatTrack (TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { 
+			var its = new List<TrackerTracksVM> (others);
+			its.Insert(0, current);
+			inTracks = its;
+			pageChanged = true;
+		}
+		public void SetBurnTrack (TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { 
+			var its = new List<TrackerTracksVM> (others);
+			its.Insert(0, current);
+			outTracks = its;
+			pageChanged = true;
+		}
+
+		// platformy...?
 		public void UIThread (Action a) { a (); }
 
 		// Some data members

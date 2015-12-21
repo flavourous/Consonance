@@ -35,9 +35,7 @@ namespace Consonance
 
 		// repetition info (starts at when)
 		public RecurranceType repeatType { get; set; }
-		public int repeatData { get; set; }
-		public bool repeatForever { get; set; }
-		public DateTime repeatEnd { get; set; }
+		public byte[] repeatData { get; set; }
 
 		// clone
 		#region ICloneable implementation

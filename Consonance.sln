@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consonance.XamarinFormsView
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consonance.ConsoleView", "Consonance.ConsoleView\Consonance.ConsoleView.csproj", "{581D0F9A-ADA5-41D0-B049-2CAB1F1BF0FE}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibRTP", "..\LibRTP\LibRTP\LibRTP.shproj", "{1C3091EB-5350-48F8-AA8A-51E7D4656DA0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Ad-Hoc|Any CPU = Ad-Hoc|Any CPU

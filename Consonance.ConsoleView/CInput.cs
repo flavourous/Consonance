@@ -25,6 +25,7 @@ namespace Consonance.ConsoleView
 		}
 		class PlanChoosePage : IConsolePage
 		{
+			public bool allowDefaultActions { get { return true; } }
 			readonly String title;
 			readonly List<String> options;
 			readonly Action<int> choose;
@@ -72,13 +73,50 @@ namespace Consonance.ConsoleView
 			pushed.SetResult(null);
 			return vt;
 		}
+		class WarnPage : IConsolePage
+		{
+			public bool allowDefaultActions { get { return false; } }
+			readonly String action;
+			readonly Promise compl;
+			readonly TaskCompletionSource<EventArgs> fin;
+			public WarnPage(String action, Promise compl, TaskCompletionSource<EventArgs> fin)
+			{
+				this.action=action;
+				this.compl=compl;
+				this.fin = fin;
+			}
+			#region IConsolePage implementation
+			public bool pageChanged { get; set; }
+			public string pageData { get { return "Warning: " + action; } }
+			public ConsolePageAction[] pageActions {
+				get {
+					return new[] { 
+						new ConsolePageAction () { name = "Ok", argumentNames = new String[0], action = _ => {
+								compl(); // no wait.
+								MainClass.consolePager.Pop(this);
+								fin.SetResult(new EventArgs());
+							}
+						},
+						new ConsolePageAction () { name = "Cancel", argumentNames = new String[0], action = _ => {
+								MainClass.consolePager.Pop(this);
+								fin.SetResult(new EventArgs());
+							}
+						}
+					};
+				}
+			}
+			#endregion
+		}
 		public Task WarnConfirm (string action, Promise confirmed)
 		{
-			Console.WriteLine ("Not Implimented");
-			throw new NotImplementedException ();
+			TaskCompletionSource<EventArgs> ts = new TaskCompletionSource<EventArgs> ();
+			var v = new WarnPage (action, confirmed, ts);
+			MainClass.consolePager.Push (v);
+			return ts.Task;
 		}
 		class CInfoView : IConsolePage
 		{
+			public bool allowDefaultActions { get { return true; } }
 			readonly bool sel;
 			readonly TaskCompletionSource<InfoLineVM> select;
 			readonly ObservableCollection<InfoLineVM> items;
@@ -153,6 +191,7 @@ namespace Consonance.ConsoleView
 		}
 		class CFindyChooseView : IConsolePage
 		{
+			public bool allowDefaultActions { get { return true; } }
 			IReadOnlyList<InfoLineVM> clines = new List<InfoLineVM>();
 			IValueRequestFromString[] creqs;
 			int modeSelected = -1;

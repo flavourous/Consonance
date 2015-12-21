@@ -560,6 +560,10 @@ namespace Consonance
 			int totalPatternLength = 0;
 			foreach (var dp in trg.DayPattern)
 				totalPatternLength += dp;
+
+			// f****k ok this is dumb ... lets return something here at least...
+			if (totalPatternLength == 0)
+				return new DayTargetReturn (dayStart, dayStart.AddDays (1), trg.DayTargets.Length > 0 ? trg.DayTargets [0] : 0.0);
 			
 			// easier to unwrap i think.
 			double[] unwrapped = new double[totalPatternLength];

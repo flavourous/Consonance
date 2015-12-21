@@ -47,7 +47,7 @@ namespace Consonance.ConsoleView
 			// show and register actions
 			inputResponses.Clear ();
 			int ct = 1;
-			foreach (var a in WithDefaultActions(top.pageActions)) {
+			foreach (var a in top.allowDefaultActions ? WithDefaultActions(top.pageActions) : top.pageActions ) {
 				String k = (ct++).ToString ();
 				inputResponses [k] = () =>
 				{
@@ -114,6 +114,7 @@ namespace Consonance.ConsoleView
 		bool pageChanged { get; set; }
 		String pageData { get; }
 		ConsolePageAction[] pageActions { get; }
+		bool allowDefaultActions { get; }
 	}
 	class ConsolePageAction
 	{

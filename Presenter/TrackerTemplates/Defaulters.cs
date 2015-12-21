@@ -19,9 +19,10 @@ namespace Consonance
 		{
 			name = new RequestStorageHelper<string> ("name",()=>"",Validate);
 			when = new RequestStorageHelper<DateTime>("when",()=>DateTime.Now,Validate);
+		
 			var ogv = new OptionGroupValue (new[] { "None", "Day of month", "Per days" });
-
 			recurranceMode = new RequestStorageHelper<OptionGroupValue>("Repeat", () => ogv, ValidateRecurr);
+
 			recurrDayOfMonth = new RequestStorageHelper<int> ("Day of month", () => 1, ValidateRecurr);
 			recurrNSpan= new RequestStorageHelper<TimeSpan>("Repeat this often", () => TimeSpan.FromDays(7), ValidateRecurr);
 			recurrForever = new RequestStorageHelper<bool> ("Repeat forever", () => true, ValidateRecurr);
@@ -207,7 +208,11 @@ namespace Consonance
 				if(editing.hasEnded) requestPackage.Add(cEndWhen);
 				// lets hook this
 				dietEnded.request.changed += () => {
-					if(dietEnded) requestPackage.Add(cEndWhen);
+					if(dietEnded) 
+					{
+						if(!requestPackage.Contains(cEndWhen))
+							requestPackage.Add(cEndWhen);
+					}
 					else requestPackage.Remove(cEndWhen);
 				};
 

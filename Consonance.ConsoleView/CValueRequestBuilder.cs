@@ -16,6 +16,7 @@ namespace Consonance.ConsoleView
 		}
 		class GetValuesConsolePage : IConsolePage
 		{
+			public bool allowDefaultActions { get { return true; } }
 			List<IValueRequestFromString> creqs = new List<IValueRequestFromString>();
 			GetValuesPage mpage;
 			public GetValuesPage page {
