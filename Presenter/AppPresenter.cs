@@ -8,6 +8,7 @@ using SQLite;
 using System.IO;
 using System.Threading;
 using System.Text;
+using LibRTP;
 
 namespace Consonance
 {
@@ -446,6 +447,62 @@ namespace Consonance
 		IValueRequest<EventArgs> ActionRequestor(String name);
 		IValueRequest<Barcode> BarcodeRequestor (String name);
 		IValueRequest<OptionGroupValue> OptionGroupRequestor(String name);
+		IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
+		IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
+	}
+	public class RecurrsEveryPatternValue
+	{
+		public readonly DateTime PatternFixed;
+		public readonly RecurrSpan PatternType;
+		public readonly int PatternFrequency;
+		public RecurrsEveryPatternValue(DateTime date, RecurrSpan pt, int freq)
+		{
+			PatternFixed = date;
+			PatternType = pt;
+			PatternFrequency = freq;
+		}
+		public RecurrsEveryPatternValue() : this(DateTime.Now, RecurrSpan.Day, 1) {
+		}
+		public bool IsValid 
+		{ 
+			get 
+			{  
+				return PatternType == RecurrSpan.Day ||
+				       PatternType == RecurrSpan.Month ||
+				       PatternType == RecurrSpan.Year ||
+				       PatternType == RecurrSpan.Week;	
+			}
+		}
+		public RecurrsEveryPattern Create(DateTime? s, DateTime? e)
+		{
+			return new RecurrsEveryPattern (PatternFixed, PatternFrequency, PatternType, s, e);
+		}
+	}
+	public class RecurrsOnPatternValue
+	{
+		public readonly RecurrSpan PatternType;
+		public readonly int[] PatternValues;
+		public RecurrsOnPatternValue(RecurrSpan pat, int[] vals)
+		{
+			PatternType = pat;
+			PatternValues = vals;
+		}
+		public RecurrsOnPatternValue():this(RecurrSpan.Day | RecurrSpan.Month, new[] { 1, 1 }){
+		}
+		public bool IsValid 
+		{
+			get 
+			{ 
+				int pc = 0;
+				foreach (var pt in PatternType.SplitFlags())
+					pc++;
+				return PatternValues.Length > 1 && pc == PatternValues.Length;
+			}
+		}
+		public RecurrsOnPattern Create(DateTime? s, DateTime? e)
+		{
+			return new RecurrsOnPattern (PatternValues, PatternType, s, e);
+		}
 	}
 	public class OptionGroupValue 
 	{

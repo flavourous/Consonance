@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using LibRTP;
 
 namespace Consonance
 {
@@ -61,10 +62,10 @@ namespace Consonance
 		public InstanceValue [] instanceValueFields { get { return new[] { 
 					InstanceValue.FromType(0.0, "Target", "budget", f=>f.DoubleRequestor)
 				}; } } // creating an instance
-		public SimpleTrackingTarget[] Calcluate(object[] fieldValues) 
+		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{ 
-			List<SimpleTrackingTarget> targs = new List<SimpleTrackingTarget> ();
-			targs.Add (new SimpleTrackingTarget (new[] { 1 }, new[] { SimpleTrackingTarget.RangeType.DaysFromStart }, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			List<RecurringAggregatePattern> targs = new List<RecurringAggregatePattern> ();
+			targs.Add (new RecurringAggregatePattern(1, RecurringAggregatePattern.RangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
 			return targs.ToArray ();
 		}
 	}

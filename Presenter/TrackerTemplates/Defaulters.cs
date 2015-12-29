@@ -1,32 +1,44 @@
 ﻿using System;
 using System.ComponentModel;
+using LibRTP;
+using LibSharpHelp;
 
 namespace Consonance
 {
 	class DefaultEntryRequests
 	{
+		// normal
 		readonly RequestStorageHelper<string> name;
 		readonly RequestStorageHelper<DateTime> when;
 
-		// recurrance
+		// recurrance type & common
 		readonly RequestStorageHelper<OptionGroupValue> recurranceMode;
-		readonly RequestStorageHelper<int> recurrDayOfMonth;
-		readonly RequestStorageHelper<TimeSpan> recurrNSpan;
-		readonly RequestStorageHelper<bool> recurrForever;
-		readonly RequestStorageHelper<DateTime> recurrEnd;
+		readonly RequestStorageHelper<bool> recurrEnded, recurrStarted;
+		readonly RequestStorageHelper<DateTime> recurrEnd, recurrStart;
+
+		// Varaints of repeating
+		readonly RequestStorageHelper<RecurrsEveryPatternValue> recurrEvery;
+		readonly RequestStorageHelper<RecurrsOnPatternValue> recurrOn;
 
 		public DefaultEntryRequests()
 		{
+			// name etc
 			name = new RequestStorageHelper<string> ("name",()=>"",Validate);
 			when = new RequestStorageHelper<DateTime>("when",()=>DateTime.Now,Validate);
 		
-			var ogv = new OptionGroupValue (new[] { "None", "Day of month", "Per days" });
+			// recurrance
+			var ogv = new OptionGroupValue (new[] { "None", "Repeat On...", "Repeat Every..." });
 			recurranceMode = new RequestStorageHelper<OptionGroupValue>("Repeat", () => ogv, ValidateRecurr);
 
-			recurrDayOfMonth = new RequestStorageHelper<int> ("Day of month", () => 1, ValidateRecurr);
-			recurrNSpan= new RequestStorageHelper<TimeSpan>("Repeat this often", () => TimeSpan.FromDays(7), ValidateRecurr);
-			recurrForever = new RequestStorageHelper<bool> ("Repeat forever", () => true, ValidateRecurr);
-			recurrEnd= new RequestStorageHelper<DateTime>("Stop repeating by", () => DateTime.Now.AddDays(14), ValidateRecurr);
+			// common recurrance
+			recurrEnded = new RequestStorageHelper<bool> ("Has End", () => false, ValidateRecurr);
+			recurrStarted=new RequestStorageHelper<bool> ("Has Start", () => false, ValidateRecurr);
+			recurrEnd=new RequestStorageHelper<DateTime> ("Repeat Until", () => DateTime.Now, ValidateRecurr);
+			recurrStart=new RequestStorageHelper<DateTime> ("Repeat Since", () => DateTime.Now, ValidateRecurr);
+
+			// ones
+			recurrEvery=new RequestStorageHelper<RecurrsEveryPatternValue> ("Every Pattern", () => new RecurrsEveryPatternValue(), ValidateRecurr);
+			recurrOn=new RequestStorageHelper<RecurrsOnPatternValue> ("On Pattern", () => new RecurrsOnPatternValue(), ValidateRecurr);
 		}
 		void Validate()
 		{
@@ -35,28 +47,33 @@ namespace Consonance
 		}
 		void ValidateRecurr()
 		{
-			recurrEnd.request.valid = when.request.value < recurrEnd.request.value;
-			recurrForever.request.valid = true;
-			recurranceMode.request.valid = true;
-			switch ((RecurranceType)recurranceMode.request.value.SelectedOption) {
-			case RecurranceType.EveryNDays:
-				recurrNSpan.request.valid = (int)recurrNSpan.request.value.TotalDays > 0;
-				break;
-			case RecurranceType.DayOfMonth:
-				recurrDayOfMonth.request.valid = (int)recurrDayOfMonth > 0 && (int)recurrDayOfMonth <= 27; // 27 days in july...sooooyeah.
-				break;
-			}
+			// these switches are always ok
+			recurrEnded.request.valid = recurrStarted.request.valid = recurranceMode.request.valid = true;
+
+			// the start/ends just muse be contigious.
+			recurrEnd.request.valid = !recurrStarted || recurrEnd.request.value >= recurrStart.request.value;
+			recurrStart.request.valid = !recurrEnded || recurrEnd.request.value >= recurrStart.request.value;
+
+			// just validate both every time.
+			recurrEvery.request.valid = recurrEvery.request.value.IsValid;
+			recurrOn.request.valid = recurrOn.request.value.IsValid;
 		}
+		// consumers be like "ok done - please set the data you got on this guy please"
 		public void Set(BaseEntry entry)
 		{
 			entry.entryName = name;
 			entry.entryWhen = when;
+
+			// these are 'auxiallry', used in queries but actually stored in the above blob for actual api purposes.
+			var s = entry.repeatEnd = recurrEnded ? recurrEnd : null;
+			var e = entry.repeatStart = recurrStarted ? recurrStart : null;
+
+			// recurring stuff
 			entry.repeatType = (RecurranceType) recurranceMode.request.value.SelectedOption;
-			if (entry.repeatType == RecurranceType.DayOfMonth) entry.repeatData = (int)recurrDayOfMonth;
-			if (entry.repeatType == RecurranceType.EveryNDays) entry.repeatData = (int)recurrNSpan.request.value.TotalDays;
-			entry.repeatEnd = recurrEnd;
-			entry.repeatForever = recurrForever;
+			if (entry.repeatType == RecurranceType.RecurrsEveryPattern) entry.repeatData= recurrEvery.request.value.Create(s,e).ToBinary();
+			if (entry.repeatType == RecurranceType.RecurrsOnPattern) entry.repeatData = recurrOn.request.value.Create(s,e).ToBinary();
 		}
+		// entry point for consumers asking "hey i need the default request objects for stuff please"
 		public void PushInDefaults(BaseEntry editing, IBindingList requestPackage, IValueRequestFactory fac)
 		{
 			// no reset here...for entries...event registration clearing is automatic though.
@@ -68,22 +85,23 @@ namespace Consonance
 
 			// NOTE dont forget, this package will be added to after/before.  Gotta remember starting index and insert there each time etc.
 			int firstItem = -1;
-			requestPackage.ListChanged += (sender, e) => firstItem = requestPackage.Contains (rMode) ? requestPackage.IndexOf (rMode) + 1 : firstItem;
+			requestPackage.ListChanged += (sender, e) => firstItem = requestPackage.IndexOf (nr);
 
 			// and we need to preload the others for maybe adding later.
-			var rRepForever = recurrForever.CGet (fac.BoolRequestor);
-			var rEnd = recurrEnd.CGet (fac.DateRequestor);
+			var rRepStarted = recurrStarted.CGet (fac.BoolRequestor);
+			var rRepEnded = recurrEnded.CGet (fac.BoolRequestor);
+			var rRepEnd = recurrEnd.CGet (fac.DateRequestor);
+			var rRepStart = recurrStart.CGet (fac.DateRequestor);
+			var rRepOn = recurrOn.CGet (fac.RecurrOnRequestor);
+			var rRepEvery = recurrEvery.CGet (fac.RecurrEveryRequestor);
 
-			var rDaySpan = recurrNSpan.CGet (fac.TimeSpanRequestor);
-			var rMonthDay = recurrDayOfMonth.CGet (fac.IntRequestor);
-
-			Action aEnded = () => {
-				if (!(bool)recurrForever)
-				{
-					if(requestPackage.Contains (rRepForever) && !requestPackage.Contains (rEnd))
-						requestPackage.Insert (requestPackage.IndexOf (rRepForever) + 1, rEnd);
-				}
-				else requestPackage.Remove (rEnd);
+			Action CheckRepStartedEnded = () => {
+				if ((bool)recurrEnded && requestPackage.Contains(rRepEnded))
+					requestPackage.Ensure(requestPackage.IndexOf(rRepEnded)+1,rRepEnd);
+				else requestPackage.Remove (rRepEnd);
+				if ((bool)recurrStarted && requestPackage.Contains(rRepStarted))
+					requestPackage.Ensure (requestPackage.IndexOf(rRepStarted) +1, rRepStart);
+				else requestPackage.Remove (rRepStart);
 			};
 
 			// push in reqs
@@ -95,47 +113,71 @@ namespace Consonance
 				switch((RecurranceType)recurranceMode.request.value.SelectedOption)
 				{
 				case RecurranceType.None:
-					requestPackage.RemoveAll(rRepForever,rEnd,rDaySpan, rMonthDay); // fails nicely.
+					requestPackage.RemoveAll(rRepStarted, rRepStart, rRepEnded,rRepEnd, rRepOn, rRepEvery); // fails nicely.
+					requestPackage.Ensure(firstItem+1, wr);
 					break;
-				case RecurranceType.EveryNDays:
-					requestPackage.RemoveAll(rMonthDay);
-					requestPackage.Ensure(firstItem, rDaySpan, rRepForever);
-					aEnded();
+				case RecurranceType.RecurrsEveryPattern:
+					requestPackage.RemoveAll(rRepOn, wr);
+					requestPackage.Ensure(requestPackage.IndexOf(rMode) +1, rRepEvery, rRepStarted, rRepEnded);
+					CheckRepStartedEnded();
 					break;
-				case RecurranceType.DayOfMonth:
-					requestPackage.RemoveAll(rDaySpan);
-					requestPackage.Ensure(firstItem, rMonthDay, rRepForever);
-					aEnded();
+				case RecurranceType.RecurrsOnPattern:
+					requestPackage.RemoveAll(rRepEvery, wr);
+					requestPackage.Ensure(requestPackage.IndexOf(rMode) +1, rRepOn, rRepStarted, rRepEnded);
+					CheckRepStartedEnded();
 					break;
 				}
 			};
 
 			// this changes too! but it can only itself change while mode != none (or I hope so)
-			recurrForever.request.changed += aEnded;
+			recurrStarted.request.changed += CheckRepStartedEnded;
+			recurrEnded.request.changed += CheckRepStartedEnded;
 			recurranceMode.request.changed += rModeChanged;
 
-			// set exiting data
+			// set editing data if we are
 			if (editing != null) {
+				//nameanddate
 				name.request.value = editing.entryName;
 				when.request.value = editing.entryWhen;
-				recurrForever.request.value = editing.repeatForever;
-				recurrEnd.request.value = editing.repeatEnd;
+
+				// repeat bounds
+				recurrEnded.request.value = editing.repeatEnd.HasValue;
+				if (editing.repeatEnd.HasValue)
+					recurrEnd.request.value = editing.repeatEnd.Value;
+				recurrStarted.request.value = editing.repeatStart.HasValue;
+				if (editing.repeatStart.HasValue)
+					recurrStart.request.value = editing.repeatStart.Value;
+
+				// which pattern
 				recurranceMode.request.value.SelectedOption = (int)editing.repeatType;
-				if (editing.repeatType == RecurranceType.DayOfMonth) recurrDayOfMonth.request.value = editing.repeatData;
-				if (editing.repeatType == RecurranceType.EveryNDays) recurrNSpan.request.value = TimeSpan.FromDays (editing.repeatData);
+				// pattern specific
+				if (editing.repeatType == RecurranceType.RecurrsEveryPattern) {
+					var rd = RecurrsEveryPattern.FromBinary (editing.repeatData);
+					recurrEvery.request.value = new RecurrsEveryPatternValue(rd.FixedPoint, rd.units, rd.frequency);
+				}
+				if (editing.repeatType == RecurranceType.RecurrsOnPattern) {
+					var rd = RecurrsOnPattern.FromBinary (editing.repeatData);
+					RecurrSpan use = rd.units [0];
+					foreach (var d in rd.units)
+						use |= d;
+					recurrOn.request.value = new RecurrsOnPatternValue(use, rd.onIndexes);
+				}
 			}
 
 			rModeChanged (); //  needed because we could be on a non-initialiation call from CreationFields for example.
 		}
+		// consumers are like "hey stuff needs resetting whatever that stuff u got is"
 		public void ResetRequests()
 		{
 			when.Reset ();
 			name.Reset ();
 			recurranceMode.Reset ();
-			recurrDayOfMonth.Reset ();
-			recurrNSpan.Reset ();
-			recurrForever.Reset ();
+			recurrOn.Reset ();
+			recurrEvery.Reset ();
+			recurrEnded.Reset ();
+			recurrStarted.Reset ();
 			recurrEnd.Reset ();
+			recurrStart.Reset ();
 		}
 	}
 

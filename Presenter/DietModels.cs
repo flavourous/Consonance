@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Collections.Generic;
 using SQLite;
 using System.Diagnostics;
+using LibRTP;
 
 namespace Consonance
 {
@@ -23,7 +24,7 @@ namespace Consonance
 		[PrimaryKey, AutoIncrement]
 		public int id{ get; set; }
 	}
-	public class BaseEntry : BaseDB, ICloneable
+	public class BaseEntry : BaseDB
 	{
 		// keys
 		public int trackerinstanceid{ get; set; }
@@ -35,23 +36,21 @@ namespace Consonance
 
 		// repetition info (starts at when)
 		public RecurranceType repeatType { get; set; }
-		public byte[] repeatData { get; set; }
+		public byte[] repeatData { get;set; }
+		public DateTime? repeatStart { get; set; } // repeated in data
+		public DateTime? repeatEnd {get;set;}// repeated in data
 
-		// clone
-		#region ICloneable implementation
-		public virtual object Clone () { return MemberwiseClone (); }
-		#endregion
-
-		// Helper
-		public Object CloneWithDate(DateTime dt)
+		// Helper for cloning - it's a flyweight also due to memberwuse clone reference copying the byte[].
+		public BaseEntry FlyweightCloneWithDate(DateTime dt)
 		{
-			var ret = (BaseEntry)Clone ();
+			var ret = MemberwiseClone () as BaseEntry;
 			ret.entryWhen = dt;
 			return ret;
 		}
 	}
-	[Flags]
-	public enum RecurranceType { None = 0, DayOfMonth = 1, EveryNDays = 2 }
+
+	[Flags] // this deontes a class used from libRTP.
+	public enum RecurranceType { None = 0, RecurrsOnPattern = 1, RecurrsEveryPattern = 2 }
 
 	// when we're doing a diet here, created by diet class
 	public class TrackerInstance : BaseDB
@@ -183,7 +182,6 @@ namespace Consonance
 	
 		public DietInstType StartNewTracker()
 		{
-			PDebug.WriteWithShortType ("Comitting model for new tracker", GetType ());
 			var di = model.New ();
 			conn.Insert (di as DietInstType);
 			return di;
@@ -317,44 +315,26 @@ namespace Consonance
 			foreach(var tet in tets)
 				conn.Delete<EntryType> (tet.id);
 		}
+		Dictionary<RecurranceType,Func<byte[], IRecurr>> patcreators = new Dictionary<RecurranceType, Func<byte[], IRecurr>> {
+			{ RecurranceType.RecurrsOnPattern, RecurrsOnPattern.FromBinary },
+			{ RecurranceType.RecurrsEveryPattern, RecurrsEveryPattern.FromBinary},
+		};
 		public IEnumerable<EntryType> Get (D diet, DateTime start, DateTime end)
 		{
 			// Get the noraml and repeating ones, then repeat the repeating ones
 			var normalQuery = conn.Table<EntryType> ().Where 
 				(d => d.trackerinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end && d.repeatType == RecurranceType.None);
 			var repeatersQuery = conn.Table<EntryType> ().Where
-				(d => d.trackerinstanceid == diet.id && d.repeatType != RecurranceType.None &&
-					d.entryWhen <= end &&	(d.repeatForever || d.repeatEnd >= start)
-				);
+				(d => d.trackerinstanceid == diet.id && d.repeatType != RecurranceType.None);
 			foreach (var ent in normalQuery) yield return ent;
-			List<EntryType> ents = new List<EntryType>(repeatersQuery);
-			foreach (var entl in ents) {
-				EntryType ent = entl;
-				//  we will return N entries, with changed entryWhens, all with the same id
-				DateTime begin = ent.entryWhen; // this is fixed in the switch
-				DateTime finish = (!ent.repeatForever && ent.repeatEnd < end) ? ent.repeatEnd: end;
-				Func<DateTime, DateTime> inc = null;
-				switch (ent.repeatType) {
-				case RecurranceType.EveryNDays:
-					if (begin < start) // oh ok, we gotta % the first drop into our range.
-							begin = start.AddDays (ent.repeatData - (start - begin).TotalDays % ent.repeatData);
-					inc = b => b.AddDays (ent.repeatData);
-					break;
-				case RecurranceType.DayOfMonth:
-						// align to next occurance of day after the when
-					var buse = start > begin ? start : begin;
-					if (buse.Day > ent.repeatData)
-						buse = buse.AddMonths (1);
-					buse = buse.AddDays (ent.repeatData - buse.Day);
-					inc = b => b.AddMonths (1);
-					begin = buse;
-					break;
-				}
-				if (inc == null) break; // srsly I saw it happen.
-				while (begin < end) {
-					yield return (EntryType)ent.CloneWithDate (begin);
-					begin = inc (begin);
-				}
+
+			// Repeaters .. do second half of the "query" here.
+			foreach (EntryType ent in repeatersQuery) {
+				DateTime patEnd = ent.repeatEnd ?? DateTime.MaxValue;
+				DateTime patStart = ent.repeatStart ?? DateTime.MinValue;
+				if ((patStart >= start ^ patEnd >= end) || (patStart >= end ^ patEnd >= start))
+					foreach (var rd in patcreators [ent.repeatType] (ent.repeatData).GetOccurances(start,end))
+						yield return (EntryType) ent.FlyweightCloneWithDate (rd);
 			}
 		}
 		public IEnumerable<EntryType> GetOrphans(D trackerInstance)

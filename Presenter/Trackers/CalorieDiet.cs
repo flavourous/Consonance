@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Collections.Generic;
+using LibRTP;
 
 namespace Consonance
 {
@@ -61,11 +62,11 @@ namespace Consonance
 				InstanceValue.FromType (true, "Track Daily", "trackDaily", f => f.BoolRequestor),
 				InstanceValue.FromType (false, "Track Weekly", "trackWeekly", f => f.BoolRequestor)
 			}; } } // creating an instance
-		public SimpleTrackingTarget[] Calcluate(object[] fieldValues) 
+		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{ 
-			List<SimpleTrackingTarget> targs = new List<SimpleTrackingTarget> ();
-			if ((bool)fieldValues [1]) targs.Add(new SimpleTrackingTarget (new[] { 0 }, new[] { SimpleTrackingTarget.RangeType.DaysEitherSide }, new[] { 1 }, new[] { (double)fieldValues [0] }));
-			if ((bool)fieldValues [2]) targs.Add (new SimpleTrackingTarget (new[] { 7 }, new[] { SimpleTrackingTarget.RangeType.DaysFromStart }, new[] { 1 }, new[] { (double)fieldValues [0]*7 }) );
+			List<RecurringAggregatePattern> targs = new List<RecurringAggregatePattern> ();
+			if ((bool)fieldValues [1]) targs.Add(new RecurringAggregatePattern(0, RecurringAggregatePattern.RangeType.DaysEitherSide, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			if ((bool)fieldValues [2]) targs.Add (new RecurringAggregatePattern(7, RecurringAggregatePattern.RangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0]*7 }) );
 			return targs.ToArray ();
 		}
 	}
@@ -89,13 +90,12 @@ namespace Consonance
 					InstanceValue.FromType(0, "Strict days", "nStrictDays", f=>f.IntRequestor ), 
 					InstanceValue.FromType(0.0, "Calories", "strictCalorieLimit", f=>f.DoubleRequestor ) 
 			}; } } // creating an instance
-		public SimpleTrackingTarget[] Calcluate(object[] fieldValues) 
+		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{
 			return new[] { 
-				new SimpleTrackingTarget (
+				new RecurringAggregatePattern (
 					// Range Tracking
-					new int[] { 0 }, 
-					new[] { SimpleTrackingTarget.RangeType.DaysEitherSide }, 
+					0, RecurringAggregatePattern.RangeType.DaysEitherSide, 
 
 					// Pattern Values
 					new int[] { (int)fieldValues [0], (int)fieldValues [2] }, 

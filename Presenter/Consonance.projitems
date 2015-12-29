@@ -13,13 +13,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)AppPresenter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DietPresenters.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)InfoFindersManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Helper Classes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequestFactory_FinderAdapter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\SimpleTrackyHelpy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\Defaulters.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Trackers\CalorieDiet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Trackers\Budgeting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Trackers\DietCommon.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)TrackerTemplates\" />

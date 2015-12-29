@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consonance.ConsoleView", "C
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibRTP", "..\LibRTP\LibRTP\LibRTP.shproj", "{1C3091EB-5350-48F8-AA8A-51E7D4656DA0}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibSharpHelp", "..\LibSharpHelp\LibSharpHelp.shproj", "{7E0E5AEB-4591-4161-B39E-B50569C802F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Ad-Hoc|Any CPU = Ad-Hoc|Any CPU

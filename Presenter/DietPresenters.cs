@@ -337,7 +337,6 @@ namespace Consonance
 		}
 		public IViewTask StartNewTracker()
 		{
-			PDebug.WriteWithShortType("Starting new tracker", GetType ());
 			var pages = new List<GetValuesPage> (modelHandler.model.CreationPages (instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
 			vt.Completed.ContinueWith(async rt => {

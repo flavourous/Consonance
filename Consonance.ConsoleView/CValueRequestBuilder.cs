@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text;
 using System.ComponentModel;
+using LibRTP;
 
 namespace Consonance.ConsoleView
 {
@@ -149,7 +150,51 @@ namespace Consonance.ConsoleView
 				ogv.SelectedOption = idx;
 			});
 		}
-
+		DateTimeConverter dtc = new DateTimeConverter ();
+		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name)
+		{
+			return new RequestFromString<RecurrsEveryPatternValue>(name,
+				str => {
+					var args = str.Split(' ');
+					return new RecurrsEveryPatternValue(
+						(DateTime)dtc.ConvertFromString(args[0]), 
+						(LibRTP.RecurrSpan)int.Parse(args[1]),
+						int.Parse(args[2])
+					);
+				},
+				patval => {
+					return String.Join(" ",
+						patval.PatternFixed.ToShortDateString(), 
+						((int)patval.PatternType).ToString(),
+						patval.PatternFrequency.ToString()
+					) + String.Format(" :: Every {0}{1}s fixed at {2}", patval.PatternFrequency, patval.PatternType.ToString(), patval.PatternFixed);
+				}
+			);
+		}
+		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name)
+		{
+			return new RequestFromString<RecurrsOnPatternValue>(name,
+				str => {
+					var args = str.Split(' ');
+					uint mask = 0;
+					foreach(var t in args[0].Split('|'))
+						mask |= uint.Parse(t);
+					List<int> ons = new List<int>();
+					foreach(var t in args[0].Split('|'))
+						ons.Add(int.Parse(t));
+					return new RecurrsOnPatternValue((RecurrSpan)mask, ons.ToArray());
+				},
+				patval => {
+					var masks = new List<uint>();
+					foreach(var v in patval.PatternType.SplitFlags())
+						masks.Add((uint)v);
+					return String.Join(" ",
+						string.Join("|", masks), 
+						string.Join("|", patval.PatternValues)
+					);
+				}
+			);
+		}
 		#endregion
 	}
 
@@ -182,22 +227,24 @@ namespace Consonance.ConsoleView
 		Action<T> onlyAct = null;
 		public override string ToString () { return sdel (value); }
 		public bool FromString (String s) { 
-			try {
+			Action final = delegate { };
+//			try {
 				if (onlyAct != null)
 				{
 					onlyAct (value);
-					changed ();
+					final = changed; 
 				}
 				else if (actOnExisting != null) 
 				{
 					actOnExisting (s, value);
-					changed ();
+					final = changed;
 				} else
 					value = cdel (s); 
-				Invalidated ();
-			} catch {
-				return false;
-			}
+//			} catch(Exception exp) {
+//				return false;
+//			}
+			final ();
+			Invalidated ();
 			return true;
 		}
 		public event Action Invalidated = delegate { };

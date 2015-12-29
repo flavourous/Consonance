@@ -6,6 +6,8 @@ using System.Linq.Expressions;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
+using LibSharpHelp;
+using LibRTP;
 
 namespace Consonance
 {
@@ -60,7 +62,7 @@ namespace Consonance
 		//InstanceValue<bool> [] instanceOptions { get; } // boolean fields
 
 		// This has to represent any number of targets, in any number of patterns, for any period range.
-		SimpleTrackingTarget[] Calcluate(Object[] fieldValues); 
+		RecurringAggregatePattern[] Calcluate(Object[] fieldValues); 
 
 		// Entries and infos
 		IReflectedHelpyQuants<InInfo,QuantityIn> input { get; }
@@ -94,21 +96,6 @@ namespace Consonance
 				f => directRequest (f),
 				o => (T)o, o => (T)o // they are the same.
 			);
-		}
-	}
-	public class SimpleTrackingTarget
-	{
-		public enum RangeType { DaysFromStart = 1, DaysEitherSide = 2 }
-		public readonly int[] DayPattern; 
-		public readonly double[] DayTargets; 
-		public readonly int[] DayTargetRanges;
-		public readonly RangeType[] DayTargetRangeTypes; 
-		public SimpleTrackingTarget(int[] targetRanges, RangeType[] rangetypes, int[] targetPattern, double[] patternTarget)
-		{
-			DayTargetRanges = targetRanges;
-			DayTargetRangeTypes = rangetypes;
-			DayPattern = targetPattern;
-			DayTargets = patternTarget;
 		}
 	}
 	public interface IReflectedHelpyQuants<I,MT>
@@ -474,7 +461,7 @@ namespace Consonance
 			);
 		}
 
-		SimpleTrackingTarget[] GetTargets(Inst entry)
+		RecurringAggregatePattern[] GetTargets(Inst entry)
 		{
 			var vals = fvalues.MakeList(f => f.Get (entry));
 			return helpy.Calcluate (vals.ToArray ());
@@ -516,91 +503,21 @@ namespace Consonance
 			return new InfoLineVM () { name = info.name };
 		}
 
+		TimeSpanConverter tss = new TimeSpanConverter();
 		public IEnumerable<TrackingInfoVM> DetermineInTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
 			if(dayStart < di.started) yield break;
 			var targets = GetTargets (di);
 			for (var ti=0; ti < targets.Length; ti++) {
-				var trg = targets [ti];
-				for (int tr=0; tr < trg.DayTargetRanges.Length; tr++) {
-					TimeSpan spantime = TimeSpan.FromDays (tr);
-					String rangeString = trg.DayTargetRanges.Length == 1 && trg.DayTargetRanges [0] == 1 ? " balance" : " " + spantime.ToString () + " balance";
-
-					// use method to get target info
-					var targetInfo = FindTargetForDay (di, trg, tr, dayStart);
-
-					TrackingInfoVM info = new TrackingInfoVM () {
-						valueName = helpy.trackedname + rangeString,
-						targetValue = targetInfo.target
-					};
-
-					GetValsForRange (eats, burns, targetInfo.begin, targetInfo.end, out info.inValues, out info.outValues);
-					yield return info;
-				}
+				var trg = targets [ti].FindTargetForDay(di.started, dayStart);
+				var dtr = targets [ti].DayTargetRange;
+				var yret = new TrackingInfoVM ();
+				yret.targetValue = GetValsForRange (eats, burns, trg.begin, trg.end, out yret.inValues, out yret.outValues);
+				yret.valueName = dtr == 1 ? " balance" : " " + tss.ConvertToString (TimeSpan.FromDays (dtr)) + " balance";
+				yield return yret;
 			}
 		}
-			
-		struct DayTargetReturn {
-			public readonly DateTime begin;
-			public readonly DateTime end;
-			public readonly double target;
-			public DayTargetReturn(DateTime begin, DateTime end, double target)
-			{
-				this.begin=begin;
-				this.end=end;
-				this.target=target;
-			}
-		}
-		DayTargetReturn FindTargetForDay(Inst di, SimpleTrackingTarget trg, int ridx, DateTime dayStart)
-		{
-			var r = trg.DayTargetRanges [ridx];
-			var t = trg.DayTargetRangeTypes [ridx];
-
-			// find the total length of the pattern
-			int totalPatternLength = 0;
-			foreach (var dp in trg.DayPattern)
-				totalPatternLength += dp;
-
-			// f****k ok this is dumb ... lets return something here at least...
-			if (totalPatternLength == 0)
-				return new DayTargetReturn (dayStart, dayStart.AddDays (1), trg.DayTargets.Length > 0 ? trg.DayTargets [0] : 0.0);
-			
-			// easier to unwrap i think.
-			double[] unwrapped = new double[totalPatternLength];
-			int c = 0;
-			for (int i = 0; i < trg.DayTargets.Length; i++)
-				for (int j = 0; j < trg.DayPattern [i]; j++)
-					unwrapped [c++] = trg.DayTargets [i];
-
-			//total days since started (big number)
-			var daysSinceStart = (dayStart - di.started).TotalDays;
-
-			// get the number of days into a pattern (could concieveably be negative)
-			var daysSincePatternStarted = (int)(daysSinceStart % totalPatternLength);
-			if (daysSincePatternStarted < 0) daysSincePatternStarted += totalPatternLength;
-
-			// ok which way?
-			double targ =0;
-			DateTime useStart = DateTime.MinValue, useEnd = DateTime.MinValue;
-			switch (t) {
-			case SimpleTrackingTarget.RangeType.DaysFromStart:
-				useStart = dayStart.AddDays (-daysSincePatternStarted);
-				useEnd = dayStart.AddDays (r);
-				for (int ds = 0; ds < r; ds++)
-					targ += unwrapped [ds % totalPatternLength];
-				break;
-			case SimpleTrackingTarget.RangeType.DaysEitherSide:
-				useStart = dayStart.AddDays (-r);
-				useEnd = dayStart.AddDays (r);
-				var rs = daysSincePatternStarted + r;
-				for (int ds = daysSincePatternStarted - r; ds <= rs; ds++)
-					targ += unwrapped [Math.Abs(ds % totalPatternLength)];
-				break;
-			}
-			return new DayTargetReturn (useStart, useEnd, targ);
-		}
-
-		void GetValsForRange(EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime s, DateTime e, out TrackingElementVM[] invals,out TrackingElementVM[] outvals )
+		double GetValsForRange(EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime s, DateTime e, out TrackingElementVM[] invals,out TrackingElementVM[] outvals )
 		{
 			double tot = 0.0;
 			List<TrackingElementVM> vin = new List<TrackingElementVM> (), vout = new List<TrackingElementVM> ();
@@ -616,8 +533,8 @@ namespace Consonance
 			}
 			invals = vin.ToArray ();
 			outvals = vout.ToArray ();
+			return tot;
 		}
-			
 		public IEnumerable<TrackingInfoVM> DetermineOutTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
 			return DetermineInTrackingForDay(di, eats, burns, dayStart);
