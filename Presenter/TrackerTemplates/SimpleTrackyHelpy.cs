@@ -511,29 +511,25 @@ namespace Consonance
 			for (var ti=0; ti < targets.Length; ti++) {
 				var trg = targets [ti].FindTargetForDay(di.started, dayStart);
 				var dtr = targets [ti].DayTargetRange;
-				var yret = new TrackingInfoVM ();
-				yret.targetValue = GetValsForRange (eats, burns, trg.begin, trg.end, out yret.inValues, out yret.outValues);
+				var yret = new TrackingInfoVM { targetValue = trg.target };
+				GetValsForRange (eats, burns, trg.begin, trg.end, out yret.inValues, out yret.outValues);
 				yret.valueName = dtr == 1 ? " balance" : " " + tss.ConvertToString (TimeSpan.FromDays (dtr)) + " balance";
 				yield return yret;
 			}
 		}
-		double GetValsForRange(EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime s, DateTime e, out TrackingElementVM[] invals,out TrackingElementVM[] outvals )
+		void GetValsForRange(EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime s, DateTime e, out TrackingElementVM[] invals,out TrackingElementVM[] outvals )
 		{
-			double tot = 0.0;
 			List<TrackingElementVM> vin = new List<TrackingElementVM> (), vout = new List<TrackingElementVM> ();
 			foreach (var ient in eats(s, e)) {
 				var v = (double)InTrack.Get (ient);
 				vin.Add (new TrackingElementVM () { value = v , name = ient.entryName });
-				tot += v;
 			}
 			foreach (var oent in burns(s,e)) {
 				var v = (double)OutTrack.Get (oent);
 				vout.Add (new TrackingElementVM () { value = v, name = oent.entryName });
-				tot -= v;
 			}
 			invals = vin.ToArray ();
 			outvals = vout.ToArray ();
-			return tot;
 		}
 		public IEnumerable<TrackingInfoVM> DetermineOutTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
