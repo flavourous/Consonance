@@ -65,8 +65,8 @@ namespace Consonance
 			entry.entryWhen = when;
 
 			// these are 'auxiallry', used in queries but actually stored in the above blob for actual api purposes.
-			var s = entry.repeatEnd = recurrEnded ? recurrEnd : null;
-			var e = entry.repeatStart = recurrStarted ? recurrStart : null;
+			var s = entry.repeatEnd = recurrEnded ? (DateTime?)recurrEnd : null;
+			var e = entry.repeatStart = recurrStarted ? (DateTime?)recurrStart : null;
 
 			// recurring stuff
 			entry.repeatType = (RecurranceType) recurranceMode.request.value.SelectedOption;
