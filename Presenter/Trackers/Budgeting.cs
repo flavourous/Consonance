@@ -65,7 +65,7 @@ namespace Consonance
 		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{ 
 			List<RecurringAggregatePattern> targs = new List<RecurringAggregatePattern> ();
-			targs.Add (new RecurringAggregatePattern(1, RecurringAggregatePattern.RangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			targs.Add (new RecurringAggregatePattern(1, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
 			return targs.ToArray ();
 		}
 	}

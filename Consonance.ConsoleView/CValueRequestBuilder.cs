@@ -167,7 +167,7 @@ namespace Consonance.ConsoleView
 						patval.PatternFixed.ToShortDateString(), 
 						((int)patval.PatternType).ToString(),
 						patval.PatternFrequency.ToString()
-					) + String.Format(" :: Every {0}{1}s fixed at {2}", patval.PatternFrequency, patval.PatternType.ToString(), patval.PatternFixed);
+					) + String.Format(" :: Every {0} {1}s fixed at {2}", patval.PatternFrequency, patval.PatternType.ToString(), patval.PatternFixed.ToShortDateString());
 				}
 			);
 		}
@@ -228,7 +228,7 @@ namespace Consonance.ConsoleView
 		public override string ToString () { return sdel (value); }
 		public bool FromString (String s) { 
 			Action final = delegate { };
-//			try {
+			try {
 				if (onlyAct != null)
 				{
 					onlyAct (value);
@@ -240,9 +240,9 @@ namespace Consonance.ConsoleView
 					final = changed;
 				} else
 					value = cdel (s); 
-//			} catch(Exception exp) {
-//				return false;
-//			}
+			} catch(Exception exp) {
+				return false;
+			}
 			final ();
 			Invalidated ();
 			return true;

@@ -24,7 +24,7 @@ namespace Consonance
 		{
 			// name etc
 			name = new RequestStorageHelper<string> ("name",()=>"",Validate);
-			when = new RequestStorageHelper<DateTime>("when",()=>DateTime.Now,Validate);
+			when = new RequestStorageHelper<DateTime>("when",()=>DateTime.Now.StartOfDay(),Validate);
 		
 			// recurrance
 			var ogv = new OptionGroupValue (new[] { "None", "Repeat On...", "Repeat Every..." });
@@ -33,8 +33,8 @@ namespace Consonance
 			// common recurrance
 			recurrEnded = new RequestStorageHelper<bool> ("Has End", () => false, ValidateRecurr);
 			recurrStarted=new RequestStorageHelper<bool> ("Has Start", () => false, ValidateRecurr);
-			recurrEnd=new RequestStorageHelper<DateTime> ("Repeat Until", () => DateTime.Now, ValidateRecurr);
-			recurrStart=new RequestStorageHelper<DateTime> ("Repeat Since", () => DateTime.Now, ValidateRecurr);
+			recurrEnd=new RequestStorageHelper<DateTime> ("Repeat Until", () => DateTime.Now.StartOfDay(), ValidateRecurr);
+			recurrStart=new RequestStorageHelper<DateTime> ("Repeat Since", () => DateTime.Now.StartOfDay(), ValidateRecurr);
 
 			// ones
 			recurrEvery=new RequestStorageHelper<RecurrsEveryPatternValue> ("Every Pattern", () => new RecurrsEveryPatternValue(), ValidateRecurr);
@@ -194,9 +194,9 @@ namespace Consonance
 		public DefaultTrackerInstanceRequests(String typeName)
 		{
 			dietName = new RequestStorageHelper<string> (typeName + " Name", () => "", Validate);
-			dietStart = new RequestStorageHelper<DateTime> ("Start Date", () => DateTime.Now, Validate);
+			dietStart = new RequestStorageHelper<DateTime> ("Start Date", () => DateTime.Now.StartOfDay(), Validate);
 			dietEnded = new RequestStorageHelper<bool> ("Ended", () => false, Validate);
-			dietEnd = new RequestStorageHelper<DateTime> ("End Date", () => DateTime.Now, Validate);
+			dietEnd = new RequestStorageHelper<DateTime> ("End Date", () => DateTime.Now.StartOfDay(), Validate);
 		}
 		public bool editing = false;
 		void Validate()

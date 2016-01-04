@@ -198,7 +198,7 @@ namespace Consonance
 		void ChangeDay(DateTime to)
 		{
 			PTask.Run (() => {
-				ds = new DateTime (to.Year, to.Month, to.Day, 0, 0, 0);
+				ds = to.StartOfDay();
 				de = ds.AddDays (1);
 				view.day = ds;
 				if (view.currentTrackerInstance != null) {
