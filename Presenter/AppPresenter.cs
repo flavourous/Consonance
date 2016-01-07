@@ -292,11 +292,18 @@ namespace Consonance
 			Debug.WriteLine ("Setting Trackers");
 			view.SetInstances (lastBuild);
 			// change current diet if we have to.
-			if ((currentRemoved || view.currentTrackerInstance == null) && lastBuild.Count > 0) {
-				view.currentTrackerInstance = lastBuild[0];
-				PushEatLines ();
-				PushBurnLines ();
-				PushTracking ();
+			if (currentRemoved || view.currentTrackerInstance == null) {
+				if (lastBuild.Count > 0) {
+					view.currentTrackerInstance = lastBuild [0];
+					PushEatLines ();
+					PushBurnLines ();
+					PushTracking ();
+				} else {
+					view.SetEatLines (new EntryLineVM[0]);
+					view.SetBurnLines (new EntryLineVM[0]);
+					view.SetEatTrack (null, new TrackerTracksVM[0]);
+					view.SetBurnTrack (null, new TrackerTracksVM[0]);
+				}
 			}
 		}
 			

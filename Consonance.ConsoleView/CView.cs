@@ -196,13 +196,13 @@ namespace Consonance.ConsoleView
 		IReadOnlyList<TrackerTracksVM> inTracks = new List<TrackerTracksVM>(), outTracks= new List<TrackerTracksVM>();
 		public void SetEatTrack (TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { 
 			var its = new List<TrackerTracksVM> (others);
-			its.Insert(0, current);
+			if(current != null) its.Insert(0, current);
 			inTracks = its;
 			pageChanged = true;
 		}
 		public void SetBurnTrack (TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { 
 			var its = new List<TrackerTracksVM> (others);
-			its.Insert(0, current);
+			if(current != null) its.Insert(0, current);
 			outTracks = its;
 			pageChanged = true;
 		}
