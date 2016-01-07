@@ -64,9 +64,10 @@ namespace Consonance
 			entry.entryName = name;
 			entry.entryWhen = when;
 
-			// these are 'auxiallry', used in queries but actually stored in the above blob for actual api purposes.
-			var s = entry.repeatEnd = recurrEnded ? (DateTime?)recurrEnd : null;
-			var e = entry.repeatStart = recurrStarted ? (DateTime?)recurrStart : null;
+			// these are 'auxiallry', used in queries but actually stored in the below blobs for actual api purposes.
+			DateTime? s=null,e=null;
+			if (recurrStarted) s = recurrStart; if (recurrEnded) e = recurrEnd;
+			entry.repeatStart = s; entry.repeatEnd = e;
 
 			// recurring stuff
 			entry.repeatType = (RecurranceType) recurranceMode.request.value.SelectedOption;
@@ -150,17 +151,21 @@ namespace Consonance
 
 				// which pattern
 				recurranceMode.request.value.SelectedOption = (int)editing.repeatType;
+
 				// pattern specific
-				if (editing.repeatType == RecurranceType.RecurrsEveryPattern) {
-					var rd = RecurrsEveryPattern.FromBinary (editing.repeatData);
-					recurrEvery.request.value = new RecurrsEveryPatternValue(rd.FixedPoint, rd.units, rd.frequency);
+				IRecurr pat;
+				if (editing.repeatType == RecurranceType.RecurrsEveryPattern &&
+					RecurrsEveryPattern.TryFromBinary (editing.repeatData, out pat)) {
+					var rd = (RecurrsEveryPattern)pat;
+					recurrEvery.request.value = new RecurrsEveryPatternValue (rd.FixedPoint, rd.units, rd.frequency);
 				}
-				if (editing.repeatType == RecurranceType.RecurrsOnPattern) {
-					var rd = RecurrsOnPattern.FromBinary (editing.repeatData);
+				if (editing.repeatType == RecurranceType.RecurrsOnPattern &&
+					RecurrsOnPattern.TryFromBinary (editing.repeatData, out pat)) {
+					var rd = (RecurrsOnPattern)pat;
 					RecurrSpan use = rd.units [0];
 					foreach (var d in rd.units)
 						use |= d;
-					recurrOn.request.value = new RecurrsOnPatternValue(use, rd.onIndexes);
+					recurrOn.request.value = new RecurrsOnPatternValue (use, rd.onIndexes);
 				}
 			}
 
@@ -214,15 +219,8 @@ namespace Consonance
 		}
 		public void Set(TrackerInstance thisone)
 		{
-			if (!editing) {
-				thisone.name = dietName; 
-				thisone.started = dietStart;
-			} else {
-				thisone.name = dietName;
-				thisone.started = dietStart;
-				thisone.hasEnded = dietEnded;
-				if (dietEnded) thisone.ended = dietEnd;
-			}
+			thisone.name = dietName; 
+			thisone.startpoint = dietStart;
 		}
 		public void Reset()
 		{
@@ -246,23 +244,9 @@ namespace Consonance
 			requestPackage.Add (cName);
 			requestPackage.Add (cWhen);
 			if (this.editing) {
-				requestPackage.Add (cHasEnded);
-				if(editing.hasEnded) requestPackage.Add(cEndWhen);
-				// lets hook this
-				dietEnded.request.changed += () => {
-					if(dietEnded) 
-					{
-						if(!requestPackage.Contains(cEndWhen))
-							requestPackage.Add(cEndWhen);
-					}
-					else requestPackage.Remove(cEndWhen);
-				};
-
 				// we're editing, lets setty
 				dietName.request.value = editing.name;
-				dietStart.request.value = editing.started;
-				dietEnded.request.value = editing.hasEnded;
-				dietEnd.request.value = editing.ended;
+				dietStart.request.value = editing.startpoint;
 			}
 		}
 	}

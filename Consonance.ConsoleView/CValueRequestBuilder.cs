@@ -175,23 +175,37 @@ namespace Consonance.ConsoleView
 		{
 			return new RequestFromString<RecurrsOnPatternValue>(name,
 				str => {
-					var args = str.Split(' ');
 					uint mask = 0;
-					foreach(var t in args[0].Split('|'))
-						mask |= uint.Parse(t);
 					List<int> ons = new List<int>();
-					foreach(var t in args[0].Split('|'))
-						ons.Add(int.Parse(t));
+					var input = str.Split(' ');
+					int i=0;
+					for(;i<input.Length-1;i++)
+					{
+						var pv = input[i].Split('|');
+						mask |= uint.Parse(pv[1]);
+						ons.Add(int.Parse(pv[0]));
+					}
+					mask |= uint.Parse(input[i]);
 					return new RecurrsOnPatternValue((RecurrSpan)mask, ons.ToArray());
 				},
 				patval => {
 					var masks = new List<uint>();
 					foreach(var v in patval.PatternType.SplitFlags())
 						masks.Add((uint)v);
-					return String.Join(" ",
-						string.Join("|", masks), 
-						string.Join("|", patval.PatternValues)
-					);
+					
+					String exlp = "";
+					int i=0;
+					for(;i<masks.Count-1;i++)
+						exlp += (i==0 ? "on " : "of ")+ (RecurrSpan)masks[i] + " " + patval.PatternValues[i];
+					var lpv = patval.PatternValues[i];
+					exlp += " of the " + (RecurrSpan)masks[i];
+
+					String[] fmt = new string[masks.Count];
+					for(i=0;i<masks.Count-1;i++)
+						fmt[i] = patval.PatternValues[i] + "|" + masks[i];
+					fmt[i] = masks[i].ToString();
+
+					return String.Join(" ", fmt) + " :: " + exlp;
 				}
 			);
 		}

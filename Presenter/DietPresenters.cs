@@ -47,18 +47,16 @@ namespace Consonance
 	}
 	public class TrackerInstanceVM : OriginatorVM
 	{
-        public DateTime start { get; private set; }
-        public bool hasended { get; private set; }
-        public DateTime end { get; private set; }
+        public DateTime started { get; private set; }
         public String name { get; private set; }
         public String desc { get; private set; }
         public KVPList<string, double> displayAmounts { get; private set; }
         public TrackerDialect dialect { get; private set; }
 
-		public TrackerInstanceVM(TrackerDialect td, DateTime s, bool he, DateTime e, String n, String d, KVPList<string,double>  t)
+		public TrackerInstanceVM(TrackerDialect td, DateTime s, String n, String d, KVPList<string,double>  t)
 		{
 			this.dialect = td;
-			start=s; end = e; hasended = he;
+			started=s;
 			name=n; desc=d;
 			displayAmounts = t;
 		}

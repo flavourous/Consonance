@@ -56,9 +56,7 @@ namespace Consonance
 	public class TrackerInstance : BaseDB
 	{
 		public string name{get;set;}
-		public DateTime started{get;set;}
-		public DateTime ended{get;set;}
-		public bool hasEnded {get;set;}
+		public DateTime startpoint{get;set;}
 	}
 
 	public class BaseInfo : BaseDB
@@ -190,18 +188,6 @@ namespace Consonance
 		{
 			// actually call edit promise...
 			model.Edit(diet);
-
-			List<BaseEntry> orphans = new List<BaseEntry>();
-			orphans.AddRange (inhandler.GetOrphans (diet));
-			orphans.AddRange (outhandler.GetOrphans (diet));
-			foreach (var e in orphans)
-				if (e.entryWhen < diet.started)
-					diet.started = e.entryWhen;
-			if (diet.hasEnded)
-				foreach (var e in orphans)
-					if (e.entryWhen > diet.ended)
-						diet.ended = e.entryWhen;
-			conn.Update (diet, typeof(DietInstType)); 
 		}
 		public void RemoveTracker(DietInstType rem)
 		{
@@ -214,22 +200,22 @@ namespace Consonance
 			var tab = conn.Table<DietInstType> ();
 			return tab;
 		}
-		public IEnumerable<DietInstType> GetTrackers(DateTime st, DateTime en)
-		{
-			//  | is i1/i2 \ is st/en		i1>st	i2>en	i1>en	i2>st		WANTED
-			// |    \    \     |		= 	false	true	false	true		true		
-			// \  |    \   |			=	true	true	false	true		true
-			// |    \    |   \ 			=	false	false	false	true		true
-			// \    |  |       \		=	true	false	true	true		true
-			// \  \   |   |				=	true	true	true	true		false
-			// |  |   \   \				=	false	false	false	false		false
-
-			// what works is (i1>st ^ i2 > en) | (i1>en ^ i2>st)
-
-			return conn.Table<DietInstType> ().Where (
-				d => ((!d.hasEnded && (st >= d.started || en >= d.started))
-					|| ((d.started >= st ^ d.ended >= en) || (d.started >= en ^ d.ended >= st))));
-		}
+//		public IEnumerable<DietInstType> GetTrackers(DateTime st, DateTime en)
+//		{
+//			//  | is i1/i2 \ is st/en		i1>st	i2>en	i1>en	i2>st		WANTED
+//			// |    \    \     |		= 	false	true	false	true		true		
+//			// \  |    \   |			=	true	true	false	true		true
+//			// |    \    |   \ 			=	false	false	false	true		true
+//			// \    |  |       \		=	true	false	true	true		true
+//			// \  \   |   |				=	true	true	true	true		false
+//			// |  |   \   \				=	false	false	false	false		false
+//
+//			// what works is (i1>st ^ i2 > en) | (i1>en ^ i2>st)
+//
+//			return conn.Table<DietInstType> ().Where (
+//				d => ((!d.hasEnded && (st >= d.started || en >= d.started))
+//					|| ((d.started >= st ^ d.ended >= en) || (d.started >= en ^ d.ended >= st))));
+//		}
 	}
 
 
@@ -263,26 +249,11 @@ namespace Consonance
 		{
 			return true;
 		}
-		void CheckOrphans(D diet, EntryType entry) // FIXME SLOW
-		{
-			bool updateDiet = false;
-			if (diet.started > entry.entryWhen) {
-				updateDiet = true;
-				diet.started = entry.entryWhen;
-			}
-			if (diet.hasEnded && diet.ended < entry.entryWhen) {
-				updateDiet = true;
-				diet.ended = entry.entryWhen;
-			}
-			if (updateDiet)
-				conn.Update (diet, typeof(D));
-		}
 		public void Add (D diet, EntryInfoType info)
 		{
 			EntryType ent = creator.Calculate (info, ShouldComplete());
 			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = info.id;
-			CheckOrphans (diet, ent);
 			conn.Insert (ent as EntryType);
 		}
 		public void Add (D diet)
@@ -290,7 +261,6 @@ namespace Consonance
 			EntryType ent = creator.Create ();
 			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = null;
-			CheckOrphans (diet, ent);
 			conn.Insert (ent as EntryType);
 		}
 		public void Edit(EntryType ent, D diet, EntryInfoType info)
@@ -298,7 +268,6 @@ namespace Consonance
 			creator.Edit(ent, info, ShouldComplete());
 			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = info.id;
-			CheckOrphans (diet, ent);
 			conn.Update (ent as EntryType);
 		}
 		public void Edit(EntryType ent, D diet)
@@ -306,7 +275,6 @@ namespace Consonance
 			creator.Edit (ent);
 			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = null;
-			CheckOrphans (diet, ent);
 			conn.Update (ent as EntryType);
 		}
 		public void Remove (params EntryType[] tets)
@@ -315,9 +283,10 @@ namespace Consonance
 			foreach(var tet in tets)
 				conn.Delete<EntryType> (tet.id);
 		}
-		Dictionary<RecurranceType,Func<byte[], IRecurr>> patcreators = new Dictionary<RecurranceType, Func<byte[], IRecurr>> {
-			{ RecurranceType.RecurrsOnPattern, RecurrsOnPattern.FromBinary },
-			{ RecurranceType.RecurrsEveryPattern, RecurrsEveryPattern.FromBinary},
+		delegate bool RecurrGetter(byte[] data, out IRecurr rec);
+		Dictionary<RecurranceType,RecurrGetter> patcreators = new Dictionary<RecurranceType, RecurrGetter> {
+			{ RecurranceType.RecurrsOnPattern, RecurrsOnPattern.TryFromBinary },
+			{ RecurranceType.RecurrsEveryPattern, RecurrsEveryPattern.TryFromBinary},
 		};
 		public IEnumerable<EntryType> Get (D diet, DateTime start, DateTime end)
 		{
@@ -332,19 +301,14 @@ namespace Consonance
 			foreach (EntryType ent in repeatersQuery) {
 				DateTime patEnd = ent.repeatEnd ?? DateTime.MaxValue;
 				DateTime patStart = ent.repeatStart ?? DateTime.MinValue;
-				if ((patStart >= start ^ patEnd >= end) || (patStart >= end ^ patEnd >= start))
-					foreach (var rd in patcreators [ent.repeatType] (ent.repeatData).GetOccurances(start,end))
-						yield return (EntryType) ent.FlyweightCloneWithDate (rd);
+				if ((patStart >= start ^ patEnd >= end) || (patStart >= end ^ patEnd >= start)) {
+					IRecurr patcreator = null;
+					if(!patcreators [ent.repeatType] (ent.repeatData, out patcreator))
+						continue; /* report after loop */
+					foreach (var rd in patcreator.GetOccurances(start,end))
+						yield return (EntryType)ent.FlyweightCloneWithDate (rd);
+				}
 			}
-		}
-		public IEnumerable<EntryType> GetOrphans(D trackerInstance)
-		{
-			return conn.Table<EntryType> ().Where (d => 
-				d.trackerinstanceid == trackerInstance.id &&  (
-					d.entryWhen < trackerInstance.started || 
-					(trackerInstance.hasEnded && d.entryWhen > trackerInstance.ended)
-				)
-			);
 		}
 		public int Count ()
 		{

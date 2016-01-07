@@ -486,9 +486,7 @@ namespace Consonance
 			}
 			return new TrackerInstanceVM(
 				dialect,
-				entry.started, 
-				entry.hasEnded,
-				entry.ended,
+				entry.startpoint, 
 				entry.name,
 				"",
 				kl
@@ -506,10 +504,9 @@ namespace Consonance
 		TimeSpanConverter tss = new TimeSpanConverter();
 		public IEnumerable<TrackingInfoVM> DetermineInTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
-			if(dayStart < di.started) yield break;
 			var targets = GetTargets (di);
 			for (var ti=0; ti < targets.Length; ti++) {
-				var trg = targets [ti].FindTargetForDay(di.started, dayStart);
+				var trg = targets [ti].FindTargetForDay(di.startpoint, dayStart);
 				var dtr = targets [ti].DayTargetRange;
 				var yret = new TrackingInfoVM { targetValue = trg.target };
 				GetValsForRange (eats, burns, trg.begin, trg.end, out yret.inValues, out yret.outValues);

@@ -286,22 +286,14 @@ namespace Consonance
 				}
 			foreach (var vm in lastBuild)
 				vm.trackChanged = v => PushTracking (); // lazy way.
-			Debug.WriteLine("Setting Trackers");
+			Debug.WriteLine ("Setting Trackers");
 			view.SetInstances (lastBuild);
 			// change current diet if we have to.
-			if (currentRemoved || view.currentTrackerInstance == null) {
-				Debug.WriteLine("Attempting to default to a tracker instance, lastbuild has " + lastBuild.Count);
-				// select the first one thats open today
-				foreach (var d in lastBuild) {
-					if (d.start <= DateTime.Now && (d.hasended ? d.end : DateTime.MaxValue) >= DateTime.Now) {
-						view.currentTrackerInstance = d;
-						Debug.WriteLine("Selecting tracker defaultly");
-						PushEatLines ();
-						PushBurnLines ();
-						PushTracking ();
-						break;
-					}
-				}
+			if ((currentRemoved || view.currentTrackerInstance == null) && lastBuild.Count > 0) {
+				view.currentTrackerInstance = lastBuild[0];
+				PushEatLines ();
+				PushBurnLines ();
+				PushTracking ();
 			}
 		}
 			
@@ -496,7 +488,13 @@ namespace Consonance
 				int pc = 0;
 				foreach (var pt in PatternType.SplitFlags())
 					pc++;
-				return PatternValues.Length > 1 && pc == PatternValues.Length;
+				bool s1 = PatternValues.Length > 1 && pc == PatternValues.Length;
+				if (s1) 
+				{
+					try{ new RecurrsOnPattern(PatternValues, PatternType,null,null); }
+					catch{ s1 = false; }
+				}
+				return s1;
 			}
 		}
 		public RecurrsOnPattern Create(DateTime? s, DateTime? e)
