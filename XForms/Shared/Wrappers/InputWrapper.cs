@@ -69,11 +69,10 @@ namespace Consonance.XamarinFormsView
 				pv.PlanChoices.Clear ();
 				foreach (var pi in choose_from)
 					pv.PlanChoices.Add (pi);
-				pv.Disappearing
 				await nav.PushAsync (pv);
 				tcs.SetResult (new EventArgs ());
 			});
-			return new ViewTask<int> (res.Task, tcs.Task, () => nav.RemoveOrPop (pv));
+			return new ViewTask<int> (() => nav.RemoveOrPop (pv),tcs.Task,res.Task);
 		}
 
 		public async Task WarnConfirm(string action, Promise confirmed)
@@ -82,5 +81,14 @@ namespace Consonance.XamarinFormsView
 			Device.BeginInvokeOnMainThread(async () => tcs.SetResult(await root.DisplayAlert ("Warning", action, "OK", "Cancel")));
 			if(await tcs.Task) await confirmed ();
         }
+		public async Task Message(string msg)
+		{
+			TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool> ();
+			Device.BeginInvokeOnMainThread (async () => {
+				await root.DisplayAlert ("Message", msg, "OK");
+				tcs.SetResult (false);
+			});
+			await tcs.Task;
+		}
     }
 }

@@ -49,7 +49,7 @@ namespace Consonance.XamarinFormsView
 				vrv.completed -= each_handler;
 				tcs_all.SetResult(success);
 			});
-			return new ViewTask<bool> (tcs_all.Task, tcs_push.Task, () => nav.RemoveOrPop (vrv));
+			return new ViewTask<bool> (() => nav.RemoveOrPop (vrv),tcs_push.Task, tcs_all.Task);
         }
 
 		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)
@@ -95,6 +95,8 @@ namespace Consonance.XamarinFormsView
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new ValueRequestVM<Barcode> (new ValueRequestTemplate (), name); }
 		public IValueRequest<int> IntRequestor (string name){ return new ValueRequestVM<int> (new ValueRequestTemplate (), name); }
 		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return new ValueRequestVM<OptionGroupValue> (new ValueRequestTemplate (), name); }
+		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return new ValueRequestVM<RecurrsEveryPatternValue> (new ValueRequestTemplate (), name); }
+		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return new ValueRequestVM<RecurrsOnPatternValue> (new ValueRequestTemplate (), name); }
 		#endregion
 	}
 

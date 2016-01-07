@@ -50,7 +50,7 @@ namespace Consonance.XamarinFormsView
             // Handle when your app starts
 
 			// just let go of this async loader method.
-			Presenter.PresentTo(viewWrapper, userInputWrapper, planCommandWrapper, defaultBuilder);
+			Presenter.PresentTo(viewWrapper, new Platform(), userInputWrapper, planCommandWrapper, defaultBuilder);
         }
     }
     

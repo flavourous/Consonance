@@ -70,6 +70,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequests\Templates\OptionGroupValueRequest.xaml.cs">
       <DependentUpon>OptionGroupValueRequest.xaml</DependentUpon>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Platform.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\ChoosePlanView.xaml">

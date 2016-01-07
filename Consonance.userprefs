@@ -1,4 +1,4 @@
-﻿<Properties StartupItem="Consonance.ConsoleView\Consonance.ConsoleView.csproj" RefactoringSettings.EnableRefactorings="True">
+﻿<Properties StartupItem="XForms\Droid\Consonance.XamarinFormsView.Droid.csproj" RefactoringSettings.EnableRefactorings="True">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Console" />
   <MonoDevelop.Ide.Workbench ActiveDocument="..\LibRTP\LibRTP\RecurrsOnPattern.cs">
     <Files>

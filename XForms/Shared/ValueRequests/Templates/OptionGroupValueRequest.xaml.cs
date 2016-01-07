@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Xamarin.Forms;
 using System.ComponentModel;
+using LibSharpHelp;
 
 namespace Consonance.XamarinFormsView
 {
@@ -40,7 +41,7 @@ namespace Consonance.XamarinFormsView
 				var bc = BindingContext as ValueRequestVM<OptionGroupValue>;	
 				// ok, value could be null!
 				if (bc.value != null && bc.value.OptionNames != null) {
-					psel.Items.AddAll (bc.value.OptionNames);
+					psel.Items.AddAll(bc.value.OptionNames);
 					psel.SelectedIndex = bc.value.SelectedOption;
 				}
 			}
