@@ -31,10 +31,12 @@ namespace Consonance
 		IAbstractedTracker cdh;
 		TrackerInstanceVM cd;
 		readonly Func<TrackerInstanceVM> getCurrent;
-		public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent)
+		readonly Func<String,Task> message;
+		public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String,Task> message)
 		{
 			// remember it
 			this.getCurrent = getCurrent;
+			this.message = message;
 
 			// commanding for pland
 			commands.eat.add += View_addeatitem;
@@ -69,6 +71,7 @@ namespace Consonance
 			cd = getCurrent();
 			if (cd == null) {
 				// ping the view about being stupid.
+				message("You need to create a tracker before you can do that").Wait();
 				cdh = null;
 				return false;
 			}
@@ -165,7 +168,7 @@ namespace Consonance
 				view.changeday += ChangeDay;
 				view.manageInfo += View_manageInfo;
 
-				pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance);
+				pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance, input.Message);
 
 				// setup view
 				PushDietInstances ();
@@ -412,6 +415,7 @@ namespace Consonance
 		Task SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
 		ViewTask<int> ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
 		Task WarnConfirm (String action, Promise confirmed);
+		Task Message(String msg);
 		Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType imt, ObservableCollection<InfoLineVM> toManage,InfoLineVM initiallySelected); // which ends up calling this one
 		Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd);
 	}

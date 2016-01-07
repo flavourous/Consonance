@@ -77,18 +77,18 @@ namespace Consonance.ConsoleView
 		class WarnPage : IConsolePage
 		{
 			public bool allowDefaultActions { get { return false; } }
-			readonly String action;
+			readonly String msg;
 			readonly Promise compl;
 			readonly TaskCompletionSource<EventArgs> fin;
 			public WarnPage(String action, Promise compl, TaskCompletionSource<EventArgs> fin)
 			{
-				this.action=action;
+				this.msg=action;
 				this.compl=compl;
 				this.fin = fin;
 			}
 			#region IConsolePage implementation
 			public bool pageChanged { get; set; }
-			public string pageData { get { return "Warning: " + action; } }
+			public string pageData { get { return "Warning: " + msg; } }
 			public ConsolePageAction[] pageActions {
 				get {
 					return new[] { 
@@ -112,6 +112,40 @@ namespace Consonance.ConsoleView
 		{
 			TaskCompletionSource<EventArgs> ts = new TaskCompletionSource<EventArgs> ();
 			var v = new WarnPage (action, confirmed, ts);
+			MainClass.consolePager.Push (v);
+			return ts.Task;
+		}
+		class MessagePage : IConsolePage
+		{
+			public bool allowDefaultActions { get { return false; } }
+			readonly String msg;
+			readonly TaskCompletionSource<EventArgs> fin;
+			public MessagePage(String msg, TaskCompletionSource<EventArgs> fin)
+			{
+				this.msg=msg;
+				this.fin = fin;
+			}
+			#region IConsolePage implementation
+			public bool pageChanged { get; set; }
+			public string pageData { get { return msg; } }
+			public ConsolePageAction[] pageActions {
+				get {
+					return new[] { 
+						new ConsolePageAction () { name = "Ok", argumentNames = new String[0], action = _ => {
+								MainClass.consolePager.Pop (this);
+								fin.SetResult (new EventArgs ());
+							}
+						},
+					};
+					}
+				}
+
+			#endregion
+		}
+		public Task Message (string msg)
+		{
+			TaskCompletionSource<EventArgs> ts = new TaskCompletionSource<EventArgs> ();
+			var v = new MessagePage (msg, ts);
 			MainClass.consolePager.Push (v);
 			return ts.Task;
 		}
