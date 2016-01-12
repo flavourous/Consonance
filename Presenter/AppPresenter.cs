@@ -171,8 +171,9 @@ namespace Consonance
 				pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance, input.Message);
 
 				// setup view
-				PushDietInstances ();
 				ChangeDay (DateTime.UtcNow);
+				view.SetLoadingState (LoadThings.Generally, false);
+				PushDietInstances ();
 			});
 		}
 
@@ -240,15 +241,20 @@ namespace Consonance
 
 		void PushEatLines()
 		{
+			view.SetLoadingState (LoadThings.EatItems, true);
+			Task.Delay (2000);
 			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
 			var eatEntries = ad.InEntries (view.currentTrackerInstance, ds, de);
 			view.SetEatLines (eatEntries);
+			view.SetLoadingState (LoadThings.EatItems, false);
 		}
 		void PushBurnLines()
 		{
+			view.SetLoadingState (LoadThings.BurnItems, true);
 			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
 			var burnEntries = ad.OutEntries (view.currentTrackerInstance, ds, de);
 			view.SetBurnLines (burnEntries);
+			view.SetLoadingState (LoadThings.BurnItems, false);
 		}
 		void PushTracking()
 		{
@@ -279,6 +285,7 @@ namespace Consonance
 		List<TrackerInstanceVM> lastBuild = new  List<TrackerInstanceVM>();
 		void PushDietInstances()
 		{
+			view.SetLoadingState (LoadThings.Instances, true);
 			lastBuild.Clear ();	
 			bool currentRemoved = view.currentTrackerInstance != null;
 			foreach (var dh in dietHandlers)
@@ -305,6 +312,7 @@ namespace Consonance
 					view.SetBurnTrack (null, new TrackerTracksVM[0]);
 				}
 			}
+			view.SetLoadingState (LoadThings.Instances, false);
 		}
 			
 		List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
@@ -323,7 +331,7 @@ namespace Consonance
 		void HandleViewModelsChanged (IAbstractedTracker sender, DietVMChangeEventArgs args)
 		{
 			// we want these from any registered tracker
-			if(args.changeType == DietVMChangeType.Instances)
+			if (args.changeType == DietVMChangeType.Instances)
 				PushDietInstances ();
 			
 			// check its from the active tracker
@@ -345,11 +353,13 @@ namespace Consonance
 	public delegate bool Predicate();
 	public delegate Task Promise();
 	public delegate Task Promise<T>(T arg);
+	public enum LoadThings { Generally, EatItems, BurnItems, Instances };
 	/// <summary>
 	/// definition on the application view
 	/// </summary>
 	public interface IView
 	{
+		void SetLoadingState(LoadThings thing, bool active);
 		void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others);
 		void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others);
 		void SetEatLines (IEnumerable<EntryLineVM> lineitems);
@@ -559,59 +569,5 @@ namespace Consonance
 		bool enabled { set; } // so the model domain can communicate what fields should be in action (for combining quick and calculate entries)
 		bool valid { set; } // if we want to check the value set is ok
 		bool read_only { set; } // if we want to check the value set is ok
-	}
-	public interface IRequestStorageHelper
-	{
-		void Reset();
-		event Action requestChanged;
-		bool requestValid {set;}
-		Object requestValue { get; set; }
-		object CGet (IValueRequestFactory fact, Func<IValueRequestFactory, Func<String, Object>> FindRequestDelegate);
-	}
-	public class RequestStorageHelper<V> : IRequestStorageHelper
-	{
-		#region IRequestStorageHelper implementation
-		public event Action requestChanged { add { request.changed += value; } remove{ request.changed -= value; } }
-		public Object requestValue { get { return request.value; } set { request.value = (V)value; } }
-		public object CGet (IValueRequestFactory fact, Func<IValueRequestFactory, Func<String, Object>> FindRequestDelegate)
-		{
-			return CGet ((Func<String, IValueRequest<V>>)FindRequestDelegate (fact));
-		}
-		public bool requestValid { set { request.valid = value; } }
-		#endregion
-
-		public IValueRequest<V> request { get; private set; }
-		readonly String name;
-		readonly Func<V> defaultValue = () => default(V);
-		readonly Action validate;
-		public RequestStorageHelper(String requestName, Func<V> defaultValue, Action validate)
-		{
-			this.validate = validate;
-			this.defaultValue = defaultValue;
-			name = requestName;
-		}
-		bool shouldReset = true; // initiailisation
-		public void Reset()
-		{
-			if (!(shouldReset = request == null)) {
-				request.ClearListeners ();
-				request.value = defaultValue ();
-			} 
-		}
-		// will return cached instance if possible, but will do defaulting if specified and will
-		// always call ClearListeners, so that old registrations to the changed event are no longer called.
-		public Object CGet(Func<String,IValueRequest<V>> creator)
-		{
-			if (request == null)				
-				request = creator (name);
-			if (shouldReset) Reset ();
-			request.ClearListeners ();
-			request.changed += validate;
-			return request.request;
-		}
-		public static implicit operator V (RequestStorageHelper<V> me)
-		{
-			return me.request.value;
-		}
 	}
 }

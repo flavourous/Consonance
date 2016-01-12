@@ -9,6 +9,11 @@ namespace Consonance.ConsoleView
 {
 	class CView : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, IConsolePage
 	{
+		public void SetLoadingState (LoadThings thing, bool active)
+		{
+			throw new NotImplementedException ();
+		}
+
 		public bool allowDefaultActions { get { return true; } }
 		readonly CPlanCommands pc;
 		public CView(CPlanCommands pc)

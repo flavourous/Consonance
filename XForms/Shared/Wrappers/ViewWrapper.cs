@@ -6,6 +6,7 @@ using Xamarin.Forms;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.ComponentModel;
+using LibSharpHelp;
 
 namespace Consonance.XamarinFormsView
 {
@@ -22,8 +23,10 @@ namespace Consonance.XamarinFormsView
 		}
 
 		readonly MainTabs main;
-		public ViewWrapper(MainTabs main)
+		readonly Action loaded;
+		public ViewWrapper(MainTabs main, Action loaded)
         {
+			this.loaded = loaded;
             this.main = main;
 			main.daypagerContext = this;
 			main.InInfoManage += () => manageInfo (InfoManageType.In);
@@ -41,6 +44,56 @@ namespace Consonance.XamarinFormsView
 		{ 
 			get { return main.SelectedPlanItem; } 
 			set { ViewWrapper.InvokeOnMainThread (() => main.SelectedPlanItem = value); }
+		}
+
+		Page loady = new ContentPage {
+			Content = new Label {
+				Text = "Loading...",
+				HorizontalOptions = LayoutOptions.Center,
+				VerticalOptions = LayoutOptions.Center
+			}
+		};
+		void LoadyPage(bool active)
+		{
+			// this should be good enough...
+			if (active) main.Navigation.PushModalAsync (loady);
+			else main.Navigation.PopModalAsync ();
+		}
+
+		void TLS(TabbedPage tp, ListView lv, bool loading)
+		{
+			lv.IsEnabled = !loading;
+		}
+
+
+		bool firstload = false;
+		public void SetLoadingState (LoadThings thing, bool active)
+		{
+			ViewWrapper.InvokeOnMainThread (() => {
+				switch (thing) {
+				case LoadThings.Generally:
+					if(!firstload)
+					{
+						if(!active)
+						{
+							firstload = true;
+							loaded();
+						}
+						break;
+					}
+					LoadyPage (active);
+					break;
+				case LoadThings.EatItems: 
+					main.load1=active;
+					break;
+				case LoadThings.BurnItems: 
+					main.load2=active;
+					break;
+				case LoadThings.Instances: 
+					main.load3=active;
+					break;
+				}
+			});
 		}
 		
         public void SetEatLines(IEnumerable<EntryLineVM> lineitems)

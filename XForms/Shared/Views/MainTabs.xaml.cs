@@ -14,6 +14,11 @@ namespace Consonance.XamarinFormsView
 			BindingContext = this;
 		}
 		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = value; } }
+		bool _l1,_l2,_l3;
+		public bool load1{ get{ return _l1; } set{ _l1 = value; OnPropertyChanged ("load1"); } }
+		public bool load2{ get{ return _l2; } set{ _l2 = value; OnPropertyChanged ("load2"); } }
+		public bool load3{ get{ return _l3; } set{ _l3 = value; OnPropertyChanged ("load3"); } }
+
 
 		//////////////
 		// Commands //

@@ -36,14 +36,19 @@ namespace Consonance.XamarinFormsView
             var navigator = new NavigationPage(main);
 
 			// The root page of your application
-			MainPage = navigator;
+			MainPage = new Splash();
 
 			// instantiate wrappers
-			viewWrapper = new ViewWrapper(main);
+			viewWrapper = new ViewWrapper(main, () => MainPage = navigator);
 			defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
 			userInputWrapper = new UserInputWrapper(navigator, iman, () => viewWrapper.currentTrackerInstance.sender as IAbstractedTracker);
 			planCommandWrapper = new PlanCommandsWrapper(defaultBuilder, main, iman);
+
+			// def the loading 
+			viewWrapper.SetLoadingState (LoadThings.Generally, true);
         }
+
+
 
         protected override void OnStart()
         {
