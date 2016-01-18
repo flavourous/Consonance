@@ -2,5 +2,5 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.Splash">
 <StackLayout HeightRequest="40" WidthRequest = "250" BackgroundColor="White" VerticalOptions="Center" HorizontalOptions="Center">
 	<Label Text = "Loading, please wait..." HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" TextColor="Black" />
- </StackLayout>
+</StackLayout>
 </ContentPage>

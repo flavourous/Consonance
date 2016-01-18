@@ -20,8 +20,8 @@ namespace Consonance.XamarinFormsView
 			{ typeof(Barcode), () => new BarcodeRequest () },
 			{ typeof(int), () => new IntRequest () },
 			{ typeof(OptionGroupValue), () => new OptionGroupValueRequest () },
-			{ typeof(RecurrsEveryPatternValue), () => null },
-			{ typeof(RecurrsOnPatternValue), () => null }
+			{ typeof(RecurrsEveryPatternValue), () => new RecurrsEveryPatternValueRequest() },
+			{ typeof(RecurrsOnPatternValue), () => new RecurrsOnPatternValueRequest() }
 		};
 		public ValueRequestTemplate ()
 		{

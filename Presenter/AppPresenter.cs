@@ -465,9 +465,9 @@ namespace Consonance
 	}
 	public class RecurrsEveryPatternValue
 	{
-		public readonly DateTime PatternFixed;
-		public readonly RecurrSpan PatternType;
-		public readonly int PatternFrequency;
+		public DateTime PatternFixed;
+		public RecurrSpan PatternType;
+		public int PatternFrequency;
 		public RecurrsEveryPatternValue(DateTime date, RecurrSpan pt, int freq)
 		{
 			PatternFixed = date;
@@ -493,14 +493,14 @@ namespace Consonance
 	}
 	public class RecurrsOnPatternValue
 	{
-		public readonly RecurrSpan PatternType;
-		public readonly int[] PatternValues;
+		public RecurrSpan PatternType;
+		public int[] PatternValues;
 		public RecurrsOnPatternValue(RecurrSpan pat, int[] vals)
 		{
 			PatternType = pat;
 			PatternValues = vals;
 		}
-		public RecurrsOnPatternValue():this(RecurrSpan.Day | RecurrSpan.Month, new[] { 1, 1 }){
+		public RecurrsOnPatternValue():this(RecurrSpan.Day | RecurrSpan.Month, new[] { 1 }){
 		}
 		public bool IsValid 
 		{

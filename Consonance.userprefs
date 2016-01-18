@@ -1,43 +1,45 @@
 ﻿<Properties StartupItem="XForms\Droid\Consonance.XamarinFormsView.Droid.csproj" RefactoringSettings.EnableRefactorings="True">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="XForms\Shared\Views\Splash.xaml">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.192.168.1.1:5555" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="XForms\Shared\ValueRequests\Templates\RecurrsOnPatternValueRequest.xaml.cs">
     <Files>
-      <File FileName="Presenter\Trackers\CalorieDiet.cs" Line="1" Column="1" />
-      <File FileName="..\LibRTP\LibRTP\RecurrsOnPattern.cs" Line="121" Column="6" />
-      <File FileName="..\LibRTP\LibRTP\Common.cs" Line="1" Column="1" />
-      <File FileName="..\LibRTP\LibRTP\RecurrsEveryPattern.cs" Line="1" Column="1" />
-      <File FileName="Presenter\DietPresenters.cs" Line="320" Column="3" />
-      <File FileName="c:\w\Consonance\Presenter\Trackers\Budgeting.cs" Line="1" Column="1" />
-      <File FileName="Consonance.ConsoleView\CView.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\Presenter\AppPresenter.cs" Line="572" Column="3" />
-      <File FileName="Presenter\DietModels.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\Presenter\TrackerTemplates\Defaulters.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\Presenter\TrackerTemplates\SimpleTrackyHelpy.cs" Line="76" Column="38" />
-      <File FileName="..\LibRTP\LibRTP\RecurringAggregatePattern.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\Consonance.ConsoleView\IConsolePager.cs" Line="108" Column="6" />
-      <File FileName="XForms\Shared\Views\MainTabs.xaml" Line="52" Column="10" />
-      <File FileName="Presenter\Helpers.cs" Line="109" Column="4" />
-      <File FileName="XForms\Shared\Platform.cs" Line="2" Column="1" />
-      <File FileName="XForms\Shared\App.cs" Line="42" Column="27" />
-      <File FileName="XForms\Shared\Wrappers\ViewWrapper.cs" Line="97" Column="1" />
-      <File FileName="XForms\Shared\Views\MainTabs.xaml.cs" Line="12" Column="1" />
-      <File FileName="XForms\Shared\Views\Splash.xaml" Line="5" Column="19" />
-      <File FileName="XForms\Shared\Views\Splash.xaml.cs" Line="7" Column="1" />
-      <File FileName="c:\w\Consonance\XForms\Droid\MainActivity.cs" Line="20" Column="1" />
+      <File FileName="XForms\Shared\ValueRequests\Templates\RecurrsEveryPatternValueRequest.xaml" Line="5" Column="45" />
+      <File FileName="XForms\Shared\ValueRequests\Templates\RecurrsEveryPatternValueRequest.xaml.cs" Line="2" Column="1" />
+      <File FileName="XForms\Shared\ValueRequests\Templates\TimeSpanRequest.xaml" Line="4" Column="8" />
+      <File FileName="XForms\Shared\ValueRequests\Templates\RecurrsOnPatternValueRequest.xaml" Line="17" Column="30" />
+      <File FileName="XForms\Shared\ValueRequests\Templates\RecurrsOnPatternValueRequest.xaml.cs" Line="98" Column="27" />
+      <File FileName="c:\w\Consonance\Presenter\AppPresenter.cs" Line="468" Column="10" />
+      <File FileName="..\LibRTP\LibRTP\RecurrsOnPattern.cs" Line="12" Column="2" />
+      <File FileName="..\LibRTP\LibRTP\Common.cs" Line="30" Column="38" />
+      <File FileName="..\LibSharpHelp\StringHelpers.cs" Line="24" Column="40" />
+      <File FileName="c:\w\Consonance\Presenter\TrackerTemplates\Defaulters.cs" Line="41" Column="92" />
+      <File FileName="XForms\Shared\ValueRequests\Templates\DateTimeRequest.xaml" Line="1" Column="1" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
           <Node name="Consonance" expanded="True">
-            <Node name="Consonance.XamarinFormsView" expanded="True">
-              <Node name="Views" expanded="True">
-                <Node name="Splash.xaml" expanded="True" />
-              </Node>
-              <Node name="Wrappers" expanded="True" />
+            <Node name="Consonance" expanded="True">
+              <Node name="TrackerTemplates" expanded="True" />
             </Node>
-            <Node name="Consonance.XamarinFormsView.Droid" expanded="True" selected="True" />
+            <Node name="Consonance.XamarinFormsView" expanded="True">
+              <Node name="ValueRequests" expanded="True">
+                <Node name="Templates" expanded="True">
+                  <Node name="IntRequest.xaml" expanded="True" />
+                  <Node name="RecurrsEveryPatternValueRequest.xaml" expanded="True" />
+                  <Node name="RecurrsOnPatternValueRequest.xaml" expanded="True" />
+                </Node>
+                <Node name="ValueRequestTemplate.xaml" expanded="True" />
+              </Node>
+              <Node name="Views" expanded="True" />
+            </Node>
+            <Node name="Consonance.XamarinFormsView.Droid" selected="True" />
+            <Node name="LibRTP" expanded="True" />
+            <Node name="LibSharpHelp" expanded="True" />
           </Node>
         </State>
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State />
       </Pad>
     </Pads>
   </MonoDevelop.Ide.Workbench>

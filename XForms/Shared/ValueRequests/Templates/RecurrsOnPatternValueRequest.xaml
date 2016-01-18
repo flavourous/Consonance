@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.RecurrsOnPatternValueRequest">
+	<ContentView.Resources>
+		<ResourceDictionary>
+			<l:RecurrsOnPatternValueRequestConverter x:Key="rConverter"/>
+		</ResourceDictionary>
+	</ContentView.Resources>
+	<Grid>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="*"/>
+		</Grid.ColumnDefinitions>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="auto" />
+			<RowDefinition Height="auto" />
+			<RowDefinition Height="auto" />
+		</Grid.RowDefinitions>
+		<StackLayout Orientation="Vertical" Grid.Column="0">
+			<Label>Day</Label>
+			<Switch IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=day}"/>
+			<Entry Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=dayval}" Keyboard="Numeric"
+				IsVisible="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daybox}"/>
+		</StackLayout>
+		<StackLayout Orientation="Vertical" Grid.Column="1">
+			<Label>Week</Label>
+			<Switch IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=week}"/>
+			<Entry Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekval}" Keyboard="Numeric"
+				IsVisible="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekbox}"/>
+		</StackLayout>
+		<StackLayout Orientation="Vertical" Grid.Column="2">
+			<Label>Month</Label>
+			<Switch IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=month}"/>
+			<Entry Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthval}" Keyboard="Numeric"
+				IsVisible="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthbox}"/>
+		</StackLayout>
+		<StackLayout Orientation="Vertical" Grid.Column="3">
+			<Label>Year</Label>
+			<Switch IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=year}"/>
+		</StackLayout>
+		<Label Grid.ColumnSpan="4" Grid.Row="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=explanation}"/>
+	</Grid>
+</ContentView>
