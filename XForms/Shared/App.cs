@@ -6,6 +6,7 @@ using Consonance;
 using Xamarin.Forms;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.ComponentModel;
 
 namespace Consonance.XamarinFormsView
 {
@@ -23,10 +24,17 @@ namespace Consonance.XamarinFormsView
 	}
     public class App : Application
     {
+		public static IValueRequestBuilder bld;
+		
 		readonly ViewWrapper viewWrapper;
 		readonly PlanCommandsWrapper planCommandWrapper;
 		readonly ValueRequestBuilder defaultBuilder;
 		readonly UserInputWrapper userInputWrapper;
+
+		public Task Presentation()
+		{
+			return Presenter.PresentTo(viewWrapper, new Platform(), userInputWrapper, planCommandWrapper, defaultBuilder);
+		}
 
         public App()
 		{
@@ -36,27 +44,29 @@ namespace Consonance.XamarinFormsView
             var navigator = new NavigationPage(main);
 
 			// The root page of your application
-			MainPage = new Splash();
+			MainPage = navigator;
 
 			// instantiate wrappers
-			viewWrapper = new ViewWrapper(main, () => MainPage = navigator);
-			defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
+			viewWrapper = new ViewWrapper(main);
+			bld = defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
 			userInputWrapper = new UserInputWrapper(navigator, iman, () => viewWrapper.currentTrackerInstance.sender as IAbstractedTracker);
 			planCommandWrapper = new PlanCommandsWrapper(defaultBuilder, main, iman);
 
-			// def the loading 
-			viewWrapper.SetLoadingState (LoadThings.Generally, true);
+			App.TLog("app constructed");
         }
-
-
 
         protected override void OnStart()
         {
-            // Handle when your app starts
-
-			// just let go of this async loader method.
-			Presenter.PresentTo(viewWrapper, new Platform(), userInputWrapper, planCommandWrapper, defaultBuilder);
+			App.TLog("app started - presenting now");
         }
+
+		static DateTime? itm = null;
+		public static void TLog(String msg, params String[] args)
+		{
+			var tuse = DateTime.Now;
+			if(itm == null) itm = tuse;
+			System.Diagnostics.Debug.WriteLine ("[" + (tuse-itm.Value).TotalMilliseconds.ToString("F1") + "ms]: " + msg, args);
+		}
     }
     
 }

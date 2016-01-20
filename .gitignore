@@ -1,9 +1,7 @@
-Consonance.AndroidView/bin
 Consonance.sdf
 ipch
 **bin
 **obj
-Droid
+./Droid
 packages
-Consonance.AndroidView/obj
 Components/

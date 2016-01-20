@@ -2,6 +2,7 @@
 <TabbedPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.MainTabs">
 	<ContentPage Title="{Binding InTabName}">
 		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+			<Button Clicked="OnTest">Test</Button>
 			<l:DayPagerView x:Name="daypagerIn" />
 			<Grid>
 				<ListView ItemsSource="{Binding InItems}" HasUnevenRows="true">

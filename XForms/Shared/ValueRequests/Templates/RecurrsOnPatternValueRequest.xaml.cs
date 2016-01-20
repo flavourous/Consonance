@@ -37,18 +37,25 @@ namespace Consonance.XamarinFormsView
 			case "monthbox": return GetOnValue(RecurrSpan.Month, false);
 			case "monthval": return GetValue(RecurrSpan.Month);
 			case "year": return GetOnValue(RecurrSpan.Year, true);
-			case "explanation":
-				var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
-				if (f.Count < 2) return "You must select at least two time types.";
-				StringBuilder ss = new StringBuilder ("Repeat on ");
-				for (int i = 0; i < reference.PatternValues.Length; i++)
-					ss.AppendFormat ("the {0} {1} of ", reference.PatternValues [i].WithSuffix (), f [i].AsString ());
-				ss.AppendFormat ("the {0}", f [f.Count - 1].AsString ());
-				return ss.ToString ();
+			case "yearval": return GetValue(RecurrSpan.Year);
+			case "yearbox": return false;
+			case "explain-day": return GetExplain (RecurrSpan.Day);
+			case "explain-week": return GetExplain (RecurrSpan.Week);
+			case "explain-month": return GetExplain (RecurrSpan.Month);
+			case "explain-year": return GetExplain (RecurrSpan.Year);
 			}
-
 			// We should not be reaching here in a working application
 			throw new NotImplementedException ();
+		}
+		String GetExplain(RecurrSpan flag)
+		{
+			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
+			if (f.Count < 2) return "-";
+			int fidx = f.IndexOf (flag);
+			if(fidx == -1) return "";
+			if(fidx == 0) return "On the " + reference.PatternValues [fidx].WithSuffix () + " " + flag.AsString ();
+			if (fidx == f.Count - 1) return "of the " + flag.AsString ();
+			return "of the " + reference.PatternValues [fidx].WithSuffix () + " " + flag.AsString ();
 		}
 		bool GetOnValue (RecurrSpan flag, bool isflag)
 		{
@@ -56,16 +63,18 @@ namespace Consonance.XamarinFormsView
 			var fi = f.IndexOf (flag);
 			return fi != -1 && (isflag || fi < f.Count - 1);
 		}
-		int GetValue (RecurrSpan flag)
+		String GetValue (RecurrSpan flag)
 		{
+			String ret = "-";
 			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
 			var fi = f.IndexOf (flag);
 			if(fi != -1 && fi < f.Count - 1)
-				return reference.PatternValues [fi];
-			return 0;
+				ret = reference.PatternValues [fi].ToString();
+			return ret;
 		}
 		void SetValue(RecurrSpan flag, Object value)
 		{
+			if (value.ToString() == "-") value = 0;
 			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
 			var fi = f.IndexOf (flag);
 			if (fi != -1 && fi < f.Count - 1)
@@ -86,7 +95,9 @@ namespace Consonance.XamarinFormsView
 				var vals = new List<int>(reference.PatternValues);
 				if (value) {
 					reference.PatternType |= flag;
-					vals.Insert (new List<RecurrSpan> (reference.PatternType.SplitFlags ()).IndexOf (flag), 1);
+					var fidx = new List<RecurrSpan> (reference.PatternType.SplitFlags ()).IndexOf (flag);
+					if (fidx < vals.Count) vals.Insert (fidx, 1);
+					else vals.Add (1);
 				}
 				else {
 					reference.PatternType ^= flag;
@@ -98,7 +109,6 @@ namespace Consonance.XamarinFormsView
 		}
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			Debug.WriteLine ("I am " + value.GetType ());
 			if(value != null)
 			switch ((String)parameter) 
 			{

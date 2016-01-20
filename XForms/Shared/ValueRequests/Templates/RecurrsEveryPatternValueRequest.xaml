@@ -7,18 +7,14 @@
 	</ContentView.Resources>
 	<Grid>
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="*"/>
 			<ColumnDefinition Width="auto"/>
 			<ColumnDefinition Width="auto"/>
-			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="auto"/>
+			<ColumnDefinition Width="auto"/>
 		</Grid.ColumnDefinitions>
-		<Grid.RowDefinitions>
-			<RowDefinition Height="auto"/>
-			<RowDefinition Height="auto"/>
-		</Grid.RowDefinitions>
-		<Entry Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=freq}" Keyboard="Numeric"/>
-		<Picker Grid.Column="2" SelectedIndex="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=type}" x:Name="picky"/>
-		<Label Grid.Row="1" Grid.Column="1">Fixed at</Label>
-		<DatePicker Grid.Row="1" Grid.Column="2" Date="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=date}"/>
+		<Entry Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=freq}" Keyboard="Numeric"/>
+		<Picker Grid.Column="1" SelectedIndex="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=type}" x:Name="picky"/>
+		<Label Grid.Column="2" VerticalOptions="Center" HorizontalOptions="Center">@</Label>
+		<DatePicker Grid.Column="3" Date="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=date}"/>
 	</Grid>
 </ContentView>

@@ -12,8 +12,10 @@ namespace Consonance.XamarinFormsView
 {
 	class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, INotifyPropertyChanged
     {
+		static int? mainID;
 		public static void InvokeOnMainThread(Action act)
 		{
+			// invoke needed...
 			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs> ();
 			Device.BeginInvokeOnMainThread (() => {
 				act();
@@ -24,8 +26,9 @@ namespace Consonance.XamarinFormsView
 
 		readonly MainTabs main;
 		readonly Action loaded;
-		public ViewWrapper(MainTabs main, Action loaded)
+		public ViewWrapper(MainTabs main)
         {
+			mainID = Task.CurrentId;
 			this.loaded = loaded;
             this.main = main;
 			main.daypagerContext = this;
@@ -66,21 +69,11 @@ namespace Consonance.XamarinFormsView
 		}
 
 
-		bool firstload = false;
 		public void SetLoadingState (LoadThings thing, bool active)
 		{
 			ViewWrapper.InvokeOnMainThread (() => {
 				switch (thing) {
 				case LoadThings.Generally:
-					if(!firstload)
-					{
-						if(!active)
-						{
-							firstload = true;
-							loaded();
-						}
-						break;
-					}
 					LoadyPage (active);
 					break;
 				case LoadThings.EatItems: 

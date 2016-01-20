@@ -2,6 +2,8 @@
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using Xamarin.Forms;
+using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace Consonance.XamarinFormsView
 {
@@ -10,7 +12,6 @@ namespace Consonance.XamarinFormsView
 		public MainTabs ()
 		{
 			InitializeComponent ();
-			//PlanItems.Add (new TrackerInstanceVM (new TrackerDialect ("a", "b", "c", "d"), DateTime.Now, false, DateTime.Now, "daveee", "test", new KVPList<string, double> ()));
 			BindingContext = this;
 		}
 		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = value; } }
@@ -19,6 +20,17 @@ namespace Consonance.XamarinFormsView
 		public bool load2{ get{ return _l2; } set{ _l2 = value; OnPropertyChanged ("load2"); } }
 		public bool load3{ get{ return _l3; } set{ _l3 = value; OnPropertyChanged ("load3"); } }
 
+
+		public void OnTest(Object s, EventArgs e)
+		{
+			var f = App.bld.requestFactory;
+			var rp = new GetValuesPage ("Test");
+			rp.SetList (new BindingList<object> (new Object[] {
+				f.RecurrOnRequestor ("Test #1").request,
+				f.RecurrEveryRequestor ("Test #2").request
+			}));
+			App.bld.GetValues (new [] { rp });
+		}
 
 		//////////////
 		// Commands //
