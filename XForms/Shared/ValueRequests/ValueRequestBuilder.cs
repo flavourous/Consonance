@@ -21,33 +21,45 @@ namespace Consonance.XamarinFormsView
 			ValueRequestView vrv = null;
 			TaskCompletionSource<bool> tcs_all = new TaskCompletionSource<bool> ();
 			TaskCompletionSource<EventArgs> tcs_push = new TaskCompletionSource<EventArgs> ();
-			ViewWrapper.InvokeOnMainThread (async () => {
+			Device.BeginInvokeOnMainThread(() => {
+				// We're returning tasks to indicate bits in here completing, so this begininvoke is alright
+				// ...i always seem to have trouble when awaiting PushAsync :/ so im making this method not wait on any ui ops
+				// even though it should yield appropriately
+
+				// Create the view!
 				vrv = new ValueRequestView ();
-				bool success = false; 
-				TaskCompletionSource<bool> tcs_each = new TaskCompletionSource<bool> ();
-				Action<bool> each_handler = b => tcs_each.TrySetResult(b);
-				vrv.completed += each_handler;
+
+				// Handler for when the requests we putting in change...
 				ListChangedEventHandler leh = (s,e) => Requests_ListChanged(vrv, s as BindingList<object>, e);
-				await nav.PushAsync (vrv); // push first.
-				tcs_push.SetResult(new EventArgs());
-				foreach(var requests in requestPages)
+
+				// this happens when next or ok or cancel is pressed	
+				List<GetValuesPage> pages = new List<GetValuesPage>(requestPages);
+				int npage = -1; // init hack
+				Action<bool> PageCompletedHandler =null;
+				PageCompletedHandler = suc =>
 				{
-					// set rows from this request, and hook changes.
-					vrv.ClearRows ();
-					vrv.Title = requests.title;
-					foreach (var ob in requests.valuerequests)
-						vrv.AddRow (ob as View);
-					requests.valuerequestsChanegd = leh;
+					// Either way we need to unhook the previous page
+					if(npage >=0) pages[npage].valuerequestsChanegd = delegate { };
+					npage++;
+					if(!suc || npage >= pages.Count) 
+					{
+						// We're done
+						vrv.completed -= PageCompletedHandler;
+						tcs_all.SetResult(suc);  
+					}
+					else 
+					{
+						// set up the next page.
+						vrv.Title = pages[npage].title;
+						pages[npage].valuerequestsChanegd = leh;
+						leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
+					}
+				};
+				vrv.completed += PageCompletedHandler;
+				PageCompletedHandler(true); // begin cycle
 
-					success = await tcs_each.Task;
-					tcs_each = new TaskCompletionSource<bool> (); // re-create for following ones.
-
-					requests.valuerequestsChanegd = delegate { }; // unhook changes from this iteration.
-
-					if(!success) break;
-				}
-				vrv.completed -= each_handler;
-				tcs_all.SetResult(success);
+				// push the view - configure a callback to set the "im pushed" task.
+				nav.PushAsync (vrv).ContinueWith(t=> tcs_push.SetResult(new EventArgs())); // push first.
 			});
 			return new ViewTask<bool> (() => nav.RemoveOrPop (vrv),tcs_push.Task, tcs_all.Task);
         }
@@ -55,7 +67,8 @@ namespace Consonance.XamarinFormsView
 		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)
 		{
 			// the object can be modified from other threads of course.
-			ViewWrapper.InvokeOnMainThread (() => {
+			// im not putting an ordering lock...should be ok.
+			Device.BeginInvokeOnMainThread(() => {
 				switch (e.ListChangedType) {
 				case ListChangedType.Reset:
 					vrv.ClearRows ();

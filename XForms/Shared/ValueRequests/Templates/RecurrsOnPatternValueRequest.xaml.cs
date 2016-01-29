@@ -65,7 +65,7 @@ namespace Consonance.XamarinFormsView
 		}
 		String GetValue (RecurrSpan flag)
 		{
-			String ret = "-";
+			String ret = " ";
 			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
 			var fi = f.IndexOf (flag);
 			if(fi != -1 && fi < f.Count - 1)
@@ -74,11 +74,11 @@ namespace Consonance.XamarinFormsView
 		}
 		void SetValue(RecurrSpan flag, Object value)
 		{
-			if (value.ToString() == "-") value = 0;
+			if (value.ToString() == " ") value = 0;
 			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
 			var fi = f.IndexOf (flag);
 			if (fi != -1 && fi < f.Count - 1)
-				reference.PatternValues [f.IndexOf (flag)] = ConvertHelp.ToInt(value);
+				int.TryParse ((String)value, out reference.PatternValues [f.IndexOf (flag)]);
 		}
 		void SetValue(RecurrSpan flag, bool value)
 		{

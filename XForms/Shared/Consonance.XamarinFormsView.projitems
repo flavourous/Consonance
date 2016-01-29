@@ -77,6 +77,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequests\Templates\RecurrsOnPatternValueRequest.xaml.cs">
       <DependentUpon>RecurrsOnPatternValueRequest.xaml</DependentUpon>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Views\Controls\IValControls.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\ErrorDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\ChoosePlanView.xaml">

@@ -13,17 +13,6 @@ namespace Consonance.XamarinFormsView
 	class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, INotifyPropertyChanged
     {
 		static int? mainID;
-		public static void InvokeOnMainThread(Action act)
-		{
-			// invoke needed...
-			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs> ();
-			Device.BeginInvokeOnMainThread (() => {
-				act();
-				tcs.SetResult(new EventArgs());
-			});
-			tcs.Task.Wait ();
-		}
-
 		readonly MainTabs main;
 		readonly Action loaded;
 		public ViewWrapper(MainTabs main)
@@ -37,31 +26,18 @@ namespace Consonance.XamarinFormsView
 			Debug.WriteLine ("viewwrapper injected");
         }
 
-		public void UIThread (Action a)
+		public void BeginUIThread (Action a)
 		{
-			InvokeOnMainThread (a);
+			Device.BeginInvokeOnMainThread(a);
 		}
 
         // IView Properly //
 		public TrackerInstanceVM currentTrackerInstance 
 		{ 
 			get { return main.SelectedPlanItem; } 
-			set { ViewWrapper.InvokeOnMainThread (() => main.SelectedPlanItem = value); }
+			set { Device.BeginInvokeOnMainThread (() => main.SelectedPlanItem = value); }
 		}
 
-		Page loady = new ContentPage {
-			Content = new Label {
-				Text = "Loading...",
-				HorizontalOptions = LayoutOptions.Center,
-				VerticalOptions = LayoutOptions.Center
-			}
-		};
-		void LoadyPage(bool active)
-		{
-			// this should be good enough...
-			if (active) main.Navigation.PushModalAsync (loady);
-			else main.Navigation.PopModalAsync ();
-		}
 
 		void TLS(TabbedPage tp, ListView lv, bool loading)
 		{
@@ -71,11 +47,8 @@ namespace Consonance.XamarinFormsView
 
 		public void SetLoadingState (LoadThings thing, bool active)
 		{
-			ViewWrapper.InvokeOnMainThread (() => {
+			Device.BeginInvokeOnMainThread (() => {
 				switch (thing) {
-				case LoadThings.Generally:
-					LoadyPage (active);
-					break;
 				case LoadThings.EatItems: 
 					main.load1=active;
 					break;
@@ -91,7 +64,7 @@ namespace Consonance.XamarinFormsView
 		
         public void SetEatLines(IEnumerable<EntryLineVM> lineitems)
         {
-			ViewWrapper.InvokeOnMainThread (() => {
+			Device.BeginInvokeOnMainThread (() => {
 				main.InItems.Clear ();
 				foreach (var itm in lineitems)
 					main.InItems.Add (itm);
@@ -99,7 +72,7 @@ namespace Consonance.XamarinFormsView
         }
         public void SetBurnLines(IEnumerable<EntryLineVM> lineitems)
         {
-			ViewWrapper.InvokeOnMainThread (() => {
+			Device.BeginInvokeOnMainThread (() => {
 				main.OutItems.Clear ();
 				foreach (var itm in lineitems)
 					main.OutItems.Add (itm);
@@ -108,7 +81,7 @@ namespace Consonance.XamarinFormsView
 		readonly Dictionary<TrackerInstanceVM, bool> toKeep_TI = new Dictionary<TrackerInstanceVM, bool> ();
         public void SetInstances(IEnumerable<TrackerInstanceVM> instanceitems)
 		{
-			ViewWrapper.InvokeOnMainThread(() => {
+			Device.BeginInvokeOnMainThread(() => {
 				main.PlanItems.Clear (); // lets figure out why no get here after add....
 				foreach (var itm in instanceitems)
 				{

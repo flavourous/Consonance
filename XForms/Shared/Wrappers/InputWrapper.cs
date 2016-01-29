@@ -22,7 +22,7 @@ namespace Consonance.XamarinFormsView
 			iman.initiallySelectedItem  = iman.selectedItem = initiallySelected; // null works.
 			iman.imt = mt;
 			iman.completedTask = tcs;
-			ViewWrapper.InvokeOnMainThread (() => nav.PushAsync (iman));
+			Device.BeginInvokeOnMainThread (() => nav.PushAsync (iman));
 			return tcs.Task; // return result, or initial if it gave null (wich is null if it really was and no change)
 		}
 

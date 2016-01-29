@@ -120,14 +120,7 @@ namespace Consonance
 		//public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
 		public static async Task PresentTo(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
-			TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs e) => 
-			{
-				view.UIThread (() => {
-					throw e.Exception.InnerException;
-				});
-			};
 			PTask.taskops = platform.TaskOps;
-
 			singleton = new Presenter ();
 			await singleton.PresentToImpl (view, platform, input, commands, defBuilder);
 		}
@@ -172,7 +165,6 @@ namespace Consonance
 
 				// setup view
 				ChangeDay (DateTime.UtcNow);
-				view.SetLoadingState (LoadThings.Generally, false);
 				PushDietInstances ();
 			});
 		}
@@ -192,9 +184,9 @@ namespace Consonance
 			PTask.Run (() => {
 				// yeah, it was selected....cant stack overflow here...
 				//view.currentTrackerInstance = obj;
-				PushEatLines ();
-				PushBurnLines ();
-				PushTracking ();	
+				PushEatLines (obj);
+				PushBurnLines (obj);
+				PushTracking (obj);	
 			});
 		}
 
@@ -205,10 +197,11 @@ namespace Consonance
 				ds = to.StartOfDay();
 				de = ds.AddDays (1);
 				view.day = ds;
-				if (view.currentTrackerInstance != null) {
-					PushEatLines ();
-					PushBurnLines ();
-					PushTracking ();
+				var ti = view.currentTrackerInstance;
+				if (ti != null) {
+					PushEatLines (ti);
+					PushBurnLines (ti);
+					PushTracking (ti);
 				}
 			});
 		}
@@ -239,37 +232,36 @@ namespace Consonance
 			PTask.Run (() => (obj.sender as IAbstractedTracker).EditTracker (obj));
 		}
 
-		void PushEatLines()
+		void PushEatLines(TrackerInstanceVM ti)
 		{
 			view.SetLoadingState (LoadThings.EatItems, true);
-			Task.Delay (2000);
-			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-			var eatEntries = ad.InEntries (view.currentTrackerInstance, ds, de);
+			var ad = ti.sender as IAbstractedTracker;
+			var eatEntries = ad.InEntries (ti, ds, de);
 			view.SetEatLines (eatEntries);
 			view.SetLoadingState (LoadThings.EatItems, false);
 		}
-		void PushBurnLines()
+		void PushBurnLines(TrackerInstanceVM ti)
 		{
 			view.SetLoadingState (LoadThings.BurnItems, true);
-			var ad = view.currentTrackerInstance.sender as IAbstractedTracker;
-			var burnEntries = ad.OutEntries (view.currentTrackerInstance, ds, de);
+			var ad = ti.sender as IAbstractedTracker;
+			var burnEntries = ad.OutEntries (ti, ds, de);
 			view.SetBurnLines (burnEntries);
 			view.SetLoadingState (LoadThings.BurnItems, false);
 		}
-		void PushTracking()
+		void PushTracking(TrackerInstanceVM tii)
 		{
-			SetViewTrackerTracks (ti => (ti.sender as IAbstractedTracker).GetInTracking (ti, ds), view.SetEatTrack);
-			SetViewTrackerTracks (ti => (ti.sender as IAbstractedTracker).GetOutTracking (ti, ds), view.SetBurnTrack);
+			SetViewTrackerTracks (tii, ti => (ti.sender as IAbstractedTracker).GetInTracking (ti, ds), view.SetEatTrack);
+			SetViewTrackerTracks (tii, ti => (ti.sender as IAbstractedTracker).GetOutTracking (ti, ds), view.SetBurnTrack);
 		}
-		void SetViewTrackerTracks(Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
+		void SetViewTrackerTracks(TrackerInstanceVM current, Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
 		{
-			var v = processor (view.currentTrackerInstance);
+			var v = processor (current);
 			viewSetter (
 				new TrackerTracksVM () { 
-					tracks = processor (view.currentTrackerInstance), 
-					instance = view.currentTrackerInstance
+					tracks = processor (current), 
+					instance = current
 				},
-				OtherOnes (view.currentTrackerInstance, lastBuild, processor)
+				OtherOnes (current, lastBuild, processor)
 			);
 		}
 		IEnumerable<TrackerTracksVM> OtherOnes (TrackerInstanceVM curr, List<TrackerInstanceVM> last, Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor)
@@ -295,16 +287,19 @@ namespace Consonance
 					lastBuild.Add (d);
 				}
 			foreach (var vm in lastBuild)
-				vm.trackChanged = v => PushTracking (); // lazy way.
+			{
+				var lvm = vm;
+				vm.trackChanged = v => PushTracking (lvm); // lazy way.
+			}
 			Debug.WriteLine ("Setting Trackers");
 			view.SetInstances (lastBuild);
 			// change current diet if we have to.
 			if (currentRemoved || view.currentTrackerInstance == null) {
 				if (lastBuild.Count > 0) {
 					view.currentTrackerInstance = lastBuild [0];
-					PushEatLines ();
-					PushBurnLines ();
-					PushTracking ();
+					PushEatLines (lastBuild [0]);
+					PushBurnLines (lastBuild [0]);
+					PushTracking (lastBuild [0]);
 				} else {
 					view.SetEatLines (new EntryLineVM[0]);
 					view.SetBurnLines (new EntryLineVM[0]);
@@ -334,18 +329,14 @@ namespace Consonance
 			if (args.changeType == DietVMChangeType.Instances)
 				PushDietInstances ();
 			
-			// check its from the active tracker
-			if (view.currentTrackerInstance == null || Object.ReferenceEquals (view.currentTrackerInstance.sender, sender)) {
+			// check its from the active tracker]
+			var ti = view.currentTrackerInstance;
+			if (ti != null && Object.ReferenceEquals (ti.sender, sender)) {
 				switch (args.changeType) {
-				case DietVMChangeType.EatEntries:
-					PushEatLines ();
-					PushTracking ();
-					break;
-				case DietVMChangeType.BurnEntries:
-					PushBurnLines ();
-					PushTracking ();
-					break;
+					case DietVMChangeType.EatEntries: PushEatLines (ti); break;
+					case DietVMChangeType.BurnEntries: PushBurnLines (ti); break;
 				}
+				PushTracking (ti);
 			}
 		}
 	}
@@ -353,7 +344,7 @@ namespace Consonance
 	public delegate bool Predicate();
 	public delegate Task Promise();
 	public delegate Task Promise<T>(T arg);
-	public enum LoadThings { Generally, EatItems, BurnItems, Instances };
+	public enum LoadThings { EatItems, BurnItems, Instances };
 	/// <summary>
 	/// definition on the application view
 	/// </summary>
@@ -370,7 +361,7 @@ namespace Consonance
 		TrackerInstanceVM currentTrackerInstance { get; set; }
 		ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get; }
 		event Action<InfoManageType> manageInfo;
-		void UIThread (Action a);
+		void BeginUIThread (Action a);
 	}
 	public enum InfoManageType { In, Out };
 	public interface IPlatform

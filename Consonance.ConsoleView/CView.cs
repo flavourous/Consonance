@@ -213,7 +213,7 @@ namespace Consonance.ConsoleView
 		}
 
 		// platformy...?
-		public void UIThread (Action a) { a (); }
+		public void BeginUIThread (Action a) { a (); }
 
 		// Some data members
 		DateTime mday;

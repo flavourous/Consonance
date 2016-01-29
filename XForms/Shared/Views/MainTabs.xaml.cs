@@ -21,16 +21,16 @@ namespace Consonance.XamarinFormsView
 		public bool load3{ get{ return _l3; } set{ _l3 = value; OnPropertyChanged ("load3"); } }
 
 
-		public void OnTest(Object s, EventArgs e)
-		{
-			var f = App.bld.requestFactory;
-			var rp = new GetValuesPage ("Test");
-			rp.SetList (new BindingList<object> (new Object[] {
-				f.RecurrOnRequestor ("Test #1").request,
-				f.RecurrEveryRequestor ("Test #2").request
-			}));
-			App.bld.GetValues (new [] { rp });
-		}
+//		public void OnTest(Object s, EventArgs e)
+//		{
+//			var f = App.bld.requestFactory;
+//			var rp = new GetValuesPage ("Test");
+//			rp.SetList (new BindingList<object> (new Object[] {
+//				f.RecurrOnRequestor ("Test #1").request,
+//				f.RecurrEveryRequestor ("Test #2").request
+//			}));
+//			App.bld.GetValues (new [] { rp });
+//		}
 
 		//////////////
 		// Commands //

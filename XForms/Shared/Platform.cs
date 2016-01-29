@@ -1,12 +1,22 @@
-﻿
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Consonance.XamarinFormsView
 {
 	class Platform : IPlatform, ITasks
 	{
+		readonly Action<String, Action> showError;
+		public Platform(Action<String, Action> showError)
+		{
+			this.showError = showError;
+			AppDomain.CurrentDomain.UnhandledException += AppDomain_CurrentDomain_UnhandledException;
+		}
+		void AppDomain_CurrentDomain_UnhandledException (object sender, UnhandledExceptionEventArgs e)
+		{
+			HandleException (e.ExceptionObject as Exception);
+		}
 		#region ITasks implementation
 		public Task RunTask (Func<Task> asyncMethod)
 		{ return FailHandler (Task.Factory.StartNew(asyncMethod, TaskCreationOptions.AttachedToParent)); }
@@ -23,8 +33,14 @@ namespace Consonance.XamarinFormsView
 		}
 		void Failed(Task t)
 		{
-			Debug.WriteLine (t.Exception.InnerException);
-			throw t.Exception.InnerException;
+			HandleException (t.Exception.InnerException);
+		}
+		void HandleException(Exception h)
+		{
+			Debug.WriteLine (h);
+			Xamarin.Forms.Device.BeginInvokeOnMainThread (() => 
+				showError (h.ToString (), () => Environment.Exit (h.HResult))
+			);
 		}
 		#endregion
 		#region IPlatform implementation

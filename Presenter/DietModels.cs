@@ -117,7 +117,6 @@ namespace Consonance
 			boundrequests = newlist;
 			Newlist_ListChanged (boundrequests, new ListChangedEventArgs (ListChangedType.Reset, -1));
 		}
-
 	}
 	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
 	{

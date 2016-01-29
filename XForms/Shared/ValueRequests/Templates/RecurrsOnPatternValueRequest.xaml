@@ -22,7 +22,7 @@
 		<Label Grid.Row="0" Grid.Column="0">Day</Label>
 		<Switch Grid.Row="0" Grid.Column="1" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=day}"/>
 		<Entry Grid.Row="0" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=dayval}" Keyboard="Numeric"
-			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daybox}"/>
+			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daybox}" />
 		<Label Grid.Row="0" Grid.Column="3" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=explain-day}"/>
 
 		<Label Grid.Row="1" Grid.Column="0">Week</Label>

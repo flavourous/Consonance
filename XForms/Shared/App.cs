@@ -14,7 +14,7 @@ namespace Consonance.XamarinFormsView
 	{
 		public static void RemoveOrPop(this INavigation me, Page page)
 		{
-			ViewWrapper.InvokeOnMainThread (() => {
+			Device.BeginInvokeOnMainThread (() => {
 				if (me.NavigationStack.Contains (page)) {
 					if (me.NavigationStack [me.NavigationStack.Count - 1] == page) me.PopAsync ();
 					else me.RemovePage (page);
@@ -33,7 +33,7 @@ namespace Consonance.XamarinFormsView
 
 		public Task Presentation()
 		{
-			return Presenter.PresentTo(viewWrapper, new Platform(), userInputWrapper, planCommandWrapper, defaultBuilder);
+			return Presenter.PresentTo(viewWrapper, new Platform((err,a) => ErrorDialog.Show(err, MainPage.Navigation, a)), userInputWrapper, planCommandWrapper, defaultBuilder);
 		}
 
         public App()

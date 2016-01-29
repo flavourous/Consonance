@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Xamarin.Forms;
 using LibSharpHelp;
+using System.ComponentModel;
+using LibRTP;
 
 namespace Consonance.XamarinFormsView
 {
@@ -10,11 +12,24 @@ namespace Consonance.XamarinFormsView
 		public RecurrsEveryPatternValueRequest ()
 		{
 			InitializeComponent ();
-			picky.Items.AddAll(new List<String> { "Days", "Weeks", "Months", "Years" });
+			picky.Items.AddAll (new List<String> { "Days", "Weeks", "Months", "Years" });
+			convy.changed += parameter => sl.Ival ();
 		}
+	}
+	public class StackLayoutIval : StackLayout
+	{
+		public void Ival() {
+			InvalidateLayout ();
+			ForceLayout ();
+		}
+	}
+	public class PickerIval : Picker
+	{
+		public PickerIval() { SelectedIndexChanged += (sender, e) => InvalidateMeasure(); }
 	}
 	public class RecurrsEveryPatternValueRequestConverter : IValueConverter
 	{
+		public event Action<String> changed = delegate { };
 		RecurrsEveryPatternValue reference = new RecurrsEveryPatternValue();
 		#region IValueConverter implementation
 		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -25,7 +40,7 @@ namespace Consonance.XamarinFormsView
 
 			switch ((String)parameter) {
 				case "date": return reference.PatternFixed;
-				case "type": return reference.PatternType;
+				case "type": return  Math.Log10 ((int)reference.PatternType) / Math.Log10 (2);
 				case "freq": return reference.PatternFrequency;	
 			}
 
@@ -37,19 +52,15 @@ namespace Consonance.XamarinFormsView
 			// Sorry, we've got nothing to do
 			if (reference != null)
 			switch ((String)parameter) {
-				case "date":
-					if (value is DateTime)
-						reference.PatternFixed = (DateTime)value;
-					break;
-				case "type": 
-					if (value is int)
-						reference.PatternType = (LibRTP.RecurrSpan)(1 << (int)value);
-					break;
+				case "date": reference.PatternFixed = (DateTime)value; break;
+				case "type": reference.PatternType = (LibRTP.RecurrSpan)(1 << (int)value); break;
 				case "freq": 
-					if (value is int)
-						reference.PatternFrequency = (int)value;
+					int v;
+					if (int.TryParse(value as String, out v))
+						reference.PatternFrequency = v;
 					break;
 			}
+			changed ((String)parameter);
 			return reference;
 		}
 		#endregion

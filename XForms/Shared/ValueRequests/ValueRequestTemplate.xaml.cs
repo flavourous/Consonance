@@ -31,12 +31,14 @@ namespace Consonance.XamarinFormsView
 			{
 				foreach(var kv in templateSelector)
 				{
+					Console.WriteLine("testing " + kv.Key.ToString());
 					try { var view = kv.Value(); }
 					catch(Exception e) {
 						Console.WriteLine("Creating "+kv.Key.ToString()+" template failed");
 						Console.WriteLine(e.ToString());
 					}
 				}
+				Console.WriteLine("testing complete");
 				testingComplete = true;
 			}
 			#endif
