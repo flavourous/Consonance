@@ -1,20 +1,34 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="Consonance.XamarinFormsView.ChoosePlanView">
-	<StackLayout Orientation="Vertical">
-		  <ListView HasUnevenRows="true" ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey}">
-		    <ListView.ItemTemplate>
-	      		<DataTemplate>
-		              <ViewCell>
-			          		<Label Text="{Binding name}" HorizontalOptions="Fill" VerticalOptions="CenterAndExpand"/>
-		              </ViewCell>
-        		</DataTemplate>
-		    </ListView.ItemTemplate>
-		  </ListView>
-		  <StackLayout Orientation="Horizontal">
-		  	<Button Text="Cancel" Clicked="DoCancel"/>
-		  	<Button Text="Ok" Clicked="DoChoose"/>
-		  </StackLayout>
-	</StackLayout>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ContentPage Title="Choose a plan" xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.ChoosePlanView">
+	<Grid>
+		<ListView x:Name="lv" IsGroupingEnabled="true" HasUnevenRows="true"  ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey}">
+			<ListView.GroupHeaderTemplate>
+				<DataTemplate>
+					<ViewCell>
+						<Label Text="{Binding category}"/>
+					</ViewCell>
+				</DataTemplate>
+			</ListView.GroupHeaderTemplate>
+			<ListView.ItemTemplate>
+				<DataTemplate>
+					<ViewCell>
+						<Grid RowSpacing="0" ColumnSpacing="0">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*"/>
+								<ColumnDefinition Width="auto"/>
+							</Grid.ColumnDefinitions>
+							<Grid.RowDefinitions>
+								<RowDefinition Height="30"/>
+								<RowDefinition Height="auto"/>
+							</Grid.RowDefinitions>
+							<Label Text="{Binding name}" FontSize="16" HorizontalOptions="Fill" VerticalOptions="CenterAndExpand" />
+							<Label Grid.Column="1" IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Center" Text="Choose" />
+							<Button Grid.Column="1" Clicked="DoChoose" IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Center" HeightRequest="30" />
+							<Label IsVisible="{Binding selected}" Text="{Binding description}" HorizontalOptions="Fill" VerticalOptions="Start" Grid.Row="1" Grid.ColumnSpan="2"/>
+						</Grid>
+					</ViewCell>
+				</DataTemplate>
+			</ListView.ItemTemplate>
+		</ListView>
+	</Grid>
 </ContentPage>

@@ -22,6 +22,7 @@ namespace Consonance.XamarinFormsView
 			});
 		}
 	}
+		
     public class App : Application
     {
 		public static IValueRequestBuilder bld;
@@ -31,9 +32,10 @@ namespace Consonance.XamarinFormsView
 		readonly ValueRequestBuilder defaultBuilder;
 		readonly UserInputWrapper userInputWrapper;
 
-		public Task Presentation()
+		public Task Presentation(IPlatform plat)
 		{
-			return Presenter.PresentTo(viewWrapper, new Platform((err,a) => ErrorDialog.Show(err, MainPage.Navigation, a)), userInputWrapper, planCommandWrapper, defaultBuilder);
+			plat.Attach ((err, a) => ErrorDialog.Show (err, MainPage.Navigation, a));
+			return Presenter.PresentTo(viewWrapper, plat, userInputWrapper, planCommandWrapper, defaultBuilder);
 		}
 
         public App()

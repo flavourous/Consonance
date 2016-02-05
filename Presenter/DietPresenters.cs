@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Collections.Generic;
 using SQLite;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Consonance
 {
@@ -33,8 +34,20 @@ namespace Consonance
 			Add (new KeyValuePair<T1, T2> (a, b));
 		}
 	}
-	public class TrackerDetailsVM
+	public class TrackerDetailsVM : INotifyPropertyChanged
 	{
+		#region INotifyPropertyChanged implementation
+		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+		void OnPropertyChanged([CallerMemberName]String pn = null)
+		{
+			PropertyChanged (this, new PropertyChangedEventArgs (pn));
+		}
+		#endregion
+
+		// viewhakcs
+		bool _selected = false;
+		public bool selected { get { return _selected; } set { _selected=value; OnPropertyChanged (); } }
+
         public String name { get; private set; }
         public String description { get; private set; }
         public String category { get; private set; }
@@ -143,27 +156,27 @@ namespace Consonance
 		IEnumerable<EntryLineVM>  OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime day);
 		IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime day);
-		IViewTask StartNewTracker();
+		Task StartNewTracker();
 		void RemoveTracker (TrackerInstanceVM dvm);
-		IViewTask EditTracker (TrackerInstanceVM dvm);
+		Task EditTracker (TrackerInstanceVM dvm);
 		IEnumerable<InfoLineVM> InInfos (bool onlycomplete);
 		IEnumerable<InfoLineVM> OutInfos (bool onlycomplete);
 		IFindList<InfoLineVM> InFinder {get;}
 		IFindList<InfoLineVM> OutFinder {get;}
 		event DietVMChangeEventHandler ViewModelsChanged;
 		// entry ones
-		void AddIn (TrackerInstanceVM diet, IValueRequestBuilder bld);
+		Task AddIn (TrackerInstanceVM diet, IValueRequestBuilder bld);
 		void RemoveIn (EntryLineVM evm);
-		void EditIn (EntryLineVM evm, IValueRequestBuilder bld);
-		void AddInInfo (IValueRequestBuilder bld);
+		Task EditIn (EntryLineVM evm, IValueRequestBuilder bld);
+		Task AddInInfo (IValueRequestBuilder bld);
 		void RemoveInInfo (InfoLineVM ivm);
-		void EditInInfo (InfoLineVM ivm, IValueRequestBuilder bld);
-		void AddOut (TrackerInstanceVM diet, IValueRequestBuilder bld);
+		Task EditInInfo (InfoLineVM ivm, IValueRequestBuilder bld);
+		Task AddOut (TrackerInstanceVM diet, IValueRequestBuilder bld);
 		void RemoveOut (EntryLineVM evm);
-		void EditOut (EntryLineVM evm, IValueRequestBuilder bld);
-		void AddOutInfo (IValueRequestBuilder bld);
+		Task EditOut (EntryLineVM evm, IValueRequestBuilder bld);
+		Task AddOutInfo (IValueRequestBuilder bld);
 		void RemoveOutInfo (InfoLineVM ivm);
-		void EditOutInfo (InfoLineVM ivm, IValueRequestBuilder bld);
+		Task EditOutInfo (InfoLineVM ivm, IValueRequestBuilder bld);
 	}
 	enum DietVMChangeType { None, Instances, EatEntries, BurnEntries, EatInfos, BurnInfos };
 	class DietVMChangeEventArgs
@@ -333,7 +346,7 @@ namespace Consonance
 				yield return vm;
 			}
 		}
-		public IViewTask StartNewTracker()
+		public Task StartNewTracker()
 		{
 			var pages = new List<GetValuesPage> (modelHandler.model.CreationPages (instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
@@ -341,9 +354,9 @@ namespace Consonance
 				vt.Pop();
 				if (rt.Result) modelHandler.StartNewTracker ();
 			});
-			return vt;
+			return vt.Pushed;
 		}
-		public IViewTask EditTracker (TrackerInstanceVM dvm)
+		public Task EditTracker (TrackerInstanceVM dvm)
 		{
 			var pages = new List<GetValuesPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
@@ -351,7 +364,7 @@ namespace Consonance
 				vt.Pop();
 				if (rt.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
 			});
-			return vt;
+			return vt.Pushed;
 		}
 		public void RemoveTracker (TrackerInstanceVM dvm)
 		{
@@ -365,16 +378,16 @@ namespace Consonance
 			else modelHandler.RemoveTracker (diet);
 		}
 
-		public void AddIn(TrackerInstanceVM to, IValueRequestBuilder bld)
+		public Task AddIn(TrackerInstanceVM to, IValueRequestBuilder bld)
 		{
-			Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation, bld).Wait();
+			return Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation, bld);
 		}
-		public void AddOut(TrackerInstanceVM to, IValueRequestBuilder bld)
+		public Task AddOut(TrackerInstanceVM to, IValueRequestBuilder bld)
 		{
-			Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld).Wait();
+			return Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld);
 		}
 
-		async Task Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
+		Task Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
 			EntryHandler<DietInstType,T,I> handler, bool true_if_in,
 			Func<I,InfoLineVM> rep, IValueRequestBuilder getValues, T editing = null) 
 				where T : BaseEntry, new()
@@ -449,6 +462,7 @@ namespace Consonance
 				if (result.Result) editit ();
 				infoRequest.changed -= checkFields;
 			});
+			return gv.Pushed;
 		}
 
 		public void RemoveIn (EntryLineVM toRemove)
@@ -466,29 +480,29 @@ namespace Consonance
 			return dis.Count() == 0 ? null : dis.First();
 		}
 
-		public void EditIn (EntryLineVM ed,IValueRequestBuilder bld) {
+		public Task EditIn (EntryLineVM ed,IValueRequestBuilder bld) {
 			var eat = ed.originator as EatType;
-			Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation,bld,eat).Wait();
+			return Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation,bld,eat);
 		}
-		public void EditOut (EntryLineVM ed,IValueRequestBuilder bld) {
+		public Task EditOut (EntryLineVM ed,IValueRequestBuilder bld) {
 			var burn = ed.originator as BurnType;
-			Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld,burn).Wait();
+			return Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld,burn);
 		}
 
-		public void AddInInfo(IValueRequestBuilder bld)
+		public Task AddInInfo(IValueRequestBuilder bld)
 		{
-			DoInfo<EatInfoType> ("Create a Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld);
+			return DoInfo<EatInfoType> ("Create a Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld);
 		}
-		public void EditInInfo(InfoLineVM ivm, IValueRequestBuilder bld)
+		public Task EditInInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
-			DoInfo<EatInfoType> ("Edit Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
+			return DoInfo<EatInfoType> ("Edit Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
 		}
 		public void RemoveInInfo(InfoLineVM ivm)
 		{
 			modelHandler.inhandler.Remove (ivm.originator as EatInfoType);
 		}
 
-		void DoInfo<I>(String title,IFindList<InfoLineVM> finder, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
+		Task DoInfo<I>(String title,IFindList<InfoLineVM> finder, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
 		{
 			bool editing = toEdit != null;
 			var vros = editing ? creator.InfoFields (builder.requestFactory) : new ValueRequestFactory_FinderAdapter<I> (finder, creator, builder.requestFactory, getInput).GetRequestObjects ();
@@ -503,15 +517,16 @@ namespace Consonance
 					else handler.Add ();
 				}
 			});
+			return vr.Pushed;
 		}
 
-		public void AddOutInfo(IValueRequestBuilder bld)
+		public Task AddOutInfo(IValueRequestBuilder bld)
 		{
-			DoInfo<BurnInfoType> ("Create a Fire",OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
+			return DoInfo<BurnInfoType> ("Create a Fire",OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
 		}
-		public void EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
+		public Task EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
-			DoInfo<BurnInfoType> ("Edit Food", OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
+			return DoInfo<BurnInfoType> ("Edit Food", OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
 		}
 		public void RemoveOutInfo(InfoLineVM ivm)
 		{

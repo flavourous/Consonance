@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Xamarin.Forms;
+using System.ComponentModel;
 
 namespace Consonance.XamarinFormsView
 {
@@ -23,6 +24,18 @@ namespace Consonance.XamarinFormsView
 			{ typeof(RecurrsEveryPatternValue), () => new RecurrsEveryPatternValueRequest() },
 			{ typeof(RecurrsOnPatternValue), () => new RecurrsOnPatternValueRequest() }
 		};
+		class TestVM<T> : INotifyPropertyChanged, IValueRequest<T>
+		{
+			public event PropertyChangedEventHandler PropertyChanged = delegate { };
+			public event Action changed = delegate { };
+			public void ClearListeners () { }
+			public object request { get { return null; } }
+			public bool enabled { get { return true; } set { } }
+			public bool valid { get { return true; } set { } }
+			public bool read_only { get { return false; } set { } }
+			public String name { get { return "moo"; } }
+			public T value { get { return default(T); } set { } }
+		}
 		public ValueRequestTemplate ()
 		{
 			InitializeComponent ();
@@ -32,7 +45,11 @@ namespace Consonance.XamarinFormsView
 				foreach(var kv in templateSelector)
 				{
 					Console.WriteLine("testing " + kv.Key.ToString());
-					try { var view = kv.Value(); }
+					try 
+					{ 
+						var view = kv.Value(); 
+						view.BindingContext = Activator.CreateInstance(typeof(TestVM<>).MakeGenericType(kv.Key));
+					}
 					catch(Exception e) {
 						Console.WriteLine("Creating "+kv.Key.ToString()+" template failed");
 						Console.WriteLine(e.ToString());

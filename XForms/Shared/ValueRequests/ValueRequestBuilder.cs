@@ -104,21 +104,24 @@ namespace Consonance.XamarinFormsView
 		public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return new ValueRequestVM<TimeSpan> (new ValueRequestTemplate (), name); }
 		public IValueRequest<double> DoubleRequestor (string name) { return new ValueRequestVM<double> (new ValueRequestTemplate (), name); }
 		public IValueRequest<bool> BoolRequestor (string name) { return new ValueRequestVM<bool> (new ValueRequestTemplate (), name); }
-		public IValueRequest<EventArgs> ActionRequestor (string name) { return new ValueRequestVM<EventArgs> (new ValueRequestTemplate (), name); }
+		public IValueRequest<EventArgs> ActionRequestor (string name) { return new ValueRequestVM<EventArgs> (new ValueRequestTemplate (), name, false); }
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new ValueRequestVM<Barcode> (new ValueRequestTemplate (), name); }
 		public IValueRequest<int> IntRequestor (string name){ return new ValueRequestVM<int> (new ValueRequestTemplate (), name); }
 		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return new ValueRequestVM<OptionGroupValue> (new ValueRequestTemplate (), name); }
-		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return new ValueRequestVM<RecurrsEveryPatternValue> (new ValueRequestTemplate (), name); }
-		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return new ValueRequestVM<RecurrsOnPatternValue> (new ValueRequestTemplate (), name); }
+		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return new ValueRequestVM<RecurrsEveryPatternValue> (new ValueRequestTemplate (), name, false); }
+		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return new ValueRequestVM<RecurrsOnPatternValue> (new ValueRequestTemplate (), name, false); }
 		#endregion
 	}
-
-	class ValueRequestVM<T> : IValueRequest<T>, INotifyPropertyChanged
+		
+	interface IShowName { bool showName { get; } String name { get; } }
+	class ValueRequestVM<T> : IValueRequest<T>, INotifyPropertyChanged, IShowName
 	{
+		public bool showName { get; private set; }
 		public String name { get; set; }
-		public ValueRequestVM(ContentView bound, String name)
+		public ValueRequestVM(ValueRequestTemplate bound, String name, bool showName = true)
 		{
 			this.name=name;
+			this.showName = showName;
 			bound.BindingContext = this;
 			_request = bound;
 		}

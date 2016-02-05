@@ -29,18 +29,16 @@ namespace Consonance.XamarinFormsView.Droid
 		{
 			base.OnStart ();
 			App.TLog("native droid onstart - launching task to prepare for forms");
-			Task.Run (async () => {
-				App.TLog("forms task started, creating forms App+forms init on droid activity");
+			Platform plat = new Platform (); //
+			plat.RunTask (async () => {
+				App.TLog ("forms task started, creating forms App+forms init on droid activity");
 				global::Xamarin.Forms.Forms.Init (this, meloady);
 				MainActivity.appy = new App ();
-				App.TLog("presenting to forms App");
-				await MainActivity.appy.Presentation();
-				App.TLog("starting forms activity");
+				App.TLog ("presenting to forms App");
+				await MainActivity.appy.Presentation (plat);
+				App.TLog ("starting forms activity");
 				StartActivity (typeof(MainActivity));
-			}).ContinueWith (task => {
-				// sad times....
-				Toast.MakeText (this, "Sad times loading xforms", ToastLength.Long);
-			}, TaskContinuationOptions.OnlyOnFaulted);
+			});
 		}
 	}
 

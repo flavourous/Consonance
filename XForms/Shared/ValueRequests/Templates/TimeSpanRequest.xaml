@@ -6,7 +6,6 @@
 				<l:TimeSpanValueConverter_Stateful x:Key="tsrConverter"/>
 			</ResourceDictionary>
 		</StackLayout.Resources>
-		<Label Text="{Binding name}" VerticalOptions="Center"/>
 		<Entry Keyboard="Numeric" Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=h}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 		<Label Text="h" VerticalOptions="Center"/>
 		<Entry Keyboard="Numeric" Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=m}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>

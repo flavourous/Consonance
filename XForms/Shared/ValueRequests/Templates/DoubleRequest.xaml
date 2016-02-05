@@ -9,9 +9,8 @@
 			<l:XorParam x:Key="convert_xor"/>
 		</ResourceDictionary>
 	</ContentView.Resources>
-	<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
-		<Label Text="{Binding name}" VerticalOptions="Center"/>
+	<Grid>
 		<Entry Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=true}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" Keyboard="Numeric"/>
 		<Label Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=false}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
-	</StackLayout>
+	</Grid>
 </ContentView>

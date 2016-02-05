@@ -1,8 +1,11 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<TabbedPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.MainTabs">
+<TabbedPage Title="Consonance" xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.MainTabs">
 	<ContentPage Title="{Binding InTabName}">
+		<ContentPage.ToolbarItems>
+			<ToolbarItem Text="Add" Clicked="AddInClick" />
+			<ToolbarItem Text="Manage" Clicked="InInfoManageClick" />
+		</ContentPage.ToolbarItems>
 		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
-			<l:DayPagerView x:Name="daypagerIn" />
 			<Grid>
 				<ListView ItemsSource="{Binding InItems}" HasUnevenRows="true">
 					<ListView.ItemTemplate>
@@ -19,13 +22,15 @@
 				</ListView>
 				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load1}" />
 			</Grid>
-			<Button Text="Add" Clicked="AddInClick" />
-			<Button Text="Manage" Clicked="InInfoManageClick" />
+			<l:DayPagerView x:Name="daypagerIn" />
 		</StackLayout>
 	</ContentPage>
 	<ContentPage Title="{Binding OutTabName}">
+		<ContentPage.ToolbarItems>
+			<ToolbarItem Text="Add" Clicked="AddOutClick" />
+			<ToolbarItem Text="Manage" Clicked="OutInfoManageClick" />
+		</ContentPage.ToolbarItems>
 		<StackLayout Orientation="Vertical">
-			<l:DayPagerView x:Name="daypagerOut" />
 			<Grid>
 				<ListView ItemsSource="{Binding OutItems}" HasUnevenRows="true">
 					<ListView.ItemTemplate>
@@ -42,11 +47,14 @@
 				</ListView>
 				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load2}" />
 			</Grid>
-			<Button Text="Add" Clicked="AddOutClick" />
-			<Button Text="Manage" Clicked="OutInfoManageClick" />
+			<l:DayPagerView x:Name="daypagerOut" />
 		</StackLayout>
 	</ContentPage>
 	<ContentPage Title="Plan">
+		<ContentPage.ToolbarItems>
+			<ToolbarItem Text="Add" Clicked="AddPlanClick" />
+			<ToolbarItem Text="Invent" />
+		</ContentPage.ToolbarItems>
 		<StackLayout Orientation="Vertical">
 			<Grid>
 				<ListView HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem, Mode=OneWayToSource}" x:Name="PlanList" ItemsSource="{Binding PlanItems}">
@@ -73,7 +81,6 @@
 				</ListView>
 				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load3}" />
 			</Grid>
-			<Button Text="Add" Clicked="AddPlanClick" />
 		</StackLayout>
 	</ContentPage>
 </TabbedPage>

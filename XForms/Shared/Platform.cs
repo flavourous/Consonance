@@ -7,25 +7,28 @@ namespace Consonance.XamarinFormsView
 {
 	class Platform : IPlatform, ITasks
 	{
-		readonly Action<String, Action> showError;
-		public Platform(Action<String, Action> showError)
+		Action<String, Action> showError = (ex,a) => a();
+		public Platform()
 		{
-			this.showError = showError;
 			AppDomain.CurrentDomain.UnhandledException += AppDomain_CurrentDomain_UnhandledException;
 		}
 		void AppDomain_CurrentDomain_UnhandledException (object sender, UnhandledExceptionEventArgs e)
 		{
 			HandleException (e.ExceptionObject as Exception);
 		}
+		public void Attach(Action<String, Action> showError)
+		{
+			this.showError = showError;
+		}
 		#region ITasks implementation
 		public Task RunTask (Func<Task> asyncMethod)
-		{ return FailHandler (Task.Factory.StartNew(asyncMethod, TaskCreationOptions.AttachedToParent)); }
+		{ return FailHandler (Task.Run(asyncMethod)); }
 		public Task RunTask (Action syncMethod) 
-		{ return FailHandler (Task.Factory.StartNew(syncMethod, TaskCreationOptions.AttachedToParent)); }
+		{ return FailHandler (Task.Run(syncMethod)); }
 		public Task<T> RunTask<T> (Func<Task<T>> asyncMethod)
-		{ return FailHandler (Task.Factory.StartNew(asyncMethod, TaskCreationOptions.AttachedToParent)) as Task<T>; }
+		{ return FailHandler (Task.Run(asyncMethod)) as Task<T>; }
 		public Task<T> RunTask<T> (Func<T> syncMethod) 
-		{ return FailHandler (Task.Factory.StartNew(syncMethod, TaskCreationOptions.AttachedToParent)) as Task<T>; }
+		{ return FailHandler (Task.Run(syncMethod)) as Task<T>; }
 		Task FailHandler(Task t)
 		{
 			t.ContinueWith (Failed, TaskContinuationOptions.OnlyOnFaulted); 
@@ -38,9 +41,7 @@ namespace Consonance.XamarinFormsView
 		void HandleException(Exception h)
 		{
 			Debug.WriteLine (h);
-			Xamarin.Forms.Device.BeginInvokeOnMainThread (() => 
-				showError (h.ToString (), () => Environment.Exit (h.HResult))
-			);
+			Xamarin.Forms.Device.BeginInvokeOnMainThread (() => showError (h.ToString (), () => { throw h; }));
 		}
 		#endregion
 		#region IPlatform implementation

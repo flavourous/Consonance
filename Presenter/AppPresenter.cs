@@ -28,8 +28,6 @@ namespace Consonance
 
 	class PlanCommandManager
 	{
-		IAbstractedTracker cdh;
-		TrackerInstanceVM cd;
 		readonly Func<TrackerInstanceVM> getCurrent;
 		readonly Func<String,Task> message;
 		public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String,Task> message)
@@ -53,30 +51,31 @@ namespace Consonance
 			commands.burninfo.edit += View_editburninfo;
 		}
 
-		void View_addeatitem (IValueRequestBuilder bld) 					{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.AddIn (cd,bld); }); }
-		void View_removeeatitem (EntryLineVM vm) 							{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveIn (vm); });  }
-		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.EditIn (vm,bld); }); }
-		void View_addeatinfo (IValueRequestBuilder bld) 					{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.AddInInfo (bld); }); }
-		void View_removeeatinfo (InfoLineVM vm) 							{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveInInfo (vm); }); }
-		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder bld) 		{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.EditInInfo (vm,bld); }); }
-		void View_addburnitem (IValueRequestBuilder bld) 					{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.AddOut (cd,bld); }); }
-		void View_removeburnitem (EntryLineVM vm)						 	{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveOut (vm); }); }
-		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.EditOut (vm,bld); }); }
-		void View_addburninfo (IValueRequestBuilder bld) 					{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.AddOutInfo (bld); }); }
-		void View_removeburninfo (InfoLineVM vm)							{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.RemoveOutInfo (vm); }); }
-		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder bld) 	{ PTask.Run(() => { if (!VerifyDiet ()) return; cdh.EditOutInfo (vm,bld); }); }
+		void View_addeatitem (IValueRequestBuilder bld) 					{ VerifyDiet((cdh, cd) => cdh.AddIn (cd,bld)); }
+		void View_removeeatitem (EntryLineVM vm) 							{ VerifyDiet((cdh, cd) => cdh.RemoveIn (vm));  }
+		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ VerifyDiet((cdh, cd) => cdh.EditIn (vm,bld)); }
+		void View_addeatinfo (IValueRequestBuilder bld) 					{ VerifyDiet((cdh, cd) => cdh.AddInInfo (bld)); }
+		void View_removeeatinfo (InfoLineVM vm) 							{ VerifyDiet((cdh, cd) => cdh.RemoveInInfo (vm)); }
+		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder bld) 		{ VerifyDiet((cdh, cd) => cdh.EditInInfo (vm,bld)); }
+		void View_addburnitem (IValueRequestBuilder bld) 					{ VerifyDiet((cdh, cd) => cdh.AddOut (cd,bld)); }
+		void View_removeburnitem (EntryLineVM vm)						 	{ VerifyDiet((cdh, cd) => cdh.RemoveOut (vm)); }
+		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ VerifyDiet((cdh, cd) => cdh.EditOut (vm,bld)); }
+		void View_addburninfo (IValueRequestBuilder bld) 					{ VerifyDiet((cdh, cd) => cdh.AddOutInfo (bld)); }
+		void View_removeburninfo (InfoLineVM vm)							{ VerifyDiet((cdh, cd) => cdh.RemoveOutInfo (vm)); }
+		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder bld) 	{ VerifyDiet((cdh, cd) => cdh.EditOutInfo (vm,bld)); }
 
-		bool VerifyDiet()
+		public void VerifyDiet(Action<IAbstractedTracker, TrackerInstanceVM> acty)
 		{
-			cd = getCurrent();
-			if (cd == null) {
-				// ping the view about being stupid.
-				message("You need to create a tracker before you can do that").Wait();
-				cdh = null;
-				return false;
-			}
-			cdh = cd.sender as IAbstractedTracker;
-			return true;
+			TaskCompletionSource<bool> tcs_dummy = new TaskCompletionSource<bool> ();
+			tcs_dummy.SetResult (true);
+			VerifyDiet((cdh,cd) => { acty(cdh,cd); return tcs_dummy.Task; });
+		}
+		public void VerifyDiet(Func<IAbstractedTracker, TrackerInstanceVM, Task> acty)
+		{
+			var cd = getCurrent();
+			if (cd == null) // ping the view about being stupid.
+				message ("You need to create a tracker before you can do that");
+			else acty (cd.sender as IAbstractedTracker, cd); // i dont think these need threading either...
 		}
 	}
 
@@ -110,7 +109,7 @@ namespace Consonance
 		public static ITasks taskops;
 		public static Task Run (Func<Task> asyncMethod){ return taskops.RunTask(asyncMethod); }
 		public static Task Run (Action syncMethod){ return taskops.RunTask(syncMethod); }
-		public static Task<T> Runk<T> (Func<Task<T>> asyncMethod){ return taskops.RunTask(asyncMethod); }
+		public static Task<T> Run<T> (Func<Task<T>> asyncMethod){ return taskops.RunTask(asyncMethod); }
 		public static Task<T> Run<T> (Func<T> syncMethod) { return taskops.RunTask(syncMethod); }
 	}
 	public class Presenter
@@ -140,7 +139,7 @@ namespace Consonance
 		// present app logic domain to this view.
 		IView view;
 		IUserInput input;
-		Object pcm_refholder;
+		PlanCommandManager pcm_refholder;
 		Task PresentToImpl(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
 			// Start fast!
@@ -171,12 +170,11 @@ namespace Consonance
 
 		void View_manageInfo (InfoManageType obj)
 		{
-			PTask.Run (async () => {
-				await Task.Yield ();
-				if (view.currentTrackerInstance != null)
-					using (var hk = new HookedInfoLines (view.currentTrackerInstance.sender as IAbstractedTracker, obj))
-						await input.InfoView(InfoCallType.AllowManage, obj, hk.lines, null);
+			pcm_refholder.VerifyDiet ((cdh, cd) => {
+				using (var hk = new HookedInfoLines (cdh, obj))
+					return input.InfoView (InfoCallType.AllowManage, obj, hk.lines, null);
 			});
+				
 		}
 			
 		void View_trackerinstanceselected (TrackerInstanceVM obj)
@@ -206,31 +204,28 @@ namespace Consonance
 			});
 		}
 
+		// There is no reason to thread these - we want to block UI while view transitions are made, and not much work is done. //
 		void Handleadddietinstance ()
 		{
-			PTask.Run (async () => {
-				List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
-				List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM> ();
-				foreach (var ad in saveDiets)
-					dietnames.Add (ad.details);
-				var chooseViewTask = input.ChoosePlan ("Select Diet Type", dietnames, -1);
-				chooseViewTask.Completed.ContinueWith(async index =>
-				{
-					var addViewTask = saveDiets [index.Result].StartNewTracker ();
-					await addViewTask.Pushed;
-					chooseViewTask.Pop();
-				});
+			List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
+			List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM> ();
+			foreach (var ad in saveDiets) dietnames.Add (ad.details);
+			var chooseViewTask = input.ChoosePlan ("Select Diet Type", dietnames, -1);
+			chooseViewTask.Completed.ContinueWith (async index => {
+				var addViewTask = saveDiets [index.Result].StartNewTracker ();
+				await addViewTask;
+				chooseViewTask.Pop ();
 			});
 		}
-
 		void Handleremovedietinstance (TrackerInstanceVM obj)
 		{
-			PTask.Run (() => (obj.sender as IAbstractedTracker).RemoveTracker (obj));
+			(obj.sender as IAbstractedTracker).RemoveTracker (obj);
 		}
 		void View_editdietinstance (TrackerInstanceVM obj)
 		{
-			PTask.Run (() => (obj.sender as IAbstractedTracker).EditTracker (obj));
+			(obj.sender as IAbstractedTracker).EditTracker (obj);
 		}
+		// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
 
 		void PushEatLines(TrackerInstanceVM ti)
 		{
@@ -367,6 +362,7 @@ namespace Consonance
 	public interface IPlatform
 	{
 		ITasks TaskOps { get; }
+		void Attach (Action<String, Action> showError);
 	}
 	public interface ITasks
 	{

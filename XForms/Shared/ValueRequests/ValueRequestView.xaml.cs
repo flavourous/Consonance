@@ -14,30 +14,70 @@ namespace Consonance.XamarinFormsView
 		}
 		public void ClearRows()
 		{
-			InputRows.Children.Clear ();
+			rowViews.Clear ();
+			titleViews.Clear ();
+			inputs.RowDefinitions.Clear ();
+			inputs.Children.Clear ();
 			vlm.ClearListens ();
 		}
+		List<View> rowViews = new List<View>();
+		Dictionary<View,View> titleViews = new  Dictionary<View, View>();
 		public void AddRow(View forRow)
 		{
-			InputRows.Children.Add (forRow);
+			inputs.RowDefinitions.Add (new RowDefinition { Height = GridLength.Auto });
+			var isn = (forRow.BindingContext as IShowName);
+			if (isn.showName) {
+				inputs.Children.Add (forRow, 1, inputs.RowDefinitions.Count - 1);
+				inputs.Children.Add (titleViews[forRow] = RLab(isn.name), 0, inputs.RowDefinitions.Count - 1);
+			} else inputs.Children.Add (forRow, 0,1, inputs.RowDefinitions.Count - 1, inputs.RowDefinitions.Count - 1);
+			rowViews.Add (forRow);
 			vlm.ListenForValid ((INotifyPropertyChanged)forRow.BindingContext);
 		}
 		public void InsertRow(int idx, View forRow)
 		{
-			InputRows.Children.Insert(idx, forRow);
+			inputs.RowDefinitions.Insert (idx, new RowDefinition { Height = GridLength.Auto });
+			var isn = (forRow.BindingContext as IShowName);
+			if (isn.showName) {
+				inputs.Children.Add (forRow, 1, idx);
+				inputs.Children.Add (titleViews[forRow] = RLab(isn.name), 0, idx);
+			} else inputs.Children.Add (forRow, 0, 1, idx, idx);
+			rowViews.Insert (idx, forRow);
 			vlm.ListenForValid ((INotifyPropertyChanged)forRow.BindingContext);
+		}
+		View RLab(String name)
+		{
+			return new Frame { 
+				Content = new Label {
+					Text = name, 
+					HorizontalOptions = LayoutOptions.End, 
+					VerticalOptions = LayoutOptions.Center
+				}, 
+				Padding = new Thickness (5.0, 0, 3.0, 0)
+			};
 		}
 		public void RemoveRow(int row)
 		{
-			var vm = InputRows.Children [row] as INotifyPropertyChanged;
-			InputRows.Children.RemoveAt (row);
-			vlm.RemoveListen (vm);
+			var v = rowViews [row];
+			inputs.Children.Remove (v);
+			rowViews.Remove (v);
+			if (titleViews.ContainsKey (v)) {
+				inputs.Children.Remove (titleViews [v]);
+				titleViews.Remove (v);
+			}
+			vlm.RemoveListen (v.BindingContext as INotifyPropertyChanged);
 		}
-
+		protected override bool OnBackButtonPressed ()
+		{
+			completed (false);
+			return base.OnBackButtonPressed ();
+		}
 		public Action<bool> completed = delegate { };
 		ValidListenManager vlm = new ValidListenManager ("valid");
-		public void OKClick(object sender, EventArgs args) { completed (true); }
-		public void CancelClick(object sender, EventArgs args) { completed (false); }
+		public void OKClick(object sender, EventArgs args) 
+		{
+			if(vlm.Valid) completed (true); 
+			else UserInputWrapper.message("Fix the invalid input first");
+		}
 	}
 	class ValidListenManager : INotifyPropertyChanged
 	{

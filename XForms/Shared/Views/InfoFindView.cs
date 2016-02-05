@@ -19,6 +19,7 @@ namespace Consonance.XamarinFormsView
 		IFindList<InfoLineVM> finder;
 		public Task<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd)
 		{
+			throw new NotImplementedException ();
 			this.finder = ifnd;
 			this.tcs = new TaskCompletionSource<InfoLineVM> ();
 			smodes.Items.Clear ();

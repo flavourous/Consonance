@@ -10,6 +10,7 @@ namespace Consonance.XamarinFormsView
 {
 	class UserInputWrapper : IUserInput
     {
+		public static Action<String> message = Console.WriteLine;
 		readonly InfoManageView iman;
 		public Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType mt, ObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
 		{
@@ -35,6 +36,7 @@ namespace Consonance.XamarinFormsView
 			this.iman = iman;
 			this.root = root;
 			pv.chosen += v => pv_callback(v);
+			message = s => Message (s);
         }
 
 		InfoFindView fv = new InfoFindView();
@@ -66,9 +68,10 @@ namespace Consonance.XamarinFormsView
 					pv_callback = delegate { }; // overwrite it, no double call
 					res.SetResult (cv);
 				};
-				pv.PlanChoices.Clear ();
+				pv.mPlanChoices.Clear ();
 				foreach (var pi in choose_from)
-					pv.PlanChoices.Add (pi);
+					pv.mPlanChoices.Add (pi);
+				pv.choicey = null;
 				await nav.PushAsync (pv);
 				tcs.SetResult (new EventArgs ());
 			});

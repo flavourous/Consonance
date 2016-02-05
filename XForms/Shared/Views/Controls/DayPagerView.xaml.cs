@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Xamarin.Forms;
+using Xamarin.Forms.Xaml;
 
 namespace Consonance.XamarinFormsView
 {
@@ -9,6 +10,8 @@ namespace Consonance.XamarinFormsView
 		public DayPagerView ()
 		{
 			InitializeComponent ();
+			next.Text = ">>";
+			prev.Text = "<<";
 		}
 		DateTime dayWrapper 
 		{
@@ -18,5 +21,21 @@ namespace Consonance.XamarinFormsView
 		void OnPrev(Object s, EventArgs e) { dayWrapper = dayWrapper.AddDays (-1); }
 		void OnNext(Object s, EventArgs e) { dayWrapper = dayWrapper.AddDays (+1); }
 	}
+	public class DPConv : IValueConverter
+	{
+		#region IValueConverter implementation
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (value == null) return "Loading...";
+			return ((DateTime)value).ToString("dd-MMM-yyyy dddd");
+		}
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException ();
+		}
+		#endregion
+		BoxView b;
+	}
+
 }
 
