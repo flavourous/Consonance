@@ -7,6 +7,7 @@ namespace Consonance.XamarinFormsView
 {
 	public partial class ValueRequestView : ContentPage
 	{
+		InvalidRedConverter validConverter = new InvalidRedConverter { ignore = true };
 		public ValueRequestView ()
 		{
 			InitializeComponent ();
@@ -22,28 +23,39 @@ namespace Consonance.XamarinFormsView
 		}
 		List<View> rowViews = new List<View>();
 		Dictionary<View,View> titleViews = new  Dictionary<View, View>();
-		public void AddRow(View forRow)
-		{
-			inputs.RowDefinitions.Add (new RowDefinition { Height = GridLength.Auto });
-			var isn = (forRow.BindingContext as IShowName);
-			if (isn.showName) {
-				inputs.Children.Add (forRow, 1, inputs.RowDefinitions.Count - 1);
-				inputs.Children.Add (titleViews[forRow] = RLab(isn.name), 0, inputs.RowDefinitions.Count - 1);
-			} else inputs.Children.Add (forRow, 0,1, inputs.RowDefinitions.Count - 1, inputs.RowDefinitions.Count - 1);
-			rowViews.Add (forRow);
-			vlm.ListenForValid ((INotifyPropertyChanged)forRow.BindingContext);
-		}
+		public void AddRow(View forRow) { InsertRow (rowViews.Count, forRow); }
 		public void InsertRow(int idx, View forRow)
 		{
 			inputs.RowDefinitions.Insert (idx, new RowDefinition { Height = GridLength.Auto });
 			var isn = (forRow.BindingContext as IShowName);
-			if (isn.showName) {
-				inputs.Children.Add (forRow, 1, idx);
-				inputs.Children.Add (titleViews[forRow] = RLab(isn.name), 0, idx);
-			} else inputs.Children.Add (forRow, 0, 1, idx, idx);
+
+			// title maueb
+			if (isn.showName)
+				inputs.Children.Add (titleViews [forRow] = RLab (isn.name));
+
+			// view
+			int col = isn.showName ? 1 : 0, colspan = isn.showName ? 1 : 2;
+			forRow.SetValue (Grid.ColumnProperty, col);
+			forRow.SetValue (Grid.ColumnSpanProperty, colspan);
+			inputs.Children.Add (forRow);
+
+			// indexing etc
 			rowViews.Insert (idx, forRow);
 			vlm.ListenForValid ((INotifyPropertyChanged)forRow.BindingContext);
+
+			//process after
+			for (int i = 0; i < rowViews.Count; i++) {
+				if((int)rowViews[i].GetValue (Grid.RowProperty) != i)
+					rowViews[i].SetValue (Grid.RowProperty, i);
+				if (titleViews.ContainsKey (rowViews [i]) 
+					&& (int)titleViews [rowViews [i]].GetValue (Grid.RowProperty) != i)
+					titleViews [rowViews [i]].SetValue (Grid.RowProperty, i);
+			}
+
+			// Set validityConverter
+			(forRow as ValueRequestTemplate).ValidityConverter = validConverter;
 		}
+
 		View RLab(String name)
 		{
 			return new Frame { 
@@ -77,6 +89,9 @@ namespace Consonance.XamarinFormsView
 		{
 			if(vlm.Valid) completed (true); 
 			else UserInputWrapper.message("Fix the invalid input first");
+			validConverter.ignore = false; // enable reds
+			foreach (var v in rowViews)
+				(v as ValueRequestTemplate).RefreshBindingContext ();
 		}
 	}
 	class ValidListenManager : INotifyPropertyChanged

@@ -9,9 +9,15 @@ namespace Consonance.ConsoleView
 {
 	class CView : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, IConsolePage
 	{
+		Dictionary<LoadThings,bool> aloads = new Dictionary<LoadThings, bool> {
+			{ LoadThings.BurnItems, false },
+			{ LoadThings.EatItems, false },
+			{ LoadThings.Instances, false }
+		};
 		public void SetLoadingState (LoadThings thing, bool active)
 		{
-			throw new NotImplementedException ();
+			aloads [thing] = active;
+			pageChanged = true;
 		}
 
 		public bool allowDefaultActions { get { return true; } }
@@ -28,6 +34,7 @@ namespace Consonance.ConsoleView
 			get {
 				pdb.Clear ();
 				pdb.AppendFormat ("Main Page\n=================================\n");
+				pdb.AppendFormat ("Loading: In({0}), Out({1}), Plan({2})\n=================================\n", aloads [LoadThings.EatItems], aloads [LoadThings.BurnItems], aloads [LoadThings.Instances]);
 				pdb.AppendFormat ("Date: {0}\n\n", day.ToShortDateString ());
 
 				int maxRows = Math.Min (10, ManyMax (inlines.Count, outlines.Count, instances.Count));

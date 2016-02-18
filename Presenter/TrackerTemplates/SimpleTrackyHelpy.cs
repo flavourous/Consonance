@@ -69,33 +69,41 @@ namespace Consonance
 		IReflectedHelpyQuants<OutInfo,QuantityOut> output { get; }
 	}
 	public class InstanceValue  // lets try a object-cast based one here - I think it will be better then generics even after the casts
-	{ 
+	{
 		public readonly Object defaultValue; 
 		public readonly String name; 
 		public readonly String fieldName; 
+		public readonly Predicate<IRequestStorageHelper[]> ValidateHelper;
 		public readonly Func<Action, IRequestStorageHelper> CreateHelper;
 		public readonly Func<IValueRequestFactory, Func<String, Object>> FindRequestorDelegate;
 		public readonly Func<Object,Object> ConvertDataToRequestValue, ConvertRequestValueToData;
-		private InstanceValue(Object def, String name, String field,Func<Action, 
-			IRequestStorageHelper> CreateHelper, Func<IValueRequestFactory, Func<String, Object>> FindRequestorDelegate,
+		private InstanceValue(Object def, String name, String field, Func<Action, IRequestStorageHelper> CreateHelper, 
+			Func<IValueRequestFactory, Func<String, Object>> FindRequestorDelegate, Predicate<IRequestStorageHelper[]> ValidateHelper,
 			Func<Object,Object> ConvertDataToRequestValue, Func<Object,Object> ConvertRequestValueToData)
 		{
 			defaultValue = def; this.name = name; this.fieldName = field; 
-			this.CreateHelper = CreateHelper; this.FindRequestorDelegate=FindRequestorDelegate;
+			this.CreateHelper = CreateHelper; 
+			this.FindRequestorDelegate=FindRequestorDelegate;
+			this.ValidateHelper = ValidateHelper;
 			this.ConvertDataToRequestValue = ConvertDataToRequestValue;
 			this.ConvertRequestValueToData = ConvertRequestValueToData;
 		}
-
-		public static InstanceValue FromType<T>(T defaultValue, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest)
+		public static InstanceValue FromType<T>(T defaultValue, Predicate<object[]> validateit, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest)
 		{
+			Func<Action, IRequestStorageHelper> creator = v => new RequestStorageHelper<T> (name, () => defaultValue, v);
 			return new InstanceValue (
 				defaultValue,
 				name,
-				field, 
-				v => new RequestStorageHelper<T> (name, () => defaultValue, v),
+				field,
+				creator,
 				f => directRequest (f),
-				o => (T)o, o => (T)o // they are the same.
+				irhs => (validateit ?? ( _=> true)) (irhs.MakeList(rsh => rsh.requestValue).ToArray()),
+				o => (T)o, o => (T)o
 			);
+		}
+		public static InstanceValue FromType<T>(T defaultValue, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest)
+		{
+			return FromType (defaultValue, null, name, field, directRequest);
 		}
 	}
 	public interface IReflectedHelpyQuants<I,MT>
@@ -148,8 +156,10 @@ namespace Consonance
 		}
 		void Validate()
 		{
+			var rqs = flectyRequests.MakeList (ip => ip.requestStore).ToArray ();
+			System.Diagnostics.Debug.WriteLine ("Validating: " + string.Join (" ", rqs.MakeList (rh => rh.requestValue.ToString ())));
 			foreach (var r in flectyRequests)
-				r.requestStore.requestValid = true;
+				r.requestStore.requestValid = r.descriptor.ValidateHelper (rqs);
 		}
 		#region ITrackModel implementation
 		public IEntryCreation<In, InInfo> increator {get{ return inc; }}

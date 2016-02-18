@@ -5,7 +5,7 @@
 			<l:RecurrsOnPatternValueRequestConverter x:Key="rConverter"/>
 		</ResourceDictionary>
 	</ContentView.Resources>
-	<Grid>
+	<Grid RowSpacing="0" ColumnSpacing="0">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="auto"/>
 			<ColumnDefinition Width="auto"/>

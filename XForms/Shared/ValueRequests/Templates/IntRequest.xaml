@@ -2,10 +2,5 @@
 <ContentView 
 	xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView"
 	xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.IntRequest">
-	<ContentView.Resources>
-		<ResourceDictionary>
-			<l:dic x:Key="dic"/>
-		</ResourceDictionary>
-	</ContentView.Resources>
-	<Entry Text="{Binding value, Converter={StaticResource dic}}" Keyboard="Numeric" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
+	<l:MyStepper Value="{Binding value}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 </ContentView>

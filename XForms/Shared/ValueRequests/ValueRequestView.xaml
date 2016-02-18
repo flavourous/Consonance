@@ -4,7 +4,7 @@
 		<ToolbarItem Text="OK" Clicked="OKClick" x:Name="okButton" />
 	</ContentPage.ToolbarItems>
 	<ScrollView Orientation="Vertical">
-		<Grid x:Name="inputs" RowSpacing="0" ColumnSpacing="0">
+		<Grid x:Name="inputs" RowSpacing="2" ColumnSpacing="0" Padding="0,2,2,0">
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="auto"/>
 				<ColumnDefinition Width="*"/>

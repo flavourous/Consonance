@@ -10,7 +10,7 @@ namespace Consonance
 	// Models
 	public class CalorieDietEatEntry : BaseEatEntry
 	{
-		public double calories { get; set; } // eaten..
+		public double calories { get; set; } // eaten..33
 	}
 	public class CalorieDietBurnEntry : BaseBurnEntry
 	{
@@ -85,9 +85,9 @@ namespace Consonance
 		public String typename { get { return "Diet"; } }
 		public String trackedname { get { return "calories"; } }
 		public InstanceValue[] instanceValueFields { get { return new[] { 
-					InstanceValue.FromType(0, "Loose days", "nLooseDays", f=>f.IntRequestor ), 
+					InstanceValue.FromType(0, v => (int)v[0] > 0, "Loose days", "nLooseDays", f=>f.IntRequestor ), 
 					InstanceValue.FromType(0.0, "Calories", "looseCalorieLimit", f=>f.DoubleRequestor ), 
-					InstanceValue.FromType(0, "Strict days", "nStrictDays", f=>f.IntRequestor ), 
+					InstanceValue.FromType(0, v => (int)v[2] > 0, "Strict days", "nStrictDays", f=>f.IntRequestor ), 
 					InstanceValue.FromType(0.0, "Calories", "strictCalorieLimit", f=>f.DoubleRequestor ) 
 			}; } } // creating an instance
 		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 

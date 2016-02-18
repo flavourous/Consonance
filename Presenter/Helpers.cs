@@ -102,6 +102,7 @@ namespace Consonance
 			request.ClearListeners ();
 			request.changed += validate;
 			request.value = defaultValue ();
+			validate ();
 		}
 		// will return cached instance if possible, but will do defaulting if specified and will
 		// always call ClearListeners, so that old registrations to the changed event are no longer called.
@@ -116,8 +117,7 @@ namespace Consonance
 				request.read_only = dum.read_only;
 				request.enabled = dum.read_only;
 			}
-			request.ClearListeners ();
-			request.changed += validate;
+			Reset ();
 			return request.request;
 		}
 		public static implicit operator V (RequestStorageHelper<V> me)
