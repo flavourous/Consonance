@@ -26,6 +26,7 @@ namespace Consonance.XamarinFormsView
 		}
 		void SIC(object sender, EventArgs args)
 		{
+			if (brent) return;
 			var bc = BindingContext as ValueRequestVM<OptionGroupValue>;	
 			bc.value.SelectedOption = psel.SelectedIndex;
 			brent = true;
@@ -37,13 +38,15 @@ namespace Consonance.XamarinFormsView
 		{
 			if (brent) return;
 			if (e.PropertyName == "value") {
-				psel.Items.Clear ();
 				var bc = BindingContext as ValueRequestVM<OptionGroupValue>;	
+				brent = true; // this will alter selectedindex, which will alter the bound selectedoption, which we dont want to do.
+				psel.Items.Clear (); 
+				brent = false;
 				// ok, value could be null!
 				if (bc.value != null && bc.value.OptionNames != null) {
-					psel.Items.AddAll(bc.value.OptionNames);
+					psel.Items.AddAll (bc.value.OptionNames);
 					psel.SelectedIndex = bc.value.SelectedOption;
-				}
+				} else psel.SelectedIndex = -1;
 			}
 		}
 	}

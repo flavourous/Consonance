@@ -27,8 +27,8 @@ namespace Consonance
 			when = new RequestStorageHelper<DateTime>("when",()=>DateTime.Now.StartOfDay(),Validate);
 		
 			// recurrance
-			var ogv = new OptionGroupValue (new[] { "None", "Repeat On...", "Repeat Every..." });
-			recurranceMode = new RequestStorageHelper<OptionGroupValue>("Repeat", () => ogv, ValidateRecurr);
+			Func<OptionGroupValue> ogv = () => new OptionGroupValue (new[] { "None", "Repeat On...", "Repeat Every..." });
+			recurranceMode = new RequestStorageHelper<OptionGroupValue> ("Repeat", ogv, ValidateRecurr);
 
 			// common recurrance
 			recurrEnded = new RequestStorageHelper<bool> ("Has End", () => false, ValidateRecurr);

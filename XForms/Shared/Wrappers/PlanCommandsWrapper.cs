@@ -26,7 +26,7 @@ namespace Consonance.XamarinFormsView
 		{
 			return mt == InfoManageType.In ? inInfoBacker : outInfoBacker;
 		}
-		public PlanCommandsWrapper(IValueRequestBuilder defBuilder, MainTabs main, InfoManageView iman)
+		public PlanCommandsWrapper(IValueRequestBuilder defBuilder, MainTabs main)
 		{
 			// Ready Backers
 			inBacker = new DefbuilderCommandWrapper<EntryLineVM> (defBuilder);
@@ -42,6 +42,9 @@ namespace Consonance.XamarinFormsView
 			main.InItemDelete += inBacker.OnRemove;
 			main.OutItemDelete += outBacker.OnRemove;
 
+		}
+		public void Attach(InfoManageView iman)
+		{
 			// hooks on the info manager...
 			iman.ItemAdd += mt => imtSwitch(mt).OnAdd();
 			iman.ItemEdit += (mt,m) => imtSwitch(mt).OnEdit(m);

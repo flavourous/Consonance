@@ -40,7 +40,7 @@
       <File FileName="XForms\Shared\Views\InfoFindView.cs" Line="1" Column="1" />
       <File FileName="XForms\Shared\ValueRequests\Templates\TimeSpanRequest.xaml.cs" Line="1" Column="1" />
       <File FileName="c:\w\Consonance\XForms\Droid\obj\Debug\Consonance.XamarinFormsView.Droid.C_.w.Consonance.XForms.Shared.Views.InfoManageView.xaml.g.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\ChoosePlanView.xaml" Line="2" Column="45" />
+      <File FileName="XForms\Shared\Views\ChoosePlanView.xaml" Line="24" Column="8" />
       <File FileName="XForms\Shared\ValueRequests\ValueRequestView.xaml" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>

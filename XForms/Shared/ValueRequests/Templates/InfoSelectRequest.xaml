@@ -6,7 +6,22 @@
 		</ResourceDictionary>
 	</ContentView.Resources>
 	<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
-		<Label Text="{Binding value, Converter={StaticResource isvc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center" x:Name="lblInfo"/>
-		<Button Text="Choose" VerticalOptions="Center" Clicked="OnChoose"/>
+		<Label Text="{Binding value, Converter={StaticResource isvc}}" HorizontalOptions="CenterAndExpand" VerticalOptions="Center" x:Name="lblInfo"/>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="30"/>
+			</Grid.RowDefinitions>
+			<Grid.Resources>
+				<ResourceDictionary>
+					<Style TargetType="{x:Type Button}">
+						<Setter Property="BorderWidth" Value="0"/>
+						<Setter Property="BorderRadius" Value="0"/>
+						<Setter Property="VerticalOptions" Value="FillAndExpand"/>
+					</Style>
+				</ResourceDictionary>
+			</Grid.Resources>
+			<Button Clicked="OnChoose"/>
+			<Label HorizontalOptions="Center" VerticalOptions="Center">Change</Label>
+		</Grid>
 	</StackLayout>
 </ContentView>

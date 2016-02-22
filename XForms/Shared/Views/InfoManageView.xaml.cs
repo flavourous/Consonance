@@ -9,24 +9,7 @@ namespace Consonance.XamarinFormsView
 {
 	public partial class InfoManageView : ContentPage
 	{
-		private bool mchoiceEnabled;
-		public bool choiceEnabled {
-			get { return mchoiceEnabled; }
-			set {
-				mchoiceEnabled = value;
-				OnPropertyChanged ("choiceEnabled");
-			}
-		}
-		private bool mmanageEnabled;
-		public bool manageEnabled {
-			get { return mmanageEnabled; }
-			set {
-				mmanageEnabled = value;
-				if (value) infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
-				else infoList.ItemTemplate = Resources ["dt_noact"] as DataTemplate;
-				OnPropertyChanged ("manageEnabled");
-			}
-		}
+		
 		private InfoLineVM mselectedItem;
 		public InfoLineVM selectedItem {
 			get { return mselectedItem; }
@@ -52,10 +35,21 @@ namespace Consonance.XamarinFormsView
 		}
 		public TaskCompletionSource<InfoLineVM> completedTask;
 		public InfoManageType imt;
-		public InfoManageView ()
+		public InfoManageView (bool choice, bool manage)
 		{
 			InitializeComponent ();
 			BindingContext = this;
+
+			if (choice) {
+				ToolbarItems.Add (new ToolbarItem ("Nothing", null, OnNothing));
+				ToolbarItems.Add (new ToolbarItem ("Choose", null, OnChoose));
+			}
+			if (manage) {
+				infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
+				ToolbarItems.Add (new ToolbarItem ("Add", null, OnItemAdd));
+			} 
+			else infoList.ItemTemplate = Resources ["dt_noact"] as DataTemplate;
+
 		}
 		protected override bool OnBackButtonPressed ()
 		{
@@ -63,12 +57,12 @@ namespace Consonance.XamarinFormsView
 			return base.OnBackButtonPressed ();
 		}
 
-		void OnChoose(Object sender, EventArgs args) { completedTask.SetResult (selectedItem); Navigation.PopAsync (); }
-		void OnNothing(Object sender, EventArgs args) { completedTask.SetResult (null); Navigation.PopAsync (); }
+		void OnChoose() { completedTask.SetResult (selectedItem); Navigation.PopAsync (); }
+		void OnNothing() { completedTask.SetResult (null); Navigation.PopAsync (); }
 
 		// info hooks
 		public event Action<InfoManageType> ItemAdd = delegate { };
-		void OnItemAdd(Object sender, EventArgs args) { ItemAdd(imt); }
+		void OnItemAdd() { ItemAdd(imt); }
 		public event Action<InfoManageType, InfoLineVM> ItemEdit = delegate { };
 		void OnItemEdit(Object s, EventArgs e) { ItemEdit (imt, (((MenuItem)s).BindingContext as InfoLineVM)); }
 		public event Action<InfoManageType, InfoLineVM> ItemDelete = delegate { };

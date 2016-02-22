@@ -18,11 +18,5 @@
 			</DataTemplate>
 		</ResourceDictionary>
 	</ContentPage.Resources>
-	<StackLayout Orientation="Vertical">
-      <Label Text="pagey infos"/>
-      <ListView ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem}" x:Name="infoList"/>
-      <Button Text="Nothing" Clicked="OnNothing" IsVisible="{Binding choiceEnabled}" />
-      <Button Text="Choose" Clicked="OnChoose" IsVisible="{Binding choiceEnabled}"/>
-      <Button Text="Add" Clicked="OnItemAdd"  IsVisible="{Binding manageEnabled}" />
-    </StackLayout>
+  	<ListView ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem}" x:Name="infoList" />
 </ContentPage>

@@ -8,29 +8,33 @@ using System.Collections.ObjectModel;
 
 namespace Consonance.XamarinFormsView
 {
+	public delegate InfoManageView CreateImanHandler (bool choice, bool manage);
 	class UserInputWrapper : IUserInput
     {
 		public static Action<String> message = Console.WriteLine;
-		readonly InfoManageView iman;
+		readonly CreateImanHandler iman;
 		public Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType mt, ObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
 		{
 			var tt = getCurrent ();
-			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM>();
-			iman.Title = mt == InfoManageType.In ? tt.dialect.InputInfoPlural : tt.dialect.OutputInfoPlural;
-			iman.choiceEnabled = (calltype & InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
-			iman.manageEnabled = (calltype & InfoCallType.AllowManage) == InfoCallType.AllowManage;
-			iman.Items = toManage;
-			iman.initiallySelectedItem  = iman.selectedItem = initiallySelected; // null works.
-			iman.imt = mt;
-			iman.completedTask = tcs;
-			Device.BeginInvokeOnMainThread (() => nav.PushAsync (iman));
+			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
+			bool choiceEnabled = (calltype & InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
+			bool manageEnabled = (calltype & InfoCallType.AllowManage) == InfoCallType.AllowManage;
+			Device.BeginInvokeOnMainThread (() => {
+				var iman_c = iman (choiceEnabled, manageEnabled);
+				iman_c.Title = mt == InfoManageType.In ? tt.dialect.InputInfoPlural : tt.dialect.OutputInfoPlural;
+				iman_c.Items = toManage;
+				iman_c.initiallySelectedItem = iman_c.selectedItem = initiallySelected; // null works.
+				iman_c.imt = mt;
+				iman_c.completedTask = tcs;
+				nav.PushAsync (iman_c);
+			});
 			return tcs.Task; // return result, or initial if it gave null (wich is null if it really was and no change)
 		}
 
 		readonly Func<IAbstractedTracker> getCurrent;
 		readonly Page root;
 		INavigation nav { get { return root.Navigation; } }
-		public UserInputWrapper(Page root, InfoManageView iman, Func<IAbstractedTracker> getCurrent)
+		public UserInputWrapper(Page root, CreateImanHandler iman, Func<IAbstractedTracker> getCurrent)
         {
 			this.getCurrent = getCurrent;
 			this.iman = iman;

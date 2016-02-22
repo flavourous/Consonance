@@ -24,7 +24,7 @@
 							<Label Text="{Binding name}" FontSize="16" HorizontalOptions="Fill" VerticalOptions="CenterAndExpand" />
 							<Label Grid.Column="1" IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Center" Text="Choose" />
 							<Button Grid.Column="1" Clicked="DoChoose" IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Center" HeightRequest="30" />
-							<Label IsVisible="{Binding selected}" Text="{Binding description}" HorizontalOptions="Fill" VerticalOptions="Start" Grid.Row="1" Grid.ColumnSpan="2"/>
+							<Label IsVisible="{Binding selected}" Text="{Binding description}" HorizontalOptions="Fill" VerticalOptions="Start" Grid.Row="1" Grid.ColumnSpan="2" />
 						</Grid>
 					</ViewCell>
 				</DataTemplate>

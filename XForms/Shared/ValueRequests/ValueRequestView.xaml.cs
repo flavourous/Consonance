@@ -87,11 +87,12 @@ namespace Consonance.XamarinFormsView
 		ValidListenManager vlm = new ValidListenManager ("valid");
 		public void OKClick(object sender, EventArgs args) 
 		{
-			if(vlm.Valid) completed (true); 
-			else UserInputWrapper.message("Fix the invalid input first");
 			validConverter.ignore = false; // enable reds
 			foreach (var v in rowViews)
 				(v as ValueRequestTemplate).RefreshBindingContext ();
+			
+			if(vlm.Valid) completed (true); 
+			else UserInputWrapper.message("Fix the invalid input first");
 		}
 	}
 	class ValidListenManager : INotifyPropertyChanged

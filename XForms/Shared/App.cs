@@ -25,6 +25,7 @@ namespace Consonance.XamarinFormsView
 		
     public class App : Application
     {
+		
 		public static IValueRequestBuilder bld;
 		
 		readonly ViewWrapper viewWrapper;
@@ -41,7 +42,6 @@ namespace Consonance.XamarinFormsView
         public App()
 		{
 			// some pages.
-			var iman = new InfoManageView ();
 			var main = new MainTabs();
             var navigator = new NavigationPage(main);
 
@@ -51,8 +51,12 @@ namespace Consonance.XamarinFormsView
 			// instantiate wrappers
 			viewWrapper = new ViewWrapper(main);
 			bld = defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
-			userInputWrapper = new UserInputWrapper(navigator, iman, () => viewWrapper.currentTrackerInstance.sender as IAbstractedTracker);
-			planCommandWrapper = new PlanCommandsWrapper(defaultBuilder, main, iman);
+			planCommandWrapper = new PlanCommandsWrapper(defaultBuilder, main);
+			userInputWrapper = new UserInputWrapper(navigator, (c,m) => {
+				var im = new InfoManageView (c,m);
+				planCommandWrapper.Attach(im);
+				return im;
+			}, () => viewWrapper.currentTrackerInstance.sender as IAbstractedTracker);
 
 			App.TLog("app constructed");
         }

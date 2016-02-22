@@ -513,7 +513,15 @@ namespace Consonance
 	public class OptionGroupValue 
 	{
 		public readonly IReadOnlyList<String> OptionNames;
-		public int SelectedOption { get; set; }
+		int selectedOption;
+		public int SelectedOption {
+			get {
+				return selectedOption;
+			}
+			set {
+				selectedOption = value;
+			}
+		}
 		public OptionGroupValue(IEnumerable<String> options)
 		{
 			SelectedOption = 0;
