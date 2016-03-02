@@ -13,13 +13,13 @@ namespace Consonance.XamarinFormsView
     {
 		public static Action<String> message = Console.WriteLine;
 		readonly CreateImanHandler iman;
-		public Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType mt, ObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
+		public Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType mt, IObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
 		{
 			var tt = getCurrent ();
 			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
 			bool choiceEnabled = (calltype & InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
 			bool manageEnabled = (calltype & InfoCallType.AllowManage) == InfoCallType.AllowManage;
-			Device.BeginInvokeOnMainThread (() => {
+			Platform.UIThread (() => {
 				var iman_c = iman (choiceEnabled, manageEnabled);
 				iman_c.Title = mt == InfoManageType.In ? tt.dialect.InputInfoPlural : tt.dialect.OutputInfoPlural;
 				iman_c.Items = toManage;
@@ -47,7 +47,7 @@ namespace Consonance.XamarinFormsView
 		public Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd)
 		{
 			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
-			Device.BeginInvokeOnMainThread ( async () => {
+			Platform.UIThread ( async () => {
 				await nav.PushAsync(fv);
 				tcs.SetResult (await fv.Choose (ifnd));
 			});
@@ -66,7 +66,7 @@ namespace Consonance.XamarinFormsView
 		{
 			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs> ();
 			TaskCompletionSource<int> res = new TaskCompletionSource<int> ();
-			Device.BeginInvokeOnMainThread (async () => {
+			Platform.UIThread (async () => {
 				// make this async, which means it can await and continue nicely
 				pv_callback = cv => {
 					pv_callback = delegate { }; // overwrite it, no double call
@@ -85,13 +85,13 @@ namespace Consonance.XamarinFormsView
 		public async Task WarnConfirm(string action, Promise confirmed)
         {
 			TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool> ();
-			Device.BeginInvokeOnMainThread(async () => tcs.SetResult(await root.DisplayAlert ("Warning", action, "OK", "Cancel")));
+			Platform.UIThread(async () => tcs.SetResult(await root.DisplayAlert ("Warning", action, "OK", "Cancel")));
 			if(await tcs.Task) await confirmed ();
         }
 		public async Task Message(string msg)
 		{
 			TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool> ();
-			Device.BeginInvokeOnMainThread (async () => {
+			Platform.UIThread (async () => {
 				await root.DisplayAlert ("Message", msg, "OK");
 				tcs.SetResult (false);
 			});

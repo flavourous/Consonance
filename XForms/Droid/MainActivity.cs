@@ -24,21 +24,23 @@ namespace Consonance.XamarinFormsView.Droid
 			SetContentView (Resource.Layout.Main);
 			App.TLog("created native droid");
 		}
-
+			
 		protected override void OnStart ()
 		{
 			base.OnStart ();
-			App.TLog("native droid onstart - launching task to prepare for forms");
-			Platform plat = new Platform (); //
-			plat.RunTask (async () => {
-				App.TLog ("forms task started, creating forms App+forms init on droid activity");
-				global::Xamarin.Forms.Forms.Init (this, meloady);
-				MainActivity.appy = new App ();
-				App.TLog ("presenting to forms App");
-				await MainActivity.appy.Presentation (plat);
+			App.TLog ("native droid onstart - init xamarin.forms inside onstart");
+			global::Xamarin.Forms.Forms.Init (this, meloady);
+			App.TLog ("forms task started, creating forms App+forms init on droid activity, using xamarinforms bgininvokeonmaintherad to return to loop and displayh loading");
+			MainActivity.appy = new App ();
+			App.TLog ("presenting to forms App");
+			var pres = MainActivity.appy.Presentation (new Platform ());
+			pres.ContinueWith (t => {
 				App.TLog ("starting forms activity");
 				StartActivity (typeof(MainActivity));
-			});
+			}, TaskContinuationOptions.OnlyOnRanToCompletion);
+			pres.ContinueWith (t => {
+				throw t.Exception;
+			}, TaskContinuationOptions.OnlyOnFaulted);
 		}
 	}
 

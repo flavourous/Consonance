@@ -55,6 +55,7 @@ namespace Consonance
 	// when we're doing a diet here, created by diet class
 	public class TrackerInstance : BaseDB
 	{
+		public bool tracked {get;set;}
 		public string name{get;set;}
 		public DateTime startpoint{get;set;}
 	}

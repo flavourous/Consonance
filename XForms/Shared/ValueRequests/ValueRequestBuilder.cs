@@ -21,7 +21,7 @@ namespace Consonance.XamarinFormsView
 			ValueRequestView vrv = null;
 			TaskCompletionSource<bool> tcs_all = new TaskCompletionSource<bool> ();
 			TaskCompletionSource<EventArgs> tcs_push = new TaskCompletionSource<EventArgs> ();
-			Device.BeginInvokeOnMainThread(() => {
+			Platform.UIThread(() => {
 				// We're returning tasks to indicate bits in here completing, so this begininvoke is alright
 				// ...i always seem to have trouble when awaiting PushAsync :/ so im making this method not wait on any ui ops
 				// even though it should yield appropriately
@@ -68,7 +68,7 @@ namespace Consonance.XamarinFormsView
 		{
 			// the object can be modified from other threads of course.
 			// im not putting an ordering lock...should be ok.
-			Device.BeginInvokeOnMainThread(() => {
+			Platform.UIThread(() => {
 				switch (e.ListChangedType) {
 				case ListChangedType.Reset:
 					vrv.ClearRows ();
@@ -98,19 +98,26 @@ namespace Consonance.XamarinFormsView
 	class ValueRequestFactory : IValueRequestFactory
 	{
 		#region IValueRequestFactory implementation
-		public IValueRequest<string> StringRequestor (string name) { return new ValueRequestVM<String> (new ValueRequestTemplate (), name); }
-		public IValueRequest<InfoSelectValue> InfoLineVMRequestor (string name) { return new ValueRequestVM<InfoSelectValue> (new ValueRequestTemplate (), name); }
-		public IValueRequest<DateTime> DateRequestor (string name) { return new ValueRequestVM<DateTime> (new ValueRequestTemplate (), name); }
-		public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return new ValueRequestVM<TimeSpan> (new ValueRequestTemplate (), name); }
-		public IValueRequest<double> DoubleRequestor (string name) { return new ValueRequestVM<double> (new ValueRequestTemplate (), name); }
-		public IValueRequest<bool> BoolRequestor (string name) { return new ValueRequestVM<bool> (new ValueRequestTemplate (), name); }
-		public IValueRequest<EventArgs> ActionRequestor (string name) { return new ValueRequestVM<EventArgs> (new ValueRequestTemplate (), name, false); }
-		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new ValueRequestVM<Barcode> (new ValueRequestTemplate (), name); }
-		public IValueRequest<int> IntRequestor (string name){ return new ValueRequestVM<int> (new ValueRequestTemplate (), name); }
-		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return new ValueRequestVM<OptionGroupValue> (new ValueRequestTemplate (), name); }
-		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return new ValueRequestVM<RecurrsEveryPatternValue> (new ValueRequestTemplate (), name, false); }
-		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return new ValueRequestVM<RecurrsOnPatternValue> (new ValueRequestTemplate (), name, false); }
+		public IValueRequest<string> StringRequestor (string name) { return RequestCreator<String> (name); }
+		public IValueRequest<InfoSelectValue> InfoLineVMRequestor (string name) { return RequestCreator<InfoSelectValue> (name); }
+		public IValueRequest<DateTime> DateRequestor (string name) { return RequestCreator<DateTime> (name); }
+		public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return RequestCreator<TimeSpan> (name); }
+		public IValueRequest<double> DoubleRequestor (string name) { return RequestCreator<double> (name); }
+		public IValueRequest<bool> BoolRequestor (string name) { return RequestCreator<bool> (name); }
+		public IValueRequest<EventArgs> ActionRequestor (string name) { return RequestCreator<EventArgs> (name, false); }
+		public IValueRequest<Barcode> BarcodeRequestor (string name) { return RequestCreator<Barcode> (name); }
+		public IValueRequest<int> IntRequestor (string name){ return RequestCreator<int> (name); }
+		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return RequestCreator<OptionGroupValue> (name); }
+		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue> (name, false); }
+		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue> (name, false); }
 		#endregion
+
+		IValueRequest<T> RequestCreator<T>(String name, bool showName = true)
+		{
+			ValueRequestVM<T> ret = null;
+			Platform.UIThread(() => ret = new ValueRequestVM<T> (new ValueRequestTemplate (), name, showName)).Wait();
+			return ret;
+		}
 	}
 		
 	interface IShowName { bool showName { get; } String name { get; } }
@@ -118,7 +125,7 @@ namespace Consonance.XamarinFormsView
 	{
 		public bool showName { get; private set; }
 		public String name { get; set; }
-		public ValueRequestVM(ValueRequestTemplate bound, String name, bool showName = true)
+		public ValueRequestVM(ValueRequestTemplate bound, String name, bool showName)
 		{
 			this.name=name;
 			this.showName = showName;
@@ -137,11 +144,17 @@ namespace Consonance.XamarinFormsView
 		// This are all bindings for the view to use - the generic type T is actually only relevant for the factory.
 		#region INotifyPropertyChanged implementation
 		public event PropertyChangedEventHandler PropertyChanged = delegate { };
-		public void OnPropertyChanged(String n) { PropertyChanged (this, new PropertyChangedEventArgs (n)); } 
+		public void OnPropertyChanged(String n, bool chain=false) 
+		{ 
+			Platform.UIThread (() => {
+				PropertyChanged (this, new PropertyChangedEventArgs (n));
+				if(chain) changed ();
+			}); 
+		} 
 		#endregion
 
 		private T mvalue;
-		public T value  { get { return mvalue; } set { mvalue = value; OnPropertyChanged("value"); changed (); } }
+		public T value  { get { return mvalue; } set { mvalue = value; OnPropertyChanged("value", true); } }
 
 		private bool menabled;
 		public bool enabled { get { return menabled; } set { menabled = value; OnPropertyChanged ("enabled"); } }

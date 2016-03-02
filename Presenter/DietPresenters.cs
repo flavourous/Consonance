@@ -60,25 +60,20 @@ namespace Consonance
 	}
 	public class TrackerInstanceVM : OriginatorVM
 	{
+		public bool tracked { get; private set; }
         public DateTime started { get; private set; }
         public String name { get; private set; }
         public String desc { get; private set; }
         public KVPList<string, double> displayAmounts { get; private set; }
         public TrackerDialect dialect { get; private set; }
-
-		public TrackerInstanceVM(TrackerDialect td, DateTime s, String n, String d, KVPList<string,double>  t)
+		public TrackerInstanceVM(TrackerDialect td, bool tracked, DateTime s, String n, String d, KVPList<string,double>  t)
 		{
+			this.tracked = tracked;
 			this.dialect = td;
 			started=s;
 			name=n; desc=d;
 			displayAmounts = t;
 		}
-
-		// Tracked property
-		Action<bool> _trackChanged = delegate { };
-		public Action<bool> trackChanged {set{ _trackChanged = value; }}
-		bool _tracked = true;
-		public bool tracked { get { return _tracked; } set { _tracked = value; _trackChanged (value); } }
 	}
 	public class EntryLineVM : OriginatorVM
 	{
@@ -121,6 +116,7 @@ namespace Consonance
 	public class InfoLineVM : OriginatorVM
 	{
 		public String name { get; set; }
+		public KVPList<string, double> displayAmounts { get; set; }
 	}
 
 	public delegate IEnumerable<T> EntryRetriever<T>(DateTime start, DateTime end);
@@ -398,7 +394,7 @@ namespace Consonance
 
 			// get a request object for infos
 			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
-			var infoRequest = getValues.requestFactory.InfoLineVMRequestor ("Select " + info_plural);
+			var infoRequest = getValues.requestFactory.InfoLineVMRequestor (info_plural);
 			Action chooseDelegate = null;
 			chooseDelegate = () => PTask.Run (async () => {
 				var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;

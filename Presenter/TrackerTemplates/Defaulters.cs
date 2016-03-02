@@ -192,16 +192,13 @@ namespace Consonance
 		// info 
 		readonly RequestStorageHelper<String> dietName;
 		readonly RequestStorageHelper<DateTime> dietStart;
-		readonly RequestStorageHelper<bool> dietEnded;
-		readonly RequestStorageHelper<DateTime> dietEnd;
-
+		readonly RequestStorageHelper<bool> tracked;
 
 		public DefaultTrackerInstanceRequests(String typeName)
 		{
 			dietName = new RequestStorageHelper<string> (typeName + " Name", () => "", Validate);
 			dietStart = new RequestStorageHelper<DateTime> ("Start Date", () => DateTime.Now.StartOfDay(), Validate);
-			dietEnded = new RequestStorageHelper<bool> ("Ended", () => false, Validate);
-			dietEnd = new RequestStorageHelper<DateTime> ("End Date", () => DateTime.Now.StartOfDay(), Validate);
+			tracked = new RequestStorageHelper<bool> ("Tracked", () => true, Validate);
 		}
 		public bool editing = false;
 		void Validate()
@@ -211,23 +208,20 @@ namespace Consonance
 				dietStart.request.valid = true;
 			} else {
 				dietName.request.valid = !string.IsNullOrWhiteSpace (dietName);
-				dietStart.request.valid = !dietEnded || dietStart.request.value < dietEnd;
-				dietEnded.request.valid = true;
-				if(dietEnded)
-					dietEnd.request.valid = !dietEnded || dietEnd > dietStart.request.value;
+				dietStart.request.valid = true;
 			}
 		}
 		public void Set(TrackerInstance thisone)
 		{
+			thisone.tracked = tracked;
 			thisone.name = dietName; 
 			thisone.startpoint = dietStart;
 		}
 		public void Reset()
 		{
+			tracked.Reset ();
 			dietName.Reset ();
 			dietStart.Reset ();
-			dietEnd.Reset ();
-			dietEnded.Reset ();
 		}
 		public void PushInDefaults(TrackerInstance editing, IBindingList requestPackage, IValueRequestFactory fac)
 		{
@@ -237,16 +231,17 @@ namespace Consonance
 			// get them ready
 			var cName = dietName.CGet (fac.StringRequestor);
 			var cWhen = dietStart.CGet (fac.DateRequestor);
-			var cEndWhen = dietEnd.CGet (fac.DateRequestor); 
-			var cHasEnded = dietEnded.CGet (fac.BoolRequestor);
+			var cTr = tracked.CGet (fac.BoolRequestor);
 
 			// CGet method will clear listners to changed, so no need for unhooking madness..tis stateful.
 			requestPackage.Add (cName);
 			requestPackage.Add (cWhen);
+			requestPackage.Add (cTr);
 			if (this.editing) {
 				// we're editing, lets setty
 				dietName.request.value = editing.name;
 				dietStart.request.value = editing.startpoint;
+				tracked.request.value = editing.tracked;
 			}
 		}
 	}

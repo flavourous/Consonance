@@ -7,7 +7,7 @@ namespace Consonance.XamarinFormsView
 {
 	public partial class ValueRequestView : ContentPage
 	{
-		InvalidRedConverter validConverter = new InvalidRedConverter { ignore = true };
+		BoolColorConverter validConverter = new BoolColorConverter(Color.Transparent, Color.Red) { ignore = true };
 		public ValueRequestView ()
 		{
 			InitializeComponent ();
@@ -115,7 +115,7 @@ namespace Consonance.XamarinFormsView
 		Dictionary<INotifyPropertyChanged , bool> currentValidity = new Dictionary<INotifyPropertyChanged , bool>();
 		public void ListenForValid(INotifyPropertyChanged obj)
 		{
-			currentValidity [obj] = false;
+			currentValidity [obj] = (bool)obj.GetType ().GetProperty (ValidName).GetValue (obj);
 			obj.PropertyChanged += ValidityListener;
 		}
 		public void ClearListens()

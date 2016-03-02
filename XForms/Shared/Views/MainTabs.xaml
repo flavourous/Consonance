@@ -17,11 +17,12 @@
 								</ViewCell.ContextActions>
 								<Label Text="{Binding name}" HorizontalOptions="StartAndExpand" />
 							</ViewCell>
-						</DataTemplate>
+						</DataTemplate>				
 					</ListView.ItemTemplate>
 				</ListView>
 				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load1}" />
 			</Grid>
+			<l:TTView Items="{Binding InTrack}"/>
 			<l:DayPagerView x:Name="daypagerIn" />
 		</StackLayout>
 	</ContentPage>
@@ -47,6 +48,7 @@
 				</ListView>
 				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load2}" />
 			</Grid>
+			<l:TTView Items="{Binding OutTrack}"/>
 			<l:DayPagerView x:Name="daypagerOut" />
 		</StackLayout>
 	</ContentPage>
@@ -65,22 +67,14 @@
 									<MenuItem Clicked="OnPlanItemEdit" Text="Edit" />
 									<MenuItem Clicked="OnPlanItemDelete" Text="Delete" />
 								</ViewCell.ContextActions>
-								<StackLayout Orientation="Horizontal">
-									<StackLayout.Resources>
-										<ResourceDictionary>
-											<l:KVPListConverter x:Key="klc" />
-										</ResourceDictionary>
-									</StackLayout.Resources>
-									<Label Text="{Binding start}" VerticalOptions="Center" />
-									<Label Text="{Binding name}" VerticalOptions="Center" />
-									<Label Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="EndAndExpand" VerticalOptions="Center" />
-								</StackLayout>
+								<l:TrackerInstanceVM_Row />
 							</ViewCell>
 						</DataTemplate>
 					</ListView.ItemTemplate>
 				</ListView>
 				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load3}" />
 			</Grid>
+			<l:DayPagerView x:Name="daypagerPlan" />
 		</StackLayout>
 	</ContentPage>
 </TabbedPage>

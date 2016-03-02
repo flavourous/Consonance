@@ -4,6 +4,14 @@ using Xamarin.Forms.Xaml;
 
 namespace Consonance.XamarinFormsView
 {
+	public static class ExMethods
+	{
+		public static T OnCol<T>(this T ret, int col) where T : View
+		{
+			ret.SetValue (Grid.ColumnProperty, col);
+			return ret;
+		}
+	}
 	[ContentProperty("Source")]
 	class EmbededImageExtension : IMarkupExtension
 	{

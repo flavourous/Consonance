@@ -144,12 +144,14 @@ namespace Consonance
 		{
 			// Start fast!
 			return PTask.Run (() => {
+				Debug.WriteLine("PresntToImpl: presenting");
 				this.view = view;
 				this.input = input;
 				AddDietPair (CalorieDiets.simple.model, CalorieDiets.simple.presenter, defBuilder);
 				AddDietPair (CalorieDiets.scav.model, CalorieDiets.scav.presenter, defBuilder);
 				AddDietPair (Budgets.simpleBudget.model, Budgets.simpleBudget.presenter, defBuilder);
 
+				Debug.WriteLine("PresntToImpl: commands");
 				// commanding...
 				view.plan.add += Handleadddietinstance;
 				view.plan.select += View_trackerinstanceselected;
@@ -163,7 +165,9 @@ namespace Consonance
 				pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance, input.Message);
 
 				// setup view
+				Debug.WriteLine("PresntToImpl: Change day");
 				ChangeDay (DateTime.UtcNow);
+				Debug.WriteLine("PresntToImpl: pushing");
 				PushDietInstances ();
 			});
 		}
@@ -272,8 +276,11 @@ namespace Consonance
 		List<TrackerInstanceVM> lastBuild = new  List<TrackerInstanceVM>();
 		void PushDietInstances()
 		{
+			Debug.WriteLine("PushDietInstances: loading state");
 			view.SetLoadingState (LoadThings.Instances, true);
+			Debug.WriteLine("PushDietInstances: clearing");
 			lastBuild.Clear ();	
+			Debug.WriteLine("PushDietInstances: figuring");
 			bool currentRemoved = view.currentTrackerInstance != null;
 			foreach (var dh in dietHandlers)
 				foreach (var d in dh.Instances ()) {
@@ -281,11 +288,6 @@ namespace Consonance
 						currentRemoved = false;
 					lastBuild.Add (d);
 				}
-			foreach (var vm in lastBuild)
-			{
-				var lvm = vm;
-				vm.trackChanged = v => PushTracking (lvm); // lazy way.
-			}
 			Debug.WriteLine ("Setting Trackers");
 			view.SetInstances (lastBuild);
 			// change current diet if we have to.
@@ -331,8 +333,10 @@ namespace Consonance
 					case DietVMChangeType.EatEntries: PushEatLines (ti); break;
 					case DietVMChangeType.BurnEntries: PushBurnLines (ti); break;
 				}
-				PushTracking (ti);
 			}
+
+			// need to do if instances changes, or if any eat/burn changed in case tracked..so just do.
+			PushTracking (ti);
 		}
 	}
 
@@ -420,7 +424,7 @@ namespace Consonance
 		ViewTask<int> ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
 		Task WarnConfirm (String action, Promise confirmed);
 		Task Message(String msg);
-		Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType imt, ObservableCollection<InfoLineVM> toManage,InfoLineVM initiallySelected); // which ends up calling this one
+		Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType imt, IObservableCollection<InfoLineVM> toManage,InfoLineVM initiallySelected); // which ends up calling this one
 		Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd);
 	}
 	public interface IValueRequestBuilder

@@ -27,7 +27,8 @@ namespace Consonance
 		public BindingList<Object> GetRequestObjects()
 		{
 			var flds = infoCreator.InfoFields(factory);
-			var ar = factory.ActionRequestor ("Searchy");
+			var ar = factory.ActionRequestor ("search");
+			ar.valid = true;
 			flds.Add (ar.request);
 			ar.changed += LaunchFinder;
 			return flds;

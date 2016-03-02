@@ -14,11 +14,9 @@ namespace Consonance.XamarinFormsView
     {
 		static int? mainID;
 		readonly MainTabs main;
-		readonly Action loaded;
 		public ViewWrapper(MainTabs main)
         {
 			mainID = Task.CurrentId;
-			this.loaded = loaded;
             this.main = main;
 			main.daypagerContext = this;
 			main.InInfoManage += () => manageInfo (InfoManageType.In);
@@ -28,14 +26,14 @@ namespace Consonance.XamarinFormsView
 
 		public void BeginUIThread (Action a)
 		{
-			Device.BeginInvokeOnMainThread(a);
+			Platform.UIThread(a);
 		}
 
         // IView Properly //
 		public TrackerInstanceVM currentTrackerInstance 
 		{ 
 			get { return main.SelectedPlanItem; } 
-			set { Device.BeginInvokeOnMainThread (() => main.SelectedPlanItem = value); }
+			set { Platform.UIThread (() => main.SelectedPlanItem = value); }
 		}
 
 
@@ -47,7 +45,7 @@ namespace Consonance.XamarinFormsView
 
 		public void SetLoadingState (LoadThings thing, bool active)
 		{
-			Device.BeginInvokeOnMainThread (() => {
+			Platform.UIThread (() => {
 				switch (thing) {
 				case LoadThings.EatItems: 
 					main.load1=active;
@@ -64,7 +62,7 @@ namespace Consonance.XamarinFormsView
 		
         public void SetEatLines(IEnumerable<EntryLineVM> lineitems)
         {
-			Device.BeginInvokeOnMainThread (() => {
+			Platform.UIThread (() => {
 				main.InItems.Clear ();
 				foreach (var itm in lineitems)
 					main.InItems.Add (itm);
@@ -72,7 +70,7 @@ namespace Consonance.XamarinFormsView
         }
         public void SetBurnLines(IEnumerable<EntryLineVM> lineitems)
         {
-			Device.BeginInvokeOnMainThread (() => {
+			Platform.UIThread (() => {
 				main.OutItems.Clear ();
 				foreach (var itm in lineitems)
 					main.OutItems.Add (itm);
@@ -81,7 +79,7 @@ namespace Consonance.XamarinFormsView
 		readonly Dictionary<TrackerInstanceVM, bool> toKeep_TI = new Dictionary<TrackerInstanceVM, bool> ();
         public void SetInstances(IEnumerable<TrackerInstanceVM> instanceitems)
 		{
-			Device.BeginInvokeOnMainThread(() => {
+			Platform.UIThread(() => {
 				main.PlanItems.Clear (); // lets figure out why no get here after add....
 				foreach (var itm in instanceitems)
 				{
@@ -93,6 +91,7 @@ namespace Consonance.XamarinFormsView
 				}
 			});
 		}
+
 			
 		// plan commands
         public ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get { return this; } }
@@ -118,9 +117,14 @@ namespace Consonance.XamarinFormsView
 		}
 		#endregion
 
-        // IView Unimplimented Properly //
-        public void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { }
-        public void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { }
+		public void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { main.InTrack = Combined (current, others); }
+		public void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { main.OutTrack = Combined (current, others); }
+		IEnumerable<TrackerTracksVM> Combined(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others)
+		{
+			yield return current;
+			foreach (var tt in others)
+				yield return tt;
+		}
     }
 
 }

@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.InfoManageView">
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView;assembly=Consonance.XamarinFormsView" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.InfoManageView">
 	<ContentPage.Resources>
 		<ResourceDictionary>
 			<DataTemplate x:Key="dt_noact">
 				<ViewCell>
-				  <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+					<l:InfoLineVM_Row Chooseable="false"/>
 				</ViewCell>
 			</DataTemplate>
 			<DataTemplate x:Key="dt_act">
@@ -13,10 +13,23 @@
 				    	<MenuItem Clicked="OnItemEdit" Text="Edit" />
 				    	<MenuItem Clicked="OnItemDelete" Text="Delete" />
 					</ViewCell.ContextActions>
-				  <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+					<l:InfoLineVM_Row Chooseable="true" Chosen="OnChoose"/>
 				</ViewCell>
 			</DataTemplate>
 		</ResourceDictionary>
 	</ContentPage.Resources>
-  	<ListView ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem}" x:Name="infoList" />
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="auto"/>
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="auto"/>
+		</Grid.ColumnDefinitions>
+  		<ListView Grid.ColumnSpan="2" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem}" x:Name="infoList"  HasUnevenRows="true" />
+  		<Label Grid.Row="1" HorizontalTextAlignment="End">Add New</Label>
+  		<Label FontSize="18" Grid.Row="1" Grid.Column="1">+</Label>
+  		<Button VerticalOptions="FillAndExpand" Clicked="OnItemAdd" HorizontalOptions="FillAndExpand" HeightRequest="5" WidthRequest="5" Grid.Row="1" Grid.Column="1"/>
+	</Grid>
 </ContentPage>

@@ -12,9 +12,10 @@ namespace Consonance.XamarinFormsView
 		public MainTabs ()
 		{
 			InitializeComponent ();
+		//	Resources.Add ("greynotcurrent", new BoolColorConverter (Color.Default, Color.Gray));
 			BindingContext = this;
 		}
-		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = value; } }
+		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = daypagerPlan.BindingContext = value; } }
 		bool _l1,_l2,_l3;
 		public bool load1{ get{ return _l1; } set{ _l1 = value; OnPropertyChanged ("load1"); } }
 		public bool load2{ get{ return _l2; } set{ _l2 = value; OnPropertyChanged ("load2"); } }
@@ -96,8 +97,11 @@ namespace Consonance.XamarinFormsView
 				PlanItemSelected (use); 
 			}
 		}
-	}
 
+		// tracks
+		public IEnumerable<TrackerTracksVM> InTrack { get; set; }
+		public IEnumerable<TrackerTracksVM> OutTrack { get; set; }
+	}
 
 }
 

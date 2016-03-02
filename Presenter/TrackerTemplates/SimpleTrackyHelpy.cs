@@ -426,6 +426,8 @@ namespace Consonance
 		public TrackerDialect dialect { get; private set; }
 		readonly IReflectedHelpy<InInfo,OutInfo,MIn,MOut> helpy;
 
+		Flecter<InInfo> InInfoTrack;
+		Flecter<OutInfo> OutInfoTrack;
 		Flecter<InInfo> InQuant;
 		Flecter<OutInfo> OutQuant;
 		Flecter<In> InTrack;
@@ -436,6 +438,8 @@ namespace Consonance
 			this.details = details;
 			this.dialect = dialect;
 
+			InInfoTrack = new Flecter<InInfo> (helpy.input.trackedMember);
+			OutInfoTrack = new Flecter<OutInfo> (helpy.output.trackedMember);
 			InQuant = new Flecter<InInfo> (helpy.input.quantifier.fieldName);
 			OutQuant = new Flecter<OutInfo> (helpy.output.quantifier.fieldName);
 			InTrack = new Flecter<In> (helpy.input.trackedMember);
@@ -489,13 +493,14 @@ namespace Consonance
 			var kl = new KVPList<string, double> ();
 			foreach (var target in GetTargets(entry)) {
 				if (target.DayPattern.Length == 1)
-					kl.Add (helpy.trackedname + " per " + TimeSpan.FromDays (target.DayPattern [0]).ToString (), target.DayTargets [0]);
+					kl.Add (helpy.trackedname + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
 				else
 					for (int i = 0; i < target.DayPattern.Length; i++)
-						kl.Add (helpy.trackedname + " for " + TimeSpan.FromDays (target.DayPattern [0]).ToString (), target.DayTargets [0]);	
+						kl.Add (helpy.trackedname + " for " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);	
 			}
 			return new TrackerInstanceVM(
 				dialect,
+				entry.tracked,
 				entry.startpoint, 
 				entry.name,
 				"",
@@ -504,11 +509,13 @@ namespace Consonance
 		}
 		public InfoLineVM GetRepresentation (InInfo info)
 		{
-			return new InfoLineVM () { name = info.name };
+			String t = helpy.input.trackedMember + " / " + helpy.input.Convert ((MIn)InQuant.Get (info)) + " " + helpy.input.quantifier.name;
+			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)InInfoTrack.Get(info) } } };
 		}
 		public InfoLineVM GetRepresentation (OutInfo info)
 		{
-			return new InfoLineVM () { name = info.name };
+			String t = helpy.output.trackedMember + " / " + helpy.output.Convert ((MOut)OutQuant.Get (info)) + " " + helpy.output.quantifier.name;
+			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)OutInfoTrack.Get(info) } } };
 		}
 
 		TimeSpanConverter tss = new TimeSpanConverter();

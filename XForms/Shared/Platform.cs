@@ -2,15 +2,48 @@
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Reflection;
+using Xamarin.Forms;
+using System.Threading;
 
 namespace Consonance.XamarinFormsView
 {
 	class Platform : IPlatform, ITasks
 	{
+		static int uiThread;
 		Action<String, Action> showError = (ex,a) => a();
+		// Must be constructed on UI thread.
 		public Platform()
 		{
+			uiThread = Thread.CurrentThread.ManagedThreadId;
 			AppDomain.CurrentDomain.UnhandledException += AppDomain_CurrentDomain_UnhandledException;
+		}
+		public static void UIAssert()
+		{	
+			Debug.Assert (Thread.CurrentThread.ManagedThreadId == uiThread);
+		}
+		public static Task UIThread(Action method)
+		{
+			TaskCompletionSource<EventArgs> tc = new TaskCompletionSource<EventArgs> ();
+			if (Thread.CurrentThread.ManagedThreadId == uiThread) {
+				method(); 
+				tc.SetResult(new EventArgs());
+			}
+			else 
+			{
+				var callingStack = Environment.StackTrace;
+				Device.BeginInvokeOnMainThread(() => {
+					try { method(); }
+					catch(Exception e) 
+					{ 
+						tc.SetException(e); 
+						Debug.WriteLine("From invoker:\n " + callingStack);
+						Debug.WriteLine(e);
+						throw;
+					}
+					tc.SetResult(new EventArgs());
+				});
+			}
+			return tc.Task;
 		}
 		void AppDomain_CurrentDomain_UnhandledException (object sender, UnhandledExceptionEventArgs e)
 		{
@@ -41,7 +74,7 @@ namespace Consonance.XamarinFormsView
 		void HandleException(Exception h)
 		{
 			Debug.WriteLine (h);
-			Xamarin.Forms.Device.BeginInvokeOnMainThread (() => showError (h.ToString (), () => { throw h; }));
+			Platform.UIThread (() => showError (h.ToString (), () => { throw h; }));
 		}
 		#endregion
 		#region IPlatform implementation

@@ -1,5 +1,6 @@
 ﻿using System;
 using Xamarin.Forms;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace Consonance.XamarinFormsView
@@ -21,20 +22,25 @@ namespace Consonance.XamarinFormsView
 		}
 		#endregion
 	}
-	public class InvalidRedConverter : IValueConverter
+	public class BoolColorConverter : IValueConverter
 	{
+		readonly Color ctrue, cfalse;
+		public BoolColorConverter(Color ctrue, Color cfalse)
+		{
+			this.ctrue = ctrue;
+			this.cfalse = cfalse;
+		}
 		public bool ignore = false;
 		#region IValueConverter implementation
 		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			return (bool)(value ?? false) || ignore ? Color.Transparent : Color.Red;
+			return (bool)(value ?? false) || ignore ? ctrue : cfalse;
 		}
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
 			throw new NotImplementedException ();
 		}
 		#endregion
-		
 	}
 	public class IntToStringConverter : IValueConverter
 	{

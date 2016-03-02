@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xamarin.Forms;
 using System.Runtime.CompilerServices;
+using System.Collections;
+using LibSharpHelp;
 
 namespace Consonance.XamarinFormsView
 {
 	public partial class InfoManageView : ContentPage
 	{
-		
 		private InfoLineVM mselectedItem;
 		public InfoLineVM selectedItem {
 			get { return mselectedItem; }
@@ -19,35 +20,31 @@ namespace Consonance.XamarinFormsView
 			}
 		}
 		public InfoLineVM initiallySelectedItem { get; set; }
-		ObservableCollection<InfoLineVM> _Items;
-		public ObservableCollection<InfoLineVM> Items
+
+		Nothingable _Items;
+		public IObservableCollection<InfoLineVM> Items
 		{
 			get { return _Items; }
 			set {
-				_Items = value;
+				_Items = new Nothingable(value);
 				OnPropertyChanged ("Items");
 			}
 		}
 		protected override void OnPropertyChanged ([CallerMemberName] string propertyName = null)
 		{
-			Device.BeginInvokeOnMainThread (() =>
-				base.OnPropertyChanged (propertyName));
+			Platform.UIThread (() =>
+				base.OnPropertyChanged (propertyName)
+			);
 		}
 		public TaskCompletionSource<InfoLineVM> completedTask;
 		public InfoManageType imt;
+		bool choice = false;
 		public InfoManageView (bool choice, bool manage)
 		{
 			InitializeComponent ();
 			BindingContext = this;
-
-			if (choice) {
-				ToolbarItems.Add (new ToolbarItem ("Nothing", null, OnNothing));
-				ToolbarItems.Add (new ToolbarItem ("Choose", null, OnChoose));
-			}
-			if (manage) {
-				infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
-				ToolbarItems.Add (new ToolbarItem ("Add", null, OnItemAdd));
-			} 
+			this.choice = choice;
+			if (manage) infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
 			else infoList.ItemTemplate = Resources ["dt_noact"] as DataTemplate;
 
 		}
@@ -57,15 +54,43 @@ namespace Consonance.XamarinFormsView
 			return base.OnBackButtonPressed ();
 		}
 
-		void OnChoose() { completedTask.SetResult (selectedItem); Navigation.PopAsync (); }
-		void OnNothing() { completedTask.SetResult (null); Navigation.PopAsync (); }
+		void OnChoose(Object s, EventArgs e) 
+		{ 
+			completedTask.SetResult (selectedItem == Nothingable.noth ? null : selectedItem); Navigation.PopAsync (); 
+		}
 
 		// info hooks
 		public event Action<InfoManageType> ItemAdd = delegate { };
 		void OnItemAdd() { ItemAdd(imt); }
 		public event Action<InfoManageType, InfoLineVM> ItemEdit = delegate { };
-		void OnItemEdit(Object s, EventArgs e) { ItemEdit (imt, (((MenuItem)s).BindingContext as InfoLineVM)); }
+		void OnItemEdit(Object s, EventArgs e) {
+			var b = (((MenuItem)s).BindingContext as InfoLineVM);
+			if (b != Nothingable.noth)
+				ItemEdit (imt, b);
+		}
 		public event Action<InfoManageType, InfoLineVM> ItemDelete = delegate { };
-		void OnItemDelete(Object s, EventArgs e) { ItemDelete (imt, (((MenuItem)s).BindingContext as InfoLineVM)); }
+		void OnItemDelete(Object s, EventArgs e) {
+			var b = (((MenuItem)s).BindingContext as InfoLineVM);
+			if (b != Nothingable.noth)
+				ItemDelete (imt, b); 
+		}
+	}
+	public class Nothingable : ObservableCollectionProxy<InfoLineVM, IObservableCollection<InfoLineVM>>
+	{
+		public Nothingable(IObservableCollection<InfoLineVM> val) : base(val) { }
+		public static InfoLineVM noth = new InfoLineVM { name = "Nothing" };
+		public override InfoLineVM this[int index] {
+			get 
+			{
+				if( index > 0) return base[index - 1];
+				return noth;
+			}
+			set { if (index > 0) base[index - 1] = value; }
+		}
+		public override int Count { get { return base.Count + 1; } }
+		public override IEnumerator<InfoLineVM> GetEnumerator ()
+		{
+			return new ListEnumerator<InfoLineVM> (this);
+		}
 	}
 }

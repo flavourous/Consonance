@@ -14,10 +14,13 @@ namespace Consonance.XamarinFormsView
 	{
 		public static void RemoveOrPop(this INavigation me, Page page)
 		{
-			Device.BeginInvokeOnMainThread (() => {
+			Platform.UIThread (() => {
 				if (me.NavigationStack.Contains (page)) {
 					if (me.NavigationStack [me.NavigationStack.Count - 1] == page) me.PopAsync ();
-					else me.RemovePage (page);
+					else {
+						Debug.WriteLine("Navigation Extension: Removing {0}", page);
+						me.RemovePage (page);
+					}
 				}
 			});
 		}
@@ -44,6 +47,9 @@ namespace Consonance.XamarinFormsView
 			// some pages.
 			var main = new MainTabs();
             var navigator = new NavigationPage(main);
+
+			navigator.Pushed += (sender, e) => Debug.WriteLine("Navigation: Pushed {0}", e.Page);
+			navigator.Popped += (sender, e) => Debug.WriteLine("Navigation: Popped {0}", e.Page);
 
 			// The root page of your application
 			MainPage = navigator;

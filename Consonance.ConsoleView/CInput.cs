@@ -154,10 +154,10 @@ namespace Consonance.ConsoleView
 			public bool allowDefaultActions { get { return true; } }
 			readonly bool sel;
 			readonly TaskCompletionSource<InfoLineVM> select;
-			readonly ObservableCollection<InfoLineVM> items;
+			readonly IObservableCollection<InfoLineVM> items;
 			readonly InfoLineVM selected;
 			readonly CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM> commands;
-			public CInfoView(bool sel, TaskCompletionSource<InfoLineVM> select, ObservableCollection<InfoLineVM> itemsThatUpdate, InfoLineVM initSel, CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM> commands)
+			public CInfoView(bool sel, TaskCompletionSource<InfoLineVM> select, IObservableCollection<InfoLineVM> itemsThatUpdate, InfoLineVM initSel, CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM> commands)
 			{
 				this.commands=commands;
 				this.sel=sel;
@@ -215,7 +215,7 @@ namespace Consonance.ConsoleView
 			}
 			#endregion
 		}
-		public Task<InfoLineVM> InfoView (InfoCallType calltype, InfoManageType imt, ObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
+		public Task<InfoLineVM> InfoView (InfoCallType calltype, InfoManageType imt, IObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
 		{
 			bool doesSelection = (calltype & InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
 			TaskCompletionSource<InfoLineVM> chosen = new TaskCompletionSource<InfoLineVM> ();
