@@ -203,6 +203,7 @@ namespace Consonance
 		public bool editing = false;
 		void Validate()
 		{
+			tracked.requestValid = true;
 			if (!editing) {
 				dietName.request.valid = !string.IsNullOrWhiteSpace (dietName);
 				dietStart.request.valid = true;

@@ -5,76 +5,84 @@
 			<ToolbarItem Text="Add" Clicked="AddInClick" />
 			<ToolbarItem Text="Manage" Clicked="InInfoManageClick" />
 		</ContentPage.ToolbarItems>
-		<StackLayout Orientation="Vertical" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
-			<Grid>
-				<ListView ItemsSource="{Binding InItems}" HasUnevenRows="true">
-					<ListView.ItemTemplate>
-						<DataTemplate>
-							<ViewCell>
-								<ViewCell.ContextActions>
-									<MenuItem Clicked="OnInItemEdit" Text="Edit" />
-									<MenuItem Clicked="OnInItemDelete" Text="Delete" />
-								</ViewCell.ContextActions>
-								<Label Text="{Binding name}" HorizontalOptions="StartAndExpand" />
-							</ViewCell>
-						</DataTemplate>				
-					</ListView.ItemTemplate>
-				</ListView>
-				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load1}" />
-			</Grid>
-			<l:TTView Items="{Binding InTrack}"/>
-			<l:DayPagerView x:Name="daypagerIn" />
-		</StackLayout>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="*" />
+				<RowDefinition Height="auto" />
+				<RowDefinition Height="auto" />
+			</Grid.RowDefinitions>
+			<ListView ItemsSource="{Binding InItems}" HasUnevenRows="true">
+				<ListView.ItemTemplate>
+					<DataTemplate>
+						<ViewCell>
+							<ViewCell.ContextActions>
+								<MenuItem Clicked="OnInItemEdit" Text="Edit" />
+								<MenuItem Clicked="OnInItemDelete" Text="Delete" />
+							</ViewCell.ContextActions>
+							<Label Text="{Binding name}" HorizontalOptions="StartAndExpand" />
+						</ViewCell>
+					</DataTemplate>
+				</ListView.ItemTemplate>
+			</ListView>
+			<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load1}" />
+			<l:TTView Grid.Row="1" Items="{Binding InTrack}" />
+			<l:DayPagerView Grid.Row="2" x:Name="daypagerIn" />
+		</Grid>
 	</ContentPage>
 	<ContentPage Title="{Binding OutTabName}">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddOutClick" />
 			<ToolbarItem Text="Manage" Clicked="OutInfoManageClick" />
 		</ContentPage.ToolbarItems>
-		<StackLayout Orientation="Vertical">
-			<Grid>
-				<ListView ItemsSource="{Binding OutItems}" HasUnevenRows="true">
-					<ListView.ItemTemplate>
-						<DataTemplate>
-							<ViewCell>
-								<ViewCell.ContextActions>
-									<MenuItem Clicked="OnOutItemEdit" Text="Edit" />
-									<MenuItem Clicked="OnOutItemDelete" Text="Delete" />
-								</ViewCell.ContextActions>
-								<l:EntryLineVM_Row />
-							</ViewCell>
-						</DataTemplate>
-					</ListView.ItemTemplate>
-				</ListView>
-				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load2}" />
-			</Grid>
-			<l:TTView Items="{Binding OutTrack}"/>
-			<l:DayPagerView x:Name="daypagerOut" />
-		</StackLayout>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="*" />
+				<RowDefinition Height="auto" />
+				<RowDefinition Height="auto" />
+			</Grid.RowDefinitions>
+			<ListView ItemsSource="{Binding OutItems}" HasUnevenRows="true">
+				<ListView.ItemTemplate>
+					<DataTemplate>
+						<ViewCell>
+							<ViewCell.ContextActions>
+								<MenuItem Clicked="OnOutItemEdit" Text="Edit" />
+								<MenuItem Clicked="OnOutItemDelete" Text="Delete" />
+							</ViewCell.ContextActions>
+							<l:EntryLineVM_Row />
+						</ViewCell>
+					</DataTemplate>
+				</ListView.ItemTemplate>
+			</ListView>
+			<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load2}" />
+			<l:TTView Grid.Row="1" Items="{Binding OutTrack}" />
+			<l:DayPagerView Grid.Row="2" x:Name="daypagerOut" />
+		</Grid>
 	</ContentPage>
 	<ContentPage Title="Plan">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddPlanClick" />
 			<ToolbarItem Text="Invent" />
 		</ContentPage.ToolbarItems>
-		<StackLayout Orientation="Vertical">
-			<Grid>
-				<ListView HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem, Mode=OneWayToSource}" x:Name="PlanList" ItemsSource="{Binding PlanItems}">
-					<ListView.ItemTemplate>
-						<DataTemplate>
-							<ViewCell>
-								<ViewCell.ContextActions>
-									<MenuItem Clicked="OnPlanItemEdit" Text="Edit" />
-									<MenuItem Clicked="OnPlanItemDelete" Text="Delete" />
-								</ViewCell.ContextActions>
-								<l:TrackerInstanceVM_Row />
-							</ViewCell>
-						</DataTemplate>
-					</ListView.ItemTemplate>
-				</ListView>
-				<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load3}" />
-			</Grid>
-			<l:DayPagerView x:Name="daypagerPlan" />
-		</StackLayout>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="*" />
+				<RowDefinition Height="auto" />
+			</Grid.RowDefinitions>
+			<ListView HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem, Mode=OneWayToSource}" x:Name="PlanList" ItemsSource="{Binding PlanItems}">
+				<ListView.ItemTemplate>
+					<DataTemplate>
+						<ViewCell>
+							<ViewCell.ContextActions>
+								<MenuItem Clicked="OnPlanItemEdit" Text="Edit" />
+								<MenuItem Clicked="OnPlanItemDelete" Text="Delete" />
+							</ViewCell.ContextActions>
+							<l:TrackerInstanceVM_Row />
+						</ViewCell>
+					</DataTemplate>
+				</ListView.ItemTemplate>
+			</ListView>
+			<Label Text="Loading" BackgroundColor="#55555555" HorizontalOptions="Fill" VerticalOptions="Fill" XAlign="Center" YAlign="Center" IsVisible="{Binding load3}" />
+			<l:DayPagerView Grid.Row="1" x:Name="daypagerPlan" />
+		</Grid>
 	</ContentPage>
 </TabbedPage>

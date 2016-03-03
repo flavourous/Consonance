@@ -3,6 +3,7 @@ using System.Linq;
 using Xamarin.Forms;
 using System.Collections.Generic;
 using System.Collections;
+using System.Diagnostics;
 
 namespace Consonance.XamarinFormsView
 {
@@ -37,19 +38,34 @@ namespace Consonance.XamarinFormsView
 				Children = { 
 					new Label { Text = vm.instanceName },
 					new TTViewItem { BindingContext = vm.tracks }
-				}
+				},	
 			};
 		}
 	}
 	public class TTViewItem : VStacker
 	{
+		public class cc : IValueConverter
+		{
+			#region IValueConverter implementation
+			public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+			{
+				Debug.WriteLine ("conv a " + value.ToString ());
+				return new GridLength ((double)value, GridUnitType.Star);
+			}
+			public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+			{
+				throw new NotImplementedException ();
+			}
+			#endregion
+		}
 		public TTViewItem () : base(BarInfo.GenerateView) { }
 		class BarInfo
 		{
+			static cc lcc = new cc();
 			static ColumnDefinition CBound(String wname)
 			{
 				var c = new ColumnDefinition ();
-				c.SetBinding (ColumnDefinition.WidthProperty, wname);
+				c.SetBinding (ColumnDefinition.WidthProperty, wname, BindingMode.Default, lcc);
 				return c;
 			}
 

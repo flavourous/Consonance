@@ -21,8 +21,10 @@ namespace Consonance.XamarinFormsView
 			var bc = BindingContext as INotifyPropertyChanged;
 			if(old != null) old.PropertyChanged -= Bc_PropertyChanged;
 			old = bc;
-			bc.PropertyChanged += Bc_PropertyChanged;
-			Bc_PropertyChanged (bc, new PropertyChangedEventArgs ("value"));
+			if (bc != null) {
+				bc.PropertyChanged += Bc_PropertyChanged;
+				Bc_PropertyChanged (bc, new PropertyChangedEventArgs ("value"));
+			}
 		}
 		void SIC(object sender, EventArgs args)
 		{
