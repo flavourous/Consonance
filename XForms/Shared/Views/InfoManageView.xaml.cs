@@ -61,7 +61,7 @@ namespace Consonance.XamarinFormsView
 
 		// info hooks
 		public event Action<InfoManageType> ItemAdd = delegate { };
-		void OnItemAdd() { ItemAdd(imt); }
+		void OnItemAdd(Object s, EventArgs ea) { ItemAdd(imt); }
 		public event Action<InfoManageType, InfoLineVM> ItemEdit = delegate { };
 		void OnItemEdit(Object s, EventArgs e) {
 			var b = (((MenuItem)s).BindingContext as InfoLineVM);

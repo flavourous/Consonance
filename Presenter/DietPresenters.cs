@@ -395,6 +395,7 @@ namespace Consonance
 			// get a request object for infos
 			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor (info_plural);
+			infoRequest.valid = true; // always true
 			Action chooseDelegate = null;
 			chooseDelegate = () => PTask.Run (async () => {
 				var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;

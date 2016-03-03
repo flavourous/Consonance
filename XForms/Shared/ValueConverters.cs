@@ -12,7 +12,7 @@ namespace Consonance.XamarinFormsView
 		{
 			List<String> kls = new List<string> ();
 			var kl = value as KVPList<String,double>;
-			foreach (var kv in kl)
+			foreach (var kv in kl ?? new KVPList<string, double>())
 				kls.Add (kv.Key + ": " + kv.Value);
 			return String.Join ("\n", kls.ToArray ());
 		}
