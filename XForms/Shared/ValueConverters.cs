@@ -2,9 +2,24 @@
 using Xamarin.Forms;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Consonance.XamarinFormsView
 {
+	public class InvalidRedConverter : IValueConverter 
+	{
+		public bool ignore = true;
+		#region IValueConverter implementation
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			return ignore || (value is bool && (bool)value) ? Color.Transparent: Color.Red;
+		}
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException ();
+		}
+		#endregion
+	}
 	public class KVPListConverter : IValueConverter
 	{
 		#region IValueConverter implementation
@@ -15,26 +30,6 @@ namespace Consonance.XamarinFormsView
 			foreach (var kv in kl ?? new KVPList<string, double>())
 				kls.Add (kv.Key + ": " + kv.Value);
 			return String.Join ("\n", kls.ToArray ());
-		}
-		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			throw new NotImplementedException ();
-		}
-		#endregion
-	}
-	public class BoolColorConverter : IValueConverter
-	{
-		readonly Color ctrue, cfalse;
-		public BoolColorConverter(Color ctrue, Color cfalse)
-		{
-			this.ctrue = ctrue;
-			this.cfalse = cfalse;
-		}
-		public bool ignore = false;
-		#region IValueConverter implementation
-		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			return (bool)(value ?? false) || ignore ? ctrue : cfalse;
 		}
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{

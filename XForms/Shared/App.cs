@@ -25,12 +25,10 @@ namespace Consonance.XamarinFormsView
 			});
 		}
 	}
-		
+
     public class App : Application
     {
-		
 		public static IValueRequestBuilder bld;
-		
 		readonly ViewWrapper viewWrapper;
 		readonly PlanCommandsWrapper planCommandWrapper;
 		readonly ValueRequestBuilder defaultBuilder;

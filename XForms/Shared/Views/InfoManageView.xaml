@@ -21,15 +21,15 @@
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="*"/>
-			<RowDefinition Height="auto"/>
+			<RowDefinition Height="30"/>
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="*"/>
-			<ColumnDefinition Width="auto"/>
+			<ColumnDefinition Width="30"/>
 		</Grid.ColumnDefinitions>
   		<ListView Grid.ColumnSpan="2" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem}" x:Name="infoList"  HasUnevenRows="true" />
-  		<Label Grid.Row="1" HorizontalTextAlignment="End">Add New</Label>
-  		<Label FontSize="18" Grid.Row="1" Grid.Column="1">+</Label>
-  		<Button VerticalOptions="FillAndExpand" Clicked="OnItemAdd" HorizontalOptions="FillAndExpand" HeightRequest="5" WidthRequest="5" Grid.Row="1" Grid.Column="1"/>
+  		<Label Grid.Row="1" HorizontalTextAlignment="End" VerticalOptions="Center">Add New</Label>
+  		<Label FontSize="18" Grid.Row="1" Grid.Column="1" VerticalOptions="Center" HorizontalOptions="Center">+</Label>
+  		<Button VerticalOptions="FillAndExpand" Clicked="OnItemAdd" HorizontalOptions="FillAndExpand" Grid.Row="1" Grid.Column="1"/>
 	</Grid>
 </ContentPage>

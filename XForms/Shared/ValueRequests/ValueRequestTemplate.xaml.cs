@@ -37,15 +37,6 @@ namespace Consonance.XamarinFormsView
 			public String name { get { return "moo"; } }
 			public T value { get { return default(T); } set { } }
 		}
-		public IValueConverter ValidityConverter {
-			set {
-				cframe.SetBinding (Frame.OutlineColorProperty, "valid", BindingMode.OneWay, value);
-			}
-		}
-		public void RefreshBindingContext()
-		{
-			OnBindingContextChanged();
-		}
 		public ValueRequestTemplate ()
 		{
 			#if DEBUG
@@ -80,11 +71,17 @@ namespace Consonance.XamarinFormsView
 			}
 			#endif
 		}
+		INotifyPropertyChanged lastContext = null;
 		protected override void OnBindingContextChanged ()
 		{
-			if (BindingContext != null && BindingContext.GetType ().GetGenericArguments ().Length > 0)
-				cframe.Content = templateSelector [BindingContext.GetType ().GetGenericArguments () [0]]();
-			else cframe.Content = null;
+			// select template
+			Platform.UIThread (() => {
+				if (BindingContext != null && BindingContext.GetType ().GetGenericArguments ().Length > 0)
+					Content = templateSelector [BindingContext.GetType ().GetGenericArguments () [0]] ();
+				else
+					Content = new Frame ();
+			});
+
 			base.OnBindingContextChanged ();
 		}
 	}

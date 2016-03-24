@@ -4,11 +4,11 @@
 	xmlns="http://xamarin.com/schemas/2014/forms" 
 	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
 	x:Class="Consonance.XamarinFormsView.ActionRequest">
-	<Grid>
+	<Grid HorizontalOptions="End">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="30"/>
 		</Grid.RowDefinitions>
-		<Label Text="{Binding name}"/>
-		<Button VerticalOptions="Center" HorizontalOptions="End" Clicked="OnClicked"/>
+		<Label Text="{Binding name}" VerticalOptions="Center" HorizontalOptions="Center"/>
+		<Button Clicked="OnClicked"/>
 	</Grid>
 </ContentView>

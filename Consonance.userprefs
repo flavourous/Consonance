@@ -1,48 +1,66 @@
 ﻿<Properties StartupItem="XForms\Droid\Consonance.XamarinFormsView.Droid.csproj" RefactoringSettings.EnableRefactorings="True">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.andrymk2" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="XForms\Shared\Views\ChoosePlanView.xaml">
+  <MonoDevelop.Ide.Workbench ActiveDocument="XForms\Shared\ValueRequests\ValueRequestView.xaml.cs">
     <Files>
-      <File FileName="XForms\Shared\ValueRequests\Templates\RecurrsEveryPatternValueRequest.xaml" Line="1" Column="1" />
-      <File FileName="XForms\Shared\ValueRequests\Templates\RecurrsEveryPatternValueRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\ValueRequests\Templates\TimeSpanRequest.xaml" Line="1" Column="1" />
-      <File FileName="XForms\Shared\ValueRequests\Templates\RecurrsOnPatternValueRequest.xaml" Line="1" Column="1" />
-      <File FileName="XForms\Shared\ValueRequests\Templates\RecurrsOnPatternValueRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\Presenter\AppPresenter.cs" Line="1" Column="1" />
-      <File FileName="..\LibRTP\LibRTP\RecurrsOnPattern.cs" Line="1" Column="1" />
-      <File FileName="..\LibRTP\LibRTP\Common.cs" Line="1" Column="1" />
-      <File FileName="..\LibSharpHelp\StringHelpers.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\Presenter\TrackerTemplates\Defaulters.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\ValueRequests\Templates\DateTimeRequest.xaml" Line="1" Column="1" />
-      <File FileName="XForms\Droid\MainActivity.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\MainTabs.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\XForms\Shared\ValueRequests\ValueRequestBuilder.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\XForms\Shared\Wrappers\ViewWrapper.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\App.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Wrappers\InputWrapper.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\ChoosePlanView.xaml.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\InfoManageView.xaml.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Wrappers\PlanCommandsWrapper.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\ValueRequests\ValueRequestView.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.ConsoleView\CView.cs" Line="1" Column="1" />
-      <File FileName="Presenter\DietModels.cs" Line="1" Column="1" />
-      <File FileName="Presenter\DietPresenters.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\ValueRequests\ValueRequestTemplate.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\XForms\Droid\obj\Debug\Consonance.XamarinFormsView.Droid.C_.w.Consonance.XForms.Shared.ValueRequests.ValueRequestTemplate.xaml.g.cs" Line="1" Column="1" />
-      <File FileName="..\LibSharpHelp\NumericHelpers.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\Controls\DayPagerView.xaml" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\Controls\DayPagerView.xaml.cs" Line="1" Column="1" />
-      <File FileName="Consonance.ConsoleView\Program.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Platform.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\ErrorDialog.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\Controls\EntryLineVM_Row.xaml.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\Controls\EntryLineVM_Row.xaml" Line="1" Column="1" />
       <File FileName="XForms\Shared\Views\MainTabs.xaml" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\InfoFindView.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\ValueRequests\Templates\TimeSpanRequest.xaml.cs" Line="1" Column="1" />
-      <File FileName="c:\w\Consonance\XForms\Droid\obj\Debug\Consonance.XamarinFormsView.Droid.C_.w.Consonance.XForms.Shared.Views.InfoManageView.xaml.g.cs" Line="1" Column="1" />
-      <File FileName="XForms\Shared\Views\ChoosePlanView.xaml" Line="24" Column="8" />
-      <File FileName="XForms\Shared\ValueRequests\ValueRequestView.xaml" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\MainTabs.xaml.cs" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\Controls\TrackerInstanceVM_Row.cs" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\Controls\TrackerInstanceVM_Row.xaml" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Extensions.cs" Line="1" Column="1" />
+      <File FileName="XForms\Shared\ValueConverters.cs" Line="26" Column="1" />
+      <File FileName="Presenter\TrackerTemplates\SimpleTrackyHelpy.cs" Line="183" Column="8" />
+      <File FileName="XForms\Shared\Views\Controls\EntryLineVM_Row.xaml" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\InfoManageView.xaml" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\Controls\InfoLineVM_Row.xaml" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\ChoosePlanView.xaml.cs" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\ChoosePlanView.xaml" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\InfoManageView.xaml.cs" Line="83" Column="45" />
+      <File FileName="XForms\Shared\ValueRequests\Templates\ActionRequest.xaml" Line="1" Column="1" />
+      <File FileName="XForms\Shared\Views\Controls\TTView.cs" Line="1" Column="1" />
+      <File FileName="c:\w\Consonance\XForms\Shared\Platform.cs" Line="15" Column="10" />
+      <File FileName="XForms\Shared\App.cs" Line="38" Column="3" />
+      <File FileName="XForms\Shared\ValueRequests\ValueRequestTemplate.xaml" Line="7" Column="1" />
+      <File FileName="XForms\Shared\ValueRequests\ValueRequestTemplate.xaml.cs" Line="53" Column="10" />
+      <File FileName="c:\w\Consonance\XForms\Shared\ValueRequests\ValueRequestBuilder.cs" Line="95" Column="69" />
+      <File FileName="XForms\Shared\ValueRequests\ValueRequestView.xaml.cs" Line="132" Column="2" />
+      <File FileName="XForms\Shared\ValueRequests\ValueRequestView.xaml" Line="7" Column="50" />
+      <File FileName="XForms\Shared\Wrappers\InputWrapper.cs" Line="1" Column="1" />
+      <File FileName="Presenter\DietModels.cs" Line="105" Column="3" />
+      <File FileName="XForms\Droid\MainActivity.cs" Line="37" Column="29" />
+      <File FileName="Presenter\DietPresenters.cs" Line="457" Column="19" />
     </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="Consonance" expanded="True">
+            <Node name="Consonance" expanded="True">
+              <Node name="TrackerTemplates" expanded="True" />
+            </Node>
+            <Node name="Consonance.ConsoleView" expanded="True" />
+            <Node name="Consonance.XamarinFormsView" expanded="True">
+              <Node name="ValueRequests" expanded="True">
+                <Node name="ValueRequestTemplate.xaml" expanded="True" />
+                <Node name="ValueRequestView.xaml" expanded="True">
+                  <Node name="ValueRequestView.xaml.cs" selected="True" />
+                </Node>
+              </Node>
+              <Node name="Views" expanded="True">
+                <Node name="Controls" expanded="True" />
+                <Node name="ChoosePlanView.xaml" expanded="True" />
+                <Node name="InfoManageView.xaml" expanded="True" />
+                <Node name="MainTabs.xaml" expanded="True" />
+              </Node>
+              <Node name="Wrappers" expanded="True" />
+            </Node>
+            <Node name="Consonance.XamarinFormsView.Droid" expanded="True" />
+            <Node name="LibSharpHelp" expanded="True" />
+          </Node>
+        </State>
+      </Pad>
+      <Pad Id="MonoDevelop.Debugger.WatchPad">
+        <State />
+      </Pad>
+    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
@@ -50,6 +68,7 @@
       <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="167" column="34" />
       <Breakpoint file="c:\cygwin\home\David\Consonance\Consonance\Diets\CalorieDiet.cs" line="305" column="35" />
       <Breakpoint file="C:\w\Consonance\Consonance.ConsoleView\CView.cs" line="190" column="121" />
+      <Breakpoint file="C:\w\Consonance\XForms\Shared\Views\Controls\TTView.cs" line="36" column="2" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>

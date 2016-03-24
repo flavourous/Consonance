@@ -15,7 +15,9 @@ namespace Consonance.XamarinFormsView
 		public InfoLineVM selectedItem {
 			get { return mselectedItem; }
 			set {
+				if(mselectedItem != null) mselectedItem.selected = false;
 				mselectedItem = value;
+				if(mselectedItem != null) mselectedItem.selected = true;
 				OnPropertyChanged ("selectedItem");
 			}
 		}
@@ -56,7 +58,8 @@ namespace Consonance.XamarinFormsView
 
 		void OnChoose(Object s, EventArgs e) 
 		{ 
-			completedTask.SetResult (selectedItem == Nothingable.noth ? null : selectedItem); Navigation.PopAsync (); 
+			Navigation.PopAsync (); // pop furst AVOID BUG?
+			completedTask.SetResult (selectedItem == Nothingable.noth ? null : selectedItem); 
 		}
 
 		// info hooks

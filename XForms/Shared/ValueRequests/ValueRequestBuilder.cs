@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using Consonance;
 using Xamarin.Forms;
+using System.Diagnostics;
 
 namespace Consonance.XamarinFormsView
 {
@@ -30,7 +31,10 @@ namespace Consonance.XamarinFormsView
 				vrv = new ValueRequestView ();
 
 				// Handler for when the requests we putting in change...
-				ListChangedEventHandler leh = (s,e) => Requests_ListChanged(vrv, s as BindingList<object>, e);
+				ListChangedEventHandler leh = (s,e) => 
+					// the object can be modified from other threads of course.
+					// im not putting an ordering lock...should be ok.
+					Platform.UIThread(() => Requests_ListChanged(vrv, s as BindingList<object>, e)).Wait();
 
 				// this happens when next or ok or cancel is pressed	
 				List<GetValuesPage> pages = new List<GetValuesPage>(requestPages);
@@ -51,7 +55,7 @@ namespace Consonance.XamarinFormsView
 					{
 						// set up the next page.
 						vrv.Title = pages[npage].title;
-						pages[npage].valuerequestsChanegd = leh;
+						pages[npage].valuerequestsChanegd = leh; // testy 
 						leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
 					}
 				};
@@ -66,29 +70,25 @@ namespace Consonance.XamarinFormsView
 
 		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)
 		{
-			// the object can be modified from other threads of course.
-			// im not putting an ordering lock...should be ok.
-			Platform.UIThread(() => {
-				switch (e.ListChangedType) {
-				case ListChangedType.Reset:
-					vrv.ClearRows ();
-					foreach (var ob in requests)
-						vrv.AddRow (ob as View);
-					break;
-				case ListChangedType.ItemAdded:
-					vrv.InsertRow (e.NewIndex, requests [e.NewIndex] as View);
-					break;
-				case ListChangedType.ItemChanged:
+			switch (e.ListChangedType) {
+			case ListChangedType.Reset:
+				vrv.ClearRows ();
+				foreach (var ob in requests)
+					vrv.AddRow (ob as ValueRequestTemplate);
+				break;
+			case ListChangedType.ItemAdded:
+				vrv.InsertRow (e.NewIndex, requests [e.NewIndex] as ValueRequestTemplate);
+				break;
+			case ListChangedType.ItemChanged:
 				// do not #care
-					break;
-				case ListChangedType.ItemDeleted:
-					vrv.RemoveRow (e.NewIndex);
-					break;
-				case ListChangedType.ItemMoved:
+				break;
+			case ListChangedType.ItemDeleted:
+				vrv.RemoveRow (e.NewIndex);
+				break;
+			case ListChangedType.ItemMoved:
 				// do not #care
-					break;
-				}
-			});
+				break;
+			}
 		}
 
 		readonly ValueRequestFactory vrf = new ValueRequestFactory();
@@ -120,8 +120,8 @@ namespace Consonance.XamarinFormsView
 		}
 	}
 		
-	interface IShowName { bool showName { get; } String name { get; } }
-	class ValueRequestVM<T> : IValueRequest<T>, INotifyPropertyChanged, IShowName
+	interface IValueRequestVM : INotifyPropertyChanged { bool showName { get; } String name { get; } bool valid { get; } }
+	class ValueRequestVM<T> : IValueRequest<T>, IValueRequestVM
 	{
 		public bool showName { get; private set; }
 		public String name { get; set; }

@@ -7,7 +7,6 @@ namespace Consonance.XamarinFormsView
 {
 	public partial class ValueRequestView : ContentPage
 	{
-		BoolColorConverter validConverter = new BoolColorConverter(Color.Transparent, Color.Red) { ignore = true };
 		public ValueRequestView ()
 		{
 			InitializeComponent ();
@@ -27,7 +26,7 @@ namespace Consonance.XamarinFormsView
 		public void InsertRow(int idx, View forRow)
 		{
 			inputs.RowDefinitions.Insert (idx, new RowDefinition { Height = GridLength.Auto });
-			var isn = (forRow.BindingContext as IShowName);
+			var isn = (forRow.BindingContext as IValueRequestVM);
 
 			// title maueb
 			if (isn.showName)
@@ -51,9 +50,6 @@ namespace Consonance.XamarinFormsView
 					&& (int)titleViews [rowViews [i]].GetValue (Grid.RowProperty) != i)
 					titleViews [rowViews [i]].SetValue (Grid.RowProperty, i);
 			}
-
-			// Set validityConverter
-			(forRow as ValueRequestTemplate).ValidityConverter = validConverter;
 		}
 
 		View RLab(String name)
@@ -78,20 +74,24 @@ namespace Consonance.XamarinFormsView
 			}
 			vlm.RemoveListen (v.BindingContext as INotifyPropertyChanged);
 		}
+		void Completed(bool suc)
+		{
+			completed (suc);
+			ClearRows ();
+		}
 		protected override bool OnBackButtonPressed ()
 		{
-			completed (false);
+			Completed (false);
 			return base.OnBackButtonPressed ();
 		}
 		public Action<bool> completed = delegate { };
 		ValidListenManager vlm = new ValidListenManager ("valid");
+		InvalidRedConverter invrc = new InvalidRedConverter ();
 		public void OKClick(object sender, EventArgs args) 
 		{
-			validConverter.ignore = false; // enable reds
-			foreach (var v in rowViews)
-				(v as ValueRequestTemplate).RefreshBindingContext ();
+			invrc.ignore = false;
 			
-			if(vlm.Valid) completed (true); 
+			if(vlm.Valid) Completed (true); 
 			else UserInputWrapper.message("Fix the invalid input first");
 		}
 	}

@@ -469,7 +469,7 @@ namespace Consonance
 			return new EntryLineVM (
 				entry.entryWhen,
 				TimeSpan.Zero,
-				entry.entryName, 
+				entry.entryName,
 				info == null ? "" : QuantyGet (helpy.output.Convert((MOut)OutQuant.Get (info)), helpy.output.quantifier.name, info.name), 
 				new KVPList<string, double> { { helpy.trackedname, (double)OutTrack.Get (entry) } }
 			);
@@ -496,7 +496,7 @@ namespace Consonance
 					kl.Add (helpy.trackedname + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
 				else
 					for (int i = 0; i < target.DayPattern.Length; i++)
-						kl.Add (helpy.trackedname + " for " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);	
+						kl.Add (helpy.trackedname + " for " + TimeSpan.FromDays (target.DayPattern [i]).WithSuffix (), target.DayTargets [i]);	
 			}
 			return new TrackerInstanceVM(
 				dialect,

@@ -9,7 +9,17 @@ using System.Runtime.CompilerServices;
 
 namespace Consonance
 {
-	public class OriginatorVM {
+	public class ViewModelBase : INotifyPropertyChanged
+	{
+		#region INotifyPropertyChanged implementation
+		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+		protected void OnPropertyChanged([CallerMemberName]String pn = null)
+		{
+			PropertyChanged (this, new PropertyChangedEventArgs (pn));
+		}
+		#endregion
+	}
+	public class OriginatorVM : ViewModelBase {
 		public static bool OriginatorEquals(OriginatorVM first, OriginatorVM second)
 		{
 			if (first == null && second == null) 
@@ -34,16 +44,8 @@ namespace Consonance
 			Add (new KeyValuePair<T1, T2> (a, b));
 		}
 	}
-	public class TrackerDetailsVM : INotifyPropertyChanged
+	public class TrackerDetailsVM : ViewModelBase
 	{
-		#region INotifyPropertyChanged implementation
-		public event PropertyChangedEventHandler PropertyChanged = delegate { };
-		void OnPropertyChanged([CallerMemberName]String pn = null)
-		{
-			PropertyChanged (this, new PropertyChangedEventArgs (pn));
-		}
-		#endregion
-
 		// viewhakcs
 		bool _selected = false;
 		public bool selected { get { return _selected; } set { _selected=value; OnPropertyChanged (); } }
@@ -117,6 +119,10 @@ namespace Consonance
 	{
 		public String name { get; set; }
 		public KVPList<string, double> displayAmounts { get; set; }
+
+		// viewhakcs
+		bool _selected = false;
+		public bool selected { get { return _selected; } set { _selected=value; OnPropertyChanged (); } }
 	}
 
 	public delegate IEnumerable<T> EntryRetriever<T>(DateTime start, DateTime end);

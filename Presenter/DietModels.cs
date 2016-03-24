@@ -114,6 +114,7 @@ namespace Consonance
 		}
 		public void SetList(BindingList<Object> newlist)
 		{
+			boundrequests.ListChanged -= Newlist_ListChanged;
 			newlist.ListChanged += Newlist_ListChanged;
 			boundrequests = newlist;
 			Newlist_ListChanged (boundrequests, new ListChangedEventArgs (ListChangedType.Reset, -1));

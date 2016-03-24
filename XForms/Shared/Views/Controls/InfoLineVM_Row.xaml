@@ -3,14 +3,21 @@
 	<ContentView.Resources>
 		<ResourceDictionary>
 			<l:KVPListConverter x:Key="klc"/>
+			<l:WithChoosableConverter x:Key="withChooseable"/>
 		</ResourceDictionary>
 	</ContentView.Resources>
 	<StackLayout Orientation="Horizontal">
 		<Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
-		<Label Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
-		<Grid>
-			<Label IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Center" Text="Choose" />
-			<Button Clicked="OnChosen" x:Name="cb" HorizontalOptions="Center" VerticalOptions="Center" HeightRequest="30" />
+		<Label LineBreakMode="WordWrap" Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
+		<Grid IsVisible="{Binding selected, Converter={StaticResource withChooseable}}" HorizontalOptions="End" x:Name="gg">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="30"/>
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="auto"/>
+			</Grid.ColumnDefinitions>
+			<Label HorizontalOptions="Center" VerticalOptions="Center" Text="Choose" />
+			<Button Clicked="OnChosen"/>
 		</Grid>
 	</StackLayout>
 </ContentView>

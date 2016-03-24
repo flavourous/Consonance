@@ -36,7 +36,7 @@ namespace Consonance.XamarinFormsView.Droid
 			var pres = MainActivity.appy.Presentation (new Platform ());
 			pres.ContinueWith (t => {
 				App.TLog ("starting forms activity");
-				StartActivity (typeof(MainActivity));
+				Platform.UIThread(() => StartActivity (typeof(MainActivity))).Wait();
 			}, TaskContinuationOptions.OnlyOnRanToCompletion);
 			pres.ContinueWith (t => {
 				throw t.Exception;
