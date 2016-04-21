@@ -57,10 +57,10 @@ namespace Consonance
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Diet"; } }
 		public String trackedname { get { return "calories"; } }
-		public InstanceValue [] instanceValueFields { get { return new[] { 
-				InstanceValue.FromType (0.0, "Calorie Limit", "calorieLimit", f => f.DoubleRequestor),
-				InstanceValue.FromType (true, "Track Daily", "trackDaily", f => f.BoolRequestor),
-				InstanceValue.FromType (false, "Track Weekly", "trackWeekly", f => f.BoolRequestor)
+		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
+				VRVConnectedValue.FromType (0.0, "Calorie Limit", "calorieLimit", f => f.DoubleRequestor),
+				VRVConnectedValue.FromType (true, "Track Daily", "trackDaily", f => f.BoolRequestor),
+				VRVConnectedValue.FromType (false, "Track Weekly", "trackWeekly", f => f.BoolRequestor)
 			}; } } // creating an instance
 		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{ 
@@ -84,11 +84,11 @@ namespace Consonance
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Diet"; } }
 		public String trackedname { get { return "calories"; } }
-		public InstanceValue[] instanceValueFields { get { return new[] { 
-					InstanceValue.FromType(0, v => (int)v[0] > 0, "Loose days", "nLooseDays", f=>f.IntRequestor ), 
-					InstanceValue.FromType(0.0, "Calories", "looseCalorieLimit", f=>f.DoubleRequestor ), 
-					InstanceValue.FromType(0, v => (int)v[2] > 0, "Strict days", "nStrictDays", f=>f.IntRequestor ), 
-					InstanceValue.FromType(0.0, "Calories", "strictCalorieLimit", f=>f.DoubleRequestor ) 
+		public VRVConnectedValue[] instanceValueFields { get { return new[] { 
+					VRVConnectedValue.FromType(0, v => (int)v[0] > 0, "Loose days", "nLooseDays", f=>f.IntRequestor ), 
+					VRVConnectedValue.FromType(0.0, "Calories", "looseCalorieLimit", f=>f.DoubleRequestor ), 
+					VRVConnectedValue.FromType(0, v => (int)v[2] > 0, "Strict days", "nStrictDays", f=>f.IntRequestor ), 
+					VRVConnectedValue.FromType(0.0, "Calories", "strictCalorieLimit", f=>f.DoubleRequestor ) 
 			}; } } // creating an instance
 		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{
@@ -108,12 +108,12 @@ namespace Consonance
 	class CalDiet_HelpyIn : IReflectedHelpyQuants<FoodInfo,double>
 	{
 		#region IReflectedHelpyQuants implementation
-		public String trackedMember { get { return "calories"; } }
-		public string Convert (double quant) { return quant.ToString ("F1") + "g"; }
+        public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", "calories", 0.0); } }
+        public string Convert (double quant) { return quant.ToString ("F1") + "g"; }
 		public double InfoFixedQuantity { get { return 100.0; } }
-		public InstanceValue quantifier { get { return InstanceValue.FromType (0.0, "Grams", "grams", f => f.DoubleRequestor); } }
-		public string[] calculation { get { return new[] { "calories" }; } }
-		public double Calcluate (double amount, double[] values) { return amount * values [0] / InfoFixedQuantity; }
+		public VRVConnectedValue quantifier { get { return VRVConnectedValue.FromType (0.0, "Grams", "grams", f => f.DoubleRequestor); } }
+        public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", "calories", 0.0) }; } }
+        public double Calcluate (double amount, double[] values) { return amount * values [0] / InfoFixedQuantity; }
 		public Func<string, IValueRequest<double>> FindRequestor (IValueRequestFactory fact) { return fact.DoubleRequestor; }
 		public Expression<Func<FoodInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
 		#endregion
@@ -121,11 +121,11 @@ namespace Consonance
 	class CalDiet_HelpyOut : IReflectedHelpyQuants<FireInfo,TimeSpan>
 	{
 		#region IReflectedHelpyQuants implementation
-		public String trackedMember { get { return "calories"; } }
+		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", "calories", 0.0); } }
 		public string Convert (TimeSpan quant) { return quant.TotalHours.ToString("F1") + "h"; }
 		public TimeSpan InfoFixedQuantity { get { return TimeSpan.FromHours(1.0); } }
-		public InstanceValue quantifier { get { return InstanceValue.FromType(TimeSpan.Zero,"Duration", "duration",f=>f.TimeSpanRequestor); } }
-		public string[] calculation { get { return new[] { "calories" }; } }
+		public VRVConnectedValue quantifier { get { return VRVConnectedValue.FromType(TimeSpan.Zero,"Duration", "duration",f=>f.TimeSpanRequestor); } }
+		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", "calories", 0.0) }; } }
 		public double Calcluate (TimeSpan amount, double[] values) { return (amount.TotalHours/InfoFixedQuantity.TotalHours) * values [0]; }
 		public Func<string, IValueRequest<TimeSpan>> FindRequestor (IValueRequestFactory fact) { return fact.TimeSpanRequestor; }
 		public Expression<Func<FireInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }

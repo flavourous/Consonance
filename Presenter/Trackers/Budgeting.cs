@@ -59,8 +59,8 @@ namespace Consonance
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Finance"; } }
 		public String trackedname { get { return "amount"; } }
-		public InstanceValue [] instanceValueFields { get { return new[] { 
-					InstanceValue.FromType(0.0, "Target", "budget", f=>f.DoubleRequestor)
+		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
+					VRVConnectedValue.FromType(0.0, "Target", "budget", f=>f.DoubleRequestor)
 				}; } } // creating an instance
 		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{ 
@@ -74,11 +74,11 @@ namespace Consonance
 	class SimpleBudget_HelpyIn : IReflectedHelpyQuants<IncomeInfo,int>
 	{
 		#region IReflectedHelpyQuants implementation
-		public String trackedMember { get { return "amount"; } }
+		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Amount", "amount", 0.0); } }
 		public string Convert (int quant) { return quant.ToString (); }
 		public int InfoFixedQuantity { get { return 1; } }
-		public InstanceValue quantifier { get { return InstanceValue.FromType (1, "Quantity", "quantity", f => f.IntRequestor); } }
-		public string[] calculation { get { return new[] { "amount" }; } }
+		public VRVConnectedValue quantifier { get { return VRVConnectedValue.FromType (1, "Quantity", "quantity", f => f.IntRequestor); } }
+		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", "amount", 0.0) }; } }
 		public double Calcluate (int amount, double[] values) { return amount * values [0] / InfoFixedQuantity; }
 		public Func<string, IValueRequest<int>> FindRequestor (IValueRequestFactory fact) { return fact.IntRequestor; }
 		public Expression<Func<IncomeInfo, bool>> InfoComplete { get { return fi => true; } }
@@ -86,12 +86,12 @@ namespace Consonance
 	}
 	class SimpleBudget_HelpyOut : IReflectedHelpyQuants<ExpenditureInfo,int>
 	{
-		#region IReflectedHelpyQuants implementation
-		public String trackedMember { get { return "amount"; } }
-		public string Convert (int quant) { return quant.ToString (); }
+        #region IReflectedHelpyQuants implementation
+        public InstanceValue<double> tracked { get { return new InstanceValue<double>("Amount", "amount", 0.0); } }
+        public string Convert (int quant) { return quant.ToString (); }
 		public int InfoFixedQuantity { get { return 1; } }
-		public InstanceValue quantifier { get { return InstanceValue.FromType (1, "Quantity", "quantity", f => f.IntRequestor); } }
-		public string[] calculation { get { return new[] { "amount" }; } }
+		public VRVConnectedValue quantifier { get { return VRVConnectedValue.FromType (1, "Quantity", "quantity", f => f.IntRequestor); } }
+        public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", "amount", 0.0) }; } }
 		public double Calcluate (int amount, double[] values) { return amount * values [0]; }
 		public Func<string, IValueRequest<int>> FindRequestor (IValueRequestFactory fact) { return fact.IntRequestor; }
 		public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get { return fi => true; } }

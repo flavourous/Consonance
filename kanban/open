@@ -1,5 +1,3 @@
-VRV Title Formatting{{{1
-it's got issues, naming, caps etc}}}
 Validition highghting is turned off {{{1
 it got turned off fixing canvas bug, can put on row of the vrv}}}
 vrv date and time on entries{{{1 
@@ -13,6 +11,12 @@ sth went wrong there....}}}
 needs tracksy view{{{
 yeah it's totally not there...
 }}}
-flectors are fucked?{{{
-well, adding an entry with an info doesnt work, crashes during flector. I did change te impl of those.  I cant breakpoint it either...sth strange maybe VS+Xamarin? Dunno.  I'm tracing instead.}}}
-
+manage on in/out should be infos?{{{
+manage is silly....bettwer describing word?
+}}}
+need to impiment invention{{{
+not sure exactly how, but can start with sth basic that can be versioned off with newer better schema
+}}}
+infofixedquantity {{{
+ shouldnt be, self normalise witha  default
+}}}

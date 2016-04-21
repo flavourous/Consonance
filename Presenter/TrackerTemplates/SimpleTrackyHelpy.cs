@@ -55,8 +55,7 @@ namespace Consonance
 		String trackedname {get;}
 
 		// instance
-		InstanceValue [] instanceValueFields { get; } // for create/edit/andmemebernames
-		//InstanceValue<bool> [] instanceOptions { get; } // boolean fields
+		VRVConnectedValue [] instanceValueFields { get; } // for create/edit/andmemebernames
 
 		// This has to represent any number of targets, in any number of patterns, for any period range.
 		RecurringAggregatePattern[] Calcluate(Object[] fieldValues); 
@@ -65,30 +64,39 @@ namespace Consonance
 		IReflectedHelpyQuants<InInfo,QuantityIn> input { get; }
 		IReflectedHelpyQuants<OutInfo,QuantityOut> output { get; }
 	}
-	public class InstanceValue  // lets try a object-cast based one here - I think it will be better then generics even after the casts
-	{
-		public readonly Object defaultValue; 
-		public readonly String name; 
-		public readonly String fieldName; 
+    public class InstanceValue<T>  // lets try a object-cast based one here - I think it will be better then generics even after the casts
+    {
+        public readonly T defaultValue;
+        public readonly String name;
+        public readonly String fieldName;
+        public InstanceValue(String name, String fieldName, T defaultValue)
+        {
+            this.name = name;
+            this.fieldName = fieldName;
+            this.defaultValue = defaultValue;
+        }
+    }
+    public class VRVConnectedValue : InstanceValue<Object>
+    { 
 		public readonly Predicate<IRequestStorageHelper[]> ValidateHelper;
 		public readonly Func<Action, IRequestStorageHelper> CreateHelper;
 		public readonly Func<IValueRequestFactory, Func<String, Object>> FindRequestorDelegate;
 		public readonly Func<Object,Object> ConvertDataToRequestValue, ConvertRequestValueToData;
-		private InstanceValue(Object def, String name, String field, Func<Action, IRequestStorageHelper> CreateHelper, 
+		private VRVConnectedValue(Object def, String name, String field, Func<Action, IRequestStorageHelper> CreateHelper, 
 			Func<IValueRequestFactory, Func<String, Object>> FindRequestorDelegate, Predicate<IRequestStorageHelper[]> ValidateHelper,
 			Func<Object,Object> ConvertDataToRequestValue, Func<Object,Object> ConvertRequestValueToData)
+            : base(name,field,def)
 		{
-			defaultValue = def; this.name = name; this.fieldName = field; 
 			this.CreateHelper = CreateHelper; 
 			this.FindRequestorDelegate=FindRequestorDelegate;
 			this.ValidateHelper = ValidateHelper;
 			this.ConvertDataToRequestValue = ConvertDataToRequestValue;
 			this.ConvertRequestValueToData = ConvertRequestValueToData;
 		}
-		public static InstanceValue FromType<T>(T defaultValue, Predicate<object[]> validateit, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest)
+		public static VRVConnectedValue FromType<T>(T defaultValue, Predicate<object[]> validateit, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest)
 		{
 			Func<Action, IRequestStorageHelper> creator = v => new RequestStorageHelper<T> (name, () => defaultValue, v);
-			return new InstanceValue (
+			return new VRVConnectedValue (
 				defaultValue,
 				name,
 				field,
@@ -98,7 +106,7 @@ namespace Consonance
 				o => (T)o, o => (T)o
 			);
 		}
-		public static InstanceValue FromType<T>(T defaultValue, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest)
+		public static VRVConnectedValue FromType<T>(T defaultValue, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest)
 		{
 			return FromType (defaultValue, null, name, field, directRequest);
 		}
@@ -106,10 +114,10 @@ namespace Consonance
 	public interface IReflectedHelpyQuants<I,MT>
 	{
 		// these expect type double
-		String trackedMember { get; }
-		InstanceValue quantifier { get; } // this is the field that defines the quantity eg grams or minutes
-		// these expect double? cause is optional data.
-		String[] calculation { get; } // these are the fields we want to take from/store to the info
+		InstanceValue<double> tracked { get; }
+		VRVConnectedValue quantifier { get; } // this is the field that defines the quantity eg grams or minutes
+                                              // these expect double? cause is optional data.
+        InstanceValue<double>[] calculation { get; } // these are the fields we want to take from/store to the info
 		double Calcluate (MT amount, double[] values); // obvs
 		MT InfoFixedQuantity { get; }
 		String Convert (MT quant);
@@ -118,8 +126,8 @@ namespace Consonance
 	class IRSPair 
 	{
 		public readonly IRequestStorageHelper requestStore; 
-		public readonly InstanceValue descriptor;
-		public IRSPair(IRequestStorageHelper rs, InstanceValue iv)
+		public readonly VRVConnectedValue descriptor;
+		public IRSPair(IRequestStorageHelper rs, VRVConnectedValue iv)
 		{
 			this.requestStore=rs;
 			this.descriptor = iv;
@@ -234,8 +242,8 @@ namespace Consonance
 			this.quant = quant;
 			// we need a direct request for no info creation - and posssssibly one of each for the ones on info that might not exist.
 			// also need one for info quantity.
-			trackedQuantity = new RequestStorageHelper<double>(quant.trackedMember,()=>0.0,() => trackedQuantity.request.valid = true); // it's same on tinfo and entries
-			trackedQuantityFlecter = new Flecter<E>(quant.trackedMember);
+			trackedQuantity = new RequestStorageHelper<double>(quant.tracked.name,()=> quant.tracked.defaultValue, () => trackedQuantity.request.valid = true); // it's same on tinfo and entries
+			trackedQuantityFlecter = new Flecter<E>(quant.tracked.fieldName);
 			measureQuantityFlecter_info = new Flecter<I> (quant.quantifier.fieldName);
 			measureQuantityFlecter_ent = new Flecter<E> (quant.quantifier.fieldName);
 			measureQuantity = quant.quantifier.CreateHelper (() => measureQuantity.requestValid = true);
@@ -243,9 +251,9 @@ namespace Consonance
 			var f = new List<Flecter<I>> ();
 			foreach (var q in quant.calculation) {
 				RequestStorageHelper<double> ns = null;
-				ns = new RequestStorageHelper<double> (q + " per " + quant.Convert (quant.InfoFixedQuantity), () => 0.0, () => ns.request.valid = true);
+                ns = new RequestStorageHelper<double>(q.name + " per " + quant.Convert(quant.InfoFixedQuantity), () => q.defaultValue, () => ns.request.valid = true);
 				l.Add (ns);
-				f.Add (new Flecter<I> (q));
+				f.Add (new Flecter<I> (q.fieldName));
 			}
 			forMissingInfoQuantities = l;
 			requiredInfoFlecters = f;
@@ -437,12 +445,12 @@ namespace Consonance
 			this.details = details;
 			this.dialect = dialect;
 
-			InInfoTrack = new Flecter<InInfo> (helpy.input.trackedMember);
-			OutInfoTrack = new Flecter<OutInfo> (helpy.output.trackedMember);
+			InInfoTrack = new Flecter<InInfo> (helpy.input.tracked.fieldName);
+			OutInfoTrack = new Flecter<OutInfo> (helpy.output.tracked.fieldName);
 			InQuant = new Flecter<InInfo> (helpy.input.quantifier.fieldName);
 			OutQuant = new Flecter<OutInfo> (helpy.output.quantifier.fieldName);
-			InTrack = new Flecter<In> (helpy.input.trackedMember);
-			OutTrack = new Flecter<Out> (helpy.output.trackedMember);
+			InTrack = new Flecter<In> (helpy.input.tracked.fieldName);
+			OutTrack = new Flecter<Out> (helpy.output.tracked.fieldName);
 
 			fvalues = helpy.instanceValueFields.MakeList (s => new Flecter<Inst> (s.fieldName));
 		}
@@ -508,12 +516,12 @@ namespace Consonance
 		}
 		public InfoLineVM GetRepresentation (InInfo info)
 		{
-			String t = helpy.input.trackedMember + " / " + helpy.input.Convert ((MIn)InQuant.Get (info)) + " " + helpy.input.quantifier.name;
+			String t = helpy.input.tracked + " / " + helpy.input.Convert ((MIn)InQuant.Get (info)) + " " + helpy.input.quantifier.name;
 			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)InInfoTrack.Get(info) } } };
 		}
 		public InfoLineVM GetRepresentation (OutInfo info)
 		{
-			String t = helpy.output.trackedMember + " / " + helpy.output.Convert ((MOut)OutQuant.Get (info)) + " " + helpy.output.quantifier.name;
+			String t = helpy.output.tracked + " / " + helpy.output.Convert ((MOut)OutQuant.Get (info)) + " " + helpy.output.quantifier.name;
 			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)OutInfoTrack.Get(info) } } };
 		}
 
