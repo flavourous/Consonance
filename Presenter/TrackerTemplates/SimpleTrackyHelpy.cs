@@ -461,13 +461,14 @@ namespace Consonance
 		{
 			return amt + " " + unit + " of " + name;
 		}
+        const String noninfo = "Quick Entry";
 		public EntryLineVM GetRepresentation (In entry, InInfo info)
 		{
 			return new EntryLineVM (
 				entry.entryWhen,
 				TimeSpan.Zero,
 				entry.entryName, 
-				info == null ? "" : QuantyGet (helpy.input.Convert((MIn)InQuant.Get (info)), helpy.input.quantifier.name, info.name), 
+				info == null ? noninfo : QuantyGet (helpy.input.Convert((MIn)InQuant.Get (info)), helpy.input.quantifier.name, info.name), 
 				new KVPList<string, double> { { helpy.trackedname, (double)InTrack.Get (entry) } }
 			);
 		}
@@ -477,7 +478,7 @@ namespace Consonance
 				entry.entryWhen,
 				TimeSpan.Zero,
 				entry.entryName,
-				info == null ? "" : QuantyGet (helpy.output.Convert((MOut)OutQuant.Get (info)), helpy.output.quantifier.name, info.name), 
+				info == null ? noninfo : QuantyGet (helpy.output.Convert((MOut)OutQuant.Get (info)), helpy.output.quantifier.name, info.name), 
 				new KVPList<string, double> { { helpy.trackedname, (double)OutTrack.Get (entry) } }
 			);
 		}
@@ -516,12 +517,12 @@ namespace Consonance
 		}
 		public InfoLineVM GetRepresentation (InInfo info)
 		{
-			String t = helpy.input.tracked + " / " + helpy.input.Convert ((MIn)InQuant.Get (info)) + " " + helpy.input.quantifier.name;
+			String t = helpy.input.tracked + " / " + helpy.input.Convert ((MIn)InQuant.Get (info));
 			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)InInfoTrack.Get(info) } } };
 		}
 		public InfoLineVM GetRepresentation (OutInfo info)
 		{
-			String t = helpy.output.tracked + " / " + helpy.output.Convert ((MOut)OutQuant.Get (info)) + " " + helpy.output.quantifier.name;
+			String t = helpy.output.tracked + " / " + helpy.output.Convert ((MOut)OutQuant.Get (info));
 			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)OutInfoTrack.Get(info) } } };
 		}
 

@@ -3,7 +3,7 @@
 	<ContentPage Title="{Binding InTabName}">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddInClick" />
-			<ToolbarItem Text="Manage" Clicked="InInfoManageClick" />
+			<ToolbarItem Text="{Binding InManageName}" Clicked="InInfoManageClick" />
 		</ContentPage.ToolbarItems>
 		<Grid>
 			<Grid.RowDefinitions>
@@ -34,7 +34,7 @@
 	<ContentPage Title="{Binding OutTabName}">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddOutClick" />
-			<ToolbarItem Text="Manage" Clicked="OutInfoManageClick" />
+			<ToolbarItem Text="{Binding OutManageName}" Clicked="OutInfoManageClick" />
 		</ContentPage.ToolbarItems>
 		<Grid>
 			<Grid.RowDefinitions>

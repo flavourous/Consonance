@@ -1,18 +1,7 @@
-Validition highghting is turned off {{{1
-it got turned off fixing canvas bug, can put on row of the vrv}}}
 vrv date and time on entries{{{1 
 yeah}}}
-crash on findy for food info?{{{1
-was not impl exception so..who knows.  we dont have a real impl mayb just remove that test one?}}}
-default description for non-info{{{1
-entries description is probbably about the foodinfo used. none info needs to say sth like "manual". maybe hide desc if null? it's takin vert space even when empty i think}}}
-100g Grams on info screen{{{1
-sth went wrong there....}}}
 needs tracksy view{{{
 yeah it's totally not there...
-}}}
-manage on in/out should be infos?{{{
-manage is silly....bettwer describing word?
 }}}
 need to impiment invention{{{
 not sure exactly how, but can start with sth basic that can be versioned off with newer better schema
@@ -20,3 +9,4 @@ not sure exactly how, but can start with sth basic that can be versioned off wit
 infofixedquantity {{{
  shouldnt be, self normalise witha  default
 }}}
+

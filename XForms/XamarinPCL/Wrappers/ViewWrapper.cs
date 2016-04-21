@@ -84,7 +84,6 @@ namespace Consonance.XamarinFormsView.PCL
 				}
 			});
 		}
-
 			
 		// plan commands
         public ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get { return this; } }
@@ -119,5 +118,4 @@ namespace Consonance.XamarinFormsView.PCL
 				yield return tt;
 		}
     }
-
 }

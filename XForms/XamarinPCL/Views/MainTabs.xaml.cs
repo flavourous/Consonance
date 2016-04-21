@@ -24,6 +24,10 @@ namespace Consonance.XamarinFormsView.PCL
 		    public String InTabName { get { return mInTabName; } set { mInTabName = value; OnPropertyChanged(); } }
 		    private String mOutTabName = "Out";
 		    public String OutTabName { get { return mOutTabName; } set { mOutTabName = value; OnPropertyChanged(); } }
+            private String mInManageName = "Manage";
+            public String InManageName { get { return mInManageName; } set { mInManageName = value; OnPropertyChanged(); } }
+            private String mOutManageName = "Manage";
+            public String OutManageName { get { return mOutManageName; } set { mOutManageName = value; OnPropertyChanged(); } }
 
             // List items
             private ObservableCollection<EntryLineVM> mInItems = new ObservableCollection<EntryLineVM>();
@@ -97,6 +101,8 @@ namespace Consonance.XamarinFormsView.PCL
 				PlanList.SelectedItem = mSelectedPlanItem = use;
                 viewmodel.InTabName = value.dialect.InputEntryVerb;
                 viewmodel.OutTabName = value.dialect.OutputEntrytVerb;
+                viewmodel.InManageName = value.dialect.InputInfoPlural;
+                viewmodel.OutManageName = value.dialect.OutputInfoPlural;
 				PlanItemSelected (use); 
 			}
 		}

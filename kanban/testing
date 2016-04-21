@@ -1,1 +1,18 @@
-
+VRV Title Formatting{{{1
+it's got issues, naming, caps etc}}}
+100g Grams on info screen{{{
+sth went wrong there....
+}}}
+crash on findy for food info?{{{1
+was not impl exception so..who knows.  we dont have a real impl mayb just remove that test one?}}}
+default description for non-info{{{1
+entries description is probbably about the foodinfo used. none info needs to say sth like "manual". maybe hide desc if null? it's takin vert space even when empty i think
+ - Need to check both info and noninfo look okok
+}}}
+what happens when u remove last ti {{{
+in maintabs.selectedplanitem, it does value.thing...
+}}}
+manage on in/out should be infos?{{{
+manage is silly....bettwer describing word?
+use off of dialect like "foods" "burns"?
+}}}

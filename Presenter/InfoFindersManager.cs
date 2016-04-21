@@ -10,7 +10,7 @@ namespace Consonance
 		static Dictionary<Type,object> repo = new Dictionary<Type, object>();
 		static InfoFindersManager()
 		{
-			AddFinder (new MockFoodInfoFinder ());
+			//AddFinder (new MockFoodInfoFinder ());
 		}
 		public static void AddFinder<IType>(IFindData<IType> finder)
 		{
