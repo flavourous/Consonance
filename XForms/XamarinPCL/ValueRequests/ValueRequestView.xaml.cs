@@ -37,6 +37,11 @@ namespace Consonance.XamarinFormsView.PCL
 			int col = isn.showName ? 1 : 0, colspan = isn.showName ? 1 : 2;
 			forRow.SetValue (Grid.ColumnProperty, col);
 			forRow.SetValue (Grid.ColumnSpanProperty, colspan);
+            if (forRow is ValueRequestTemplate)
+            {
+                var vrt = ((ValueRequestTemplate)forRow);
+                vrt.pfc.SetBinding(Frame.OutlineColorProperty, "valid", BindingMode.Default, invrc);
+            }
 			inputs.Children.Add (forRow);
 
 			// indexing etc

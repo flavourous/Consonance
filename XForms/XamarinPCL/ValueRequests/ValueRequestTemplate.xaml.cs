@@ -73,33 +73,19 @@ namespace Consonance.XamarinFormsView.PCL
 			#endif
 		}
 		INotifyPropertyChanged lastContext = null;
+        public Frame pfc { get { return fc; } }
 		protected override void OnBindingContextChanged ()
 		{
             // select template
             App.platform.UIThread (() => {
 				if (BindingContext != null && BindingContext.GetType ().GenericTypeArguments.Length > 0)
-					Content = templateSelector [BindingContext.GetType ().GenericTypeArguments [0]] ();
+					fc.Content = templateSelector [BindingContext.GetType ().GenericTypeArguments [0]] ();
 				else
-					Content = new Frame ();
+					fc.Content = new Frame ();
 			});
 
 			base.OnBindingContextChanged ();
 		}
-	}
-	class XorParam : IValueConverter
-	{
-		#region IValueConverter implementation
-		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			var invert = ((String)parameter) == "true";
-			var visible = (bool)value;
-			return (invert ^ visible);
-		}
-		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			throw new NotImplementedException ();
-		}
-		#endregion
 	}
 
 }
