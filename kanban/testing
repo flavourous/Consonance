@@ -18,3 +18,8 @@ use off of dialect like "foods" "burns"?
 }}}
 Validition highghting is turned off {{{1
 it got turned off fixing canvas bug, can put on row of the vrv}}}
+vrv date and time on entries{{{1 
+yeah
+ive slapped on a timepicker bound to same thing...see if that plays nice.
+ok stacking it...would love flowlayout...
+}}}
