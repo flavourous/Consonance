@@ -2,6 +2,8 @@
 using Consonance;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using SQLite.Net.Interop;
+using System.Reflection;
 
 namespace Consonance.ConsoleView
 {
@@ -23,18 +25,36 @@ namespace Consonance.ConsoleView
 			consolePager.RunLoop ();
 		}
 	}
-	class CPlat : IPlatform, ITasks
+    class Folders : IFolders
+    {
+        public string AppData { get; set; }
+        public Folders()
+        {
+            AppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        }
+    }
+    class CPlat : IPlatform, ITasks
 	{
-		#region IPlatform implementation
-		Action<string,Action> serr;
+        readonly Folders FF = new Folders();
+        public IFolders folders { get { return FF; } }
+        #region IPlatform implementation
+        Action<string,Action> serr;
 		public void Attach (Action<string, Action> showError)
 		{
 			this.serr = showError; 
 		}
 		public ITasks TaskOps { get { return this; } }
-		#endregion
-		#region ITasks implementation
-		public Task RunTask (Func<Task> asyncMethod)
+
+        public ISQLitePlatform sqlite
+        {
+            get
+            {
+                return new SQLite.Net.Platform.Generic.SQLitePlatformGeneric();
+            }
+        }
+        #endregion
+        #region ITasks implementation
+        public Task RunTask (Func<Task> asyncMethod)
 		{
 			return Task.Run (asyncMethod);
 		}
@@ -50,6 +70,25 @@ namespace Consonance.ConsoleView
 		{
 			return Task.Run (syncMethod);
 		}
-		#endregion
-	}
+
+        public PropertyInfo GetPropertyInfo(Type t, String p) { return t.GetProperty(p); }
+        public void UIAssert()
+        {
+            
+        }
+
+        public Task UIThread(Action method)
+        {
+            TaskCompletionSource<EventArgs> tea = new TaskCompletionSource<EventArgs>();
+            method();
+            tea.SetResult(new EventArgs());
+            return tea.Task;
+        }
+
+        public bool CreateDirectory(string ifdoesntexist)
+        {
+            return System.IO.Directory.CreateDirectory(ifdoesntexist).Exists;
+        }
+        #endregion
+    }
 }

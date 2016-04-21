@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.InfoLineVM_Row">
+	<ContentView.Resources>
+		<ResourceDictionary>
+			<l:KVPListConverter x:Key="klc"/>
+			<l:WithChoosableConverter x:Key="withChooseable"/>
+		</ResourceDictionary>
+	</ContentView.Resources>
+	<StackLayout Orientation="Horizontal">
+		<Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+		<Label LineBreakMode="WordWrap" Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
+		<Grid IsVisible="{Binding selected, Converter={StaticResource withChooseable}}" HorizontalOptions="End" x:Name="gg">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="30"/>
+			</Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="auto"/>
+			</Grid.ColumnDefinitions>
+			<Label HorizontalOptions="Center" VerticalOptions="Center" Text="Choose" />
+			<Button Clicked="OnChosen"/>
+		</Grid>
+	</StackLayout>
+</ContentView>

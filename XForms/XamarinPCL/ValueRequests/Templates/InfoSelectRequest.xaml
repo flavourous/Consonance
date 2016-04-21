@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.InfoSelectRequest">
+	<ContentView.Resources>
+		<ResourceDictionary>
+			<l:InfoSelectRequestConverter x:Key="isvc"/>
+		</ResourceDictionary>
+	</ContentView.Resources>
+	<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
+		<Label Text="{Binding value, Converter={StaticResource isvc}}" HorizontalOptions="CenterAndExpand" VerticalOptions="Center" x:Name="lblInfo"/>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="30"/>
+			</Grid.RowDefinitions>
+			<Grid.Resources>
+				<ResourceDictionary>
+					<Style TargetType="{x:Type Button}">
+						<Setter Property="BorderWidth" Value="0"/>
+						<Setter Property="BorderRadius" Value="0"/>
+						<Setter Property="VerticalOptions" Value="FillAndExpand"/>
+					</Style>
+				</ResourceDictionary>
+			</Grid.Resources>
+			<Button Clicked="OnChoose"/>
+			<Label HorizontalOptions="Center" VerticalOptions="Center">Change</Label>
+		</Grid>
+	</StackLayout>
+</ContentView>

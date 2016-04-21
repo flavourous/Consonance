@@ -26,8 +26,8 @@ namespace Consonance.XamarinFormsView.Droid
 		
 		public static void UpdateIdValues()
 		{
-			global::SQLite.Resource.String.ApplicationName = global::Consonance.XamarinFormsView.Droid.Resource.String.ApplicationName;
-			global::SQLite.Resource.String.Hello = global::Consonance.XamarinFormsView.Droid.Resource.String.Hello;
+			global::SQLite.Net.Platform.XamarinAndroid.Resource.String.ApplicationName = global::Consonance.XamarinFormsView.Droid.Resource.String.ApplicationName;
+			global::SQLite.Net.Platform.XamarinAndroid.Resource.String.Hello = global::Consonance.XamarinFormsView.Droid.Resource.String.Hello;
 			global::Xamarin.Forms.Platform.Resource.Animation.abc_fade_in = global::Consonance.XamarinFormsView.Droid.Resource.Animation.abc_fade_in;
 			global::Xamarin.Forms.Platform.Resource.Animation.abc_fade_out = global::Consonance.XamarinFormsView.Droid.Resource.Animation.abc_fade_out;
 			global::Xamarin.Forms.Platform.Resource.Animation.abc_grow_fade_in_from_bottom = global::Consonance.XamarinFormsView.Droid.Resource.Animation.abc_grow_fade_in_from_bottom;

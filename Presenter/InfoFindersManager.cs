@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using LibSharpHelp;
+using SQLite.Net;
 
 namespace Consonance
 {
@@ -15,7 +16,7 @@ namespace Consonance
 		{
 			repo [typeof(IType)] = finder;
 		}
-		public static IFindList<InfoLineVM> GetFinder<IType>(Func<IType, InfoLineVM> creator, MyConn connection) where IType : BaseInfo
+		public static IFindList<InfoLineVM> GetFinder<IType>(Func<IType, InfoLineVM> creator, SQLiteConnection connection) where IType : BaseInfo
 		{
 			if(repo.ContainsKey(typeof(IType)))
 			{ 
@@ -46,8 +47,8 @@ namespace Consonance
 	{
 		readonly Func<IType, InfoLineVM> creator;
 		readonly IFindData<IType> searcher;
-		readonly MyConn conn;
-		public FinderAdapter(Func<IType, InfoLineVM> creator, IFindData<IType> searcher, MyConn conn)
+		readonly SQLiteConnection conn;
+		public FinderAdapter(Func<IType, InfoLineVM> creator, IFindData<IType> searcher, SQLiteConnection conn)
 		{
 			this.conn = conn;
 			this.creator=creator;

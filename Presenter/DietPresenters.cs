@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Linq.Expressions;
 using System.Collections.Generic;
-using SQLite;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using scm = System.ComponentModel;
+using SQLite.Net;
+using LibSharpHelp;
 
 namespace Consonance
 {
-	public class ViewModelBase : INotifyPropertyChanged
+	public class ViewModelBase : scm.INotifyPropertyChanged
 	{
 		#region INotifyPropertyChanged implementation
-		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+		public event scm.PropertyChangedEventHandler PropertyChanged = delegate { };
 		protected void OnPropertyChanged([CallerMemberName]String pn = null)
 		{
-			PropertyChanged (this, new PropertyChangedEventArgs (pn));
+			PropertyChanged (this, new scm.PropertyChangedEventArgs (pn));
 		}
 		#endregion
 	}
@@ -203,17 +202,18 @@ namespace Consonance
 		where BurnType : BaseEntry, new()
 		where BurnInfoType : BaseInfo, new()
 	{
-		public TrackerDetailsVM details { get; private set; }
+
+        public TrackerDetailsVM details { get; private set; }
 		public TrackerDialect dialect { get; private set; }
 		readonly IValueRequestBuilder instanceBuilder;
 		readonly IUserInput getInput;
 		readonly ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
 		readonly TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
-		readonly MyConn conn;
+		readonly SQLiteConnection conn;
 		public TrackerPresentationAbstractionHandler(
 			IValueRequestBuilder instanceBuilder,
 			IUserInput getInput,
-			MyConn conn,
+			SQLiteConnection conn,
 			ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model,
 			ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter
 		)
@@ -226,26 +226,7 @@ namespace Consonance
 			this.presenter = presenter;
 			this.modelHandler = new TrackerModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
 			this.conn = conn;
-			conn.MyTableChanged += HandleMyTableChanged;
-		}
-
-		void HandleMyTableChanged (object sender, NotifyTableChangedEventArgs e)
-		{
-			DietVMChangeType changeType = DietVMChangeType.None;
-			if (e.Table.MappedType.Equals (typeof(DietInstType)))
-				changeType = DietVMChangeType.Instances;
-			if (e.Table.MappedType.Equals (typeof(EatType)))
-				changeType = DietVMChangeType.EatEntries;
-			if (e.Table.MappedType.Equals (typeof(BurnType)))
-				changeType = DietVMChangeType.BurnEntries;
-			if (e.Table.MappedType.Equals (typeof(EatInfoType)))
-				changeType = DietVMChangeType.EatInfos;
-			if (e.Table.MappedType.Equals (typeof(BurnInfoType)))
-				changeType = DietVMChangeType.BurnInfos;
-			if (changeType != DietVMChangeType.None) {
-				Debug.WriteLine ("DataChange - " + changeType.ToString(), GetType ().ToString ().Replace ("Consonance.", ""));	
-				ViewModelsChanged (this, new DietVMChangeEventArgs () { changeType = changeType });
-			}
+            modelHandler.Changed += (t, ct) => ViewModelsChanged(this, new DietVMChangeEventArgs { changeType = t });
 		}
 
 		public event DietVMChangeEventHandler ViewModelsChanged = delegate { };
@@ -375,7 +356,7 @@ namespace Consonance
 			if ((ct = modelHandler.outhandler.Count (diet) + modelHandler.inhandler.Count (diet)) > 0)
 				getInput.WarnConfirm (
 					"That instance still has " + ct + " entries, they will be removed if you continue.",
-					async () => await PTask.Run(() => modelHandler.RemoveTracker (diet))
+					async () => await PlatformGlobal.Run(() => modelHandler.RemoveTracker (diet))
 				);
 			else modelHandler.RemoveTracker (diet);
 		}
@@ -403,7 +384,7 @@ namespace Consonance
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor (info_plural);
 			infoRequest.valid = true; // always true
 			Action chooseDelegate = null;
-			chooseDelegate = () => PTask.Run (async () => {
+			chooseDelegate = () => PlatformGlobal.Run (async () => {
 				var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;
 				using (var hk = new HookedInfoLines (this, imt))
 				{

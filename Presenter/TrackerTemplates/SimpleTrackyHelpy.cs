@@ -1,13 +1,10 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
 using LibSharpHelp;
 using LibRTP;
+using System.Diagnostics;
 
 namespace Consonance
 {
@@ -202,15 +199,17 @@ namespace Consonance
 		public String name { get { return pi.Name; } }
 		public Flecter(String name)
 		{
-			pi = typeof(T).GetProperty (name);
+            pi = PlatformGlobal.platform.GetPropertyInfo(typeof(T), name);
 		}
 		public Object Get(T offof)
 		{
+            Debug.WriteLine("Flector<{0}>({1}): Getting - {2} - {3}", typeof(T), name, pi, offof);
 			return pi.GetValue (offof);
 		}
 		public void Set(T onto, Object value)
 		{
-			pi.SetValue (onto, value);
+            Debug.WriteLine("Flector<{0}>({1}): Setting {2} - {3} - {4}", typeof(T), name, value, pi, onto);
+            pi.SetValue (onto, value);
 		}
 	}
 	class HelpedCreation<E,I,MT> : IEntryCreation<E,I>
@@ -518,7 +517,6 @@ namespace Consonance
 			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)OutInfoTrack.Get(info) } } };
 		}
 
-		TimeSpanConverter tss = new TimeSpanConverter();
 		public IEnumerable<TrackingInfoVM> DetermineInTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{
 			var targets = GetTargets (di);
@@ -527,7 +525,7 @@ namespace Consonance
 				var dtr = targets [ti].DayTargetRange;
 				var yret = new TrackingInfoVM { targetValue = trg.target };
 				GetValsForRange (eats, burns, trg.begin, trg.end, out yret.inValues, out yret.outValues);
-				yret.valueName = dtr == 1 ? " balance" : " " + tss.ConvertToString (TimeSpan.FromDays (dtr)) + " balance";
+				yret.valueName = dtr == 1 ? " balance" : " " + TimeSpan.FromDays (dtr).WithSuffix() + " balance";
 				yield return yret;
 			}
 		}

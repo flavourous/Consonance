@@ -2,12 +2,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Collections.ObjectModel;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Collections.Specialized;
 
 namespace Consonance

@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.DayPagerView">
+	<ContentView.Resources>
+		<ResourceDictionary>
+			<l:DPConv x:Key="dc"/>
+			<Style TargetType="{x:Type Button}">
+				<Setter Property="BorderWidth" Value="0"/>
+				<Setter Property="BorderRadius" Value="0"/>
+				<Setter Property="VerticalOptions" Value="FillAndExpand"/>
+				<Setter Property="FontSize" Value="14"/>
+			</Style>
+		</ResourceDictionary>
+	</ContentView.Resources>
+	<Grid BackgroundColor="Default" ColumnSpacing="0" RowSpacing="0" Padding="0">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="2"/>
+			<RowDefinition Height="30"/>
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="auto"/>
+			<ColumnDefinition Width="auto"/>
+			<ColumnDefinition Width="*"/>
+		</Grid.ColumnDefinitions>
+		<BoxView Grid.ColumnSpan="3" BackgroundColor="Accent"/>
+		<Button Grid.Row="1" Grid.Column="0" Clicked="OnPrev"/>
+		<Label Grid.Row="1" Grid.Column="0" x:Name="prev" HorizontalOptions="Center" VerticalOptions="Center"/>
+		<Button Grid.Row="1" Grid.Column="1" Clicked="OnNext"/>
+		<Label Grid.Row="1" Grid.Column="1" x:Name="next" HorizontalOptions="Center" VerticalOptions="Center"/>
+		<Frame Grid.Row="1" Grid.Column="2" VerticalOptions="CenterAndExpand" HorizontalOptions="FillAndExpand" Padding="5,0">
+			<Label Text="{Binding day, Converter={StaticResource dc}}"/>
+		</Frame>
+	</Grid>
+</ContentView>

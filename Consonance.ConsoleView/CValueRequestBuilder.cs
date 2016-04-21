@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Linq;
-using Consonance;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text;
-using System.ComponentModel;
 using LibRTP;
+using LibSharpHelp;
+using scm = System.ComponentModel;
 
 namespace Consonance.ConsoleView
 {
@@ -150,7 +150,7 @@ namespace Consonance.ConsoleView
 				ogv.SelectedOption = idx;
 			});
 		}
-		DateTimeConverter dtc = new DateTimeConverter ();
+		scm.DateTimeConverter dtc = new scm.DateTimeConverter ();
 		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name)
 		{
 			return new RequestFromString<RecurrsEveryPatternValue>(name,

@@ -4,113 +4,92 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Collections.Generic;
-using SQLite;
+using SQLite.Net;
 using System.IO;
 using System.Threading;
 using System.Text;
 using LibRTP;
+using SQLite.Net.Interop;
+using System.Reflection;
 
 namespace Consonance
 {
-	public interface IChangeTrigger
-	{
-		event Action Changed;
-	}
-	// this one really used for mangeinfo data supply.
-	public class ChangeTriggerList<T> : List<T>, IChangeTrigger
-	{
-		#region IChangeTrigger implementation
-		public event Action Changed = delegate { };
-		public void OnChanged() { Changed (); }
-		#endregion
-	}
+    public interface IChangeTrigger
+    {
+        event Action Changed;
+    }
+    // this one really used for mangeinfo data supply.
+    public class ChangeTriggerList<T> : List<T>, IChangeTrigger
+    {
+        #region IChangeTrigger implementation
+        public event Action Changed = delegate { };
+        public void OnChanged() { Changed(); }
+        #endregion
+    }
 
 
-	class PlanCommandManager
-	{
-		readonly Func<TrackerInstanceVM> getCurrent;
-		readonly Func<String,Task> message;
-		public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String,Task> message)
-		{
-			// remember it
-			this.getCurrent = getCurrent;
-			this.message = message;
+    class PlanCommandManager
+    {
+        readonly Func<TrackerInstanceVM> getCurrent;
+        readonly Func<String, Task> message;
+        public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String, Task> message)
+        {
+            // remember it
+            this.getCurrent = getCurrent;
+            this.message = message;
 
-			// commanding for pland
-			commands.eat.add += View_addeatitem;
-			commands.eat.remove += View_removeeatitem;
-			commands.eat.edit += View_editeatitem;
-			commands.eatinfo.add += View_addeatinfo;
-			commands.eatinfo.remove += View_removeeatinfo;
-			commands.eatinfo.edit += View_editeatinfo;
-			commands.burn.add += View_addburnitem;
-			commands.burn.remove += View_removeburnitem;
-			commands.burn.edit += View_editburnitem;
-			commands.burninfo.add += View_addburninfo;
-			commands.burninfo.remove += View_removeburninfo;
-			commands.burninfo.edit += View_editburninfo;
-		}
+            // commanding for pland
+            commands.eat.add += View_addeatitem;
+            commands.eat.remove += View_removeeatitem;
+            commands.eat.edit += View_editeatitem;
+            commands.eatinfo.add += View_addeatinfo;
+            commands.eatinfo.remove += View_removeeatinfo;
+            commands.eatinfo.edit += View_editeatinfo;
+            commands.burn.add += View_addburnitem;
+            commands.burn.remove += View_removeburnitem;
+            commands.burn.edit += View_editburnitem;
+            commands.burninfo.add += View_addburninfo;
+            commands.burninfo.remove += View_removeburninfo;
+            commands.burninfo.edit += View_editburninfo;
+        }
 
-		void View_addeatitem (IValueRequestBuilder bld) 					{ VerifyDiet((cdh, cd) => cdh.AddIn (cd,bld)); }
-		void View_removeeatitem (EntryLineVM vm) 							{ VerifyDiet((cdh, cd) => cdh.RemoveIn (vm));  }
-		void View_editeatitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ VerifyDiet((cdh, cd) => cdh.EditIn (vm,bld)); }
-		void View_addeatinfo (IValueRequestBuilder bld) 					{ VerifyDiet((cdh, cd) => cdh.AddInInfo (bld)); }
-		void View_removeeatinfo (InfoLineVM vm) 							{ VerifyDiet((cdh, cd) => cdh.RemoveInInfo (vm)); }
-		void View_editeatinfo (InfoLineVM vm,IValueRequestBuilder bld) 		{ VerifyDiet((cdh, cd) => cdh.EditInInfo (vm,bld)); }
-		void View_addburnitem (IValueRequestBuilder bld) 					{ VerifyDiet((cdh, cd) => cdh.AddOut (cd,bld)); }
-		void View_removeburnitem (EntryLineVM vm)						 	{ VerifyDiet((cdh, cd) => cdh.RemoveOut (vm)); }
-		void View_editburnitem (EntryLineVM vm,IValueRequestBuilder bld) 	{ VerifyDiet((cdh, cd) => cdh.EditOut (vm,bld)); }
-		void View_addburninfo (IValueRequestBuilder bld) 					{ VerifyDiet((cdh, cd) => cdh.AddOutInfo (bld)); }
-		void View_removeburninfo (InfoLineVM vm)							{ VerifyDiet((cdh, cd) => cdh.RemoveOutInfo (vm)); }
-		void View_editburninfo (InfoLineVM vm,IValueRequestBuilder bld) 	{ VerifyDiet((cdh, cd) => cdh.EditOutInfo (vm,bld)); }
+        void View_addeatitem(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddIn(cd, bld)); }
+        void View_removeeatitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveIn(vm)); }
+        void View_editeatitem(EntryLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditIn(vm, bld)); }
+        void View_addeatinfo(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddInInfo(bld)); }
+        void View_removeeatinfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveInInfo(vm)); }
+        void View_editeatinfo(InfoLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditInInfo(vm, bld)); }
+        void View_addburnitem(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddOut(cd, bld)); }
+        void View_removeburnitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOut(vm)); }
+        void View_editburnitem(EntryLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditOut(vm, bld)); }
+        void View_addburninfo(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddOutInfo(bld)); }
+        void View_removeburninfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOutInfo(vm)); }
+        void View_editburninfo(InfoLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditOutInfo(vm, bld)); }
 
-		public void VerifyDiet(Action<IAbstractedTracker, TrackerInstanceVM> acty)
-		{
-			TaskCompletionSource<bool> tcs_dummy = new TaskCompletionSource<bool> ();
-			tcs_dummy.SetResult (true);
-			VerifyDiet((cdh,cd) => { acty(cdh,cd); return tcs_dummy.Task; });
-		}
-		public void VerifyDiet(Func<IAbstractedTracker, TrackerInstanceVM, Task> acty)
-		{
-			var cd = getCurrent();
-			if (cd == null) // ping the view about being stupid.
-				message ("You need to create a tracker before you can do that");
-			else acty (cd.sender as IAbstractedTracker, cd); // i dont think these need threading either...
-		}
-	}
+        public void VerifyDiet(Action<IAbstractedTracker, TrackerInstanceVM> acty)
+        {
+            TaskCompletionSource<bool> tcs_dummy = new TaskCompletionSource<bool>();
+            tcs_dummy.SetResult(true);
+            VerifyDiet((cdh, cd) => { acty(cdh, cd); return tcs_dummy.Task; });
+        }
+        public void VerifyDiet(Func<IAbstractedTracker, TrackerInstanceVM, Task> acty)
+        {
+            var cd = getCurrent();
+            if (cd == null) // ping the view about being stupid.
+                message("You need to create a tracker before you can do that");
+            else acty(cd.sender as IAbstractedTracker, cd); // i dont think these need threading either...
+        }
+    }
 
-	[System.Reflection.Obfuscation(Exclude=true, ApplyToMembers=true)]
-	class MyConn : SQLiteConnection
-	{
-		public MyConn(String dbPath, bool storeDateTimeAsTicks = false) : base(dbPath, storeDateTimeAsTicks)
-		{
-			TableChanged += (object sender, NotifyTableChangedEventArgs e) => MyTableChanged (sender, e);
-		}
-		public MyConn(String dbPath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) : base(dbPath,openFlags, storeDateTimeAsTicks)
-		{
-			TableChanged += (object sender, NotifyTableChangedEventArgs e) => MyTableChanged (sender, e);
-		}
-		public event EventHandler<NotifyTableChangedEventArgs> MyTableChanged = delegate{};
-		public void Delete<T>(String whereClause)
-		{
-			Execute ("DELETE FROM " + typeof(T).Name + " WHERE " + whereClause);
-			MyTableChanged(
-				this,
-				new NotifyTableChangedEventArgs (
-					new TableMapping (typeof(T)), 
-					NotifyTableChangedAction.Delete
-				)
-			);
-			
-		}
-	}
-	static class PTask
-	{
-		public static ITasks taskops;
-		public static Task Run (Func<Task> asyncMethod){ return taskops.RunTask(asyncMethod); }
-		public static Task Run (Action syncMethod){ return taskops.RunTask(syncMethod); }
-		public static Task<T> Run<T> (Func<Task<T>> asyncMethod){ return taskops.RunTask(asyncMethod); }
-		public static Task<T> Run<T> (Func<T> syncMethod) { return taskops.RunTask(syncMethod); }
+    [System.Reflection.Obfuscation(Exclude = true, ApplyToMembers = true)]
+
+    static class PlatformGlobal
+    {
+		public static IPlatform platform;
+		public static Task Run (Func<Task> asyncMethod){ return platform.TaskOps.RunTask(asyncMethod); }
+		public static Task Run (Action syncMethod){ return platform.TaskOps.RunTask(syncMethod); }
+		public static Task<T> Run<T> (Func<Task<T>> asyncMethod){ return platform.TaskOps.RunTask(asyncMethod); }
+		public static Task<T> Run<T> (Func<T> syncMethod) { return platform.TaskOps.RunTask(syncMethod); }
 	}
 	public class Presenter
 	{
@@ -119,23 +98,12 @@ namespace Consonance
 		//public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
 		public static async Task PresentTo(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
-			PTask.taskops = platform.TaskOps;
+			PlatformGlobal.platform = platform;
 			singleton = new Presenter ();
 			await singleton.PresentToImpl (view, platform, input, commands, defBuilder);
 		}
-		MyConn conn;
-		private Presenter ()
-		{
-			var datapath = Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData);
-			if (!Directory.Exists (datapath))
-				Directory.CreateDirectory (datapath);
-			var maindbpath = Path.Combine (datapath, "manydiet.db");
-			#if DEBUG
-			//File.Delete (maindbpath); // fresh install 
-			#endif
-			conn = new MyConn(maindbpath);
-		}
-
+		SQLiteConnection conn;
+		
 		// present app logic domain to this view.
 		IView view;
 		IUserInput input;
@@ -143,8 +111,15 @@ namespace Consonance
 		Task PresentToImpl(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
 		{
 			// Start fast!
-			return PTask.Run (() => {
-				Debug.WriteLine("PresntToImpl: presenting");
+			return PlatformGlobal.Run (() => {
+
+                // load DB
+                var datapath = platform.folders.AppData;
+                platform.CreateDirectory(datapath);
+                var maindbpath = Path.Combine(datapath, "manydiet.db");
+                conn = new SQLiteConnection(platform.sqlite, maindbpath);
+
+                Debug.WriteLine("PresntToImpl: presenting");
 				this.view = view;
 				this.input = input;
 				AddDietPair (CalorieDiets.simple.model, CalorieDiets.simple.presenter, defBuilder);
@@ -183,7 +158,7 @@ namespace Consonance
 			
 		void View_trackerinstanceselected (TrackerInstanceVM obj)
 		{
-			PTask.Run (() => {
+			PlatformGlobal.Run (() => {
 				// yeah, it was selected....cant stack overflow here...
 				//view.currentTrackerInstance = obj;
 				PushEatLines (obj);
@@ -195,7 +170,7 @@ namespace Consonance
 		DateTime ds,de;
 		void ChangeDay(DateTime to)
 		{
-			PTask.Run (() => {
+			PlatformGlobal.Run (() => {
 				ds = to.StartOfDay();
 				de = ds.AddDays (1);
 				view.day = ds;
@@ -365,9 +340,19 @@ namespace Consonance
 	public enum InfoManageType { In, Out };
 	public interface IPlatform
 	{
-		ITasks TaskOps { get; }
+        void UIAssert();
+        Task UIThread(Action method);
+        ISQLitePlatform sqlite { get; }
+        ITasks TaskOps { get; }
 		void Attach (Action<String, Action> showError);
+        IFolders folders { get; }
+        bool CreateDirectory(String ifdoesntexist);
+        PropertyInfo GetPropertyInfo(Type T, String property);
 	}
+    public interface IFolders
+    {
+        string AppData { get; }
+    }
 	public interface ITasks
 	{
 		Task RunTask (Func<Task> asyncMethod);

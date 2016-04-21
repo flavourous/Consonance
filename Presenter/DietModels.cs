@@ -1,10 +1,11 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Collections.Generic;
-using SQLite;
 using System.Diagnostics;
 using LibRTP;
+using SQLite.Net.Attributes;
+using SQLite.Net;
+using LibSharpHelp;
 
 namespace Consonance
 {
@@ -158,6 +159,8 @@ namespace Consonance
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
 	delegate void EntryCallback(BaseEntry entry);
 
+    enum ItemType { Instance, Entry, Info };
+    public enum DBChangeType { Insert, Delete, Edit };
 	class TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType>
 		where DietInstType : TrackerInstance, new()
 		where EatType : BaseEntry, new()
@@ -165,37 +168,55 @@ namespace Consonance
 		where BurnType : BaseEntry, new()
 		where BurnInfoType : BaseInfo, new()
 	{
-		readonly MyConn conn;
+        public event Action<DietVMChangeType, DBChangeType> Changed = delegate { };
+
+        readonly SQLiteConnection conn;
 		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
 		public readonly EntryHandler<DietInstType, EatType, EatInfoType> inhandler;
 		public readonly EntryHandler<DietInstType, BurnType, BurnInfoType> outhandler;
-		public TrackerModelAccessLayer(MyConn conn, ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
+		public TrackerModelAccessLayer(SQLiteConnection conn, ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
 		{
 			this.conn = conn;
 			this.model = model;
 			conn.CreateTable<DietInstType> ();
 			inhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (conn, model.increator);
+            inhandler.Changed += (c, t) => Changed(Convert(c, true), t);
 			outhandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (conn, model.outcreator);
-		}
-			
+            outhandler.Changed += (c, t) => Changed(Convert(c, false), t);
+        }
+        DietVMChangeType Convert(ItemType itp, bool input)
+        {
+            switch (itp)
+            {
+                default:
+                case ItemType.Instance: return DietVMChangeType.Instances;
+                case ItemType.Entry: return input ? DietVMChangeType.EatEntries : DietVMChangeType.BurnEntries;
+                case ItemType.Info: return input ? DietVMChangeType.EatInfos: DietVMChangeType.BurnInfos;
+            }
+        }
 	
 		public DietInstType StartNewTracker()
 		{
 			var di = model.New ();
 			conn.Insert (di as DietInstType);
+            Changed(DietVMChangeType.Instances, DBChangeType.Insert);
 			return di;
 		}
 		public void EditTracker(DietInstType diet)
 		{
 			// actually call edit promise...
 			model.Edit(diet);
+            Changed(DietVMChangeType.Instances, DBChangeType.Edit);
 		}
 		public void RemoveTracker(DietInstType rem)
 		{
-			conn.Delete<EatType>("trackerinstanceid = " + rem.id);
-			conn.Delete<BurnType>("trackerinstanceid = " + rem.id);
-			conn.Delete<DietInstType> (rem.id);
-		}
+            conn.Table<EatType>().Delete(et => et.trackerinstanceid == rem.id);
+            Changed(DietVMChangeType.EatEntries, DBChangeType.Delete);
+            conn.Table<BurnType>().Delete(et => et.trackerinstanceid == rem.id);
+            Changed(DietVMChangeType.BurnEntries, DBChangeType.Delete);
+            conn.Delete<DietInstType> (rem.id);
+            Changed(DietVMChangeType.Instances, DBChangeType.Delete);
+        }
 		public IEnumerable<DietInstType> GetTrackers()
 		{
 			var tab = conn.Table<DietInstType> ();
@@ -232,6 +253,7 @@ namespace Consonance
 		where EntryType : BaseEntry, new()
 		where EntryInfoType : BaseInfo, new()
 	{
+        public event Action<ItemType, DBChangeType> Changed = delegate { };
 		readonly SQLiteConnection conn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
 		public EntryHandler(SQLiteConnection conn, IEntryCreation<EntryType, EntryInfoType> creator)
@@ -252,37 +274,50 @@ namespace Consonance
 		}
 		public void Add (D diet, EntryInfoType info)
 		{
+            Debug.WriteLine("addin with info...");
 			EntryType ent = creator.Calculate (info, ShouldComplete());
+            Debug.WriteLine("...done");
 			ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = info.id;
 			conn.Insert (ent as EntryType);
+            Changed(ItemType.Entry, DBChangeType.Insert);
 		}
 		public void Add (D diet)
 		{
-			EntryType ent = creator.Create ();
-			ent.trackerinstanceid = diet.id;
+            Debug.WriteLine("addin...");
+            EntryType ent = creator.Create ();
+            Debug.WriteLine("...done");
+            ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = null;
 			conn.Insert (ent as EntryType);
+            Changed(ItemType.Entry, DBChangeType.Insert);
 		}
 		public void Edit(EntryType ent, D diet, EntryInfoType info)
 		{
-			creator.Edit(ent, info, ShouldComplete());
-			ent.trackerinstanceid = diet.id;
+            Debug.WriteLine("editing with info...");
+            creator.Edit(ent, info, ShouldComplete());
+            Debug.WriteLine("...done");
+            ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = info.id;
 			conn.Update (ent as EntryType);
+            Changed(ItemType.Entry, DBChangeType.Edit);
 		}
 		public void Edit(EntryType ent, D diet)
 		{
-			creator.Edit (ent);
-			ent.trackerinstanceid = diet.id;
+            Debug.WriteLine("editing...");
+            creator.Edit (ent);
+            Debug.WriteLine("...done");
+            ent.trackerinstanceid = diet.id;
 			ent.infoinstanceid = null;
 			conn.Update (ent as EntryType);
+            Changed(ItemType.Entry, DBChangeType.Edit);
 		}
 		public void Remove (params EntryType[] tets)
 		{
 			// FIXME drop where?
 			foreach(var tet in tets)
 				conn.Delete<EntryType> (tet.id);
+            Changed(ItemType.Entry, DBChangeType.Delete);
 		}
 		delegate bool RecurrGetter(byte[] data, out IRecurr rec);
 		Dictionary<RecurranceType,RecurrGetter> patcreators = new Dictionary<RecurranceType, RecurrGetter> {
@@ -328,17 +363,20 @@ namespace Consonance
 		{
 			var mod = creator.MakeInfo ();
 			conn.Insert (mod, typeof(EntryInfoType));
+            Changed(ItemType.Info, DBChangeType.Insert);
 		}
 
 		public void Edit (EntryInfoType editing)
 		{
 			creator.MakeInfo (editing);
 			conn.Update (editing, typeof(EntryInfoType));
+            Changed(ItemType.Info, DBChangeType.Edit);
 		}
 
 		public void Remove (EntryInfoType removing)
 		{
 			conn.Delete (removing);
+            Changed(ItemType.Info, DBChangeType.Delete);
 		}
 
 		#endregion

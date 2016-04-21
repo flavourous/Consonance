@@ -1,0 +1,2 @@
+Problems with PCL {{{1
+it wouldnt load if it was a superscope ns/asm of the including droid ns/asm.  Wouldnt load the App class with that ns "conflict".  With the "asm" conflict, I got random binding errors even though the asm directives were ok NPE and stuff.  Guessits xamarin framework assuming around non-exotic ns/asm setups.
