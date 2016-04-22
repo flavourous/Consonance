@@ -3,5 +3,5 @@
 	xmlns="http://xamarin.com/schemas/2014/forms" 
 	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
 	x:Class="Consonance.XamarinFormsView.PCL.ValueRequestTemplate" >
-	<Frame x:Name="fc"/>
+	<Frame x:Name="fc" Padding="0"/>
 </ContentView>

@@ -121,7 +121,13 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 	}
 		
-	interface IValueRequestVM : INotifyPropertyChanged { bool showName { get; } String name { get; } bool valid { get; } }
+	interface IValueRequestVM : INotifyPropertyChanged
+    {
+        bool showName { get; }
+        String name { get; }
+        bool valid { get; }
+        bool ignorevalid { get; set; }
+    }
 	class ValueRequestVM<T> : IValueRequest<T>, IValueRequestVM
 	{
 		public bool showName { get; private set; }
@@ -163,7 +169,10 @@ namespace Consonance.XamarinFormsView.PCL
 		private bool mvalid;
 		public bool valid { get { return mvalid; } set { mvalid = value; OnPropertyChanged ("valid"); } }
 
-		private bool mread_only;
+        private bool mignorevalid;
+        public bool ignorevalid { get { return mignorevalid; } set { mignorevalid = value; OnPropertyChanged("ignorevalid"); } }
+
+        private bool mread_only;
 		public bool read_only { get { return mread_only; } set { mread_only = value; OnPropertyChanged ("read_only"); } }
 		#endregion
 	}

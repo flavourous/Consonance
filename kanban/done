@@ -4,3 +4,7 @@ flectors are fucked?{{{
  - well, adding an entry with an info doesnt work, crashes during flector. I did change te impl of those.  I cant breakpoint it either...sth strange maybe VS+Xamarin? Dunno.  I'm tracing instead.
  - so GetDeclaredProperty we replaced for the PCL with, will not get properties of superclasses, only those declared on the class inspecting. abstracted into IPlatform and acutlay the plats are implimenting with GetProperty.
 }}}
+manage on in/out should be infos?{{{
+manage is silly....bettwer describing word?
+use off of dialect like "foods" "burns"?
+}}}

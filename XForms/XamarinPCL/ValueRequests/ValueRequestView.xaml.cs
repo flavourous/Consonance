@@ -37,11 +37,6 @@ namespace Consonance.XamarinFormsView.PCL
 			int col = isn.showName ? 1 : 0, colspan = isn.showName ? 1 : 2;
 			forRow.SetValue (Grid.ColumnProperty, col);
 			forRow.SetValue (Grid.ColumnSpanProperty, colspan);
-            if (forRow is ValueRequestTemplate)
-            {
-                var vrt = ((ValueRequestTemplate)forRow);
-                vrt.pfc.SetBinding(Frame.OutlineColorProperty, "valid", BindingMode.Default, invrc);
-            }
 			inputs.Children.Add (forRow);
 
 			// indexing etc
@@ -92,11 +87,11 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		public Action<bool> completed = delegate { };
 		ValidListenManager vlm = new ValidListenManager ("valid");
-		InvalidRedConverter invrc = new InvalidRedConverter ();
 		public void OKClick(object sender, EventArgs args) 
 		{
-			invrc.ignore = false;
-			
+            foreach (var vv in rowViews)
+                ((IValueRequestVM)vv.BindingContext).ignorevalid = false;
+
 			if(vlm.Valid) Completed (true); 
 			else UserInputWrapper.message("Fix the invalid input first");
 		}

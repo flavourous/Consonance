@@ -72,18 +72,33 @@ namespace Consonance.XamarinFormsView.PCL
 			}
 			#endif
 		}
-		INotifyPropertyChanged lastContext = null;
-        public Frame pfc { get { return fc; } }
-		protected override void OnBindingContextChanged ()
+        INotifyPropertyChanged lastcontext = null;
+        void BindTo(INotifyPropertyChanged obj)
+        {
+            // remove old handler (setbinding scarey always with the npe)
+            if (lastcontext != null) lastcontext.PropertyChanged -= Obj_PropertyChanged;
+            // add new handler (setbinding is scare me)
+            if (obj != null) obj.PropertyChanged += Obj_PropertyChanged;
+            lastcontext = obj;
+        }
+        private void Obj_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (sender is IValueRequestVM && (e.PropertyName == "valid" || e.PropertyName == "ignorevalid"))
+            {
+                var vvm = (IValueRequestVM)sender; // hmm
+                fc.OutlineColor = (vvm.valid || vvm.ignorevalid) ? Color.Transparent : Color.Red;
+            }
+        }
+        protected override void OnBindingContextChanged ()
 		{
             // select template
             App.platform.UIThread (() => {
 				if (BindingContext != null && BindingContext.GetType ().GenericTypeArguments.Length > 0)
 					fc.Content = templateSelector [BindingContext.GetType ().GenericTypeArguments [0]] ();
 				else
-					fc.Content = new Frame ();
+					fc.Content = new Frame { Padding = new Thickness(0) };
 			});
-
+            BindTo(BindingContext as INotifyPropertyChanged);
 			base.OnBindingContextChanged ();
 		}
 	}

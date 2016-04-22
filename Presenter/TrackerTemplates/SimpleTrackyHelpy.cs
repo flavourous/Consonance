@@ -517,12 +517,12 @@ namespace Consonance
 		}
 		public InfoLineVM GetRepresentation (InInfo info)
 		{
-			String t = helpy.input.tracked + " / " + helpy.input.Convert ((MIn)InQuant.Get (info));
+			String t = helpy.input.tracked.name + " / " + helpy.input.Convert ((MIn)InQuant.Get (info));
 			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)InInfoTrack.Get(info) } } };
 		}
 		public InfoLineVM GetRepresentation (OutInfo info)
 		{
-			String t = helpy.output.tracked + " / " + helpy.output.Convert ((MOut)OutQuant.Get (info));
+			String t = helpy.output.tracked.name + " / " + helpy.output.Convert ((MOut)OutQuant.Get (info));
 			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)OutInfoTrack.Get(info) } } };
 		}
 

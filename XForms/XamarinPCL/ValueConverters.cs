@@ -7,7 +7,24 @@ using System.Globalization;
 
 namespace Consonance.XamarinFormsView.PCL
 {
-	public class InvalidRedConverter : IValueConverter 
+
+    class XorParam : IValueConverter
+    {
+        #region IValueConverter implementation
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var invert = ((String)parameter) == "true";
+            var visible = (bool)value;
+            return (invert ^ visible);
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+    }
+
+    public class InvalidRedConverter : IValueConverter 
 	{
 		public bool ignore = true;
 		#region IValueConverter implementation

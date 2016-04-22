@@ -22,8 +22,8 @@ namespace Consonance
 		public DefaultEntryRequests()
 		{
 			// name etc
-			name = new RequestStorageHelper<string> ("name",()=>"",Validate);
-			when = new RequestStorageHelper<DateTime>("when",()=>DateTime.Now.StartOfDay(),Validate);
+			name = new RequestStorageHelper<string> ("Name",()=>"",Validate);
+			when = new RequestStorageHelper<DateTime>("When",()=>DateTime.Now.StartOfDay(),Validate);
 		
 			// recurrance
 			Func<OptionGroupValue> ogv = () => new OptionGroupValue (new[] { "None", "Repeat On...", "Repeat Every..." });
