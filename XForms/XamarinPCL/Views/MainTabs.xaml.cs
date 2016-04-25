@@ -5,6 +5,7 @@ using Xamarin.Forms;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -96,6 +97,7 @@ namespace Consonance.XamarinFormsView.PCL
 		public TrackerInstanceVM SelectedPlanItem {
 			get { return mSelectedPlanItem; }
 			set {
+                Debug.WriteLine("view selecting tracker");
 				if (value == mSelectedPlanItem) return; // block reentrency
 				var use =  viewmodel.PlanItems.Contains(value) ? value : null;
 				PlanList.SelectedItem = mSelectedPlanItem = use;
@@ -103,8 +105,10 @@ namespace Consonance.XamarinFormsView.PCL
                 viewmodel.OutTabName = value.dialect.OutputEntrytVerb;
                 viewmodel.InManageName = value.dialect.InputInfoPlural;
                 viewmodel.OutManageName = value.dialect.OutputInfoPlural;
-				PlanItemSelected (use); 
-			}
+				PlanItemSelected (use);
+                Debug.WriteLine("view finsihed selecting tracker");
+
+            }
 		}
 
 		// tracks

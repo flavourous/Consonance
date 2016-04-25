@@ -23,7 +23,7 @@ namespace Consonance
 		{
 			// name etc
 			name = new RequestStorageHelper<string> ("Name",()=>"",Validate);
-			when = new RequestStorageHelper<DateTime>("When",()=>DateTime.Now.StartOfDay(),Validate);
+			when = new RequestStorageHelper<DateTime>("When",()=>DateTime.Now,Validate);
 		
 			// recurrance
 			Func<OptionGroupValue> ogv = () => new OptionGroupValue (new[] { "None", "Repeat On...", "Repeat Every..." });

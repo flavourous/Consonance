@@ -74,7 +74,6 @@ namespace Consonance
 		public Object[] UseFindMode (String mode, IValueRequestFactory factory) { return searcher.UseFindMode (mode, factory); }
 		#endregion
 	}
-		
 
 	class EmptyFinder : IFindList<InfoLineVM>
 	{

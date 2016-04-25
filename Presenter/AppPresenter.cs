@@ -159,12 +159,14 @@ namespace Consonance
 		void View_trackerinstanceselected (TrackerInstanceVM obj)
 		{
 			PlatformGlobal.Run (() => {
-				// yeah, it was selected....cant stack overflow here...
-				//view.currentTrackerInstance = obj;
+                // yeah, it was selected....cant stack overflow here...
+                //view.currentTrackerInstance = obj;
+                Debug.WriteLine("Beginning tracker selection");
 				PushEatLines (obj);
 				PushBurnLines (obj);
-				PushTracking (obj);	
-			});
+				PushTracking (obj);
+                Debug.WriteLine("Tracker selection completed");
+            });
 		}
 
 		DateTime ds,de;

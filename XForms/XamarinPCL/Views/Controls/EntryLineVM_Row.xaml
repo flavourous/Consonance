@@ -10,12 +10,12 @@
       <l:TimeConverter x:Key="tc"/>
 		</ResourceDictionary>
 	</ContentView.Resources>
-	<StackLayout Orientation="Horizontal">
-		<Label Text="{Binding start, Converter={StaticResource tc}}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
-		<StackLayout Orientation="Vertical" VerticalOptions="Center">
-			<Label Text="{Binding name}"/>
-			<Label Text="{Binding desc}"/>
+	<StackLayout Orientation="Horizontal" BackgroundColor="Red">
+		<Label Text="{Binding start, Converter={StaticResource tc}}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" BackgroundColor="Blue"/>
+		<StackLayout Orientation="Vertical" VerticalOptions="Center" BackgroundColor="Green">
+			<Label Text="{Binding name}" BackgroundColor="Teal"/>
+			<Label Text="{Binding desc}" BackgroundColor="Purple"/>
 		</StackLayout>
-		<Label Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
+		<Label FontAttributes="Italic" Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center" BackgroundColor="Yellow"/>
 	</StackLayout>
 </ContentView>

@@ -26,10 +26,13 @@ namespace Consonance
 		public BindingList<Object> GetRequestObjects()
 		{
 			var flds = infoCreator.InfoFields(factory);
-			var ar = factory.ActionRequestor ("search");
-			ar.valid = true;
-			flds.Add (ar.request);
-			ar.changed += LaunchFinder;
+            if (infoFinder.CanFind)
+            { // dont push in if we dont actually have a finder...
+                var ar = factory.ActionRequestor("search");
+                ar.valid = true;
+                flds.Add(ar.request);
+                ar.changed += LaunchFinder;
+            }
 			return flds;
 		}
 		async void LaunchFinder() // again, it's event handler.

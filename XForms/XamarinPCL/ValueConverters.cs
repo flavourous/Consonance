@@ -24,27 +24,13 @@ namespace Consonance.XamarinFormsView.PCL
         #endregion
     }
 
-    public class InvalidRedConverter : IValueConverter 
-	{
-		public bool ignore = true;
-		#region IValueConverter implementation
-		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			return ignore || (value is bool && (bool)value) ? Color.Transparent: Color.Red;
-		}
-		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			throw new NotImplementedException ();
-		}
-		#endregion
-	}
     public class TimeConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is DateTime)
             {
-                return String.Format("{0:HH:MM}",(DateTime)value);
+                return String.Format("{0:HH:mm}",(DateTime)value);
             }
             return null;
         }
