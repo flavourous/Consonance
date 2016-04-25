@@ -8,3 +8,18 @@ manage on in/out should be infos?{{{
 manage is silly....bettwer describing word?
 use off of dialect like "foods" "burns"?
 }}}
+100g Grams on info screen{{{
+sth went wrong there....
+it is totally fucked now. object.tostring
+}}}
+VRV Title Formatting{{{1
+it's got issues, naming, caps etc
+ - defaulter are stull fucked}}}
+npe propchance "valid" on vrVM{{{
+dunno what's triggering it...perhaps the converter?
+only got it on second opening of "eat"
+
+that makes sense.  I've moved to manual observation of inotifiyproperychanged cause i dont trust setbinding to remove the old binding. second time would indeed be the crash.
+ - nope still fucks it.  it's on "resetrequests" so perhaps sth bound still to "valid" that's out of scope?
+ - looks fixed.  I've done unbinding on ClearItmems on the vrv. proabbly reusing the valuerequestobjects.
+}}}

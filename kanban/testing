@@ -1,34 +1,8 @@
-crash on findy for food info?{{{1
-was not impl exception so..who knows.  we dont have a real impl mayb just remove that test one?}}}
-default description for non-info{{{1
-entries description is probbably about the foodinfo used. none info needs to say sth like "manual". maybe hide desc if null? it's takin vert space even when empty i think
- - Need to check both info and noninfo look okok
-}}}
-what happens when u remove last ti {{{
-in maintabs.selectedplanitem, it does value.thing...
-}}}
-vrv date and time on entries{{{1 
-yeah
-ive slapped on a timepicker bound to same thing...see if that plays nice.
-ok stacking it...would love flowlayout...
-}}}
-VRV Title Formatting{{{1
-it's got issues, naming, caps etc
- - defaulter are stull fucked}}}
-100g Grams on info screen{{{
-sth went wrong there....
-it is totally fucked now. object.tostring
-}}}
-npe propchance "valid" on vrVM{{{
-dunno what's triggering it...perhaps the converter?
-only got it on second opening of "eat"
-
-that makes sense.  I've moved to manual observation of inotifiyproperychanged cause i dont trust setbinding to remove the old binding. second time would indeed be the crash.
-}}}
 Validition highghting is turned off {{{1
 it got turned off fixing canvas bug, can put on row of the vrv
  - it's not redding
  - the frame has fucky padding
 
  - hmm ok well maybe this time? I'm manual bindings now ... but maybe frame.outlinecolor isnt right.  where is that thicknessss? maybe is not what i think it is.
+ - lookslike it;s not defaulting to off. otherwise looks k. the ignore i mean.
 }}}

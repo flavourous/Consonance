@@ -8,6 +8,9 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public partial class ValueRequestView : ContentPage
 	{
+        // keeps the state between ctor and first ok press. and can be reset from outside.
+        public bool ignorevalidity = true;
+
 		public ValueRequestView ()
 		{
 			InitializeComponent ();
@@ -15,6 +18,11 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		public void ClearRows()
 		{
+            foreach (var rv in rowViews)
+            {
+                var rvv = rv as ValueRequestTemplate;
+                if (rvv != null) rvv.BindTo(null);
+            }
 			rowViews.Clear ();
 			titleViews.Clear ();
 			inputs.RowDefinitions.Clear ();
@@ -39,9 +47,10 @@ namespace Consonance.XamarinFormsView.PCL
 			forRow.SetValue (Grid.ColumnSpanProperty, colspan);
 			inputs.Children.Add (forRow);
 
-			// indexing etc
+            // indexing etc
+            isn.ignorevalid = ignorevalidity;
 			rowViews.Insert (idx, forRow);
-			vlm.ListenForValid ((INotifyPropertyChanged)forRow.BindingContext);
+			vlm.ListenForValid (isn);
 
 			//process after
 			for (int i = 0; i < rowViews.Count; i++) {
@@ -89,6 +98,7 @@ namespace Consonance.XamarinFormsView.PCL
 		ValidListenManager vlm = new ValidListenManager ("valid");
 		public void OKClick(object sender, EventArgs args) 
 		{
+            ignorevalidity = false;
             foreach (var vv in rowViews)
                 ((IValueRequestVM)vv.BindingContext).ignorevalid = false;
 

@@ -73,7 +73,7 @@ namespace Consonance.XamarinFormsView.PCL
 			#endif
 		}
         INotifyPropertyChanged lastcontext = null;
-        void BindTo(INotifyPropertyChanged obj)
+        public void BindTo(INotifyPropertyChanged obj)
         {
             // remove old handler (setbinding scarey always with the npe)
             if (lastcontext != null) lastcontext.PropertyChanged -= Obj_PropertyChanged;

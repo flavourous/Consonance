@@ -54,7 +54,8 @@ namespace Consonance.XamarinFormsView.PCL
 					}
 					else
 					{
-						// set up the next page.
+                        // set up the next page.
+                        vrv.ignorevalidity = true; // dont redbox stuff thats wrong. yet.
 						vrv.Title = pages[npage].title;
 						pages[npage].valuerequestsChanegd = leh; // testy 
 						leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
