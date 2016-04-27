@@ -13,3 +13,14 @@ in maintabs.selectedplanitem, it does value.thing...
  - ok and i have crash on fresh app, adding instance,jnpe on inTabName. hmm. check ui marshaling?
  - alight the MTVM class doesnt contain SelectedPlanItem.  It's probabbly the root of all problems here. i've pushed it accrosss...
 }}}
+vrv date and time on entries{{{1 
+yeah
+ive slapped on a timepicker bound to same thing...see if that plays nice.
+ok stacking it...would love flowlayout...
+looks stupid, again flow would be nice. might just vstack it. 
+ - ok well idk if works, the entrylinevm is just showing 00:04 all the times...
+ok thats the month in MM....still weird. I think probabbly the request isnt doing anything.
+ive set bp on after vrv to se whats happening on the value...it should work..
+ - displays ok, but, vrv not binding to the time of "when"
+ - cause really ned datepicker.format. see if this one works!!
+}}}

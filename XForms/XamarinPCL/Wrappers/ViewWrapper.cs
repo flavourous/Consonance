@@ -27,8 +27,8 @@ namespace Consonance.XamarinFormsView.PCL
         // IView Properly //
 		public TrackerInstanceVM currentTrackerInstance 
 		{ 
-			get { return main.SelectedPlanItem; } 
-			set { App.platform.UIThread (() => main.SelectedPlanItem = value); }
+			get { return main.viewmodel.SelectedPlanItem; } 
+			set { App.platform.UIThread (() => main.viewmodel.SelectedPlanItem = value); }
 		}
 
 		public void SetLoadingState (LoadThings thing, bool active)
@@ -74,8 +74,8 @@ namespace Consonance.XamarinFormsView.PCL
 					main.viewmodel.PlanItems.Add (itm);
 
 					// and since these have new refs but old origiginators, we can keep the old one selected...
-					if(OriginatorVM.OriginatorEquals(main.SelectedPlanItem, itm))
-						main.SelectedPlanItem = itm;
+					if(OriginatorVM.OriginatorEquals(main.viewmodel.SelectedPlanItem, itm))
+						main.viewmodel.SelectedPlanItem = itm;
 				}
 			});
 		}
