@@ -1,34 +1,15 @@
-crash on findy for food info?{{{1
-was not impl exception so..who knows.  we dont have a real impl mayb just remove that test one?
-still button there on foorm.....hgmmmm
-ther's a finderadapter that inserts, it wasnt checking "canfind" property lol. should call it the "pleasedont" property :D
-}}}
-Validition highghting is turned off {{{1
-it got turned off fixing canvas bug, can put on row of the vrv
- - it's not redding
- - the frame has fucky padding
-
- - hmm ok well maybe this time? I'm manual bindings now ... but maybe frame.outlinecolor isnt right.  where is that thicknessss? maybe is not what i think it is.
- - lookslike it;s not defaulting to off. otherwise looks k. the ignore i mean.
-}}}
 default description for non-info{{{1
 entries description is probbably about the foodinfo used. none info needs to say sth like "manual". maybe hide desc if null? it's takin vert space even when empty i think
  - Need to check both info and noninfo look okok
  - its too tall still..maybe not variable row height?
  - descriptino needs smaller italicetc
  > ok ive added some colors to check blocks. font changed.
-}}}
-vrv date and time on entries{{{1 
-yeah
-ive slapped on a timepicker bound to same thing...see if that plays nice.
-ok stacking it...would love flowlayout...
-looks stupid, again flow would be nice. might just vstack it. 
- - ok well idk if works, the entrylinevm is just showing 00:04 all the times...
-ok thats the month in MM....still weird. I think probabbly the request isnt doing anything.
-ive set bp on after vrv to se whats happening on the value...it should work..
+ - hmm, changing double stack to a grid.
 }}}
 what happens when u remove last ti {{{
 in maintabs.selectedplanitem, it does value.thing...
  - it;s well fucked. cant click any plan,well i added a new and selecging it did nothing. theres sth broken in there?
  - ive added logging around selecting instnaces see if it completes.
+ - ok and i have crash on fresh app, adding instance,jnpe on inTabName. hmm. check ui marshaling?
+ - alight the MTVM class doesnt contain SelectedPlanItem.  It's probabbly the root of all problems here. i've pushed it accrosss...
 }}}

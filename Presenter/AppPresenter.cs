@@ -337,7 +337,6 @@ namespace Consonance
 		TrackerInstanceVM currentTrackerInstance { get; set; }
 		ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get; }
 		event Action<InfoManageType> manageInfo;
-		void BeginUIThread (Action a);
 	}
 	public enum InfoManageType { In, Out };
 	public interface IPlatform

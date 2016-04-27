@@ -38,6 +38,27 @@ namespace Consonance.XamarinFormsView.PCL
             private ObservableCollection<TrackerInstanceVM> mPlanItems = new ObservableCollection<TrackerInstanceVM>();
             public ObservableCollection<TrackerInstanceVM> PlanItems { get { return mPlanItems; } }
 
+            // selected item
+            private TrackerInstanceVM mSelectedPlanItem;
+            public TrackerInstanceVM SelectedPlanItem
+            {
+                get { return mSelectedPlanItem; }
+                set
+                {
+                    Debug.WriteLine("view selecting tracker");
+                    if (value == mSelectedPlanItem) return; // block reentrency
+                    var use = PlanItems.Contains(value) ? value : null;
+                    InTabName = value.dialect.InputEntryVerb;
+                    OutTabName = value.dialect.OutputEntrytVerb;
+                    InManageName = value.dialect.InputInfoPlural;
+                    OutManageName = value.dialect.OutputInfoPlural;
+                    mSelectedPlanItem = use;
+                    OnPlanSelected(use);
+                    Debug.WriteLine("view finsihed selecting tracker");
+                }
+            }
+            public Action<TrackerInstanceVM> OnPlanSelected = delegate { };
+
             public event PropertyChangedEventHandler PropertyChanged = delegate { };
             public void OnPropertyChanged([CallerMemberName] string prop = null)
             {
@@ -49,11 +70,16 @@ namespace Consonance.XamarinFormsView.PCL
 		public MainTabs ()
 		{
 			InitializeComponent ();
-		//	Resources.Add ("greynotcurrent", new BoolColorConverter (Color.Default, Color.Gray));
+            viewmodel.OnPlanSelected = this.OnPlanSelected;
 			BindingContext = viewmodel;
 		}
 		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = daypagerPlan.BindingContext = value; } }
 
+        void OnPlanSelected(TrackerInstanceVM use)
+        {
+            PlanList.SelectedItem = use;
+            PlanItemSelected(use);
+        }
 
 		//////////////
 		// Commands //
@@ -93,23 +119,6 @@ namespace Consonance.XamarinFormsView.PCL
         
 		// Other bits
 		public event Action<TrackerInstanceVM> PlanItemSelected = delegate { };
-		private TrackerInstanceVM mSelectedPlanItem;
-		public TrackerInstanceVM SelectedPlanItem {
-			get { return mSelectedPlanItem; }
-			set {
-                Debug.WriteLine("view selecting tracker");
-				if (value == mSelectedPlanItem) return; // block reentrency
-				var use =  viewmodel.PlanItems.Contains(value) ? value : null;
-				PlanList.SelectedItem = mSelectedPlanItem = use;
-                viewmodel.InTabName = value.dialect.InputEntryVerb;
-                viewmodel.OutTabName = value.dialect.OutputEntrytVerb;
-                viewmodel.InManageName = value.dialect.InputInfoPlural;
-                viewmodel.OutManageName = value.dialect.OutputInfoPlural;
-				PlanItemSelected (use);
-                Debug.WriteLine("view finsihed selecting tracker");
-
-            }
-		}
 
 		// tracks
 		public IEnumerable<TrackerTracksVM> InTrack { get; set; }

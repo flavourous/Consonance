@@ -1,0 +1,20 @@
+vrv date and time on entries{{{1 
+yeah
+ive slapped on a timepicker bound to same thing...see if that plays nice.
+ok stacking it...would love flowlayout...
+looks stupid, again flow would be nice. might just vstack it. 
+ - ok well idk if works, the entrylinevm is just showing 00:04 all the times...
+ok thats the month in MM....still weird. I think probabbly the request isnt doing anything.
+ive set bp on after vrv to se whats happening on the value...it should work..
+ - displays ok, but, vrv not binding to the time of "when"
+}}}
+Validition highghting is turned off {{{1
+it got turned off fixing canvas bug, can put on row of the vrv
+ - it's not redding
+ - the frame has fucky padding
+
+ - hmm ok well maybe this time? I'm manual bindings now ... but maybe frame.outlinecolor isnt right.  where is that thicknessss? maybe is not what i think it is.
+ - lookslike it;s not defaulting to off. otherwise looks k. the ignore i mean.
+ - it's off allrght, but not being turned on after clicky!
+ - but it worked on tracker add...hmm..just on entries its not redding...
+}}}

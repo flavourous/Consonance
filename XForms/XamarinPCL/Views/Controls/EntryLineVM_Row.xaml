@@ -10,12 +10,19 @@
       <l:TimeConverter x:Key="tc"/>
 		</ResourceDictionary>
 	</ContentView.Resources>
-	<StackLayout Orientation="Horizontal" BackgroundColor="Red">
-		<Label Text="{Binding start, Converter={StaticResource tc}}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" BackgroundColor="Blue"/>
-		<StackLayout Orientation="Vertical" VerticalOptions="Center" BackgroundColor="Green">
-			<Label Text="{Binding name}" BackgroundColor="Teal"/>
-			<Label Text="{Binding desc}" BackgroundColor="Purple"/>
-		</StackLayout>
-		<Label FontAttributes="Italic" Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center" BackgroundColor="Yellow"/>
-	</StackLayout>
+  <Grid ColumnSpacing="0" RowSpacing="0">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="auto"/>
+      <RowDefinition Height="auto"/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="auto"/>
+      <ColumnDefinition Width="*"/>
+      <ColumnDefinition Width="auto"/>
+    </Grid.ColumnDefinitions>
+		<Label Grid.RowSpan="2" Text="{Binding start, Converter={StaticResource tc}}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" BackgroundColor="Blue"/>
+		<Label Grid.Column="1" Text="{Binding name}" BackgroundColor="Teal"/>
+		<Label Grid.Column="1" Grid.Row="2" Text="{Binding desc}" BackgroundColor="Purple"/>
+	  <Label Grid.Column="2" Grid.RowSpan="2" FontAttributes="Italic" Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center" BackgroundColor="Yellow"/>
+  </Grid>
 </ContentView>

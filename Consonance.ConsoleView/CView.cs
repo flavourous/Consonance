@@ -219,9 +219,6 @@ namespace Consonance.ConsoleView
 			pageChanged = true;
 		}
 
-		// platformy...?
-		public void BeginUIThread (Action a) { a (); }
-
 		// Some data members
 		DateTime mday;
 		public DateTime day { get{ return mday; } set { mday = value; pageChanged = true; } }

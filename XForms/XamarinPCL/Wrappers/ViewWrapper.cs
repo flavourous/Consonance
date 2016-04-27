@@ -24,11 +24,6 @@ namespace Consonance.XamarinFormsView.PCL
 			Debug.WriteLine ("viewwrapper injected");
         }
 
-		public void BeginUIThread (Action a)
-		{
-			App.platform.UIThread(a);
-		}
-
         // IView Properly //
 		public TrackerInstanceVM currentTrackerInstance 
 		{ 

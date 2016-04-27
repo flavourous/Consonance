@@ -23,3 +23,9 @@ that makes sense.  I've moved to manual observation of inotifiyproperychanged ca
  - nope still fucks it.  it's on "resetrequests" so perhaps sth bound still to "valid" that's out of scope?
  - looks fixed.  I've done unbinding on ClearItmems on the vrv. proabbly reusing the valuerequestobjects.
 }}}
+crash on findy for food info?{{{1
+was not impl exception so..who knows.  we dont have a real impl mayb just remove that test one?
+still button there on foorm.....hgmmmm
+ther's a finderadapter that inserts, it wasnt checking "canfind" property lol. should call it the "pleasedont" property :D
+ - searchy is gone.
+}}}
