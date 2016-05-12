@@ -334,7 +334,7 @@ namespace Consonance
 			var pages = new List<GetValuesPage> (modelHandler.model.CreationPages (instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
 			vt.Completed.ContinueWith(async rt => {
-				vt.Pop();
+				await vt.Pop();
 				if (rt.Result) modelHandler.StartNewTracker ();
 			});
 			return vt.Pushed;
@@ -343,8 +343,8 @@ namespace Consonance
 		{
 			var pages = new List<GetValuesPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory));
 			var vt = instanceBuilder.GetValues (pages);
-			vt.Completed.ContinueWith(rt => {
-				vt.Pop();
+			vt.Completed.ContinueWith(async rt => {
+				await vt.Pop();
 				if (rt.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
 			});
 			return vt.Pushed;
@@ -441,8 +441,8 @@ namespace Consonance
 			infoRequest.changed += checkFields;
 
 			var gv = getValues.GetValues (new[]{ requests });
-			gv.Completed.ContinueWith(result => {
-				gv.Pop (); 
+			gv.Completed.ContinueWith(async result => {
+				await gv.Pop (); 
 				if (result.Result) editit ();
 				infoRequest.changed -= checkFields;
 			});
@@ -494,8 +494,8 @@ namespace Consonance
 			gvp.SetList (vros);
 			if (editing) creator.FillRequestData (toEdit);
 			var vr = builder.GetValues (new[]{ gvp });
-			vr.Completed.ContinueWith(result => {
-				vr.Pop ();
+			vr.Completed.ContinueWith(async result => {
+				await vr.Pop ();
 				if (result.Result) {
 					if (editing) handler.Edit (toEdit);
 					else handler.Add ();

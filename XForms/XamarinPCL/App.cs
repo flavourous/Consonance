@@ -12,18 +12,27 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public static class Extensions
 	{
-		public static void RemoveOrPop(this INavigation me, Page page)
-		{
-            App.platform.UIThread (() => {
-				if (me.NavigationStack.Contains (page)) {
-					if (me.NavigationStack [me.NavigationStack.Count - 1] == page) me.PopAsync ();
-					else {
-						Debug.WriteLine("Navigation Extension: Removing {0}", page);
-						me.RemovePage (page);
-					}
-				}
-			});
-		}
+        /// <summary>
+        /// same spec as PopAsync
+        /// </summary>
+        /// <param name="page"></param>
+        /// <returns></returns>
+        public static async Task RemoveOrPopAsync(this INavigation me, Page page)
+        {
+            if (me.NavigationStack.Contains(page))
+            {
+                if (me.NavigationStack[me.NavigationStack.Count - 1] == page)
+                {
+                    await me.PopAsync();
+                }
+                else
+                {
+                    Debug.WriteLine("Navigation Extension: Removing {0}", page);
+                    me.RemovePage(page);
+                    await Task.Yield();
+                }
+            }
+        }
 	}
 
     

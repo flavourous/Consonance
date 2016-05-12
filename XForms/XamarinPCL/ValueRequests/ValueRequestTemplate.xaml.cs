@@ -85,8 +85,11 @@ namespace Consonance.XamarinFormsView.PCL
         {
             if (sender is IValueRequestVM && (e.PropertyName == "valid" || e.PropertyName == "ignorevalid"))
             {
-                var vvm = (IValueRequestVM)sender; // hmm
-                fc.OutlineColor = (vvm.valid || vvm.ignorevalid) ? Color.Transparent : Color.Red;
+                App.platform.UIThread(() =>
+                {
+                    var vvm = (IValueRequestVM)sender; // hmm
+                    fc.OutlineColor = (vvm.valid || vvm.ignorevalid) ? Color.Transparent : Color.Red;
+                });
             }
         }
         protected override void OnBindingContextChanged ()

@@ -67,7 +67,7 @@ namespace Consonance.XamarinFormsView.PCL
 				// push the view - configure a callback to set the "im pushed" task.
 				nav.PushAsync (vrv).ContinueWith(t=> tcs_push.SetResult(new EventArgs())); // push first.
 			});
-			return new ViewTask<bool> (() => nav.RemoveOrPop (vrv),tcs_push.Task, tcs_all.Task);
+			return new ViewTask<bool> (() => nav.RemoveOrPopAsync (vrv),tcs_push.Task, tcs_all.Task);
         }
 
 		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)

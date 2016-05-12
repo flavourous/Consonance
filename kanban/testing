@@ -1,11 +1,3 @@
-default description for non-info{{{1
-entries description is probbably about the foodinfo used. none info needs to say sth like "manual". maybe hide desc if null? it's takin vert space even when empty i think
- - Need to check both info and noninfo look okok
- - its too tall still..maybe not variable row height?
- - descriptino needs smaller italicetc
- > ok ive added some colors to check blocks. font changed.
- - hmm, changing double stack to a grid.
-}}}
 what happens when u remove last ti {{{
 in maintabs.selectedplanitem, it does value.thing...
  - it;s well fucked. cant click any plan,well i added a new and selecging it did nothing. theres sth broken in there?
@@ -23,4 +15,29 @@ ok thats the month in MM....still weird. I think probabbly the request isnt doin
 ive set bp on after vrv to se whats happening on the value...it should work..
  - displays ok, but, vrv not binding to the time of "when"
  - cause really ned datepicker.format. see if this one works!!
+ - nope. need timepicker, but it uses TimeSpan. need converter.
+ - ok wrong converter assgiened?
+}}}
+Validition highghting is turned off {{{1
+it got turned off fixing canvas bug, can put on row of the vrv
+ - it's not redding
+ - the frame has fucky padding
+
+ - hmm ok well maybe this time? I'm manual bindings now ... but maybe frame.outlinecolor isnt right.  where is that thicknessss? maybe is not what i think it is.
+ - lookslike it;s not defaulting to off. otherwise looks k. the ignore i mean.
+ - it's off allrght, but not being turned on after clicky!
+ - but it worked on tracker add...hmm..just on entries its not redding...
+- gonna hae to debug this.
+ - there was a mising ui invoke.
+ - still nope. hmm.
+ - crashy times too
+}}}
+default description for non-info{{{1
+entries description is probbably about the foodinfo used. none info needs to say sth like "manual". maybe hide desc if null? it's takin vert space even when empty i think
+ - Need to check both info and noninfo look okok
+ - its too tall still..maybe not variable row height?
+ - descriptino needs smaller italicetc
+ > ok ive added some colors to check blocks. font changed.
+ - hmm, changing double stack to a grid.
+ - yep good. needs fill or center vertical aligns.
 }}}

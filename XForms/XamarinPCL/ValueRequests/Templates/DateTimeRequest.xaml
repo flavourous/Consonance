@@ -1,4 +1,15 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentView xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.DateTimeRequest">
-    <DatePicker Date="{Binding value}" Format="dd/MM/yyyy HH:mm:ss"/>
+<ContentView 
+  xmlns="http://xamarin.com/schemas/2014/forms"
+  xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.DateTimeRequest">
+  <ContentView.Resources>
+    <ResourceDictionary>
+      <l:DateTimeStateConverter x:Key ="tc"/>
+    </ResourceDictionary>
+  </ContentView.Resources>
+  <StackLayout Orientation="Horizontal">
+    <DatePicker Date="{Binding value}"/>
+    <TimePicker Time="{Binding value, Converter={StaticResource tc}}"/>
+  </StackLayout>
 </ContentView>

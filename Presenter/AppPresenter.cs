@@ -195,7 +195,7 @@ namespace Consonance
 			chooseViewTask.Completed.ContinueWith (async index => {
 				var addViewTask = saveDiets [index.Result].StartNewTracker ();
 				await addViewTask;
-				chooseViewTask.Pop ();
+				await chooseViewTask.Pop ();
 			});
 		}
 		void Handleremovedietinstance (TrackerInstanceVM obj)
@@ -385,16 +385,21 @@ namespace Consonance
 	{
 		Task Completed {get;}
 		Task Pushed {get;}
-		void Pop();
+		Task Pop();
 	}
 	public class ViewTask<TResult> : IViewTask
 	{
 		Task IViewTask.Completed { get { return Completed; } }
 		public Task<TResult> Completed {get;private set;}
 		public Task Pushed {get;private set;}
-		public void Pop() { pop (); }
-		readonly Action pop;
-		public ViewTask(Action pop, Task pushed, Task<TResult> completed)
+		public async Task Pop()
+        {
+            Task poptask = null;
+            await PlatformGlobal.platform.UIThread(() => poptask = pop());
+            await poptask;
+        }
+		readonly Func<Task> pop;
+		public ViewTask(Func<Task> pop, Task pushed, Task<TResult> completed)
 		{
 			this.Pushed = pushed;
 			this.pop = pop;

@@ -16,19 +16,19 @@ namespace Consonance.XamarinFormsView.PCL
         {
             // loading state 
 		    bool _l1,_l2,_l3;
-		    public bool load1{ get{ return _l1; } set{ _l1 = value; OnPropertyChanged (); } }
-		    public bool load2{ get{ return _l2; } set{ _l2 = value; OnPropertyChanged (); } }
-		    public bool load3{ get{ return _l3; } set{ _l3 = value; OnPropertyChanged (); } }
+		    public bool load1{ get{ return _l1; } set{ _l1 = value; OnPropertyChanged ("load1"); } }
+		    public bool load2{ get{ return _l2; } set{ _l2 = value; OnPropertyChanged ("load2"); } }
+		    public bool load3{ get{ return _l3; } set{ _l3 = value; OnPropertyChanged ("load3"); } }
 
     		// Tab Names
 	    	private String mInTabName = "In";
-		    public String InTabName { get { return mInTabName; } set { mInTabName = value; OnPropertyChanged(); } }
+		    public String InTabName { get { return mInTabName; } set { mInTabName = value; OnPropertyChanged("InTabName"); } }
 		    private String mOutTabName = "Out";
-		    public String OutTabName { get { return mOutTabName; } set { mOutTabName = value; OnPropertyChanged(); } }
+		    public String OutTabName { get { return mOutTabName; } set { mOutTabName = value; OnPropertyChanged("OutTabName"); } }
             private String mInManageName = "Manage";
-            public String InManageName { get { return mInManageName; } set { mInManageName = value; OnPropertyChanged(); } }
+            public String InManageName { get { return mInManageName; } set { mInManageName = value; OnPropertyChanged("InManageName"); } }
             private String mOutManageName = "Manage";
-            public String OutManageName { get { return mOutManageName; } set { mOutManageName = value; OnPropertyChanged(); } }
+            public String OutManageName { get { return mOutManageName; } set { mOutManageName = value; OnPropertyChanged("OutManageName"); } }
 
             // List items
             private ObservableCollection<EntryLineVM> mInItems = new ObservableCollection<EntryLineVM>();
@@ -60,7 +60,7 @@ namespace Consonance.XamarinFormsView.PCL
             public Action<TrackerInstanceVM> OnPlanSelected = delegate { };
 
             public event PropertyChangedEventHandler PropertyChanged = delegate { };
-            public void OnPropertyChanged([CallerMemberName] string prop = null)
+            public void OnPropertyChanged(string prop)
             {
                 PropertyChanged(this, new PropertyChangedEventArgs(prop));
             }

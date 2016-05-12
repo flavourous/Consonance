@@ -70,7 +70,7 @@ namespace Consonance.ConsoleView
 			TaskCompletionSource<int> chosen = new TaskCompletionSource<int> ();
 			var pcp = new PlanChoosePage (title, from d in choose_from select d.name, chosen.SetResult);
 			MainClass.consolePager.Push(pcp);
-			var vt = new ViewTask<int> (() => MainClass.consolePager.Pop(pcp), pushed.Task, chosen.Task);
+			var vt = new ViewTask<int> (async () => MainClass.consolePager.Pop(pcp), pushed.Task, chosen.Task);
 			pushed.SetResult(null);
 			return vt;
 		}

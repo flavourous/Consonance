@@ -79,7 +79,7 @@ namespace Consonance.XamarinFormsView.PCL
 				await nav.PushAsync (pv);
 				tcs.SetResult (new EventArgs ());
 			});
-			return new ViewTask<int> (() => nav.RemoveOrPop (pv),tcs.Task,res.Task);
+			return new ViewTask<int> (() => nav.RemoveOrPopAsync (pv),tcs.Task,res.Task);
 		}
 
 		public async Task WarnConfirm(string action, Promise confirmed)

@@ -24,6 +24,63 @@ namespace Consonance.XamarinFormsView.PCL
         #endregion
     }
 
+    // one of these is attached to a date picker and a time picker
+    public class DateTimeStateConverter : IValueConverter
+    {
+        DateTime current;
+
+        //Read
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            // null override
+            if (value == null) return null;
+
+            // valid.
+            if(value is DateTime)
+            {
+                // Always store what's just bean read in.
+                current = (DateTime)value;
+                // date picker - easy
+                if (targetType == typeof(DateTime))
+                    return current;
+                // timepicker 
+                else if (targetType == typeof(TimeSpan))
+                    return new TimeSpan(current.Hour, current.Minute, current.Second);
+                throw new NotImplementedException("invalid target");
+            }
+            throw new NotImplementedException("invalid value type");
+        }
+
+        //Write
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            // null override
+            if (value == null) return null;
+
+            //valid.
+            if (targetType == typeof(DateTime))
+            {
+                // from datepicker
+                if (value is DateTime)
+                {
+                    var dt = (DateTime)value;
+                    return current = new DateTime(dt.Year, dt.Month, dt.Day,
+                        current.Hour, current.Minute, current.Second);
+                }
+                // from timepikcer
+                else if (value is TimeSpan)
+                {
+                    var ts = (TimeSpan)value;
+                    if (ts.TotalHours > 24.0) ts = new TimeSpan(0, 0, 0);
+                    return current = new DateTime(current.Year, current.Month, current.Day,
+                        ts.Hours, ts.Minutes, ts.Seconds);
+                }
+                throw new NotImplementedException("invalid value type");
+            }
+            throw new NotImplementedException("invalid target type!");
+        }
+    }
+
     public class TimeConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
