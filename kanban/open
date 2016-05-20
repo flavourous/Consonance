@@ -4,3 +4,6 @@ yeah it's totally not there...
 need to impiment invention{{{
 not sure exactly how, but can start with sth basic that can be versioned off with newer better schema
 }}}
+non-ticks datetime what? {{{
+thats what sqlite.net is working with(bugs with default true on connection creating.
+it cuts datetime by 1h each time read from database?:! }}}

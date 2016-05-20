@@ -51,17 +51,33 @@ namespace Consonance.XamarinFormsView.PCL
 			return Presenter.PresentTo(viewWrapper, plat, userInputWrapper, planCommandWrapper, defaultBuilder);
 		}
 
+        static Dictionary<Page, Queue<Action>> cb = new Dictionary<Page, Queue<Action>>();
+        public static void RegisterPoppedCallback(Page page, Action callback)
+        {
+            if (!cb.ContainsKey(page))
+                cb[page] = new Queue<Action>();
+            cb[page].Enqueue(callback);
+        }
+
+        private void Navigator_Popped(object sender, NavigationEventArgs e)
+        {
+            if (cb.ContainsKey(e.Page))
+            {
+                while (cb[e.Page].Count > 0)
+                    cb[e.Page].Dequeue()();
+                cb.Remove(e.Page);
+            }
+        }
+
         public App()
 		{
 			// some pages.
 			var main = new MainTabs();
             var navigator = new NavigationPage(main);
 
-			navigator.Pushed += (sender, e) => Debug.WriteLine("Navigation: Pushed {0}", e.Page);
-			navigator.Popped += (sender, e) => Debug.WriteLine("Navigation: Popped {0}", e.Page);
-
 			// The root page of your application
 			MainPage = navigator;
+            navigator.Popped += Navigator_Popped;
 
 			// instantiate wrappers
 			viewWrapper = new ViewWrapper(main);
@@ -75,11 +91,11 @@ namespace Consonance.XamarinFormsView.PCL
 
         }
 
+
         protected override void OnStart()
         {
             base.OnStart();
         }
 
     }
-    
 }

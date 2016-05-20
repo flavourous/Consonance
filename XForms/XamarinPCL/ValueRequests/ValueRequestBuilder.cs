@@ -8,6 +8,7 @@ using Consonance;
 using Xamarin.Forms;
 using System.Diagnostics;
 using LibSharpHelp;
+using System.Collections;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -20,13 +21,13 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		public ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
 		{
-			ValueRequestView vrv = null;
+		    ValueRequestView vrv = null;
 			TaskCompletionSource<bool> tcs_all = new TaskCompletionSource<bool> ();
 			TaskCompletionSource<EventArgs> tcs_push = new TaskCompletionSource<EventArgs> ();
 			App.platform.UIThread(() => {
-				// We're returning tasks to indicate bits in here completing, so this begininvoke is alright
-				// ...i always seem to have trouble when awaiting PushAsync :/ so im making this method not wait on any ui ops
-				// even though it should yield appropriately
+                // We're returning tasks to indicate bits in here completing, so this begininvoke is alright
+                // ...i always seem to have trouble when awaiting PushAsync :/ so im making this method not wait on any ui ops
+                // even though it should yield appropriately
 
 				// Create the view!
 				vrv = new ValueRequestView ();
@@ -41,23 +42,28 @@ namespace Consonance.XamarinFormsView.PCL
 				List<GetValuesPage> pages = new List<GetValuesPage>(requestPages);
 				int npage = -1; // init hack
 				Action<bool> PageCompletedHandler =null;
+                GetValuesPage lastPushed = null;
 				PageCompletedHandler = suc =>
 				{
 					// Either way we need to unhook the previous page
-					if(npage >=0) pages[npage].valuerequestsChanegd = delegate { };
-					npage++;
-					if(!suc || npage >= pages.Count) 
+					if(!suc || npage+1 >= pages.Count) 
 					{
 						// We're done
 						vrv.completed -= PageCompletedHandler;
-						tcs_all.SetResult(suc);  
+                        if (npage >= 0)
+                        {
+                            pages[npage].valuerequests.Clear();
+                            pages[npage].valuerequestsChanegd = delegate { };
+                        }
+                        tcs_all.SetResult(suc);
 					}
 					else
 					{
                         // set up the next page.
+					    npage++;
                         vrv.ignorevalidity = true; // dont redbox stuff thats wrong. yet.
 						vrv.Title = pages[npage].title;
-						pages[npage].valuerequestsChanegd = leh; // testy 
+						(lastPushed = pages[npage]).valuerequestsChanegd = leh; // testy 
 						leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
 					}
 				};
@@ -74,19 +80,20 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			switch (e.ListChangedType) {
 			case ListChangedType.Reset:
-				vrv.ClearRows ();
+				vrv.ClearRows (vv=>(vv.BindingContext as IValueRequestVM).ClearPropChanged());
 				foreach (var ob in requests)
-					vrv.AddRow (ob as ValueRequestTemplate);
+					vrv.AddRow ((ob as Func<ValueRequestTemplate>)());
 				break;
 			case ListChangedType.ItemAdded:
-				vrv.InsertRow (e.NewIndex, requests [e.NewIndex] as ValueRequestTemplate);
+				vrv.InsertRow (e.NewIndex, (requests [e.NewIndex] as Func<ValueRequestTemplate>)());
 				break;
 			case ListChangedType.ItemChanged:
 				// do not #care
 				break;
 			case ListChangedType.ItemDeleted:
-				vrv.RemoveRow (e.OldIndex);
-				break;
+				var v = vrv.RemoveRow (e.OldIndex);
+                (v.BindingContext as IValueRequestVM).ClearPropChanged(); // cause some disconnected (disposed?) views get fucked by propertychange - Xamarin bug?
+                break;
 			case ListChangedType.ItemMoved:
 				// do not #care
 				break;
@@ -116,9 +123,7 @@ namespace Consonance.XamarinFormsView.PCL
 
 		IValueRequest<T> RequestCreator<T>(String name, bool showName = true)
 		{
-			ValueRequestVM<T> ret = null;
-            App.platform.UIThread(() => ret = new ValueRequestVM<T> (new ValueRequestTemplate (), name, showName)).Wait();
-			return ret;
+            return new ValueRequestVM<T>(name, showName);
 		}
 	}
 		
@@ -128,41 +133,50 @@ namespace Consonance.XamarinFormsView.PCL
         String name { get; }
         bool valid { get; }
         bool ignorevalid { get; set; }
+        void ClearPropChanged();
     }
 	class ValueRequestVM<T> : IValueRequest<T>, IValueRequestVM
 	{
 		public bool showName { get; private set; }
 		public String name { get; set; }
-		public ValueRequestVM(ValueRequestTemplate bound, String name, bool showName)
+		public ValueRequestVM(String name, bool showName)
 		{
 			this.name=name;
 			this.showName = showName;
-			bound.BindingContext = this;
-			_request = bound;
 		}
 
 		#region IValueRequest implementation
-		public event Action changed = delegate { };
-		public void ClearListeners () { changed = delegate { }; }
+		public event Action ValueChanged = delegate { };
+		public void ClearListeners () { ValueChanged = delegate { }; }
+        public void ClearPropChanged() { PropertyChanged = delegate { }; }
 
-		// Request will reference the view that this VM is bound to 
-		readonly ContentView _request;
-		public object request { get { return _request; } }
+        // Request will reference the view that this VM is bound to 
+		public object request
+        {
+            get
+            {
+                return new Func<ValueRequestTemplate>(() =>
+                {
+                    return new ValueRequestTemplate { BindingContext = this };
+                });
+            }
+        }
 
 		// This are all bindings for the view to use - the generic type T is actually only relevant for the factory.
 		#region INotifyPropertyChanged implementation
 		public event PropertyChangedEventHandler PropertyChanged = delegate { };
-		public void OnPropertyChanged(String n, bool chain=false) 
+		void OnPropertyChanged(String n) 
 		{
-            App.platform.UIThread (() => {
-				PropertyChanged (this, new PropertyChangedEventArgs (n));
-				if(chain) changed ();
-			}); 
-		} 
-		#endregion
+            App.platform.UIThread(() =>
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(n));
+                if (n == "value") ValueChanged();
+            });
+		}
+        #endregion
 
 		private T mvalue;
-		public T value  { get { return mvalue; } set { mvalue = value; OnPropertyChanged("value", true); } }
+		public T value  { get { return mvalue; } set { mvalue = value; OnPropertyChanged("value"); } }
 
 		private bool menabled;
 		public bool enabled { get { return menabled; } set { menabled = value; OnPropertyChanged ("enabled"); } }

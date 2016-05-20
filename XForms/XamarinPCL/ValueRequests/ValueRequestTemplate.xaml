@@ -2,6 +2,12 @@
 <ContentView 
 	xmlns="http://xamarin.com/schemas/2014/forms" 
 	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+  xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL"
 	x:Class="Consonance.XamarinFormsView.PCL.ValueRequestTemplate" >
-	<Frame x:Name="fc" Padding="0"/>
+  <ContentView.Resources>
+    <ResourceDictionary>
+      <l:InvalidRedConverter x:Key="irc"/>
+    </ResourceDictionary>
+  </ContentView.Resources>
+	<Frame x:Name="fc" Padding="0" OutlineColor="{Binding valid, Converter={StaticResource irc}}"/>
 </ContentView>

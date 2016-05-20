@@ -25,7 +25,7 @@ namespace Consonance.ConsoleView
 			consolePager.RunLoop ();
 		}
 	}
-    class Folders : IFolders
+    class Folders : IFSOps
     {
         public string AppData { get; set; }
         public Folders()
@@ -36,7 +36,7 @@ namespace Consonance.ConsoleView
     class CPlat : IPlatform, ITasks
 	{
         readonly Folders FF = new Folders();
-        public IFolders folders { get { return FF; } }
+        public IFSOps filesystem { get { return FF; } }
         #region IPlatform implementation
         Action<string,Action> serr;
 		public void Attach (Action<string, Action> showError)

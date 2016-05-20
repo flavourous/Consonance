@@ -28,7 +28,7 @@ namespace Consonance.XamarinFormsView.PCL
 		class TestVM<T> : INotifyPropertyChanged, IValueRequest<T>
 		{
 			public event PropertyChangedEventHandler PropertyChanged = delegate { };
-			public event Action changed = delegate { };
+			public event Action ValueChanged = delegate { };
 			public void ClearListeners () { }
 			public object request { get { return null; } }
 			public bool enabled { get { return true; } set { } }
@@ -72,26 +72,6 @@ namespace Consonance.XamarinFormsView.PCL
 			}
 			#endif
 		}
-        INotifyPropertyChanged lastcontext = null;
-        public void BindTo(INotifyPropertyChanged obj)
-        {
-            // remove old handler (setbinding scarey always with the npe)
-            if (lastcontext != null) lastcontext.PropertyChanged -= Obj_PropertyChanged;
-            // add new handler (setbinding is scare me)
-            if (obj != null) obj.PropertyChanged += Obj_PropertyChanged;
-            lastcontext = obj;
-        }
-        private void Obj_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (sender is IValueRequestVM && (e.PropertyName == "valid" || e.PropertyName == "ignorevalid"))
-            {
-                App.platform.UIThread(() =>
-                {
-                    var vvm = (IValueRequestVM)sender; // hmm
-                    fc.OutlineColor = (vvm.valid || vvm.ignorevalid) ? Color.Transparent : Color.Red;
-                });
-            }
-        }
         protected override void OnBindingContextChanged ()
 		{
             // select template
@@ -101,7 +81,6 @@ namespace Consonance.XamarinFormsView.PCL
 				else
 					fc.Content = new Frame { Padding = new Thickness(0) };
 			});
-            BindTo(BindingContext as INotifyPropertyChanged);
 			base.OnBindingContextChanged ();
 		}
 	}

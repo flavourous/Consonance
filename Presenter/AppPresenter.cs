@@ -11,6 +11,7 @@ using System.Text;
 using LibRTP;
 using SQLite.Net.Interop;
 using System.Reflection;
+using SQLite.Net.Attributes;
 
 namespace Consonance
 {
@@ -91,7 +92,7 @@ namespace Consonance
 		public static Task<T> Run<T> (Func<Task<T>> asyncMethod){ return platform.TaskOps.RunTask(asyncMethod); }
 		public static Task<T> Run<T> (Func<T> syncMethod) { return platform.TaskOps.RunTask(syncMethod); }
 	}
-	public class Presenter
+    public class Presenter
 	{
 		// Singleton logic - lazily created
 		static Presenter singleton;
@@ -114,11 +115,13 @@ namespace Consonance
 			return PlatformGlobal.Run (() => {
 
                 // load DB
-                var datapath = platform.folders.AppData;
+                var datapath = platform.filesystem.AppData;
                 platform.CreateDirectory(datapath);
                 var maindbpath = Path.Combine(datapath, "manydiet.db");
-                conn = new SQLiteConnection(platform.sqlite, maindbpath);
-
+                //platform.filesystem.Delete(maindbpath);
+                //byte[] file = platform.filesystem.ReadFile(maindbpath);
+                conn = new SQLiteConnection(platform.sqlite, maindbpath, false);
+                
                 Debug.WriteLine("PresntToImpl: presenting");
 				this.view = view;
 				this.input = input;
@@ -341,18 +344,19 @@ namespace Consonance
 	public enum InfoManageType { In, Out };
 	public interface IPlatform
 	{
-        void UIAssert();
         Task UIThread(Action method);
         ISQLitePlatform sqlite { get; }
         ITasks TaskOps { get; }
 		void Attach (Action<String, Action> showError);
-        IFolders folders { get; }
+        IFSOps filesystem { get; }
         bool CreateDirectory(String ifdoesntexist);
         PropertyInfo GetPropertyInfo(Type T, String property);
 	}
-    public interface IFolders
+    public interface IFSOps
     {
         string AppData { get; }
+        void Delete(String file);
+        byte[] ReadFile(String file);
     }
 	public interface ITasks
 	{
@@ -554,10 +558,10 @@ namespace Consonance
 	{
 		Object request { get; }  // used by view to encapsulate viewbuilding lookups
 		V value { get; set; } // set by view when done, and set by view to indicate an initial value.
-		event Action changed; // so model domain can change the flags
+		event Action ValueChanged; // so model domain can change the flags
 		void ClearListeners();
-		bool enabled { set; } // so the model domain can communicate what fields should be in action (for combining quick and calculate entries)
-		bool valid { set; } // if we want to check the value set is ok
-		bool read_only { set; } // if we want to check the value set is ok
+		bool enabled { get; set; } // so the model domain can communicate what fields should be in action (for combining quick and calculate entries)
+		bool valid { get; set; } // if we want to check the value set is ok
+		bool read_only { get; set; } // if we want to check the value set is ok
 	}
 }

@@ -186,7 +186,7 @@ namespace Consonance
 			defaultTrackerStuff.PushInDefaults (editing, rqs, factory);
 			var gvp = new GetValuesPage (name);
 			gvp.SetList (rqs);
-			yield return gvp;
+            yield return gvp;
 		}
 		public Inst New ()
 		{
@@ -349,7 +349,7 @@ namespace Consonance
 			// request objects
 			var rp = new BindingList<object> () { trackedQuantity.CGet(factory.DoubleRequestor) };
 			defaulter.PushInDefaults (toEdit, rp, factory);
-
+           
 			// init request objects - defaulter did both
 			trackedQuantity.request.value = (double)trackedQuantityFlecter.Get(toEdit);
 

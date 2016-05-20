@@ -9,7 +9,7 @@
     </ResourceDictionary>
   </ContentView.Resources>
   <StackLayout Orientation="Horizontal">
-    <DatePicker Date="{Binding value}"/>
+    <DatePicker Date="{Binding value, Converter={StaticResource tc}}"/>
     <TimePicker Time="{Binding value, Converter={StaticResource tc}}"/>
   </StackLayout>
 </ContentView>

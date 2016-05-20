@@ -9,53 +9,49 @@ using System.IO;
 
 namespace Consonance.XamarinFormsView
 {
-    class Folders : IFolders
+    class FileSystem : IFSOps
     {
         public string AppData { get; set; }
-        public Folders()
+        public FileSystem()
         {
             AppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        }
+        public void Delete(string file)
+        {
+            File.Delete(file);
+        }
+
+        public byte[] ReadFile(string file)
+        {
+            return File.ReadAllBytes(file);
         }
     }
     class Platform : IPlatform, ITasks
 	{
         public PropertyInfo GetPropertyInfo(Type t, String p) { return t.GetProperty(p); }
-        readonly Folders FF = new Folders();
-        public IFolders folders { get { return FF; } }
+        readonly FileSystem FF = new FileSystem();
+        public IFSOps filesystem { get { return FF; } }
 		static int uiThread;
 		Action<String, Action> showError = (ex,a) => a();
-		// Must be constructed on UI thread.
-		public Platform()
-		{
-			uiThread = Thread.CurrentThread.ManagedThreadId;
-		}
-		public void UIAssert()
-		{	
-			Debug.Assert (Thread.CurrentThread.ManagedThreadId == uiThread);
-		}
-		public Task UIThread(Action method)
-		{
-			TaskCompletionSource<EventArgs> tc = new TaskCompletionSource<EventArgs> ();
-            if (Thread.CurrentThread.ManagedThreadId == uiThread)
+        public Task UIThread(Action method)
+        {
+            TaskCompletionSource<EventArgs> tc = new TaskCompletionSource<EventArgs>();
+            Device.BeginInvokeOnMainThread(() =>
             {
-                method();
+                try { method(); }
+                catch (Exception e)
+                {
+                    tc.SetException(e);
+                    Console.WriteLine(new String('!', 50));
+                    Console.WriteLine(new string('!', 20) + "Failed UI Method" + new string('!', 20));
+                    Console.WriteLine(new String('!', 50));
+                    Console.WriteLine(e);
+                    throw;
+                }
                 tc.SetResult(new EventArgs());
-            }
-            else
-            {
-				Device.BeginInvokeOnMainThread(() => {
-					try { method(); }
-					catch(Exception e) 
-					{ 
-						tc.SetException(e); 
-						Debug.WriteLine(e);
-						throw;
-					}
-					tc.SetResult(new EventArgs());
-				});
-			}
-			return tc.Task;
-		}
+            });
+            return tc.Task;
+        }
 		public void Attach(Action<String, Action> showError)
 		{
 			this.showError = showError;

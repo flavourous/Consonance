@@ -42,10 +42,17 @@ namespace Consonance.XamarinFormsView.PCL
                 current = (DateTime)value;
                 // date picker - easy
                 if (targetType == typeof(DateTime))
+                {
+                    Debug.WriteLine("Converting " + value + " to datetime, which is itself " + current);
                     return current;
+                }
                 // timepicker 
                 else if (targetType == typeof(TimeSpan))
-                    return new TimeSpan(current.Hour, current.Minute, current.Second);
+                {
+                    var ts = new TimeSpan(current.Hour, current.Minute, current.Second);
+                    Debug.WriteLine("Converting " + value + " to timespan " + ts);
+                    return ts;
+                }
                 throw new NotImplementedException("invalid target");
             }
             throw new NotImplementedException("invalid value type");
@@ -64,16 +71,20 @@ namespace Consonance.XamarinFormsView.PCL
                 if (value is DateTime)
                 {
                     var dt = (DateTime)value;
-                    return current = new DateTime(dt.Year, dt.Month, dt.Day,
+                    var ndt = new DateTime(dt.Year, dt.Month, dt.Day,
                         current.Hour, current.Minute, current.Second);
+                    Debug.WriteLine("Incoming datetime from datepicker is " + dt + ", we had: " + current + " which becomes: " + ndt);
+                    return current = ndt;
                 }
                 // from timepikcer
                 else if (value is TimeSpan)
                 {
                     var ts = (TimeSpan)value;
                     if (ts.TotalHours > 24.0) ts = new TimeSpan(0, 0, 0);
-                    return current = new DateTime(current.Year, current.Month, current.Day,
+                    var ndt = new DateTime(current.Year, current.Month, current.Day,
                         ts.Hours, ts.Minutes, ts.Seconds);
+                    Debug.WriteLine("Incoming timespan from timepicker is " + ts + ", we had: " + current + " which becomes: " + ndt);
+                    return current = ndt;
                 }
                 throw new NotImplementedException("invalid value type");
             }
@@ -145,5 +156,19 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		#endregion
 	}
+    public class InvalidRedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool && targetType == typeof(Color))
+                return (bool)value ? Color.Transparent : Color.Red;
+            return null;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
 

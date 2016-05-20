@@ -130,9 +130,9 @@ namespace Consonance
 			};
 
 			// this changes too! but it can only itself change while mode != none (or I hope so)
-			recurrStarted.request.changed += CheckRepStartedEnded;
-			recurrEnded.request.changed += CheckRepStartedEnded;
-			recurranceMode.request.changed += rModeChanged;
+			recurrStarted.request.ValueChanged += CheckRepStartedEnded;
+			recurrEnded.request.ValueChanged += CheckRepStartedEnded;
+			recurranceMode.request.ValueChanged += rModeChanged;
 
 			// set editing data if we are
 			if (editing != null) {
@@ -243,6 +243,7 @@ namespace Consonance
 				dietStart.request.value = editing.startpoint;
 				tracked.request.value = editing.tracked;
 			}
+            Validate();
 		}
 	}
 }

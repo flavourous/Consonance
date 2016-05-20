@@ -31,7 +31,7 @@ namespace Consonance
                 var ar = factory.ActionRequestor("search");
                 ar.valid = true;
                 flds.Add(ar.request);
-                ar.changed += LaunchFinder;
+                ar.ValueChanged += LaunchFinder;
             }
 			return flds;
 		}

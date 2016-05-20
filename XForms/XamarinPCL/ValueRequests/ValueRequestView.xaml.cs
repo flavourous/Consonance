@@ -15,14 +15,13 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			InitializeComponent ();
 			okButton.BindingContext = vlm;
+            App.RegisterPoppedCallback(this, () => Completed(false));
 		}
-		public void ClearRows()
+		public void ClearRows(Action<View> each = null)
 		{
-            foreach (var rv in rowViews)
-            {
-                var rvv = rv as ValueRequestTemplate;
-                if (rvv != null) rvv.BindTo(null);
-            }
+            if (each != null)
+                foreach (var v in rowViews)
+                    each(v);
 			rowViews.Clear ();
 			titleViews.Clear ();
 			inputs.RowDefinitions.Clear ();
@@ -73,7 +72,7 @@ namespace Consonance.XamarinFormsView.PCL
 				Padding = new Thickness (5.0, 0, 3.0, 0)
 			};
 		}
-		public void RemoveRow(int row)
+		public View RemoveRow(int row)
 		{
 			var v = rowViews [row];
 			inputs.Children.Remove (v);
@@ -83,18 +82,15 @@ namespace Consonance.XamarinFormsView.PCL
 				titleViews.Remove (v);
 			}
 			vlm.RemoveListen (v.BindingContext as INotifyPropertyChanged);
+            return v;
 		}
 		void Completed(bool suc)
 		{
 			completed (suc);
-			ClearRows ();
+            completed = delegate { };
 		}
-		protected override bool OnBackButtonPressed ()
-		{
-			Completed (false);
-			return base.OnBackButtonPressed ();
-		}
-		public Action<bool> completed = delegate { };
+
+        public Action<bool> completed = delegate { };
 		ValidListenManager vlm = new ValidListenManager ("valid");
 		public void OKClick(object sender, EventArgs args) 
 		{
@@ -128,6 +124,7 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			currentValidity [obj] = (bool)obj.GetType ().GetTypeInfo().GetDeclaredProperty(ValidName).GetValue (obj);
 			obj.PropertyChanged += ValidityListener;
+            ValidityListener(obj, new PropertyChangedEventArgs(ValidName));
 		}
 		public void ClearListens()
 		{

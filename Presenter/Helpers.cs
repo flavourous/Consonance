@@ -100,8 +100,8 @@ namespace Consonance
 	class DummyValueRequest<T> : IValueRequest<T> 
 	{
 		#region IValueRequest implementation
-		public event Action changed = delegate { };
-		public void ClearListeners () { changed = delegate { }; }
+		public event Action ValueChanged = delegate { };
+		public void ClearListeners () { ValueChanged = delegate { }; }
 		public object request { get { return null; } }
 		public T value { get; set; }
 		public bool enabled { get; set; }
@@ -113,7 +113,7 @@ namespace Consonance
 	public class RequestStorageHelper<V> : IRequestStorageHelper
 	{
 		#region IRequestStorageHelper implementation
-		public event Action requestChanged { add { request.changed += value; } remove{ request.changed -= value; } }
+		public event Action requestChanged { add { request.ValueChanged += value; } remove{ request.ValueChanged -= value; } }
 		public Object requestValue { get { return request.value; } set { request.value = (V)value; } }
 		public object CGet (IValueRequestFactory fact, Func<IValueRequestFactory, Func<String, Object>> FindRequestDelegate)
 		{
@@ -136,7 +136,7 @@ namespace Consonance
 		public void Reset()
 		{
 			request.ClearListeners ();
-			request.changed += validate;
+			request.ValueChanged += validate;
 			request.value = defaultValue ();
 			validate ();
 		}

@@ -17,12 +17,13 @@
     </Grid.RowDefinitions>
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="auto"/>
+      <ColumnDefinition Width="15"/>
       <ColumnDefinition Width="*"/>
       <ColumnDefinition Width="auto"/>
     </Grid.ColumnDefinitions>
-		<Label Grid.RowSpan="2" Text="{Binding start, Converter={StaticResource tc}}" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand" BackgroundColor="Blue"/>
-		<Label Grid.Column="1" Text="{Binding name}" BackgroundColor="Teal"/>
-		<Label Grid.Column="1" Grid.Row="2" Text="{Binding desc}" BackgroundColor="Purple"/>
-	  <Label Grid.Column="2" Grid.RowSpan="2" FontAttributes="Italic" Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" BackgroundColor="Yellow"/>
+		<Label Grid.RowSpan="2" Text="{Binding start, Converter={StaticResource tc}}" VerticalOptions="Center"/>
+		<Label Grid.Column="2" Text="{Binding name}" />
+		<Label Grid.Column="2" Grid.Row="1" Text="{Binding desc}" />
+	  <Label Grid.Column="3" Grid.RowSpan="2" FontAttributes="Italic" Text="{Binding displayAmounts, Converter={StaticResource klc}}"  VerticalOptions="Center" />
   </Grid>
 </ContentView>

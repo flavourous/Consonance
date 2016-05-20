@@ -9,7 +9,7 @@ using System.IO;
 
 namespace Consonance.XamarinFormsView
 {
-    class Folders : IFolders
+    class Folders : IFSOps
     {
         public string AppData { get; set; }
         public Folders()
@@ -21,7 +21,7 @@ namespace Consonance.XamarinFormsView
 	{
         public PropertyInfo GetPropertyInfo(Type t, String p) { return t.GetProperty(p); }
         readonly Folders FF = new Folders();
-        public IFolders folders { get { return FF; } }
+        public IFSOps filesystem { get { return FF; } }
 		static int? uiThread;
 		Action<String, Action> showError = (ex,a) => a();
 		// Must be constructed on UI thread.

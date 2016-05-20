@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using scm = System.ComponentModel;
 using SQLite.Net;
 using LibSharpHelp;
+using System.Diagnostics;
 
 namespace Consonance
 {
@@ -243,9 +244,10 @@ namespace Consonance
 		public IEnumerable<EntryLineVM> InEntries(TrackerInstanceVM instance, DateTime start, DateTime end)
 		{
 			var eatModels = modelHandler.inhandler.Get (instance.originator as DietInstType, start, end);
-			return ConvertMtoVM<EntryLineVM, EatType, EatInfoType> (
+			return ConvertMtoVM(
 				eatModels, 
 				(e,i) => {
+                    Debug.WriteLine("Entry " + e.id + ": " + e.entryWhen);
 					var vm= presenter.GetRepresentation(e,i);
 					vm.originator = e;
 					return vm;
@@ -438,13 +440,13 @@ namespace Consonance
 				requests.SetList(nrq);
 			};
 			checkFields ();
-			infoRequest.changed += checkFields;
+			infoRequest.ValueChanged += checkFields;
 
 			var gv = getValues.GetValues (new[]{ requests });
 			gv.Completed.ContinueWith(async result => {
 				await gv.Pop (); 
 				if (result.Result) editit ();
-				infoRequest.changed -= checkFields;
+				infoRequest.ValueChanged -= checkFields;
 			});
 			return gv.Pushed;
 		}
