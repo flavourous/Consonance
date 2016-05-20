@@ -38,16 +38,7 @@ namespace Consonance.XamarinFormsView
             TaskCompletionSource<EventArgs> tc = new TaskCompletionSource<EventArgs>();
             Device.BeginInvokeOnMainThread(() =>
             {
-                try { method(); }
-                catch (Exception e)
-                {
-                    tc.SetException(e);
-                    Console.WriteLine(new String('!', 50));
-                    Console.WriteLine(new string('!', 20) + "Failed UI Method" + new string('!', 20));
-                    Console.WriteLine(new String('!', 50));
-                    Console.WriteLine(e);
-                    throw;
-                }
+                method();
                 tc.SetResult(new EventArgs());
             });
             return tc.Task;

@@ -14,8 +14,8 @@ namespace Consonance.XamarinFormsView.PCL
 		static readonly Dictionary<Type, Func<View>> templateSelector= new Dictionary<Type, Func<View>> {
 			{ typeof(String), () => new StringRequest () },
 			{ typeof(double), () => new DoubleRequest () },
-			{ typeof(TimeSpan), () => new TimeSpanRequest () },
-			{ typeof(DateTime), () => new DateTimeRequest () },
+            { typeof(TimeSpan), () => new TimeSpanRequest () },
+            { typeof(DateTime), () => new DateTimeRequest () },
 			{ typeof(bool), () => new BoolRequest () },
 			{ typeof(InfoSelectValue), () => new InfoSelectRequest () },
 			{ typeof(EventArgs), () => new ActionRequest () },

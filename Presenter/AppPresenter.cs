@@ -440,8 +440,8 @@ namespace Consonance
 		IValueRequest<InfoSelectValue> InfoLineVMRequestor(String name);
 		IValueRequest<DateTime> DateRequestor(String name);
 		IValueRequest<TimeSpan> TimeSpanRequestor(String name);
-		IValueRequest<double> DoubleRequestor(String name); 
-		IValueRequest<int> IntRequestor(String name); 
+        IValueRequest<double> DoubleRequestor(String name);
+        IValueRequest<int> IntRequestor(String name); 
 		IValueRequest<bool> BoolRequestor(String name);
 		IValueRequest<EventArgs> ActionRequestor(String name);
 		IValueRequest<Barcode> BarcodeRequestor (String name);

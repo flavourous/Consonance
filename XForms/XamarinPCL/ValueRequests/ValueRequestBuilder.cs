@@ -111,8 +111,8 @@ namespace Consonance.XamarinFormsView.PCL
 		public IValueRequest<InfoSelectValue> InfoLineVMRequestor (string name) { return RequestCreator<InfoSelectValue> (name); }
 		public IValueRequest<DateTime> DateRequestor (string name) { return RequestCreator<DateTime> (name); }
 		public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return RequestCreator<TimeSpan> (name); }
-		public IValueRequest<double> DoubleRequestor (string name) { return RequestCreator<double> (name); }
-		public IValueRequest<bool> BoolRequestor (string name) { return RequestCreator<bool> (name); }
+        public IValueRequest<double> DoubleRequestor (string name) { return RequestCreator<double> (name); }
+        public IValueRequest<bool> BoolRequestor (string name) { return RequestCreator<bool> (name); }
 		public IValueRequest<EventArgs> ActionRequestor (string name) { return RequestCreator<EventArgs> (name, false); }
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return RequestCreator<Barcode> (name); }
 		public IValueRequest<int> IntRequestor (string name){ return RequestCreator<int> (name); }

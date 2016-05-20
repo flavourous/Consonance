@@ -114,7 +114,8 @@ namespace Consonance
 	{
 		#region IRequestStorageHelper implementation
 		public event Action requestChanged { add { request.ValueChanged += value; } remove{ request.ValueChanged -= value; } }
-		public Object requestValue { get { return request.value; } set { request.value = (V)value; } }
+        // the colleasce is cause V might not be nullable.
+		public Object requestValue { get { return request.value; } set { request.value = (V)(value ?? defaultValue()); } }
 		public object CGet (IValueRequestFactory fact, Func<IValueRequestFactory, Func<String, Object>> FindRequestDelegate)
 		{
 			return CGet ((Func<String, IValueRequest<V>>)FindRequestDelegate (fact));

@@ -1,6 +1,9 @@
 DateRequest needed now {{{
 cause we upgraded datetimerequest to have time, but, not all ppl wat the time
+ - tracker wants just date.
 }}}
-DateTime? Request variants needed {{{
-really cause "has start" etc is dumb.
-}}
+imporve repeaters vrvs {{{
+datetime? will help.
+both need time field.
+can we set size of switch box? hmm
+}}}
