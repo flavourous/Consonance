@@ -14,7 +14,7 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		public void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
 		{
-			var vm = BindingContext as ValueRequestVM<InfoSelectValue>;
+			var vm = BindingContext as IValueRequest<InfoSelectValue>;
 			vm.value.OnChoose();
 		}
 	}

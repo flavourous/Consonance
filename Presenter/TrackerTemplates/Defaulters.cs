@@ -78,7 +78,7 @@ namespace Consonance
 		{
 			// no reset here...for entries...event registration clearing is automatic though.
 			var nr = name.CGet (fac.StringRequestor);
-			var wr = when.CGet (fac.DateRequestor);
+			var wr = when.CGet (fac.DateTimeRequestor);
 
 			// set up recurrance stuff....off by default, so lets add the repeat mode button
 			var rMode = recurranceMode.CGet(fac.OptionGroupRequestor);
@@ -90,8 +90,8 @@ namespace Consonance
 			// and we need to preload the others for maybe adding later.
 			var rRepStarted = recurrStarted.CGet (fac.BoolRequestor);
 			var rRepEnded = recurrEnded.CGet (fac.BoolRequestor);
-			var rRepEnd = recurrEnd.CGet (fac.DateRequestor);
-			var rRepStart = recurrStart.CGet (fac.DateRequestor);
+			var rRepEnd = recurrEnd.CGet (fac.DateTimeRequestor);
+			var rRepStart = recurrStart.CGet (fac.DateTimeRequestor);
 			var rRepOn = recurrOn.CGet (fac.RecurrOnRequestor);
 			var rRepEvery = recurrEvery.CGet (fac.RecurrEveryRequestor);
 

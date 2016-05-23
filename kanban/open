@@ -7,3 +7,11 @@ not sure exactly how, but can start with sth basic that can be versioned off wit
 non-ticks datetime what? {{{
 thats what sqlite.net is working with(bugs with default true on connection creating.
 it cuts datetime by 1h each time read from database?:! }}}
+imporve repeaters vrvs {{{
+both need time field.
+can we set size of switch box? hmm
+alignment?
+has start -> has _finish_
+they need datetime? oneliners too ^^
+needs pen/paper design :/
+}}}

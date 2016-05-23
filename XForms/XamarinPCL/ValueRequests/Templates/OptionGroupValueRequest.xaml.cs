@@ -29,7 +29,7 @@ namespace Consonance.XamarinFormsView.PCL
 		void SIC(object sender, EventArgs args)
 		{
 			if (brent) return;
-			var bc = BindingContext as ValueRequestVM<OptionGroupValue>;	
+			var bc = BindingContext as IValueRequest<OptionGroupValue>;	
 			bc.value.SelectedOption = psel.SelectedIndex;
 			brent = true;
 			bc.value =bc.value; // hax lol firing changed method..
@@ -40,7 +40,7 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			if (brent) return;
 			if (e.PropertyName == "value") {
-				var bc = BindingContext as ValueRequestVM<OptionGroupValue>;	
+				var bc = BindingContext as IValueRequest<OptionGroupValue>;	
 				brent = true; // this will alter selectedindex, which will alter the bound selectedoption, which we dont want to do.
 				psel.Items.Clear (); 
 				brent = false;

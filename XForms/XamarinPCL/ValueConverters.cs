@@ -156,12 +156,18 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		#endregion
 	}
-    public class InvalidRedConverter : IValueConverter
+    public class InvalidConverter : IValueConverter
     {
+        readonly object yes, no;
+        public InvalidConverter(Object yes, Object no)
+        {
+            this.yes = yes;
+            this.no = no;
+        }
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool && targetType == typeof(Color))
-                return (bool)value ? Color.Transparent : Color.Red;
+            if (value is bool)
+                return (bool)value ? yes : no;
             return null;
         }
 

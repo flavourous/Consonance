@@ -80,7 +80,7 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			switch (e.ListChangedType) {
 			case ListChangedType.Reset:
-				vrv.ClearRows (vv=>(vv.BindingContext as IValueRequestVM).ClearPropChanged());
+				vrv.ClearRows ();
 				foreach (var ob in requests)
 					vrv.AddRow ((ob as Func<ValueRequestTemplate>)());
 				break;
@@ -91,8 +91,7 @@ namespace Consonance.XamarinFormsView.PCL
 				// do not #care
 				break;
 			case ListChangedType.ItemDeleted:
-				var v = vrv.RemoveRow (e.OldIndex);
-                (v.BindingContext as IValueRequestVM).ClearPropChanged(); // cause some disconnected (disposed?) views get fucked by propertychange - Xamarin bug?
+				vrv.RemoveRow (e.OldIndex);
                 break;
 			case ListChangedType.ItemMoved:
 				// do not #care
@@ -107,23 +106,24 @@ namespace Consonance.XamarinFormsView.PCL
 	class ValueRequestFactory : IValueRequestFactory
 	{
 		#region IValueRequestFactory implementation
-		public IValueRequest<string> StringRequestor (string name) { return RequestCreator<String> (name); }
-		public IValueRequest<InfoSelectValue> InfoLineVMRequestor (string name) { return RequestCreator<InfoSelectValue> (name); }
-		public IValueRequest<DateTime> DateRequestor (string name) { return RequestCreator<DateTime> (name); }
-		public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return RequestCreator<TimeSpan> (name); }
-        public IValueRequest<double> DoubleRequestor (string name) { return RequestCreator<double> (name); }
-        public IValueRequest<bool> BoolRequestor (string name) { return RequestCreator<bool> (name); }
-		public IValueRequest<EventArgs> ActionRequestor (string name) { return RequestCreator<EventArgs> (name, false); }
-		public IValueRequest<Barcode> BarcodeRequestor (string name) { return RequestCreator<Barcode> (name); }
-		public IValueRequest<int> IntRequestor (string name){ return RequestCreator<int> (name); }
-		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return RequestCreator<OptionGroupValue> (name); }
-		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue> (name, false); }
-		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue> (name, false); }
+		public IValueRequest<string> StringRequestor (string name) { return RequestCreator<String, StringRequest> (name); }
+		public IValueRequest<InfoSelectValue> InfoLineVMRequestor (string name) { return RequestCreator<InfoSelectValue, InfoSelectRequest> (name); }
+		public IValueRequest<DateTime> DateTimeRequestor (string name) { return RequestCreator<DateTime, DateTimeRequest> (name); }
+        public IValueRequest<DateTime> DateRequestor(string name) { return RequestCreator<DateTime, DateRequest>(name); }
+        public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return RequestCreator<TimeSpan, TimeSpanRequest> (name); }
+        public IValueRequest<double> DoubleRequestor (string name) { return RequestCreator<double, DoubleRequest> (name); }
+        public IValueRequest<bool> BoolRequestor (string name) { return RequestCreator<bool, BoolRequest> (name); }
+		public IValueRequest<EventArgs> ActionRequestor (string name) { return RequestCreator<EventArgs, ActionRequest> (name, false); }
+		public IValueRequest<Barcode> BarcodeRequestor (string name) { return RequestCreator<Barcode, BarcodeRequest> (name); }
+		public IValueRequest<int> IntRequestor (string name){ return RequestCreator<int, IntRequest> (name); }
+		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return RequestCreator<OptionGroupValue, OptionGroupValueRequest> (name); }
+		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name, false); }
+		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name, false); }
 		#endregion
 
-		IValueRequest<T> RequestCreator<T>(String name, bool showName = true)
+		IValueRequest<T> RequestCreator<T, V>(String name, bool showName = true) where V : View, new()
 		{
-            return new ValueRequestVM<T>(name, showName);
+            return new ValueRequestVM<T, V>(name, showName);
 		}
 	}
 		
@@ -135,7 +135,7 @@ namespace Consonance.XamarinFormsView.PCL
         bool ignorevalid { get; set; }
         void ClearPropChanged();
     }
-	class ValueRequestVM<T> : IValueRequest<T>, IValueRequestVM
+	class ValueRequestVM<T,V> : IValueRequest<T>, IValueRequestVM where V : View, new()
 	{
 		public bool showName { get; private set; }
 		public String name { get; set; }
@@ -157,7 +157,7 @@ namespace Consonance.XamarinFormsView.PCL
             {
                 return new Func<ValueRequestTemplate>(() =>
                 {
-                    return new ValueRequestTemplate { BindingContext = this };
+                    return new ValueRequestTemplate(new V()) { BindingContext = this };
                 });
             }
         }
@@ -182,13 +182,15 @@ namespace Consonance.XamarinFormsView.PCL
 		public bool enabled { get { return menabled; } set { menabled = value; OnPropertyChanged ("enabled"); } }
 
 		private bool mvalid;
-		public bool valid { get { return mvalid; } set { mvalid = value; OnPropertyChanged ("valid"); } }
+		public bool valid { get { return mvalid; } set { mvalid = value; OnPropertyChanged ("valid"); OnPropertyChanged("vvalid"); } }
 
         private bool mignorevalid;
-        public bool ignorevalid { get { return mignorevalid; } set { mignorevalid = value; OnPropertyChanged("ignorevalid"); } }
+        public bool ignorevalid { get { return mignorevalid; } set { mignorevalid = value; OnPropertyChanged("ignorevalid"); OnPropertyChanged("vvalid"); } }
 
         private bool mread_only;
 		public bool read_only { get { return mread_only; } set { mread_only = value; OnPropertyChanged ("read_only"); } }
 		#endregion
+
+        public bool vvalid { get { return ignorevalid || valid; } }
 	}
 }

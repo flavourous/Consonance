@@ -42,6 +42,9 @@
     <Compile Include="ValueConverters.cs" />
     <Compile Include="ValueRequests\Templates\ActionRequest.cs" />
     <Compile Include="ValueRequests\Templates\BarcodeRequest.cs" />
+    <Compile Include="ValueRequests\Templates\DateRequest.xaml.cs">
+      <DependentUpon>DateRequest.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ValueRequests\Templates\BoolRequest.xaml.cs">
       <DependentUpon>BoolRequest.xaml</DependentUpon>
     </Compile>
@@ -227,6 +230,12 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\MainTabs.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ValueRequests\Templates\DateRequest.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <SubType>Designer</SubType>
     </EmbeddedResource>

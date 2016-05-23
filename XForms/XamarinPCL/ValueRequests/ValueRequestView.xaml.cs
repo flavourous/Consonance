@@ -17,20 +17,15 @@ namespace Consonance.XamarinFormsView.PCL
 			okButton.BindingContext = vlm;
             App.RegisterPoppedCallback(this, () => Completed(false));
 		}
-		public void ClearRows(Action<View> each = null)
+		public void ClearRows()
 		{
-            if (each != null)
-                foreach (var v in rowViews)
-                    each(v);
-			rowViews.Clear ();
-			titleViews.Clear ();
-			inputs.RowDefinitions.Clear ();
-			inputs.Children.Clear ();
-			vlm.ClearListens ();
+            while (rowViews.Count > 0)
+                RemoveRow(rowViews.Count - 1);
 		}
 		List<View> rowViews = new List<View>();
 		Dictionary<View,View> titleViews = new  Dictionary<View, View>();
-		public void AddRow(View forRow) { InsertRow (rowViews.Count, forRow); }
+        Dictionary<View, View> crossViews = new Dictionary<View, View>();
+        public void AddRow(View forRow) { InsertRow (rowViews.Count, forRow); }
 		public void InsertRow(int idx, View forRow)
 		{
 			inputs.RowDefinitions.Insert (idx, new RowDefinition { Height = GridLength.Auto });
@@ -38,10 +33,20 @@ namespace Consonance.XamarinFormsView.PCL
 
 			// title maueb
 			if (isn.showName)
-				inputs.Children.Add (titleViews [forRow] = RLab (isn.name));
+            {
+                var tv = titleViews[forRow] = RLab(isn.name);
+                tv.BindingContext = isn;
+                inputs.Children.Add (tv);
+            }
 
-			// view
-			int col = isn.showName ? 1 : 0, colspan = isn.showName ? 1 : 2;
+            // crossview
+            var cv = crossViews[forRow] = CLab(isn);
+            inputs.Children.Add(cv);
+            cv.SetValue(Grid.ColumnProperty, 0);
+            cv.SetValue(Grid.ColumnSpanProperty, 3);
+
+            // view
+            int col = isn.showName ? 1 : 0, colspan = isn.showName ? 1 : 2;
 			forRow.SetValue (Grid.ColumnProperty, col);
 			forRow.SetValue (Grid.ColumnSpanProperty, colspan);
 			inputs.Children.Add (forRow);
@@ -58,12 +63,28 @@ namespace Consonance.XamarinFormsView.PCL
 				if (titleViews.ContainsKey (rowViews [i]) 
 					&& (int)titleViews [rowViews [i]].GetValue (Grid.RowProperty) != i)
 					titleViews [rowViews [i]].SetValue (Grid.RowProperty, i);
+                crossViews[rowViews[i]].SetValue(Grid.RowProperty, i);
 			}
 		}
-
+        InvalidConverter ic = new InvalidConverter(false, true);
+        View CLab(Object bc)
+        {
+            var fr = new Button
+            {
+                InputTransparent = false,
+                BorderWidth = 2.0,
+                BackgroundColor = Color.Transparent,
+                BorderColor = Color.Red,
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill,
+                BindingContext = bc
+            };
+            fr.SetBinding(Frame.IsVisibleProperty, "vvalid", BindingMode.OneWay, ic);
+            return fr;
+        }
 		View RLab(String name)
 		{
-			return new Frame { 
+			var fr  = new Frame { 
 				Content = new Label {
 					Text = name, 
 					HorizontalOptions = LayoutOptions.End, 
@@ -71,18 +92,22 @@ namespace Consonance.XamarinFormsView.PCL
 				}, 
 				Padding = new Thickness (5.0, 0, 3.0, 0)
 			};
+            return fr;
 		}
-		public View RemoveRow(int row)
+		public void RemoveRow(int row)
 		{
 			var v = rowViews [row];
+            var vv = v.BindingContext as IValueRequestVM;
+            vv.ClearPropChanged();
 			inputs.Children.Remove (v);
 			rowViews.Remove (v);
 			if (titleViews.ContainsKey (v)) {
 				inputs.Children.Remove (titleViews [v]);
 				titleViews.Remove (v);
 			}
-			vlm.RemoveListen (v.BindingContext as INotifyPropertyChanged);
-            return v;
+            inputs.Children.Remove(crossViews[v]);
+            crossViews.Remove(v);
+            vlm.RemoveListen (vv);
 		}
 		void Completed(bool suc)
 		{

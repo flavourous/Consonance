@@ -81,3 +81,11 @@ entries description is probbably about the foodinfo used. none info needs to say
 need initial edit validation {{{
 when editing, it doesnt initially validate, so you cant just click ok...
 }}}
+DateRequest needed now {{{
+cause we upgraded datetimerequest to have time, but, not all ppl wat the time
+ - tracker wants just date.
+}}}
+red when first time {{{
+shouldnt inval red if just started on valuerequestview... neds that switch
+ still crashes! omg. its def a bug in Frame into canvas.java.  I'm using sth different and lo it works.
+}}}

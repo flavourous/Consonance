@@ -1,9 +1,19 @@
-DateRequest needed now {{{
-cause we upgraded datetimerequest to have time, but, not all ppl wat the time
- - tracker wants just date.
+choose is showing on manage screen{{{
+it should be off! hmmmmm
 }}}
-imporve repeaters vrvs {{{
-datetime? will help.
-both need time field.
-can we set size of switch box? hmm
+says 100g grams {{{
+it should say xxx grams
 }}}
+caloreris per 1 day on plan {{{
+thats dumb...improve texties!
+}}}
+choose info is async{{{
+can openit twice...
+}}}
+when not tied to repeaters well{{{
+repeatevery gets now insead of the date on the repeater.  dunno about repeaton.}}}
+delete info the list doesnt update{{{
+not sure, it's manually bound.
+}}}
+delete info, edit assoc entry, crash{{{
+cause the query is empty. need to manage like when we delete a tracker instance somehow.  Perhaps reset to a quick entry with relevant values and make a note. or give options...}}}
