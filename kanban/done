@@ -89,3 +89,9 @@ red when first time {{{
 shouldnt inval red if just started on valuerequestview... neds that switch
  still crashes! omg. its def a bug in Frame into canvas.java.  I'm using sth different and lo it works.
 }}}
+choose is showing on manage screen{{{
+it should be off! hmmmmm
+}}}
+delete info the list doesnt update{{{
+not sure, it's manually bound.
+}}}

@@ -252,7 +252,7 @@ namespace Consonance
 					vm.originator = e;
 					return vm;
 				}, 
-				ee => GetInfo<EatInfoType>(ee.infoinstanceid)
+				ee => GetInfo<EatInfoType>(ee)
 			);
 		}
 		public IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime day)
@@ -271,7 +271,7 @@ namespace Consonance
 					vm.originator = e;
 					return vm;
 				}, 
-				ee => GetInfo<BurnInfoType>(ee.infoinstanceid)
+				ee => GetInfo<BurnInfoType>(ee)
 			);
 		}
 		public IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime day)
@@ -280,10 +280,16 @@ namespace Consonance
 			EntryRetriever<BurnType> burnModels = (s,e) =>  modelHandler.outhandler.Get (instance.originator as DietInstType, s,e);
 			return presenter.DetermineOutTrackingForDay (instance.originator as DietInstType, eatModels, burnModels, day);
 		}
-		T GetInfo<T>(int? id) where T : BaseInfo, new()
+		T GetInfo<T>(BaseEntry ent) where T : BaseInfo, new()
 		{
-			if (!id.HasValue) return null;
-			return conn.Table<T> ().Where (e => e.id == id.Value).First();
+            T info = null;
+            if (ent.infoinstanceid.HasValue)
+            {
+                var res = conn.Table<T>().Where(e => e.id == ent.infoinstanceid.Value);
+                if (res.Count() == 0) ent.infoinstanceid = null;
+                else info = res.First();
+            }
+            return info;
 		}
 		public IEnumerable<InfoLineVM> InInfos(bool complete)
 		{
@@ -398,7 +404,7 @@ namespace Consonance
 			InfoLineVM sinfo = null;
 			if(editing != null && editing.infoinstanceid.HasValue)
 			{
-				var imod = GetInfo<I> (editing.infoinstanceid);
+				var imod = GetInfo<I> (editing);
 				sinfo = rep (imod);
 				sinfo.originator = imod; // dont forget to set this this time...
 			}

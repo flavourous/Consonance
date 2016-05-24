@@ -6,6 +6,8 @@ using Xamarin.Forms;
 using System.Runtime.CompilerServices;
 using System.Collections;
 using LibSharpHelp;
+using System.Collections.Specialized;
+using System.Diagnostics;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -16,7 +18,10 @@ namespace Consonance.XamarinFormsView.PCL
 			get { return mselectedItem; }
 			set {
 				if(mselectedItem != null) mselectedItem.selected = false;
-				mselectedItem = value;
+				var val = value ?? Nothingable.noth;
+                foreach (var it in Items) // subvert reference comparison
+                    if (OriginatorVM.OriginatorEquals(it, val))
+                        mselectedItem = it;
 				if(mselectedItem != null) mselectedItem.selected = true;
 				OnPropertyChanged ("selectedItem");
 			}
@@ -40,15 +45,16 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		public TaskCompletionSource<InfoLineVM> completedTask;
 		public InfoManageType imt;
-		bool choice = false;
 		public InfoManageView (bool choice, bool manage)
 		{
 			InitializeComponent ();
 			BindingContext = this;
-			this.choice = choice;
-			if (manage) infoList.ItemTemplate = Resources ["dt_act"] as DataTemplate;
-			else infoList.ItemTemplate = Resources ["dt_noact"] as DataTemplate;
 
+            String res = "dt_none";
+            if (choice && manage) res = "dt_both";
+            else if (choice) res = "dt_choose";
+            else if (manage) res = "dt_manage";
+			infoList.ItemTemplate = Resources [res] as DataTemplate;
 		}
 		protected override bool OnBackButtonPressed ()
 		{
@@ -80,20 +86,33 @@ namespace Consonance.XamarinFormsView.PCL
 	}
 	public class Nothingable : ObservableCollectionProxy<InfoLineVM, IObservableCollection<InfoLineVM>>
 	{
-		public Nothingable(IObservableCollection<InfoLineVM> val) : base(val) { }
-		public static InfoLineVM noth = new InfoLineVM { name = "Nothing" };
-		public override InfoLineVM this[int index] {
-			get 
-			{
-				if( index > 0) return base[index - 1];
-				return noth;
-			}
-			set { if (index > 0) base[index - 1] = value; }
-		}
-		public override int Count { get { return base.Count + 1; } }
-		public override IEnumerator<InfoLineVM> GetEnumerator ()
-		{
-			return new ListEnumerator<InfoLineVM> (this);
-		}
-	}
+        public static readonly InfoLineVM noth = new InfoLineVM { name = "Nothing" };
+		public Nothingable(IObservableCollection<InfoLineVM> val) : base(val)
+        {
+            val.CollectionChanged += Val_CollectionChanged;
+            Val_CollectionChanged(null, null);
+        }
+
+        // stop the proxying, do self. just reset.  cant recreate the event args reliably.
+        Object raiselock = new object();
+        bool fix_in_progress = false;
+        public override event NotifyCollectionChangedEventHandler CollectionChanged = delegate { };
+        private void Val_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Interlocking checking for nothing item.
+            lock (raiselock)
+            {
+                // Do the thing you were going to do...
+                if (sender != null) CollectionChanged(sender, e);
+                bool is_ok = Count > 0 && this[0] == noth;
+                if(!is_ok && !fix_in_progress)
+                {
+                    fix_in_progress = true;
+                    Remove(noth); // might be in wrong order...
+                    Insert(0, noth);
+                    fix_in_progress = false;
+                }
+            }
+        }
+    }
 }
