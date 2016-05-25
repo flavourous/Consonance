@@ -435,8 +435,8 @@ namespace Consonance
 
 		Flecter<InInfo> InInfoTrack;
 		Flecter<OutInfo> OutInfoTrack;
-		Flecter<InInfo> InQuant;
-		Flecter<OutInfo> OutQuant;
+		Flecter<In> InQuant;
+		Flecter<Out> OutQuant;
 		Flecter<In> InTrack;
 		Flecter<Out> OutTrack;
 		public SimpleTrackyHelpyPresenter(TrackerDetailsVM details, TrackerDialect dialect, IReflectedHelpy<InInfo,OutInfo,MIn,MOut> helpy)
@@ -447,8 +447,8 @@ namespace Consonance
 
 			InInfoTrack = new Flecter<InInfo> (helpy.input.tracked.fieldName);
 			OutInfoTrack = new Flecter<OutInfo> (helpy.output.tracked.fieldName);
-			InQuant = new Flecter<InInfo> (helpy.input.quantifier.fieldName);
-			OutQuant = new Flecter<OutInfo> (helpy.output.quantifier.fieldName);
+			InQuant = new Flecter<In> (helpy.input.quantifier.fieldName);
+			OutQuant = new Flecter<Out> (helpy.output.quantifier.fieldName);
 			InTrack = new Flecter<In> (helpy.input.tracked.fieldName);
 			OutTrack = new Flecter<Out> (helpy.output.tracked.fieldName);
 
@@ -457,30 +457,34 @@ namespace Consonance
 		IReadOnlyList<Flecter<Inst>> fvalues;
 
 		#region IDietPresenter implementation
-		String QuantyGet(String amt, String unit, String name)
+		String QuantyGet<A, B>(IReflectedHelpyQuants<A, B> q, B i, String name)
 		{
-			return amt + " " + unit + " of " + name;
+			return q.Convert(i) + " of " + name;
 		}
+        String QuantyGet1<A, B>(IReflectedHelpyQuants<A, B> q)
+        {
+            return q.tracked.name + " / " + q.Convert(q.InfoFixedQuantity);
+        }
         const String noninfo = "Quick Entry";
 		public EntryLineVM GetRepresentation (In entry, InInfo info)
 		{
-			return new EntryLineVM (
-				entry.entryWhen,
-				TimeSpan.Zero,
-				entry.entryName, 
-				info == null ? noninfo : QuantyGet (helpy.input.Convert((MIn)InQuant.Get (info)), helpy.input.quantifier.name, info.name), 
-				new KVPList<string, double> { { helpy.trackedname, (double)InTrack.Get (entry) } }
-			);
+            return new EntryLineVM(
+                entry.entryWhen,
+                TimeSpan.Zero,
+                entry.entryName,
+                info == null ? noninfo : QuantyGet(helpy.input, (MIn)InQuant.Get(entry), info.name),
+                new KVPList<string, double> { { helpy.trackedname, (double)InTrack.Get(entry) } }
+            );
 		}
 		public EntryLineVM GetRepresentation (Out entry, OutInfo info)
 		{
-			return new EntryLineVM (
-				entry.entryWhen,
-				TimeSpan.Zero,
-				entry.entryName,
-				info == null ? noninfo : QuantyGet (helpy.output.Convert((MOut)OutQuant.Get (info)), helpy.output.quantifier.name, info.name), 
-				new KVPList<string, double> { { helpy.trackedname, (double)OutTrack.Get (entry) } }
-			);
+            return new EntryLineVM(
+                entry.entryWhen,
+                TimeSpan.Zero,
+                entry.entryName,
+                info == null ? noninfo : QuantyGet(helpy.output, (MOut)OutQuant.Get(entry), info.name),
+                new KVPList<string, double> { { helpy.trackedname, (double)OutTrack.Get(entry) } }
+            );
 		}
 
 		RecurringAggregatePattern[] GetTargets(Inst entry)
@@ -517,14 +521,15 @@ namespace Consonance
 		}
 		public InfoLineVM GetRepresentation (InInfo info)
 		{
-			String t = helpy.input.tracked.name + " / " + helpy.input.Convert ((MIn)InQuant.Get (info));
+            String t = QuantyGet1(helpy.input);
 			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)InInfoTrack.Get(info) } } };
 		}
 		public InfoLineVM GetRepresentation (OutInfo info)
 		{
-			String t = helpy.output.tracked.name + " / " + helpy.output.Convert ((MOut)OutQuant.Get (info));
-			return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)OutInfoTrack.Get(info) } } };
+			String t = QuantyGet1(helpy.output);
+            return new InfoLineVM { name = info.name, displayAmounts = new KVPList<string, double> { { t, (double)OutInfoTrack.Get(info) } } };
 		}
+        
 
 		public IEnumerable<TrackingInfoVM> DetermineInTrackingForDay(Inst di, EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime dayStart)
 		{

@@ -9,8 +9,3 @@ can openit twice...
 }}}
 when not tied to repeaters well{{{
 repeatevery gets now insead of the date on the repeater.  dunno about repeaton.}}}
-delete info the list doesnt update{{{
-not sure, it's manually bound.
-}}}
-delete info, edit assoc entry, crash{{{
-cause the query is empty. need to manage like when we delete a tracker instance somehow.  Perhaps reset to a quick entry with relevant values and make a note. or give options...}}}

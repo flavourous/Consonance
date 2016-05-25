@@ -15,3 +15,7 @@ has start -> has _finish_
 they need datetime? oneliners too ^^
 needs pen/paper design :/
 }}}
+delete info, edit assoc entry, crash{{{
+cause the query is empty. need to manage like when we delete a tracker instance somehow.  Perhaps reset to a quick entry with relevant values and make a note. or give options...
+ - added defense, entryies get disconnected on contact.  needs a warning on delete tought
+}}}
