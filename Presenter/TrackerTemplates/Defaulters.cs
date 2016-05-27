@@ -1,10 +1,32 @@
 ﻿using System;
 using LibRTP;
 using LibSharpHelp;
+using System.Diagnostics;
 
 namespace Consonance
 {
-	class DefaultEntryRequests
+    static class RequestStorageHelperExtensions
+    {
+        /// <summary>
+        /// deals with boring reentranct etc
+        /// </summary>
+        /// <typeparam name="A"></typeparam>
+        /// <param name="from"></param>
+        /// <param name="assignment"></param>
+        public static void Observe<A>(this RequestStorageHelper<A> from, Action<A> assignment)
+        {
+            bool block_reentrancy = false;
+            from.requestChanged += () =>
+            {
+                if (block_reentrancy) return;
+                block_reentrancy = true;
+                assignment(from.request.value);
+                block_reentrancy = false;
+            };
+        }
+    }
+
+    class DefaultEntryRequests
 	{
 		// normal
 		readonly RequestStorageHelper<string> name;
@@ -104,28 +126,34 @@ namespace Consonance
 				else requestPackage.Remove (rRepStart);
 			};
 
+            // connections
+            when.Observe(d => recurrEvery.request.value.PatternFixed = d);
+            recurrEvery.Observe(re => when.request.value = re.PatternFixed);
+
 			// push in reqs
 			requestPackage.Add(nr, wr, rMode);
 
 			// ok how are we set up?
 			Action rModeChanged = () => {
-				// ... so  when one is chosen we should set things up.
-				switch((RecurranceType)recurranceMode.request.value.SelectedOption)
+                // ... so  when one is chosen we should set things up.
+                var ttype = (RecurranceType)recurranceMode.request.value.SelectedOption;
+                switch (ttype)
 				{
 				case RecurranceType.None:
 					requestPackage.RemoveAll(rRepStarted, rRepStart, rRepEnded,rRepEnd, rRepOn, rRepEvery); // fails nicely.
 					requestPackage.Ensure(firstItem+1, wr);
 					break;
 				case RecurranceType.RecurrsEveryPattern:
-					requestPackage.RemoveAll(rRepOn, wr);
-					requestPackage.Ensure(requestPackage.IndexOf(rMode) +1, rRepEvery, rRepStarted, rRepEnded);
+					requestPackage.RemoveAll(rRepOn);
+                    requestPackage.Ensure(firstItem + 1, wr);
+                    requestPackage.Ensure(requestPackage.IndexOf(rMode) +1, rRepEvery, rRepStarted, rRepEnded);
 					CheckRepStartedEnded();
 					break;
 				case RecurranceType.RecurrsOnPattern:
 					requestPackage.RemoveAll(rRepEvery, wr);
 					requestPackage.Ensure(requestPackage.IndexOf(rMode) +1, rRepOn, rRepStarted, rRepEnded);
 					CheckRepStartedEnded();
-					break;
+                    break;
 				}
 			};
 

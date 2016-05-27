@@ -170,11 +170,23 @@ namespace Consonance.XamarinFormsView.PCL
             App.platform.UIThread(() =>
             {
                 PropertyChanged(this, new PropertyChangedEventArgs(n));
-                if (n == "value") ValueChanged();
+                if (n == "value")
+                {
+                    if(onvalue != null) onvalue.PropertyChanged -= Onvalue_PropertyChanged;
+                    onvalue = value as INotifyPropertyChanged;
+                    if (onvalue != null) onvalue.PropertyChanged += Onvalue_PropertyChanged;
+                    ValueChanged();
+                }
             });
 		}
+
+        void Onvalue_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged("value"); // chained
+        }
         #endregion
 
+        private INotifyPropertyChanged onvalue = null;
 		private T mvalue;
 		public T value  { get { return mvalue; } set { mvalue = value; OnPropertyChanged("value"); } }
 

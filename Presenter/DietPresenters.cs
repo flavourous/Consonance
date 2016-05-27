@@ -391,16 +391,28 @@ namespace Consonance
 			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
 			var infoRequest = getValues.requestFactory.InfoLineVMRequestor (info_plural);
 			infoRequest.valid = true; // always true
-			Action chooseDelegate = null;
-			chooseDelegate = () => PlatformGlobal.Run (async () => {
-				var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;
-				using (var hk = new HookedInfoLines (this, imt))
-				{
-					var res = await getInput.InfoView (InfoCallType.AllowManage | InfoCallType.AllowSelect, imt, hk.lines, infoRequest.value.selected);
-					infoRequest.value = new InfoSelectValue() { selected = res }; // like this fires changed
-					infoRequest.value.choose += chooseDelegate; // but re hook needed then!
-				}
-			});
+			Func<Task> chooseDelegate = null;
+            chooseDelegate = async () =>
+            {
+                TaskCompletionSource<EventArgs> pushed_shim_sadface = new TaskCompletionSource<EventArgs>();
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                PlatformGlobal.Run(async () =>
+                {
+                    var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;
+                    using (var hk = new HookedInfoLines(this, imt))
+                    {
+                        var vtres = getInput.InfoView(InfoCallType.AllowManage | InfoCallType.AllowSelect, imt, hk.lines, infoRequest.value.selected);
+                        await vtres.Pushed;
+                        pushed_shim_sadface.SetResult(new EventArgs());
+                        var res = await vtres.Completed;
+                        infoRequest.value = new InfoSelectValue() { selected = res }; // like this fires changed
+                        infoRequest.value.choose += chooseDelegate; // but re hook needed then!
+                    }
+                });
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                await pushed_shim_sadface.Task;
+                Debug.WriteLine("choosedelegatecompleted");
+            };
 			InfoLineVM sinfo = null;
 			if(editing != null && editing.infoinstanceid.HasValue)
 			{

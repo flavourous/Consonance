@@ -12,6 +12,7 @@ using LibRTP;
 using SQLite.Net.Interop;
 using System.Reflection;
 using SQLite.Net.Attributes;
+using System.Runtime.CompilerServices;
 
 namespace Consonance
 {
@@ -154,9 +155,8 @@ namespace Consonance
 		{
 			pcm_refholder.VerifyDiet ((cdh, cd) => {
 				using (var hk = new HookedInfoLines (cdh, obj))
-					return input.InfoView (InfoCallType.AllowManage, obj, hk.lines, null);
+					return input.InfoView (InfoCallType.AllowManage, obj, hk.lines, null).Completed;
 			});
-				
 		}
 			
 		void View_trackerinstanceselected (TrackerInstanceVM obj)
@@ -419,7 +419,7 @@ namespace Consonance
 		ViewTask<int> ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
 		Task WarnConfirm (String action, Promise confirmed);
 		Task Message(String msg);
-		Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType imt, IObservableCollection<InfoLineVM> toManage,InfoLineVM initiallySelected); // which ends up calling this one
+		ViewTask<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType imt, IObservableCollection<InfoLineVM> toManage,InfoLineVM initiallySelected); // which ends up calling this one
 		Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd);
 	}
 	public interface IValueRequestBuilder
@@ -450,12 +450,20 @@ namespace Consonance
 		IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
 		IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
 	}
-	public class RecurrsEveryPatternValue
+	public class RecurrsEveryPatternValue : INotifyPropertyChanged
 	{
-		public DateTime PatternFixed;
-		public RecurrSpan PatternType;
+        private DateTime patternFixed;
+        public DateTime PatternFixed
+        {
+            get { return patternFixed; }
+            set { ChangeProperty(() => patternFixed = value); }
+        }
+        public RecurrSpan PatternType;
 		public int PatternFrequency;
-		public RecurrsEveryPatternValue(DateTime date, RecurrSpan pt, int freq)
+
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
+
+        public RecurrsEveryPatternValue(DateTime date, RecurrSpan pt, int freq)
 		{
 			PatternFixed = date;
 			PatternType = pt;
@@ -473,7 +481,14 @@ namespace Consonance
 				       PatternType == RecurrSpan.Week;	
 			}
 		}
-		public RecurrsEveryPattern Create(DateTime? s, DateTime? e)
+
+        void ChangeProperty(Action change, [CallerMemberName]String prop = null)
+        {
+            change();
+            PropertyChanged(this, new PropertyChangedEventArgs(prop));
+        }
+
+        public RecurrsEveryPattern Create(DateTime? s, DateTime? e)
 		{
 			return new RecurrsEveryPattern (PatternFixed, PatternFrequency, PatternType, s, e);
 		}
@@ -547,8 +562,8 @@ namespace Consonance
 	public class InfoSelectValue
 	{
 		public InfoLineVM selected {get;set;}
-		public event Action choose = delegate { };
-		public void OnChoose() { choose(); }
+		public event Func<Task> choose = async delegate { await Task.Yield(); };
+		public async Task OnChoose() { await choose(); }
 
 		public override string ToString ()
 		{

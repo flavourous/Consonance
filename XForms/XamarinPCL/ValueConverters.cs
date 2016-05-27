@@ -116,7 +116,7 @@ namespace Consonance.XamarinFormsView.PCL
 			List<String> kls = new List<string> ();
 			var kl = value as KVPList<String,double>;
 			foreach (var kv in kl ?? new KVPList<string, double>())
-				kls.Add (kv.Key + ": " + kv.Value);
+				kls.Add (kv.Value + " " + kv.Key);
 			return String.Join ("\n", kls.ToArray ());
 		}
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

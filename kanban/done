@@ -1,4 +1,4 @@
-:roblems with PCL {{{
+roblems with PCL {{{
 it wouldnt load if it was a superscope ns/asm of the including droid ns/asm.  Wouldnt load the App class with that ns "conflict".  With the "asm" conflict, I got random binding errors even though the asm directives were ok NPE and stuff.  Guessits xamarin framework assuming around non-exotic ns/asm setups.}}}
 flectors are fucked?{{{
  - well, adding an entry with an info doesnt work, crashes during flector. I did change te impl of those.  I cant breakpoint it either...sth strange maybe VS+Xamarin? Dunno.  I'm tracing instead.
@@ -94,4 +94,28 @@ it should be off! hmmmmm
 }}}
 delete info the list doesnt update{{{
 not sure, it's manually bound.
+}}}
+says 100g grams {{{
+it should say xxx grams
+}}}
+caloreris per 1 day on plan {{{
+thats dumb...improve texties!
+}}}
+when not tied to repeaters well{{{
+repeat every gets now insead of the date on the repeater.  dunno about repeaton.
+}}}
+repeatevery need time too{{{
+at least.
+ok.  it just keeps when on the thing and updates using that.
+}}}
+choose info is async{{{
+can openit twice...
+same with choose on info as well as the vrv...
+}}}
+delete info, edit assoc entry, crash{{{
+cause the query is empty. need to manage like when we delete a tracker instance somehow.  Perhaps reset to a quick entry with relevant values and make a note. or give options...
+ - added defense, entryies get disconnected on contact.  needs a warning on delete tought
+}}}
+need warn delete info with fkr{{{
+some entries might still refer toit, and will be reset next time
 }}}

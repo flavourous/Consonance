@@ -4,6 +4,7 @@ using Xamarin.Forms;
 using LibSharpHelp;
 using System.ComponentModel;
 using LibRTP;
+using System.Globalization;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -27,6 +28,10 @@ namespace Consonance.XamarinFormsView.PCL
 	{
 		public PickerIval() { SelectedIndexChanged += (sender, e) => InvalidateMeasure(); }
 	}
+    class DateREShim
+    {
+        public DateTime value { get; set; }
+    }
 	public class RecurrsEveryPatternValueRequestConverter : IValueConverter
 	{
 		public event Action<String> changed = delegate { };
@@ -38,8 +43,7 @@ namespace Consonance.XamarinFormsView.PCL
 			if (!Object.ReferenceEquals(reference,value)) 
 				reference = value as RecurrsEveryPatternValue ?? new RecurrsEveryPatternValue();
 
-			switch ((String)parameter) {
-				case "date": return reference.PatternFixed;
+            switch ((String)parameter) {
 				case "type": return  Math.Log10 ((int)reference.PatternType) / Math.Log10 (2);
 				case "freq": return reference.PatternFrequency;	
 			}
@@ -52,7 +56,6 @@ namespace Consonance.XamarinFormsView.PCL
 			// Sorry, we've got nothing to do
 			if (reference != null)
 			switch ((String)parameter) {
-				case "date": reference.PatternFixed = (DateTime)value; break;
 				case "type": reference.PatternType = (LibRTP.RecurrSpan)(1 << (int)value); break;
 				case "freq": 
 					int v;
@@ -62,8 +65,9 @@ namespace Consonance.XamarinFormsView.PCL
 			}
 			changed ((String)parameter);
 			return reference;
-		}
-		#endregion
-	}
+        }
+        #endregion
+    }
+    
 }
 

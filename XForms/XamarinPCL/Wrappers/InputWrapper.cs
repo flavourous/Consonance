@@ -13,22 +13,24 @@ namespace Consonance.XamarinFormsView.PCL
     {
 		public static Action<String> message = delegate { };
 		readonly CreateImanHandler iman;
-		public Task<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType mt, IObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
+		public ViewTask<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType mt, IObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
 		{
+            TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs>();
 			var tt = getCurrent ();
 			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
 			bool choiceEnabled = (calltype & InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
 			bool manageEnabled = (calltype & InfoCallType.AllowManage) == InfoCallType.AllowManage;
+            InfoManageView iman_c = null;
             App.platform.UIThread (() => {
-				var iman_c = iman (choiceEnabled, manageEnabled);
+				iman_c = iman (choiceEnabled, manageEnabled);
 				iman_c.Title = mt == InfoManageType.In ? tt.dialect.InputInfoPlural : tt.dialect.OutputInfoPlural;
 				iman_c.Items = toManage;
 				iman_c.initiallySelectedItem = iman_c.selectedItem = initiallySelected; // null works.
 				iman_c.imt = mt;
 				iman_c.completedTask = tcs;
-				nav.PushAsync (iman_c);
+                nav.PushAsync(iman_c).ContinueWith(t => pushed.SetResult(new EventArgs()));
 			});
-			return tcs.Task; // return result, or initial if it gave null (wich is null if it really was and no change)
+            return new ViewTask<InfoLineVM>(() => nav.RemoveOrPopAsync(iman_c), pushed.Task, tcs.Task); // return result, or initial if it gave null (wich is null if it really was and no change)
 		}
 
 		readonly Func<IAbstractedTracker> getCurrent;

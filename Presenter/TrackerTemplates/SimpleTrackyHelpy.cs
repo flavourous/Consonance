@@ -508,7 +508,7 @@ namespace Consonance
 					kl.Add (helpy.trackedname + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
 				else
 					for (int i = 0; i < target.DayPattern.Length; i++)
-						kl.Add (helpy.trackedname + " for " + TimeSpan.FromDays (target.DayPattern [i]).WithSuffix (), target.DayTargets [i]);	
+						kl.Add (helpy.trackedname + " for " + TimeSpan.FromDays (target.DayPattern [i]).WithSuffix (true), target.DayTargets [i]);	
 			}
 			return new TrackerInstanceVM(
 				dialect,

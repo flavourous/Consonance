@@ -1,21 +1,11 @@
-needs tracksy view{{{
-yeah it's totally not there...
-}}}
-need to impiment invention{{{
-not sure exactly how, but can start with sth basic that can be versioned off with newer better schema
-}}}
 non-ticks datetime what? {{{
 thats what sqlite.net is working with(bugs with default true on connection creating.
 it cuts datetime by 1h each time read from database?:! }}}
-imporve repeaters vrvs {{{
-both need time field.
-can we set size of switch box? hmm
-alignment?
-has start -> has _finish_
-they need datetime? oneliners too ^^
-needs pen/paper design :/
+need to impiment invention{{{
+not sure exactly how, but can start with sth basic that can be versioned off with newer better schema
 }}}
-delete info, edit assoc entry, crash{{{
-cause the query is empty. need to manage like when we delete a tracker instance somehow.  Perhaps reset to a quick entry with relevant values and make a note. or give options...
- - added defense, entryies get disconnected on contact.  needs a warning on delete tought
+slower repeat choose info{{{
+each time you chose an info on an entry, returning to the entry screen gets slower (or, its loading does.)
+closing the entry vrv clears the issue.
+possibly some remaining bindings on the inforequestvalue objects?
 }}}

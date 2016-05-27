@@ -1,11 +1,15 @@
-says 100g grams {{{
-it should say xxx grams
+need multiple quantifiers {{{
+cause, might be a serving, or grams or whatever!
+or. or we can say "oh it's name depends on the info instance"
 }}}
-caloreris per 1 day on plan {{{
-thats dumb...improve texties!
+needs tracksy view{{{
+yeah it's totally not there...
 }}}
-choose info is async{{{
-can openit twice...
+imporve repeaters vrvs {{{
+both need time field.
+can we set size of switch box? hmm
+alignment?
+has start -> has _finish_
+they need datetime? oneliners too ^^
+needs pen/paper design :/
 }}}
-when not tied to repeaters well{{{
-repeatevery gets now insead of the date on the repeater.  dunno about repeaton.}}}

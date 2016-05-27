@@ -12,11 +12,15 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			InitializeComponent ();
 		}
-		public void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
+        bool block_reentrancy = false;
+		public async void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
 		{
+            if (block_reentrancy) return;
 			var vm = BindingContext as IValueRequest<InfoSelectValue>;
-			vm.value.OnChoose();
-		}
+            block_reentrancy = true;
+			await vm.value.OnChoose();
+            block_reentrancy = false;
+        }
 	}
 	class InfoSelectRequestConverter : IValueConverter
 	{

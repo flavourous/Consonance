@@ -62,9 +62,11 @@ namespace Consonance.XamarinFormsView.PCL
 			return base.OnBackButtonPressed ();
 		}
 
-		void OnChoose(Object s, EventArgs e) 
-		{ 
-			Navigation.PopAsync (); // pop furst AVOID BUG?
+        bool completed = false;
+		async void OnChoose(Object s, EventArgs e) 
+		{
+            if (completed) return; completed = true;
+			await Navigation.PopAsync (); // pop furst AVOID BUG?
 			completedTask.SetResult (selectedItem == Nothingable.noth ? null : selectedItem); 
 		}
 

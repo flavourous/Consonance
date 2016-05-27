@@ -9,6 +9,5 @@
 		<Entry x:Name="en" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=freq}" Keyboard="Numeric"/>
 		<l:PickerIval SelectedIndex="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=type}" x:Name="picky"/>
 		<Label YAlign="Center">@</Label>
-		<DatePicker Format="dd/MM/yyyy" Date="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=date}"/>
 	</l:StackLayoutIval>
 </ContentView>
