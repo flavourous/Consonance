@@ -27,66 +27,62 @@ namespace Consonance.XamarinFormsView.PCL
     // one of these is attached to a date picker and a time picker
     public class DateTimeStateConverter : IValueConverter
     {
-        DateTime current;
+        DateTime? current;
+        DateTime lastKnown = DateTime.Now;
 
         //Read
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            // null override
-            if (value == null) return null;
 
             // valid.
-            if(value is DateTime)
-            {
-                // Always store what's just bean read in.
-                current = (DateTime)value;
-                // date picker - easy
-                if (targetType == typeof(DateTime))
-                {
-                    Debug.WriteLine("Converting " + value + " to datetime, which is itself " + current);
-                    return current;
-                }
-                // timepicker 
-                else if (targetType == typeof(TimeSpan))
-                {
-                    var ts = new TimeSpan(current.Hour, current.Minute, current.Second);
-                    Debug.WriteLine("Converting " + value + " to timespan " + ts);
-                    return ts;
-                }
-                throw new NotImplementedException("invalid target");
-            }
-            throw new NotImplementedException("invalid value type");
+            // Always store what's just bean read in.
+            current = value is DateTime ? (DateTime)value : value as DateTime?;
+            lastKnown = current ?? lastKnown;
+            // date picker - easy
+            if (targetType == typeof(DateTime)) return lastKnown;
+            // timepicker 
+            else if (targetType == typeof(TimeSpan))
+                return new TimeSpan(lastKnown.Hour, lastKnown.Minute, lastKnown.Second);
+            // on/pff
+            else if (targetType == typeof(bool)) return current.HasValue;
+            throw new NotImplementedException("Conversion fallthrough");
         }
 
         //Write
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            // null override
-            if (value == null) return null;
-
             //valid.
-            if (targetType == typeof(DateTime))
+            if (targetType == typeof(DateTime) || targetType == typeof(DateTime?))
             {
-                // from datepicker
-                if (value is DateTime)
+                if (current.HasValue)
                 {
-                    var dt = (DateTime)value;
-                    var ndt = new DateTime(dt.Year, dt.Month, dt.Day,
-                        current.Hour, current.Minute, current.Second);
-                    Debug.WriteLine("Incoming datetime from datepicker is " + dt + ", we had: " + current + " which becomes: " + ndt);
-                    return current = ndt;
+                    // from datepicker
+                    if (value is DateTime)
+                    {
+                        var dt = (DateTime)value;
+                        current = lastKnown = new DateTime(dt.Year, dt.Month, dt.Day,
+                            current.Value.Hour, current.Value.Minute, current.Value.Second);
+                    }
+                    // from timepikcer
+                    else if (value is TimeSpan)
+                    {
+                        var ts = (TimeSpan)value;
+                        if (ts.TotalHours > 24.0) ts = new TimeSpan(0, 0, 0);
+                        current = lastKnown = new DateTime(
+                            current.Value.Year, current.Value.Month, current.Value.Day,
+                            ts.Hours, ts.Minutes, ts.Seconds);
+                    }
                 }
-                // from timepikcer
-                else if (value is TimeSpan)
+                if(value is bool)
                 {
-                    var ts = (TimeSpan)value;
-                    if (ts.TotalHours > 24.0) ts = new TimeSpan(0, 0, 0);
-                    var ndt = new DateTime(current.Year, current.Month, current.Day,
-                        ts.Hours, ts.Minutes, ts.Seconds);
-                    Debug.WriteLine("Incoming timespan from timepicker is " + ts + ", we had: " + current + " which becomes: " + ndt);
-                    return current = ndt;
+                    var b = (bool)value;
+                    if(current.HasValue != b)
+                    {
+                        if (b) current = lastKnown;
+                        else current = null;
+                    }
                 }
-                throw new NotImplementedException("invalid value type");
+                return current;
             }
             throw new NotImplementedException("invalid target type!");
         }
@@ -170,7 +166,6 @@ namespace Consonance.XamarinFormsView.PCL
                 return (bool)value ? yes : no;
             return null;
         }
-
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();

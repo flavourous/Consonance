@@ -1,4 +1,4 @@
-roblems with PCL {{{
+:oblems with PCL {{{
 it wouldnt load if it was a superscope ns/asm of the including droid ns/asm.  Wouldnt load the App class with that ns "conflict".  With the "asm" conflict, I got random binding errors even though the asm directives were ok NPE and stuff.  Guessits xamarin framework assuming around non-exotic ns/asm setups.}}}
 flectors are fucked?{{{
  - well, adding an entry with an info doesnt work, crashes during flector. I did change te impl of those.  I cant breakpoint it either...sth strange maybe VS+Xamarin? Dunno.  I'm tracing instead.
@@ -118,4 +118,27 @@ cause the query is empty. need to manage like when we delete a tracker instance 
 }}}
 need warn delete info with fkr{{{
 some entries might still refer toit, and will be reset next time
+}}}
+crash vrv r on {{{
+if you select less than 2 options.
+}}}
+imporve repeaters vrvs {{{
+can we set size of switch box? hmm
+alignment?
+has start -> has _finish_
+they need datetime? oneliners too ^^
+needs pen/paper design :/
+
+
+EVERY
+`````
+Just needs "n <timespan>" fields. easy.
+
+ON
+``
+shorten, with tickboxy :
+on the [1]st day     <x>
+-- --- [-]-- _week_  < >
+-- --- [-]-- _month_ < >
+of the [-]-- year    <x>
 }}}

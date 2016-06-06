@@ -14,14 +14,7 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			InitializeComponent ();
 			picky.Items.AddAll (new List<String> { "Days", "Weeks", "Months", "Years" });
-			convy.changed += parameter => sl.Ival ();
-		}
-	}
-	public class StackLayoutIval : StackLayout
-	{
-		public void Ival() {
-			InvalidateLayout ();
-			ForceLayout ();
+            en.TextChanged += (o, e) => mg.ForceLayout();
 		}
 	}
 	public class PickerIval : Picker

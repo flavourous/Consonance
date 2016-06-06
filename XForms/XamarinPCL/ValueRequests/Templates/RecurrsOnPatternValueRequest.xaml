@@ -3,9 +3,12 @@
 	<ContentView.Resources>
 		<ResourceDictionary>
 			<l:RecurrsOnPatternValueRequestConverter x:Key="rConverter"/>
+      <Style TargetType="Label">
+        <Setter Property="VerticalOptions" Value="Center"/>
+      </Style>
 		</ResourceDictionary>
 	</ContentView.Resources>
-	<Grid RowSpacing="0" ColumnSpacing="0">
+	<Grid RowSpacing="0" ColumnSpacing="0" x:Name="mg">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="auto"/>
 			<ColumnDefinition Width="auto"/>
@@ -18,29 +21,28 @@
 			<RowDefinition Height="auto" />
 			<RowDefinition Height="auto" />
 		</Grid.RowDefinitions>
+    <Label Grid.Row="0" Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=prefix-day}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daycolor}"/>
+		<Entry Grid.Row="0" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=dayval}" Keyboard="Numeric"
+			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daybox}"/>
+		<Label Grid.Row="0" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=suffix-day}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daycolor}"/>
+		<Switch Grid.Row="0" Grid.Column="3" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=day}" HorizontalOptions="End"/>
 
-		<Label Grid.Row="0" Grid.Column="0">Day</Label>
-		<Switch Grid.Row="0" Grid.Column="1" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=day}"/>
-		<Entry Grid.Row="0" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=dayval}" Keyboard="Numeric"
-			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daybox}" />
-		<Label Grid.Row="0" Grid.Column="3" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=explain-day}"/>
-
-		<Label Grid.Row="1" Grid.Column="0">Week</Label>
-		<Switch Grid.Row="1" Grid.Column="1" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=week}"/>
-		<Entry Grid.Row="1" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekval}" Keyboard="Numeric"
+    <Label Grid.Row="1" Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=prefix-week}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekcolor}"/>
+		<Entry Grid.Row="1" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekval}" Keyboard="Numeric"
 			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekbox}"/>
-		<Label Grid.Row="1" Grid.Column="3" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=explain-week}"/>
+		<Label Grid.Row="1" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=suffix-week}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekcolor}"/>
+		<Switch Grid.Row="1" Grid.Column="3" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=week}" HorizontalOptions="End"/>
 
-		<Label Grid.Row="2" Grid.Column="0">Month</Label>
-		<Switch Grid.Row="2" Grid.Column="1" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=month}"/>
-		<Entry Grid.Row="2" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthval}" Keyboard="Numeric"
+    <Label Grid.Row="2" Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=prefix-month}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthcolor}"/>
+		<Entry Grid.Row="2" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthval}" Keyboard="Numeric"
 			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthbox}"/>
-		<Label Grid.Row="2" Grid.Column="3" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=explain-month}"/>
+		<Label Grid.Row="2" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=suffix-month}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthcolor}"/>
+		<Switch Grid.Row="2" Grid.Column="3" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=month}" HorizontalOptions="End"/>
 
-		<Label Grid.Row="3" Grid.Column="0">Year</Label>
-		<Switch Grid.Row="3" Grid.Column="1" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=year}"/>
-		<Entry Grid.Row="3" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearval}" Keyboard="Numeric"
+    <Label Grid.Row="3" Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=prefix-year}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearcolor}"/>
+		<Entry Grid.Row="3" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearval}" Keyboard="Numeric"
 			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearbox}"/>
-		<Label Grid.Row="3" Grid.Column="3" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=explain-year}"/>
+		<Label Grid.Row="3" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=suffix-year}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearcolor}"/>
+		<Switch Grid.Row="3" Grid.Column="3" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=year}" HorizontalOptions="End"/>
 	</Grid>
 </ContentView>

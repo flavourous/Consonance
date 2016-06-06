@@ -5,9 +5,12 @@
 			<l:RecurrsEveryPatternValueRequestConverter x:Name="convy" x:Key="rConverter"/>
 		</ResourceDictionary>
 	</ContentView.Resources>
-	<l:StackLayoutIval x:Name="sl" Orientation="Horizontal">
+  <Grid x:Name="mg">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="auto"/>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
 		<Entry x:Name="en" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=freq}" Keyboard="Numeric"/>
-		<l:PickerIval SelectedIndex="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=type}" x:Name="picky"/>
-		<Label YAlign="Center">@</Label>
-	</l:StackLayoutIval>
+		<l:PickerIval Grid.Column="1" SelectedIndex="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=type}" x:Name="picky"/>
+  </Grid>
 </ContentView>

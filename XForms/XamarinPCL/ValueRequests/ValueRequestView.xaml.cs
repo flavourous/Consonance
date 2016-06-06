@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Reflection;
 using Xamarin.Forms;
 
@@ -22,7 +23,7 @@ namespace Consonance.XamarinFormsView.PCL
             while (rowViews.Count > 0)
                 RemoveRow(rowViews.Count - 1);
 		}
-		List<View> rowViews = new List<View>();
+        List<View> rowViews = new List<View>();
 		Dictionary<View,View> titleViews = new  Dictionary<View, View>();
         Dictionary<View, View> crossViews = new Dictionary<View, View>();
         public void AddRow(View forRow) { InsertRow (rowViews.Count, forRow); }
@@ -56,7 +57,7 @@ namespace Consonance.XamarinFormsView.PCL
 			rowViews.Insert (idx, forRow);
 			vlm.ListenForValid (isn);
 
-			//process after
+			// process after
 			for (int i = 0; i < rowViews.Count; i++) {
 				if((int)rowViews[i].GetValue (Grid.RowProperty) != i)
 					rowViews[i].SetValue (Grid.RowProperty, i);

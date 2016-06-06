@@ -13,6 +13,8 @@ namespace Consonance.XamarinFormsView.PCL
 		public RecurrsOnPatternValueRequest ()
 		{
 			InitializeComponent ();
+            //foreach (var c in mg.Children)
+            //    c.PropertyChanged += (o, e) => mg.ForceLayout();
 		}
 	}
 
@@ -26,37 +28,53 @@ namespace Consonance.XamarinFormsView.PCL
 			if (!Object.ReferenceEquals(reference,value)) 
 				reference = value as RecurrsOnPatternValue ?? new RecurrsOnPatternValue();
 
-			switch ((String)parameter) {
-			case "day": return GetOnValue(RecurrSpan.Day, true);
-			case "daybox": return GetOnValue(RecurrSpan.Day, false);
-			case "dayval": return GetValue(RecurrSpan.Day);
-			case "week": return GetOnValue(RecurrSpan.Week, true);
-			case "weekbox": return GetOnValue(RecurrSpan.Week, false);
-			case "weekval": return GetValue(RecurrSpan.Week);
-			case "month": return GetOnValue(RecurrSpan.Month, true);
-			case "monthbox": return GetOnValue(RecurrSpan.Month, false);
-			case "monthval": return GetValue(RecurrSpan.Month);
-			case "year": return GetOnValue(RecurrSpan.Year, true);
-			case "yearval": return GetValue(RecurrSpan.Year);
-			case "yearbox": return false;
-			case "explain-day": return GetExplain (RecurrSpan.Day);
-			case "explain-week": return GetExplain (RecurrSpan.Week);
-			case "explain-month": return GetExplain (RecurrSpan.Month);
-			case "explain-year": return GetExplain (RecurrSpan.Year);
-			}
+            switch ((String)parameter)
+            {
+                case "day": return GetOnValue(RecurrSpan.Day, true);
+                case "daybox": return GetOnValue(RecurrSpan.Day, false);
+                case "daycolor": return GetOnColor(RecurrSpan.Day);
+                case "dayval": return GetValue(RecurrSpan.Day);
+                case "week": return GetOnValue(RecurrSpan.Week, true);
+                case "weekbox": return GetOnValue(RecurrSpan.Week, false);
+                case "weekcolor": return GetOnColor(RecurrSpan.Week);
+                case "weekval": return GetValue(RecurrSpan.Week);
+                case "month": return GetOnValue(RecurrSpan.Month, true);
+                case "monthbox": return GetOnValue(RecurrSpan.Month, false);
+                case "monthcolor": return GetOnColor(RecurrSpan.Month);
+                case "monthval": return GetValue(RecurrSpan.Month);
+                case "year": return GetOnValue(RecurrSpan.Year, true);
+                case "yearval": return GetValue(RecurrSpan.Year);
+                case "yearbox": return false;
+                case "yearcolor": return GetOnColor(RecurrSpan.Year);
+                case "prefix-day": return GetPrefix(RecurrSpan.Day);
+                case "prefix-week": return GetPrefix(RecurrSpan.Week);
+                case "prefix-month": return GetPrefix(RecurrSpan.Month);
+                case "prefix-year": return GetPrefix(RecurrSpan.Year);
+                case "suffix-day": return GetSuffix(RecurrSpan.Day);
+                case "suffix-week": return GetSuffix(RecurrSpan.Week);
+                case "suffix-month": return GetSuffix(RecurrSpan.Month);
+                case "suffix-year": return GetSuffix(RecurrSpan.Year);
+            }
 			// We should not be reaching here in a working application
 			throw new NotImplementedException ();
 		}
-		String GetExplain(RecurrSpan flag)
-		{
-			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
-			if (f.Count < 2) return "-";
-			int fidx = f.IndexOf (flag);
-			if(fidx == -1) return "";
-			if(fidx == 0) return "On the " + reference.PatternValues [fidx].WithSuffix () + " " + flag.AsString ();
-			if (fidx == f.Count - 1) return "of the " + flag.AsString ();
-			return "of the " + reference.PatternValues [fidx].WithSuffix () + " " + flag.AsString ();
-		}
+        String GetPrefix(RecurrSpan fl)
+        {
+            var f = new List<RecurrSpan>(reference.PatternType.SplitFlags());
+            int dx = f.IndexOf(fl);
+            return dx == -1 ? "" : dx == 0 ? "The" : "of the";
+        }
+        String GetSuffix(RecurrSpan fl)
+        {
+            var f = new List<RecurrSpan>(reference.PatternType.SplitFlags());
+            int dx = f.IndexOf(fl);
+            var nst = dx == -1 || dx == f.Count - 1 ? "" : reference.PatternValues[dx].Suffix();
+            return nst + " " + fl.AsString();
+        }
+        Color GetOnColor(RecurrSpan f)
+        {
+            return GetOnValue(f, true) ? Color.Default : Color.FromRgba(.3, .3, .3, .5);
+        }
 		bool GetOnValue (RecurrSpan flag, bool isflag)
 		{
 			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
@@ -74,7 +92,7 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		void SetValue(RecurrSpan flag, Object value)
 		{
-			if (value.ToString() == " ") value = 0;
+			if (value.ToString() == " ") value = "0";
 			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
 			var fi = f.IndexOf (flag);
 			if (fi != -1 && fi < f.Count - 1)
@@ -92,18 +110,20 @@ namespace Consonance.XamarinFormsView.PCL
 					currvals [f [i]] = reference.PatternValues [i];
 
 				// new flags
-				var vals = new List<int>(reference.PatternValues);
-				if (value) {
-					reference.PatternType |= flag;
-					var fidx = new List<RecurrSpan> (reference.PatternType.SplitFlags ()).IndexOf (flag);
-					if (fidx < vals.Count) vals.Insert (fidx, 1);
-					else vals.Add (1);
-				}
-				else {
-					reference.PatternType ^= flag;
-					if(fi < f.Count - 1) vals.RemoveAt (f.IndexOf (flag));
-				}
-				reference.PatternValues = vals.ToArray ();
+				if (value) reference.PatternType |= flag;
+				else reference.PatternType ^= flag;
+
+                // process values
+                var newflags = new List<RecurrSpan>(reference.PatternType.SplitFlags());
+                var newvals = new List<int>();
+                for (int i = 0; i < newflags.Count - 1; i++)
+                {
+                    var nf = newflags[i];
+                    var have = currvals.ContainsKey(nf);
+                    newvals.Add(have ? currvals[nf] : 1);
+                }
+
+				reference.PatternValues = newvals.ToArray ();
 			}
 			// otherwise theres nowt to do.
 		}
@@ -120,7 +140,6 @@ namespace Consonance.XamarinFormsView.PCL
 				case "monthval": SetValue(RecurrSpan.Month, value); break;
 				case "year": SetValue(RecurrSpan.Year, (bool)value); break;
 			}
-
 			return reference;
 		}
 		#endregion

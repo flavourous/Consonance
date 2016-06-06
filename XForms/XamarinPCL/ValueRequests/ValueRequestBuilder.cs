@@ -110,6 +110,7 @@ namespace Consonance.XamarinFormsView.PCL
 		public IValueRequest<InfoSelectValue> InfoLineVMRequestor (string name) { return RequestCreator<InfoSelectValue, InfoSelectRequest> (name); }
 		public IValueRequest<DateTime> DateTimeRequestor (string name) { return RequestCreator<DateTime, DateTimeRequest> (name); }
         public IValueRequest<DateTime> DateRequestor(string name) { return RequestCreator<DateTime, DateRequest>(name); }
+        public IValueRequest<DateTime?> nDateRequestor(string name) { return RequestCreator<DateTime?, nDateRequest>(name); }
         public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return RequestCreator<TimeSpan, TimeSpanRequest> (name); }
         public IValueRequest<double> DoubleRequestor (string name) { return RequestCreator<double, DoubleRequest> (name); }
         public IValueRequest<bool> BoolRequestor (string name) { return RequestCreator<bool, BoolRequest> (name); }
@@ -117,8 +118,8 @@ namespace Consonance.XamarinFormsView.PCL
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return RequestCreator<Barcode, BarcodeRequest> (name); }
 		public IValueRequest<int> IntRequestor (string name){ return RequestCreator<int, IntRequest> (name); }
 		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return RequestCreator<OptionGroupValue, OptionGroupValueRequest> (name); }
-		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name, false); }
-		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name, false); }
+		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name); }
+		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name); }
 		#endregion
 
 		IValueRequest<T> RequestCreator<T, V>(String name, bool showName = true) where V : View, new()
