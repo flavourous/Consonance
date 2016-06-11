@@ -49,7 +49,7 @@ namespace Consonance.XamarinFormsView.PCL
                     if (value == mSelectedPlanItem) return; // block reentrency
                     var use = PlanItems.Contains(value) ? value : null;
                     InTabName = value.dialect.InputEntryVerb;
-                    OutTabName = value.dialect.OutputEntrytVerb;
+                    OutTabName = value.dialect.OutputEntryVerb;
                     InManageName = value.dialect.InputInfoPlural;
                     OutManageName = value.dialect.OutputInfoPlural;
                     mSelectedPlanItem = use;
@@ -57,7 +57,15 @@ namespace Consonance.XamarinFormsView.PCL
                     Debug.WriteLine("view finsihed selecting tracker");
                 }
             }
+
+
             public Action<TrackerInstanceVM> OnPlanSelected = delegate { };
+
+            // tracks
+            private IEnumerable<TrackerTracksVM> inTrack;
+            public IEnumerable<TrackerTracksVM> InTrack { get { return inTrack; }  set { inTrack = value; OnPropertyChanged("InTrack"); } }
+            private IEnumerable<TrackerTracksVM> outTrack;
+            public IEnumerable<TrackerTracksVM> OutTrack { get { return outTrack; }  set { outTrack = value; OnPropertyChanged("OutTrack"); } }
 
             public event PropertyChangedEventHandler PropertyChanged = delegate { };
             public void OnPropertyChanged(string prop)
@@ -112,17 +120,9 @@ namespace Consonance.XamarinFormsView.PCL
 		void OnOutItemDelete(Object s, EventArgs e) { OutItemDelete ((((MenuItem)s).BindingContext as EntryLineVM)); }
 		public event Action OutInfoManage = delegate { };
 		void OutInfoManageClick(Object s, EventArgs e) { OutInfoManage (); }
-
-		////////////////////////
-		// Data Context stuff //
-		////////////////////////
         
 		// Other bits
-		public event Action<TrackerInstanceVM> PlanItemSelected = delegate { };
-
-		// tracks
-		public IEnumerable<TrackerTracksVM> InTrack { get; set; }
-		public IEnumerable<TrackerTracksVM> OutTrack { get; set; }
+		public event Action<TrackerInstanceVM> PlanItemSelected = delegate { };		
 	}
 
 }

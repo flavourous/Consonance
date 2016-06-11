@@ -89,13 +89,23 @@ namespace Consonance
 	}
 	public class TrackerDialect
 	{
-		public readonly String InputEntryVerb, OutputEntrytVerb, InputInfoPlural, OutputInfoPlural;
-		public TrackerDialect(String InputEntryVerb, String OutpuEntrytVerb, String InputInfoPlural, String OutputInfoPlural)
+		public readonly String 
+            InputEntryVerb, OutputEntryVerb, 
+            InputInfoPlural, OutputInfoPlural,
+            InputInfoVerbPast, OutputInfoVerbPast;
+
+        public TrackerDialect(
+            String InputEntryVerb, String OutpuEntryVerb, 
+            String InputInfoPlural, String OutputInfoPlural,
+            String InputInfoVerbPast, String OutputInfoVerbPast
+            )
 		{
 			this.InputEntryVerb = InputEntryVerb;
-			this.OutputEntrytVerb = OutpuEntrytVerb;
+			this.OutputEntryVerb = OutpuEntryVerb;
 			this.InputInfoPlural = InputInfoPlural;
 			this.OutputInfoPlural = OutputInfoPlural;
+            this.InputInfoVerbPast = InputInfoVerbPast;
+            this.OutputInfoVerbPast = OutputInfoVerbPast;
 		}
 	}
 	public class GetValuesPage
@@ -206,6 +216,7 @@ namespace Consonance
 		{
 			// actually call edit promise...
 			model.Edit(diet);
+            conn.Update(diet);
             Changed(DietVMChangeType.Instances, DBChangeType.Edit);
 		}
 		public void RemoveTracker(DietInstType rem)

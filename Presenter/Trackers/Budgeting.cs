@@ -54,7 +54,7 @@ namespace Consonance
 		public IReflectedHelpyQuants<ExpenditureInfo,int> output { get { return _output; } }
 		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Finance budget", "Track spending goals and other finances.", "Finance");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Earn", "Spend", "Incomes", "Expenses");
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Earn", "Spend", "Incomes", "Expenses", "Earned", "Spent");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Finance"; } }
@@ -65,7 +65,7 @@ namespace Consonance
 		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{ 
 			List<RecurringAggregatePattern> targs = new List<RecurringAggregatePattern> ();
-			targs.Add (new RecurringAggregatePattern(1, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			targs.Add (new RecurringAggregatePattern("Balance", 1, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
 			return targs.ToArray ();
 		}
 	}

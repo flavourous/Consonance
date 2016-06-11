@@ -100,6 +100,7 @@
     <Compile Include="Views\Controls\MyStepper.xaml.cs">
       <DependentUpon>MyStepper.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Controls\TextSizedButton.cs" />
     <Compile Include="Views\Controls\TrackerInstanceVM_Row.cs" />
     <Compile Include="Views\Controls\TTView.cs" />
     <Compile Include="Views\ErrorDialog.cs" />

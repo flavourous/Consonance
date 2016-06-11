@@ -1,7 +1,17 @@
-need multiple quantifiers {{{
-cause, might be a serving, or grams or whatever!
-or. or we can say "oh it's name depends on the info instance"
+need to impiment invention{{{
+not sure exactly how, but can start with sth basic that can be versioned off with newer better schema
+
+ok - invention can be against each "trackyhelper". right now we have single quant, single track, single entryvar == tracked.  Can invent against that.
+
+future expanded trackyhelpers with >1 quant,track,entryvar and other relations can define thier own invention.
+
+so, invention can be done with a ValueRequestBuilder? the big challenge is that the trackyhelper needs type inputs.  Can we generate types at runtime reliably and reproducably?
+
+mapping of the ORM to types is based largely on name, and will work if there are matching properties.  So it should work OK, if we can make types that is.
 }}}
-needs tracksy view{{{
-yeah it's totally not there...
+ranges for weektrack are bad! {{{
+it just like days from the current day. etc. or somthing. it also says 8 days, 0 days for ranges!
+}}}
+mixup of pk between tables?{{{
+or maybe the instance is stored on same table?  ot a scav cal diet and normal one, seems to be sharing entries!!!
 }}}

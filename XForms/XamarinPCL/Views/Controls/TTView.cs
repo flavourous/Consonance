@@ -9,7 +9,9 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public class VStacker : ContentView
 	{
-		readonly StackLayout ms;
+        public static Color amnt { get { var rt = Color.Accent; return Color.FromRgba(rt.R / 2, rt.G / 2, rt.B / 2, .5); } }
+        public static Color xtra { get { var rt = Color.Accent; return Color.FromRgba(rt.R  / 5, rt.G / 5, rt.B / 5, .5); } }
+        readonly StackLayout ms;
 		public delegate View Creator(Object val);
 		readonly Creator c;
 		public VStacker(Creator c)
@@ -17,95 +19,193 @@ namespace Consonance.XamarinFormsView.PCL
 			this.c = c;
 			Content = ms = new StackLayout { Orientation = StackOrientation.Vertical };
 		}
-		public IEnumerable Items { get { return GetValue (ItemsProperty) as IEnumerable; } set { SetValue (ItemsProperty, value); } }
-		public static readonly BindableProperty ItemsProperty = BindableProperty.Create<VStacker, IEnumerable>
-			(f => f.Items, null, BindingMode.Default, null, (snd, n, o) => (snd as VStacker).SetItems ());
-		void SetItems()
-		{
-			ms.Children.Clear ();
-			if (Items != null)
-				foreach (var b in Items) 
-					ms.Children.Add (c (b));
-		}
-	}
+        public IEnumerable Items
+        {
+            get { return (IEnumerable)GetValue(ItemsProperty); }
+            set { SetValue(ItemsProperty, value); }
+        }
+        public double Spacing { get { return ms.Spacing; } set { ms.Spacing = value; } }
+        protected event Action ItemsChanged = delegate { };
+        public static readonly BindableProperty ItemsProperty = BindableProperty.Create("Items", typeof(IEnumerable), typeof(VStacker), null, BindingMode.OneWay, null, (bo, oldv, newv) =>
+           {
+               var vs = bo as VStacker;
+               vs.ms.Children.Clear();
+               if (newv != null)
+                   foreach (var b in newv as IEnumerable)
+                       vs.ms.Children.Add(vs.c(b));
+               vs.ItemsChanged();
+           });
+    }
 	public class TTView : VStacker
 	{
-		public TTView() : base(Generator) { }
-		static View Generator(Object vmo)
+        TextSizedButton b;
+        StackLayout oc;
+		public TTView() : base(Generator)
+        {
+            Spacing = 3;
+            oc = Content as StackLayout;
+            var th = new Frame
+            {
+                Padding = new Thickness(0),
+                Content = b = new TextSizedButton()
+                {
+                    VerticalOptions = LayoutOptions.Start,
+                    HorizontalOptions = LayoutOptions.End,
+                }
+            };
+            b.Clicked += Cb_Clicked;
+            Content = new StackLayout
+            {
+                Spacing = 0.0,
+                Orientation = StackOrientation.Vertical,
+                Children = { th, new ScrollView { Content = oc, VerticalOptions = LayoutOptions.Fill } },
+                VerticalOptions = LayoutOptions.Fill
+            };
+            ItemsChanged += TTView_ItemsChanged;
+        }
+
+        bool expanded = false;
+        private void TTView_ItemsChanged()
+        {
+            expanded = false;
+            ProcExp();
+        }
+        private void Cb_Clicked(object sender, EventArgs e)
+        {
+            expanded = !expanded;
+            ProcExp();
+        }
+        void ProcExp()
+        {
+            for (int i = 1; i < oc.Children.Count; i++)
+                oc.Children[i].IsVisible = expanded;
+            b.Text = expanded ? "Less" : "More";
+        }
+
+        static View Generator(Object vmo)
 		{
 			TrackerTracksVM vm = vmo as TrackerTracksVM;
-			return new StackLayout {
-				Children = { 
-					new Label { Text = vm.instanceName },
-					new TTViewItem { BindingContext = vm.tracks }
-				},	
+            var tl = new Label
+            {
+                Text = vm.instanceName + " - " + vm.modelName,
+                VerticalOptions = LayoutOptions.End,
+                HorizontalOptions = LayoutOptions.FillAndExpand
+            };
+            tl.FontSize *= 0.8;
+            return new StackLayout
+            {
+                Spacing = 0,
+                Children =
+                {
+                    new BoxView
+                    {
+                        BackgroundColor = Color.Accent,
+                        HeightRequest =1,
+                        HorizontalOptions = LayoutOptions.FillAndExpand,
+                    },
+                    tl,
+                    new BoxView
+                    {
+                        BackgroundColor = Color.Accent,
+                        HeightRequest =1,
+                        HorizontalOptions = LayoutOptions.FillAndExpand,
+                    },
+                    new TTViewItem
+                    {
+                        Padding = new Thickness(0,2,0,0),
+                        Items = vm.tracks,
+                        VerticalOptions = LayoutOptions.Start,
+                        HorizontalOptions = LayoutOptions.FillAndExpand
+                    }
+                },
 			};
 		}
 	}
 	public class TTViewItem : VStacker
 	{
-		public class cc : IValueConverter
-		{
-			#region IValueConverter implementation
-			public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-			{
-				Debug.WriteLine ("conv a " + value.ToString ());
-				return new GridLength ((double)value, GridUnitType.Star);
-			}
-			public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-			{
-				throw new NotImplementedException ();
-			}
-			#endregion
-		}
-		public TTViewItem () : base(BarInfo.GenerateView) { }
-		class BarInfo
-		{
-			static cc lcc = new cc();
-			static ColumnDefinition CBound(String wname)
-			{
-				var c = new ColumnDefinition ();
-				c.SetBinding (ColumnDefinition.WidthProperty, wname, BindingMode.Default, lcc);
-				return c;
-			}
+		public TTViewItem () : base(BarInfo.GenerateView) { Spacing = 2; }
+        class BarInfo
+        {
+            static View Bar(Color f, Color b)
+            {
+                return new Button
+                {
+                    InputTransparent = true,
+                    BorderWidth = bw,
+                    BackgroundColor = b,
+                    BorderColor = f,
+                };
+            }
+            static double bw = 2.0;
+            
+            public static View GenerateView(Object tio)
+            {
+                TrackingInfoVM ti = tio as TrackingInfoVM;
+                var bio = new BarInfo(ti);
+                var rl = new RelativeLayout { HorizontalOptions = LayoutOptions.FillAndExpand, VerticalOptions = LayoutOptions.FillAndExpand };
+                var rlc = rl.Children as ICollection<View>;
+                // I can't make bindings for constraints work! But setters do! I was using a converter - and that was firing, but the constraint was not being evaluated!!!
+                //rl.BindingContext = bio;
+                rl.Children.Add(Bar(Color.Transparent, amnt), Constraint.Constant(0), Constraint.Constant(bw), Constraint.RelativeToParent(p=>p.Width*bio.amount), Constraint.RelativeToParent(p => p.Height - bw*2));
+                rlc.Add(Bar(Color.Accent, Color.Transparent).Rel(bio.target, 0, bio.extras, 1));
+                rlc.Add(Bar(Color.Accent, Color.Transparent).Rel(0, 0, bio.target + bio.extras, 1));
+                var tl = new Label
+                {
+                    Text = String.Format(
+                        "{0}: {1} / {3} + {4}",
+                        ti.targetValueName, bio.InAmount, ti.inValuesName.ToLower(), 
+                        bio.TargetAmount, bio.OutAmount, ti.outValuesName.ToLower()
+                        ),
+                };
+                tl.FontSize *= 0.85;
+                return new Grid
+                {
+                    Children =
+                    {
+                        rl,
+                        new Frame
+                        {
+                            Content = tl,
+                            Padding = new Thickness(5,0,0,1),
+                            VerticalOptions = LayoutOptions.Center
+                        }
+                    }
+                };
+            }
+            private BarInfo(TrackingInfoVM ti)
+            {
+                AmountName = ti.targetValueName;
+                InAmount = (from f in ti.inValues select f.value).Sum();
+                OutAmount = (from f in ti.outValues select f.value).Sum();
+                TargetAmount = ti.targetValue;
 
-			public static View GenerateView(Object tio)
-			{
-				TrackingInfoVM ti = tio as TrackingInfoVM;
-				return new Grid 
-				{
-					BindingContext = new BarInfo(ti),
-					RowDefinitions = new RowDefinitionCollection 
-					{ 
-						new RowDefinition { Height = GridLength.Auto },  
-						new RowDefinition { Height = GridLength.Auto } 
-					},
-					ColumnDefinitions = new ColumnDefinitionCollection
-					{
-						CBound("InAmount"), 
-						CBound("OutAmount"), 
-						CBound("TargetAmount"),
-					},
-					Children = 
-					{
-						new BoxView { Color = Color.Red }.OnCol (0),
-						new BoxView { Color = Color.Green }.OnCol (1),
-						new BoxView { Color = Color.Blue }.OnCol (2)
-					}
-				};
-			}
-			private BarInfo(TrackingInfoVM ti)
-			{
-				AmountName = ti.valueName;
-				TargetAmount=ti.targetValue;
-				InAmount= (from f in ti.inValues select f.value).Sum();
-				OutAmount= (from f in ti.outValues select f.value).Sum();
-			}
-			public String AmountName { get; private set; }
-			public double InAmount {get;private set;}
-			public double OutAmount {get;private set;}
-			public double TargetAmount {get;private set;}
-		}
+                // get the biggest one:
+                var lrg = Math.Max(OutAmount + TargetAmount, InAmount);
+
+                if (lrg > 0)
+                {
+                    // col widths
+                    target = TargetAmount / lrg;
+                    extras = OutAmount / lrg;
+                    amount = InAmount / lrg;
+                }
+                else
+                {
+                    target = 1;
+                    extras = amount = 0;
+
+                }
+
+                }
+            public String AmountName { get; private set; }
+            public double InAmount { get; private set; }
+            public double OutAmount { get; private set; }
+            public double TargetAmount { get; private set; }
+
+            public double target { get; private set; }
+            public double extras { get; private set; }
+            public double amount { get; private set; }
+        }
 	}
 }
 

@@ -537,9 +537,19 @@ namespace Consonance
 			for (var ti=0; ti < targets.Length; ti++) {
 				var trg = targets [ti].FindTargetForDay(di.startpoint, dayStart);
 				var dtr = targets [ti].DayTargetRange;
-				var yret = new TrackingInfoVM { targetValue = trg.target };
+                var dtt = targets[ti].DayTargetRangeType;
+                var yret = new TrackingInfoVM { targetValue = trg.target };
 				GetValsForRange (eats, burns, trg.begin, trg.end, out yret.inValues, out yret.outValues);
-				yret.valueName = dtr == 1 ? " balance" : " " + TimeSpan.FromDays (dtr).WithSuffix() + " balance";
+                // FIXME I'm not sure about AggregateRangeType.DaysFromStart, if dtr == 0 means range = 0 or 1, ready nope
+                if ((dtr == 1 && dtt == AggregateRangeType.DaysFromStart) || dtr == 0 && dtt == AggregateRangeType.DaysEitherSide)
+                    yret.targetValueName = targets[ti].TargetName;
+                else
+                {
+                    int fac = dtt == AggregateRangeType.DaysEitherSide ?  2 : 1;
+                    yret.targetValueName = targets[ti].TargetName + "/" + TimeSpan.FromDays(dtr*fac + 1).WithSuffix();
+                }
+                yret.inValuesName = dialect.InputInfoVerbPast;
+                yret.outValuesName = dialect.OutputInfoVerbPast;
 				yield return yret;
 			}
 		}

@@ -110,9 +110,11 @@ namespace Consonance
 	}
 	public class TrackingInfoVM
 	{
-		public String valueName;
+        public String inValuesName;
 		public TrackingElementVM[] inValues;
-		public TrackingElementVM[] outValues;
+        public String outValuesName;
+        public TrackingElementVM[] outValues;
+		public String targetValueName;
 		public double targetValue;
 	}
 	public class InfoLineVM : OriginatorVM
@@ -448,7 +450,7 @@ namespace Consonance
 			};
 
 			// binfy
-			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntrytVerb;
+			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntryVerb;
 			var requests = new GetValuesPage (entryVerb);
 			requests.valuerequests.Add (infoRequest.request);
 

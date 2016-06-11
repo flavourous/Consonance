@@ -1,11 +1,21 @@
 non-ticks datetime what? {{{
 thats what sqlite.net is working with(bugs with default true on connection creating.
 it cuts datetime by 1h each time read from database?:! }}}
-need to impiment invention{{{
-not sure exactly how, but can start with sth basic that can be versioned off with newer better schema
-}}}
 slower repeat choose info{{{
 each time you chose an info on an entry, returning to the entry screen gets slower (or, its loading does.)
 closing the entry vrv clears the issue.
 possibly some remaining bindings on the inforequestvalue objects?
+}}}
+more tracker helpy variables {{{
+we stick to one table for in and one for aout. but might want to have a tracker that tracks different entries.  This can be solved with an EntryType member on the model, easily done on the tracker interface.  But to invent, need a tracky helper
+can have >1 var on entry, can have >1 tracking formula.  This solves the above somewhat, but not as nice.
+}}}
+need multiple quantifiers {{{
+cause, might be a serving, or grams or whatever!
+or. or we can say "oh it's name depends on the info instance"
+}}}
+upgrade paths for trackyhelpers{{{
+when we add multuple quants, we need to migrate our simplecaldiet to a mquantcaldiet.  That can be done statically.
+
+What about user invented ones? we have the type generator in theory, so we can do?
 }}}

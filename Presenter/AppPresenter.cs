@@ -276,7 +276,6 @@ namespace Consonance
 					view.currentTrackerInstance = lastBuild [0];
 					PushEatLines (lastBuild [0]);
 					PushBurnLines (lastBuild [0]);
-					PushTracking (lastBuild [0]);
 				} else {
 					view.SetEatLines (new EntryLineVM[0]);
 					view.SetBurnLines (new EntryLineVM[0]);
@@ -284,6 +283,8 @@ namespace Consonance
 					view.SetBurnTrack (null, new TrackerTracksVM[0]);
 				}
 			}
+            if(view.currentTrackerInstance != null)
+                PushTracking(view.currentTrackerInstance);
 			view.SetLoadingState (LoadThings.Instances, false);
 		}
 			

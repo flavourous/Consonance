@@ -104,8 +104,8 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		#endregion
 
-		public void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { App.platform.UIThread(() => main.InTrack = Combined (current, others)); }
-		public void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { App.platform.UIThread(() => main.OutTrack = Combined (current, others)); }
+		public void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { App.platform.UIThread(() => main.viewmodel.InTrack = Combined (current, others)); }
+		public void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { App.platform.UIThread(() => main.viewmodel.OutTrack = Combined (current, others)); }
 		IEnumerable<TrackerTracksVM> Combined(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others)
 		{
 			yield return current;

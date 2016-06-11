@@ -17,10 +17,11 @@ namespace Consonance.XamarinFormsView.PCL
 		public ObservableCollection<GroupedTDVM> collection = new ObservableCollection<GroupedTDVM>();
 		public Dictionary<String, GroupedTDVM> reffers = new Dictionary<string, GroupedTDVM>();
 		public Dictionary<TrackerDetailsVM, int> reffers2 = new Dictionary<TrackerDetailsVM, int>();
-		public void Clear() { collection.Clear (); reffers.Clear (); reffers2.Clear (); }
+        int iidx = 0;
+		public void Clear() { iidx = 0; collection.Clear (); reffers.Clear (); reffers2.Clear (); }
 		public void Add(TrackerDetailsVM vm)
 		{
-			reffers2 [vm] = reffers.Count;
+			reffers2 [vm] = iidx++;
 			if (reffers.ContainsKey (vm.category))
 				reffers [vm.category].Add (vm);
 			else {

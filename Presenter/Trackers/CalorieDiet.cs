@@ -52,7 +52,7 @@ namespace Consonance
 		public IReflectedHelpyQuants<FireInfo,TimeSpan> output { get { return _output; } }
 		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Calorie diet", "Simple calorie-control diet with a daily target.", "Diet");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises");
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Diet"; } }
@@ -65,8 +65,8 @@ namespace Consonance
 		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{ 
 			List<RecurringAggregatePattern> targs = new List<RecurringAggregatePattern> ();
-			if ((bool)fieldValues [1]) targs.Add(new RecurringAggregatePattern(0, AggregateRangeType.DaysEitherSide, new[] { 1 }, new[] { (double)fieldValues [0] }));
-			if ((bool)fieldValues [2]) targs.Add (new RecurringAggregatePattern(7, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0]*7 }) );
+			if ((bool)fieldValues [1]) targs.Add(new RecurringAggregatePattern("Calories", 0, AggregateRangeType.DaysEitherSide, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			if ((bool)fieldValues [2]) targs.Add (new RecurringAggregatePattern("Calories", 7, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0]*7 }) );
 			return targs.ToArray ();
 		}
 	}
@@ -79,7 +79,7 @@ namespace Consonance
 		public IReflectedHelpyQuants<FireInfo,TimeSpan> output { get { return _output; } }
 		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Scavenger calorie diet", "Calorie controlled diet, using periods of looser control followed by periods of stronger control.", "Diet");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises");
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public String name { get { return TrackerDetails.name; } }
 		public String typename { get { return "Diet"; } }
@@ -93,7 +93,7 @@ namespace Consonance
 		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
 		{
 			return new[] { 
-				new RecurringAggregatePattern (
+				new RecurringAggregatePattern ("Calories", 
 					// Range Tracking
 					0, AggregateRangeType.DaysEitherSide, 
 
