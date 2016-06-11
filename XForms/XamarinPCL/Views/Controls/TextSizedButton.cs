@@ -23,11 +23,14 @@ namespace Consonance.XamarinFormsView.PCL
         public String Text { get { return l.Text; } set { l.Text = value; InvalidateMeasure(); } }
         public event EventHandler Clicked { add { b.Clicked += value; } remove { b.Clicked -= value; } }
 
+
+        public void IM() { InvalidateMeasure();  }
+        public int vhack = 5, hhack = 20;
         private void TextSizedButton_MeasureInvalidated(object sender, EventArgs e)
         {
             var sr = l.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity);
-            b.HeightRequest = sr.Request.Height + 5;
-            b.WidthRequest = sr.Request.Width + 20;
+            b.HeightRequest = sr.Request.Height + vhack;
+            b.WidthRequest = sr.Request.Width + hhack;
         }
 
     }

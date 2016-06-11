@@ -51,14 +51,25 @@ namespace Consonance.XamarinFormsView.PCL
                 {
                     VerticalOptions = LayoutOptions.Start,
                     HorizontalOptions = LayoutOptions.End,
-                }
+                },
+                VerticalOptions = LayoutOptions.Start
             };
             b.Clicked += Cb_Clicked;
             Content = new StackLayout
             {
                 Spacing = 0.0,
                 Orientation = StackOrientation.Vertical,
-                Children = { th, new ScrollView { Content = oc, VerticalOptions = LayoutOptions.Fill } },
+                Children =
+                {
+                    th,
+                    new BoxView
+                    {
+                        BackgroundColor = Color.Accent,
+                        HeightRequest = 2,
+                        HorizontalOptions = LayoutOptions.FillAndExpand,
+                    },
+                    new ScrollView { Content = oc, VerticalOptions = LayoutOptions.Fill }
+                },
                 VerticalOptions = LayoutOptions.Fill
             };
             ItemsChanged += TTView_ItemsChanged;
@@ -77,9 +88,11 @@ namespace Consonance.XamarinFormsView.PCL
         }
         void ProcExp()
         {
+            b.vhack = expanded ? 18 : 5;
+            b.Text = expanded ? "Less" : "More";
+            b.IM();
             for (int i = 1; i < oc.Children.Count; i++)
                 oc.Children[i].IsVisible = expanded;
-            b.Text = expanded ? "Less" : "More";
         }
 
         static View Generator(Object vmo)
@@ -96,13 +109,7 @@ namespace Consonance.XamarinFormsView.PCL
             {
                 Spacing = 0,
                 Children =
-                {
-                    new BoxView
-                    {
-                        BackgroundColor = Color.Accent,
-                        HeightRequest =1,
-                        HorizontalOptions = LayoutOptions.FillAndExpand,
-                    },
+                {                    
                     tl,
                     new BoxView
                     {
