@@ -9,15 +9,11 @@ so, invention can be done with a ValueRequestBuilder? the big challenge is that 
 
 mapping of the ORM to types is based largely on name, and will work if there are matching properties.  So it should work OK, if we can make types that is.
 }}}
-ranges for weektrack are bad! {{{
-it just like days from the current day. etc. or somthing. it also says 8 days, 0 days for ranges!
+deleting plans locks ui{{{
+should be farmed off
 }}}
-mixup of pk between tables?{{{
-or maybe the instance is stored on same table?  ot a scav cal diet and normal one, seems to be sharing entries!!!
-}}}
-plan list missing aggregation{{{
-it's got the pattern part, but not the range part.
-}}}
-worried about my button size hacks {{{
-involves a lot of absolute or relative size changes...not sure if it's cross-device compatible. or even on same os with different settings.
+loading state doesnt really work{{{
+it should come on right after an action and before starting work. and go off after finishing work and updates to ui complete.
+former just needs better thought - latter should be guarnteed by the event firing triggering ui updates IF the event handlers are synchronous
+also, it would be "safer" as a modal dialog.
 }}}

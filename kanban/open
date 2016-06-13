@@ -19,3 +19,6 @@ when we add multuple quants, we need to migrate our simplecaldiet to a mquantcal
 
 What about user invented ones? we have the type generator in theory, so we can do?
 }}}
+worried about my button size hacks {{{
+involves a lot of absolute or relative size changes...not sure if it's cross-device compatible. or even on same os with different settings.
+}}}

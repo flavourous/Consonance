@@ -8,11 +8,11 @@ namespace Consonance
 {
 	
 	// Models
-	public class CalorieDietEatEntry : BaseEatEntry
+	public abstract class CalorieDietEatEntry : BaseEatEntry
 	{
 		public double calories { get; set; } // eaten..33
 	}
-	public class CalorieDietBurnEntry : BaseBurnEntry
+	public abstract class CalorieDietBurnEntry : BaseBurnEntry
 	{
 		public double calories { get; set; } // burned...
 	}
@@ -32,25 +32,38 @@ namespace Consonance
 	}
 
 	// helper derrivative
-	public class CalHold<T> : SimpleTrackerHolder<T, CalorieDietEatEntry, FoodInfo, double, CalorieDietBurnEntry, FireInfo, TimeSpan>
+	public class CalHold<T,E,B> : SimpleTrackerHolder<T, E, FoodInfo, double, B, FireInfo, TimeSpan>
 		where T : TrackerInstance, new()
+        where E : CalorieDietEatEntry, new()
+        where B : CalorieDietBurnEntry, new()
 	{ public CalHold(IExtraRelfectedHelpy<FoodInfo,FireInfo, double, TimeSpan> helpy) : base(helpy) { } }
 
 	// Diet factory methods
+    
 	public static class CalorieDiets
 	{
-		public static readonly CalHold<CalorieDietInstance_Simple> simple = new CalHold<CalorieDietInstance_Simple> (new CalorieDiet_SimpleTemplate ());
-		public static readonly CalHold<CalorieDietInstance_Scav> scav = new CalHold<CalorieDietInstance_Scav> (new CalorieDiet_Scavenger ());
+		public static readonly CalHold<CalorieDietInstance_Simple, CalorieDiet_Simple_EatEntry, CalorieDiet_Simple_BurnEntry> simple 
+            = new CalHold<CalorieDietInstance_Simple, CalorieDiet_Simple_EatEntry, CalorieDiet_Simple_BurnEntry>
+            (new CalorieDiet_SimpleTemplate ());
+		public static readonly CalHold<CalorieDietInstance_Scav, CalorieDiet_Scav_EatEntry, CalorieDiet_Scav_BurnEntry> scav 
+            = new CalHold<CalorieDietInstance_Scav, CalorieDiet_Scav_EatEntry, CalorieDiet_Scav_BurnEntry>
+            (new CalorieDiet_Scavenger ());
 	}
 
-	// Implimentations
-	public class CalorieDiet_SimpleTemplate : IExtraRelfectedHelpy<FoodInfo, FireInfo, double, TimeSpan>
+    // entry tables
+    public class CalorieDiet_Simple_EatEntry : CalorieDietEatEntry { }
+    public class CalorieDiet_Simple_BurnEntry : CalorieDietBurnEntry { }
+    public class CalorieDiet_Scav_EatEntry : CalorieDietEatEntry { }
+    public class CalorieDiet_Scav_BurnEntry : CalorieDietBurnEntry { }
+
+    // Implimentations
+    public class CalorieDiet_SimpleTemplate : IExtraRelfectedHelpy<FoodInfo, FireInfo, double, TimeSpan>
 	{
 		readonly IReflectedHelpyQuants<FoodInfo,double> _input = new CalDiet_HelpyIn();
 		public IReflectedHelpyQuants<FoodInfo,double> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<FireInfo,TimeSpan> _output = new CalDiet_HelpyOut();
 		public IReflectedHelpyQuants<FireInfo,TimeSpan> output { get { return _output; } }
-		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Calorie diet", "Simple calorie-control diet with a daily target.", "Diet");
+		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Calorie diet", "Simple calorie-control diet with a daily target.  If enabled, weekly tracking starts from the start date of the diet.", "Diet");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
 		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
@@ -62,13 +75,13 @@ namespace Consonance
 				VRVConnectedValue.FromType (true, "Track Daily", "trackDaily", f => f.BoolRequestor),
 				VRVConnectedValue.FromType (false, "Track Weekly", "trackWeekly", f => f.BoolRequestor)
 			}; } } // creating an instance
-		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
-		{ 
-			List<RecurringAggregatePattern> targs = new List<RecurringAggregatePattern> ();
-			if ((bool)fieldValues [1]) targs.Add(new RecurringAggregatePattern("Calories", 0, AggregateRangeType.DaysEitherSide, new[] { 1 }, new[] { (double)fieldValues [0] }));
-			if ((bool)fieldValues [2]) targs.Add (new RecurringAggregatePattern("Calories", 7, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0]*7 }) );
-			return targs.ToArray ();
-		}
+        public SimpleTrackyTarget[] Calcluate(object[] fieldValues)
+        {
+            List<SimpleTrackyTarget> targs = new List<SimpleTrackyTarget>();
+            targs.Add(new SimpleTrackyTarget("Calories", (bool)fieldValues[1], true, 0, AggregateRangeType.DaysEitherSide, new[] { 1 }, new[] { (double)fieldValues[0] }));
+            targs.Add(new SimpleTrackyTarget("Calories", (bool)fieldValues[2], false, 7, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues[0] * 7 }));
+            return targs.ToArray();
+        }
 	}
 
 	public class CalorieDiet_Scavenger : IExtraRelfectedHelpy<FoodInfo, FireInfo, double, TimeSpan>
@@ -90,10 +103,10 @@ namespace Consonance
 					VRVConnectedValue.FromType(0, v => (int)v[2] > 0, "Strict days", "nStrictDays", f=>f.IntRequestor ), 
 					VRVConnectedValue.FromType(0.0, "Calories", "strictCalorieLimit", f=>f.DoubleRequestor ) 
 			}; } } // creating an instance
-		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
+		public SimpleTrackyTarget[] Calcluate(object[] fieldValues) 
 		{
 			return new[] { 
-				new RecurringAggregatePattern ("Calories", 
+				new SimpleTrackyTarget ("Calories", true, true,
 					// Range Tracking
 					0, AggregateRangeType.DaysEitherSide, 
 

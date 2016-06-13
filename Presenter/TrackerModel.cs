@@ -9,23 +9,23 @@ using LibSharpHelp;
 
 namespace Consonance
 {
-	// \Overview\
-	// ``````````
-	// We want to support different ways of dieting. This might be a calorie control diet with a daily limit, or a weekly limit,
-	// or with different limits on each day of the week etc.  It might also not track calories, and instead track some other index
-	// like the fiberousness of the food, and aim for a target on that.
-	//
-	// Strategy is to have a central repository of food items with full nutrient info.  Other data, specific to other diets would
-	// exist on foreign tables.  The prime table would have nullable columns, indicating a lack of data.  Diet models could calculate
-	// thier index from the prime table or insist manual assignment.
+    // \Overview\
+    // ``````````
+    // We want to support different ways of dieting. This might be a calorie control diet with a daily limit, or a weekly limit,
+    // or with different limits on each day of the week etc.  It might also not track calories, and instead track some other index
+    // like the fiberousness of the food, and aim for a target on that.
+    //
+    // Strategy is to have a central repository of food items with full nutrient info.  Other data, specific to other diets would
+    // exist on foreign tables.  The prime table would have nullable columns, indicating a lack of data.  Diet models could calculate
+    // thier index from the prime table or insist manual assignment.
 
-	#region BASE_MODELS
-	public class BaseDB
+    #region BASE_MODELS
+    public abstract class BaseDB
 	{
 		[PrimaryKey, AutoIncrement]
 		public int id{ get; set; }
 	}
-	public class BaseEntry : BaseDB
+    public abstract class BaseEntry : BaseDB
 	{
 		// keys
 		public int trackerinstanceid{ get; set; }
@@ -333,7 +333,7 @@ namespace Consonance
 		delegate bool RecurrGetter(byte[] data, out IRecurr rec);
 		Dictionary<RecurranceType,RecurrGetter> patcreators = new Dictionary<RecurranceType, RecurrGetter> {
 			{ RecurranceType.RecurrsOnPattern, RecurrsOnPattern.TryFromBinary },
-			{ RecurranceType.RecurrsEveryPattern, RecurrsEveryPattern.TryFromBinary},
+			{ RecurranceType.RecurrsEveryPattern, RecurrsEveryPattern.TryFromBinary },
 		};
 		public IEnumerable<EntryType> Get (D diet, DateTime start, DateTime end)
 		{

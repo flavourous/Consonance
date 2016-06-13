@@ -62,10 +62,10 @@ namespace Consonance
 		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
 					VRVConnectedValue.FromType(0.0, "Target", "budget", f=>f.DoubleRequestor)
 				}; } } // creating an instance
-		public RecurringAggregatePattern[] Calcluate(object[] fieldValues) 
+		public SimpleTrackyTarget[] Calcluate(object[] fieldValues) 
 		{ 
-			List<RecurringAggregatePattern> targs = new List<RecurringAggregatePattern> ();
-			targs.Add (new RecurringAggregatePattern("Balance", 1, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			List<SimpleTrackyTarget> targs = new List<SimpleTrackyTarget> ();
+			targs.Add (new SimpleTrackyTarget("Balance",true,true, 1, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
 			return targs.ToArray ();
 		}
 	}

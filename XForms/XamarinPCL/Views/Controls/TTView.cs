@@ -98,6 +98,8 @@ namespace Consonance.XamarinFormsView.PCL
         static View Generator(Object vmo)
 		{
 			TrackerTracksVM vm = vmo as TrackerTracksVM;
+            if (vm == null) return new Frame { Padding = new Thickness(0) };
+
             var tl = new Label
             {
                 Text = vm.instanceName + " - " + vm.modelName,
@@ -200,10 +202,9 @@ namespace Consonance.XamarinFormsView.PCL
                 {
                     target = 1;
                     extras = amount = 0;
-
                 }
 
-                }
+            }
             public String AmountName { get; private set; }
             public double InAmount { get; private set; }
             public double OutAmount { get; private set; }

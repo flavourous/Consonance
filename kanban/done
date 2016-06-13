@@ -145,3 +145,17 @@ of the [-]-- year    <x>
 needs tracksy view{{{
 yeah it's totally not there...
 }}}
+ranges for weektrack are bad! {{{
+it just like days from the current day. etc. or somthing. it also says 8 days, 0 days for ranges!
+ok. note on the weektrack that you gotta start it on monday!
+then, the thing is weektrack is becoming a target for the trackerinstanceVM (wrong) as well as the trackertracksVM (properly).
+simpletracky helpy doesnt differentiate - ITrackerPresenter could, so helpy should I guess.
+}}}
+plan list missing aggregation{{{
+it's got the pattern part, but not the range part.
+i dont think it's supposed to show that. did stuff tho
+}}}
+mixup of pk between tables?{{{
+or maybe the instance is stored on same table?  ot a scav cal diet and normal one, seems to be sharing entries!!!
+yes, because the calorie diets share entry types.  neither tracker knows which are his. lets just not do it, only fix is a table-scope identifier right now.
+}}}

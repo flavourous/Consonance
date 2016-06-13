@@ -2,11 +2,11 @@
 
 namespace Consonance
 {
-	public class BaseEatEntry : BaseEntry 
+    public abstract class BaseEatEntry : BaseEntry 
 	{
 		public double? grams { get; set; }		
 	}
-	public class BaseBurnEntry : BaseEntry 
+	public abstract class BaseBurnEntry : BaseEntry 
 	{ 
 		public TimeSpan? duration { get; set; }
 	}

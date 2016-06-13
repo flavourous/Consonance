@@ -32,6 +32,19 @@ namespace Consonance
 		}
 	}
 
+    // Derriving from the LibRTP here...
+    public class SimpleTrackyTarget : RecurringAggregatePattern
+    {
+        public readonly bool Tracked, Shown;
+        public readonly String TargetName;
+        public SimpleTrackyTarget(String targetName, bool tracked, bool shown, int targetRange, AggregateRangeType rangetype, int[] targetPattern, double[] patternTarget)
+            : base(targetRange, rangetype, targetPattern, patternTarget)
+        {
+            this.TargetName = targetName;
+            this.Tracked = tracked;
+            this.Shown = shown;
+        }
+    }
 
 	// & how to get it from entrymodels = use reflection provide string.
 	// Alright, from the top, what would you ideally wanna specify? for a simple situation...
@@ -43,22 +56,23 @@ namespace Consonance
 	//  - how to determine target (for creation etc)
 
 	/// <summary>
-	/// I helpy.  strings are used for reflection 
+	/// I helpy.  strings are used for reflection. Provides info for SimpleTrackyHelpy to wrap the main state-observer-machine API thing,
+    /// which is most suited to a powerful OO/Procedural implimentation.  This interface suits a declarative approach (and is much more specific and simple).
 	/// </summary>
 	public interface IReflectedHelpy<InInfo,OutInfo,QuantityIn,QuantityOut>
 		where  InInfo : BaseInfo, new()
 		where  OutInfo : BaseInfo, new()
 	{
-		//Textual - not used for reflection or anything.
+		// Textual - not used for reflection or anything.
 		String name {get;}
 		String typename {get;}
 		String trackedname {get;}
 
 		// instance
-		VRVConnectedValue [] instanceValueFields { get; } // for create/edit/andmemebernames
+		VRVConnectedValue[] instanceValueFields { get; } // for create/edit/andmemebernames
 
 		// This has to represent any number of targets, in any number of patterns, for any period range.
-		RecurringAggregatePattern[] Calcluate(Object[] fieldValues); 
+		SimpleTrackyTarget[] Calcluate(Object[] fieldValues); 
 
 		// Entries and infos
 		IReflectedHelpyQuants<InInfo,QuantityIn> input { get; }
@@ -487,7 +501,7 @@ namespace Consonance
             );
 		}
 
-		RecurringAggregatePattern[] GetTargets(Inst entry)
+		SimpleTrackyTarget[] GetTargets(Inst entry)
 		{
 			var vals = fvalues.MakeList(f => f.Get (entry));
 			return helpy.Calcluate (vals.ToArray ());
@@ -504,6 +518,7 @@ namespace Consonance
 		{			
 			var kl = new KVPList<string, double> ();
 			foreach (var target in GetTargets(entry)) {
+                if (!target.Shown) continue;
 				if (target.DayPattern.Length == 1)
 					kl.Add (helpy.trackedname + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
 				else
@@ -535,18 +550,19 @@ namespace Consonance
 		{
 			var targets = GetTargets (di);
 			for (var ti=0; ti < targets.Length; ti++) {
+                if (!targets[ti].Tracked) continue;
 				var trg = targets [ti].FindTargetForDay(di.startpoint, dayStart);
 				var dtr = targets [ti].DayTargetRange;
                 var dtt = targets[ti].DayTargetRangeType;
                 var yret = new TrackingInfoVM { targetValue = trg.target };
 				GetValsForRange (eats, burns, trg.begin, trg.end, out yret.inValues, out yret.outValues);
                 // FIXME I'm not sure about AggregateRangeType.DaysFromStart, if dtr == 0 means range = 0 or 1, ready nope
-                if ((dtr == 1 && dtt == AggregateRangeType.DaysFromStart) || dtr == 0 && dtt == AggregateRangeType.DaysEitherSide)
+                if (dtr ==0)
                     yret.targetValueName = targets[ti].TargetName;
                 else
                 {
                     int fac = dtt == AggregateRangeType.DaysEitherSide ?  2 : 1;
-                    yret.targetValueName = targets[ti].TargetName + "/" + TimeSpan.FromDays(dtr*fac + 1).WithSuffix();
+                    yret.targetValueName = targets[ti].TargetName + " per " + TimeSpan.FromDays(dtr*fac + fac - 1).WithSuffix();
                 }
                 yret.inValuesName = dialect.InputInfoVerbPast;
                 yret.outValuesName = dialect.OutputInfoVerbPast;

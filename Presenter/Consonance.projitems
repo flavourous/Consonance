@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
@@ -9,9 +9,9 @@
     <Import_RootNamespace>Consonance</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)DietModels.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TrackerModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppPresenter.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DietPresenters.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TrackerPresenter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)InfoFindersManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequestFactory_FinderAdapter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\SimpleTrackyHelpy.cs" />
