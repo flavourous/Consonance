@@ -9,11 +9,19 @@ so, invention can be done with a ValueRequestBuilder? the big challenge is that 
 
 mapping of the ORM to types is based largely on name, and will work if there are matching properties.  So it should work OK, if we can make types that is.
 }}}
-deleting plans locks ui{{{
-should be farmed off
+deleting plan causes ripple?{{{
+delete plan with entries causes ui refresh for each entry as they are deleted? maybe just 3 (1 per table) either way, should only be one refresh.  Perhaps should suspend/resume the DAL?
 }}}
-loading state doesnt really work{{{
-it should come on right after an action and before starting work. and go off after finishing work and updates to ui complete.
-former just needs better thought - latter should be guarnteed by the event firing triggering ui updates IF the event handlers are synchronous
-also, it would be "safer" as a modal dialog.
+worried about my button size hacks {{{
+involves a lot of absolute or relative size changes...not sure if it's cross-device compatible. or even on same os with different settings.
+the textsizedbutton is good though. if i can find a way to remove the h and v hacks?
+}}}
+hide ttv when no items{{{
+cause yeah...
+}}}
+loading state doesnt show{{{
+got dialog now...latched.  but, it doesnt usually appear. could insist it appears for atleast a few seconds by delaying the callback on shown
+}}}
+ttview has 1 item after removing last plan{{{
+not sure why. also doesnt hide when items.count==0...
 }}}

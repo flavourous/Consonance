@@ -29,16 +29,17 @@ namespace Consonance
         #endregion
     }
 
-
     class PlanCommandManager
     {
+        readonly Func<String, ILoadingState> loader;
         readonly Func<TrackerInstanceVM> getCurrent;
         readonly Func<String, Task> message;
-        public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String, Task> message)
+        public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String, Task> message, Func<String, ILoadingState> loader)
         {
             // remember it
             this.getCurrent = getCurrent;
             this.message = message;
+            this.loader = loader;
 
             // commanding for pland
             commands.eat.add += View_addeatitem;
@@ -56,34 +57,38 @@ namespace Consonance
         }
 
         void View_addeatitem(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddIn(cd, bld)); }
-        void View_removeeatitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveIn(vm)); }
+        void View_removeeatitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveIn(vm), LoadingStateStrings.Default); }
         void View_editeatitem(EntryLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditIn(vm, bld)); }
         void View_addeatinfo(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddInInfo(bld)); }
-        void View_removeeatinfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveInInfo(vm)); }
+        void View_removeeatinfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveInInfo(vm), LoadingStateStrings.Default); }
         void View_editeatinfo(InfoLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditInInfo(vm, bld)); }
         void View_addburnitem(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddOut(cd, bld)); }
-        void View_removeburnitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOut(vm)); }
+        void View_removeburnitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOut(vm), LoadingStateStrings.Default); }
         void View_editburnitem(EntryLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditOut(vm, bld)); }
         void View_addburninfo(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddOutInfo(bld)); }
-        void View_removeburninfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOutInfo(vm)); }
+        void View_removeburninfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOutInfo(vm), LoadingStateStrings.Default); }
         void View_editburninfo(InfoLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditOutInfo(vm, bld)); }
 
-        public void VerifyDiet(Action<IAbstractedTracker, TrackerInstanceVM> acty)
-        {
-            TaskCompletionSource<bool> tcs_dummy = new TaskCompletionSource<bool>();
-            tcs_dummy.SetResult(true);
-            VerifyDiet((cdh, cd) => { acty(cdh, cd); return tcs_dummy.Task; });
-        }
-        public void VerifyDiet(Func<IAbstractedTracker, TrackerInstanceVM, Task> acty)
+        public void VerifyDiet(Action<IAbstractedTracker, TrackerInstanceVM> acty, String load = null)
         {
             var cd = getCurrent();
             if (cd == null) // ping the view about being stupid.
                 message("You need to create a tracker before you can do that");
-            else acty(cd.sender as IAbstractedTracker, cd); // i dont think these need threading either...
+            else
+            {
+                if (load != null)
+                {
+                    var lstate = loader(load);
+                    PlatformGlobal.Run(() =>
+                    {
+                        acty(cd.sender as IAbstractedTracker, cd);
+                        lstate.Complete();
+                    });
+                }
+                else acty(cd.sender as IAbstractedTracker, cd); // i dont think these need threading either...
+            }
         }
     }
-
-    [System.Reflection.Obfuscation(Exclude = true, ApplyToMembers = true)]
 
     static class PlatformGlobal
     {
@@ -141,7 +146,7 @@ namespace Consonance
 				view.changeday += ChangeDay;
 				view.manageInfo += View_manageInfo;
 
-				pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance, input.Message);
+				pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance, input.Message, view.PushLoading);
 
 				// setup view
 				Debug.WriteLine("PresntToImpl: Change day");
@@ -155,7 +160,7 @@ namespace Consonance
 		{
 			pcm_refholder.VerifyDiet ((cdh, cd) => {
 				using (var hk = new HookedInfoLines (cdh, obj))
-					return input.InfoView (InfoCallType.AllowManage, obj, hk.lines, null).Completed;
+					input.InfoView (InfoCallType.AllowManage, obj, hk.lines, null);
 			});
 		}
 			
@@ -201,37 +206,47 @@ namespace Consonance
 				await chooseViewTask.Pop ();
 			});
 		}
-		void Handleremovedietinstance (TrackerInstanceVM obj)
-		{
-			(obj.sender as IAbstractedTracker).RemoveTracker (obj);
-		}
 		void View_editdietinstance (TrackerInstanceVM obj)
 		{
 			(obj.sender as IAbstractedTracker).EditTracker (obj);
 		}
 		// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
 
-		void PushEatLines(TrackerInstanceVM ti)
+        // This one however immediately does work! //
+		void Handleremovedietinstance (TrackerInstanceVM obj)
 		{
-			view.SetLoadingState (LoadThings.EatItems, true);
-			var ad = ti.sender as IAbstractedTracker;
+            var ls = view.PushLoading(LoadingStateStrings.Default);
+            PlatformGlobal.Run(() =>
+            {
+                (obj.sender as IAbstractedTracker).RemoveTracker(obj);
+                ls.Complete();
+            });
+		}
+        // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+
+        void PushEatLines(TrackerInstanceVM ti)
+		{
+            var ls = view.PushLoading(LoadingStateStrings.Default);
+            var ad = ti.sender as IAbstractedTracker;
 			var eatEntries = ad.InEntries (ti, ds, de);
 			view.SetEatLines (eatEntries);
-			view.SetLoadingState (LoadThings.EatItems, false);
-		}
+            ls.Complete();
+        }
 		void PushBurnLines(TrackerInstanceVM ti)
 		{
-			view.SetLoadingState (LoadThings.BurnItems, true);
-			var ad = ti.sender as IAbstractedTracker;
+            var ls = view.PushLoading(LoadingStateStrings.Default);
+            var ad = ti.sender as IAbstractedTracker;
 			var burnEntries = ad.OutEntries (ti, ds, de);
 			view.SetBurnLines (burnEntries);
-			view.SetLoadingState (LoadThings.BurnItems, false);
+            ls.Complete();
 		}
 		void PushTracking(TrackerInstanceVM tii)
 		{
-			SetViewTrackerTracks (tii, ti => (ti.sender as IAbstractedTracker).GetInTracking (ti, ds), view.SetEatTrack);
+            var ls = view.PushLoading(LoadingStateStrings.Default);
+            SetViewTrackerTracks (tii, ti => (ti.sender as IAbstractedTracker).GetInTracking (ti, ds), view.SetEatTrack);
 			SetViewTrackerTracks (tii, ti => (ti.sender as IAbstractedTracker).GetOutTracking (ti, ds), view.SetBurnTrack);
-		}
+            ls.Complete();
+        }
 		void SetViewTrackerTracks(TrackerInstanceVM current, Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
 		{
 			var v = processor (current);
@@ -257,8 +272,8 @@ namespace Consonance
 		void PushDietInstances()
 		{
 			Debug.WriteLine("PushDietInstances: loading state");
-			view.SetLoadingState (LoadThings.Instances, true);
-			Debug.WriteLine("PushDietInstances: clearing");
+            var ls = view.PushLoading(LoadingStateStrings.Default);
+            Debug.WriteLine("PushDietInstances: clearing");
 			lastBuild.Clear ();	
 			Debug.WriteLine("PushDietInstances: figuring");
 			bool currentRemoved = view.currentTrackerInstance != null;
@@ -285,7 +300,7 @@ namespace Consonance
 			}
             if(view.currentTrackerInstance != null)
                 PushTracking(view.currentTrackerInstance);
-			view.SetLoadingState (LoadThings.Instances, false);
+            ls.Complete();
 		}
 			
 		List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
@@ -324,13 +339,20 @@ namespace Consonance
 	public delegate bool Predicate();
 	public delegate Task Promise();
 	public delegate Task Promise<T>(T arg);
-	public enum LoadThings { EatItems, BurnItems, Instances };
+    public static class LoadingStateStrings
+    {
+        public const String Default = "Loading";
+    }
+	public interface ILoadingState
+    {
+        void Complete();
+    }
 	/// <summary>
 	/// definition on the application view
 	/// </summary>
 	public interface IView
 	{
-		void SetLoadingState(LoadThings thing, bool active);
+        ILoadingState PushLoading(String name);
 		void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others);
 		void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others);
 		void SetEatLines (IEnumerable<EntryLineVM> lineitems);

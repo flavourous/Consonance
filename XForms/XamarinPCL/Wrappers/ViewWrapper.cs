@@ -31,22 +31,73 @@ namespace Consonance.XamarinFormsView.PCL
 			set { App.platform.UIThread (() => main.viewmodel.SelectedPlanItem = value); }
 		}
 
-		public void SetLoadingState (LoadThings thing, bool active)
-		{
-			App.platform.UIThread (() => {
-				switch (thing) {
-				case LoadThings.EatItems: 
-					main.viewmodel.load1=active;
-					break;
-				case LoadThings.BurnItems: 
-					main.viewmodel.load2 = active;
-					break;
-				case LoadThings.Instances: 
-					main.viewmodel.load3=active;
-					break;
-				}
-			});
-		}
+        readonly Dictionary<String, int> lkeys = new Dictionary<string, int>();
+        readonly ContentPage loader = new ContentPage { Content = new Label { Text = "" } };
+        class LS : ILoadingState
+        {
+            readonly String key;
+            readonly ViewWrapper vw;
+            public LS(ViewWrapper vw, String key) { this.vw = vw; this.key = key; }
+            public void Complete()
+            {
+                // async but ordered
+                App.platform.UIThread(() =>
+                {
+                    vw.states.Add("Complete Beginning");
+                    if (--vw.lkeys[key] == 0)
+                    {
+                        vw.lkeys.Remove(key);
+                        vw.DisplayProgress(false);
+                    }
+                    vw.states.Add("Complete Ending");
+                });
+            }
+        }
+        Object ll = new object();
+        bool awaitingCallback = false, wantshow = false, isshow = false;
+        void DisplayProgress(bool? wantShow) // callbacks with null
+        {
+            lock (ll)
+            {
+                if (wantShow.HasValue) wantshow = wantShow.Value; // store request
+                if (awaitingCallback && wantShow.HasValue) return; // cause we'll be recalled
+                if (!wantShow.HasValue) awaitingCallback = false; // we are now being recalled
+                
+                if(wantshow != isshow)
+                {
+                    awaitingCallback = true;
+                    if (wantshow = isshow) main.Navigation.PushModalAsync(loader).ContinueWith(t => DisplayProgress(null));
+                    else main.Navigation.PopModalAsync().ContinueWith(t => DisplayProgress(null));
+                }
+            }
+        }
+        List<String> states = new List<string>();
+        public ILoadingState PushLoading(String key)
+        {
+            // async but ordered
+            App.platform.UIThread(() =>
+            {
+                states.Add("Push Beginning");
+                // show?
+                var show = lkeys.Count == 0;
+
+                // push counter
+                if (!lkeys.ContainsKey(key)) lkeys[key] = 1;
+                else lkeys[key]++;
+
+                // display
+                if (show)
+                {
+                    (loader.Content as Label).Text = "";
+                    DisplayProgress(true);
+                }
+
+                // set text
+                (loader.Content as Label).Text = String.Join("\n", lkeys.Keys);
+                states.Add("Push Ending");
+            });
+            return new LS(this, key);
+        }
 		
         public void SetEatLines(IEnumerable<EntryLineVM> lineitems)
         {

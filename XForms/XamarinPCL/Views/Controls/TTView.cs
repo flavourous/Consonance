@@ -42,6 +42,7 @@ namespace Consonance.XamarinFormsView.PCL
         StackLayout oc;
 		public TTView() : base(Generator)
         {
+            IsVisible = false;
             Spacing = 3;
             oc = Content as StackLayout;
             var th = new Frame
@@ -80,6 +81,9 @@ namespace Consonance.XamarinFormsView.PCL
         {
             expanded = false;
             ProcExp();
+            bool v = false;
+            foreach (var i in Items) { v = true; break; }
+            IsVisible = v;
         }
         private void Cb_Clicked(object sender, EventArgs e)
         {
@@ -90,7 +94,6 @@ namespace Consonance.XamarinFormsView.PCL
         {
             b.vhack = expanded ? 18 : 5;
             b.Text = expanded ? "Less" : "More";
-            b.IM();
             for (int i = 1; i < oc.Children.Count; i++)
                 oc.Children[i].IsVisible = expanded;
         }

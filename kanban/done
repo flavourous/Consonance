@@ -1,4 +1,4 @@
-:oblems with PCL {{{
+roblems with PCL {{{
 it wouldnt load if it was a superscope ns/asm of the including droid ns/asm.  Wouldnt load the App class with that ns "conflict".  With the "asm" conflict, I got random binding errors even though the asm directives were ok NPE and stuff.  Guessits xamarin framework assuming around non-exotic ns/asm setups.}}}
 flectors are fucked?{{{
  - well, adding an entry with an info doesnt work, crashes during flector. I did change te impl of those.  I cant breakpoint it either...sth strange maybe VS+Xamarin? Dunno.  I'm tracing instead.
@@ -158,4 +158,18 @@ i dont think it's supposed to show that. did stuff tho
 mixup of pk between tables?{{{
 or maybe the instance is stored on same table?  ot a scav cal diet and normal one, seems to be sharing entries!!!
 yes, because the calorie diets share entry types.  neither tracker knows which are his. lets just not do it, only fix is a table-scope identifier right now.
+}}}
+loading state doesnt really work{{{
+it should come on right after an action and before starting work. and go off after finishing work and updates to ui complete.
+former just needs better thought - latter should be guarnteed by the event firing triggering ui updates IF the event handlers are synchronous
+also, it would be "safer" as a modal dialog.
+also, we should be disabling more than just the lists? hmm it's annoying, here's the options:
+1) granular - more state managment needed than just disabling the relevant list and showing "loading". Add needs disabling too, for example.  Also, it doesnt seem to flow well, should be guranteed to show on each DAL change (too quick sometimes?)
+2) global - just show informative spinner modal dialog when loading happens.  Easier to manage, possibly more annoying for user?
+}}}
+deleting plans locks ui{{{
+should be farmed off
+check others?
+add/edit are intentionally not threaded (immediate action is to push view)
+remove however does a lot of work, got lumped in with that logic.
 }}}

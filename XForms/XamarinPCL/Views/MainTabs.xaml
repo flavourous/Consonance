@@ -24,9 +24,6 @@
 					</DataTemplate>
 				</ListView.ItemTemplate>
 			</ListView>
-			<Frame BackgroundColor="#55555555" Padding="30" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="{Binding load1}" >
-				<Label Text="Loading"  XAlign="Center" YAlign="Center" />
-			</Frame>
 			<l:TTView Grid.Row="1" Items="{Binding InTrack}" />
 			<l:DayPagerView Grid.Row="2" x:Name="daypagerIn" />
 		</Grid>
@@ -55,9 +52,6 @@
 					</DataTemplate>
 				</ListView.ItemTemplate>
 			</ListView>
-			<Frame BackgroundColor="#55555555" Padding="30" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="{Binding load2}" >
-				<Label Text="Loading"  XAlign="Center" YAlign="Center" />
-			</Frame>
 			<l:TTView Grid.Row="1" Items="{Binding OutTrack}" />
 			<l:DayPagerView Grid.Row="2" x:Name="daypagerOut" />
 		</Grid>
@@ -85,9 +79,6 @@
 					</DataTemplate>
 				</ListView.ItemTemplate>
 			</ListView>
-			<Frame BackgroundColor="#55555555" Padding="30" HorizontalOptions="Center" VerticalOptions="Center" IsVisible="{Binding load3}" >
-				<Label Text="Loading"  XAlign="Center" YAlign="Center" />
-			</Frame>
 			<l:DayPagerView Grid.Row="1" x:Name="daypagerPlan" />
 		</Grid>
 	</ContentPage>
