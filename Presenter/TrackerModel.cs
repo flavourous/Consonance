@@ -178,7 +178,7 @@ namespace Consonance
 		where BurnType : BaseEntry, new()
 		where BurnInfoType : BaseInfo, new()
 	{
-        public event Action<DietVMChangeType, DBChangeType> Changed = delegate { };
+        public event Action<DietVMChangeType, DBChangeType, Action> ToChange = delegate { };
 
         readonly SQLiteConnection conn;
 		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
@@ -190,9 +190,9 @@ namespace Consonance
 			this.model = model;
 			conn.CreateTable<DietInstType> ();
 			inhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (conn, model.increator);
-            inhandler.Changed += (c, t) => Changed(Convert(c, true), t);
+            inhandler.ToChange+= (c, t, p) => ToChange(Convert(c, true), t, p);
 			outhandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (conn, model.outcreator);
-            outhandler.Changed += (c, t) => Changed(Convert(c, false), t);
+            outhandler.ToChange += (c, t, p) => ToChange(Convert(c, false), t, p);
         }
         DietVMChangeType Convert(ItemType itp, bool input)
         {
@@ -205,28 +205,30 @@ namespace Consonance
             }
         }
 	
-		public DietInstType StartNewTracker()
+		public void StartNewTracker()
 		{
-			var di = model.New ();
-			conn.Insert (di as DietInstType);
-            Changed(DietVMChangeType.Instances, DBChangeType.Insert);
-			return di;
+            ToChange(DietVMChangeType.Instances, DBChangeType.Insert, () =>
+            {
+                var di = model.New();
+                conn.Insert(di as DietInstType);
+            });
 		}
 		public void EditTracker(DietInstType diet)
 		{
-			// actually call edit promise...
-			model.Edit(diet);
-            conn.Update(diet);
-            Changed(DietVMChangeType.Instances, DBChangeType.Edit);
+            ToChange(DietVMChangeType.Instances, DBChangeType.Edit, () =>
+            {
+                model.Edit(diet);
+                conn.Update(diet);
+            });
 		}
 		public void RemoveTracker(DietInstType rem)
 		{
-            conn.Table<EatType>().Delete(et => et.trackerinstanceid == rem.id);
-            Changed(DietVMChangeType.EatEntries, DBChangeType.Delete);
-            conn.Table<BurnType>().Delete(et => et.trackerinstanceid == rem.id);
-            Changed(DietVMChangeType.BurnEntries, DBChangeType.Delete);
-            conn.Delete<DietInstType> (rem.id);
-            Changed(DietVMChangeType.Instances, DBChangeType.Delete);
+            ToChange(DietVMChangeType.EatEntries | DietVMChangeType.BurnEntries | DietVMChangeType.Instances, DBChangeType.Delete, () =>
+            {
+                conn.Table<EatType>().Delete(et => et.trackerinstanceid == rem.id);
+                conn.Table<BurnType>().Delete(et => et.trackerinstanceid == rem.id);
+                conn.Delete<DietInstType>(rem.id);
+            });
         }
 		public IEnumerable<DietInstType> GetTrackers()
 		{
@@ -264,7 +266,7 @@ namespace Consonance
 		where EntryType : BaseEntry, new()
 		where EntryInfoType : BaseInfo, new()
 	{
-        public event Action<ItemType, DBChangeType> Changed = delegate { };
+        public event Action<ItemType, DBChangeType, Action> ToChange = delegate { };
 		readonly SQLiteConnection conn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
 		public EntryHandler(SQLiteConnection conn, IEntryCreation<EntryType, EntryInfoType> creator)
@@ -283,52 +285,54 @@ namespace Consonance
 		{
 			return true;
 		}
-		public void Add (D diet, EntryInfoType info)
-		{
-            Debug.WriteLine("addin with info...");
-			EntryType ent = creator.Calculate (info, ShouldComplete());
-            Debug.WriteLine("...done");
-			ent.trackerinstanceid = diet.id;
-			ent.infoinstanceid = info.id;
-			conn.Insert (ent as EntryType);
-            Changed(ItemType.Entry, DBChangeType.Insert);
+        public void Add(D diet, EntryInfoType info)
+        {
+            ToChange(ItemType.Entry, DBChangeType.Insert, () =>
+            {
+                EntryType ent = creator.Calculate(info, ShouldComplete());
+                ent.trackerinstanceid = diet.id;
+                ent.infoinstanceid = info.id;
+                conn.Insert(ent as EntryType);
+            });
 		}
 		public void Add (D diet)
 		{
-            Debug.WriteLine("addin...");
-            EntryType ent = creator.Create ();
-            Debug.WriteLine("...done");
-            ent.trackerinstanceid = diet.id;
-			ent.infoinstanceid = null;
-			conn.Insert (ent as EntryType);
-            Changed(ItemType.Entry, DBChangeType.Insert);
+            ToChange(ItemType.Entry, DBChangeType.Insert, () =>
+            {
+                EntryType ent = creator.Create();
+                ent.trackerinstanceid = diet.id;
+                ent.infoinstanceid = null;
+                conn.Insert(ent as EntryType);
+            });
 		}
 		public void Edit(EntryType ent, D diet, EntryInfoType info)
 		{
-            Debug.WriteLine("editing with info...");
-            creator.Edit(ent, info, ShouldComplete());
-            Debug.WriteLine("...done");
-            ent.trackerinstanceid = diet.id;
-			ent.infoinstanceid = info.id;
-			conn.Update (ent as EntryType);
-            Changed(ItemType.Entry, DBChangeType.Edit);
+            ToChange(ItemType.Entry, DBChangeType.Edit, () =>
+            {
+                creator.Edit(ent, info, ShouldComplete());
+                ent.trackerinstanceid = diet.id;
+                ent.infoinstanceid = info.id;
+                conn.Update(ent as EntryType);
+            });
 		}
 		public void Edit(EntryType ent, D diet)
 		{
-            Debug.WriteLine("editing...");
-            creator.Edit (ent);
-            Debug.WriteLine("...done");
-            ent.trackerinstanceid = diet.id;
-			ent.infoinstanceid = null;
-			conn.Update (ent as EntryType);
-            Changed(ItemType.Entry, DBChangeType.Edit);
+            ToChange(ItemType.Entry, DBChangeType.Edit, () =>
+            {
+                creator.Edit(ent);
+                ent.trackerinstanceid = diet.id;
+                ent.infoinstanceid = null;
+                conn.Update(ent as EntryType);
+            });
 		}
 		public void Remove (params EntryType[] tets)
 		{
-			// FIXME drop where?
-			foreach(var tet in tets)
-				conn.Delete<EntryType> (tet.id);
-            Changed(ItemType.Entry, DBChangeType.Delete);
+            ToChange(ItemType.Entry, DBChangeType.Delete, () =>
+            {
+                // FIXME drop where?
+                foreach (var tet in tets)
+                    conn.Delete<EntryType>(tet.id);
+            });
 		}
 		delegate bool RecurrGetter(byte[] data, out IRecurr rec);
 		Dictionary<RecurranceType,RecurrGetter> patcreators = new Dictionary<RecurranceType, RecurrGetter> {
@@ -372,22 +376,28 @@ namespace Consonance
 
 		public void Add ()
 		{
-			var mod = creator.MakeInfo ();
-			conn.Insert (mod, typeof(EntryInfoType));
-            Changed(ItemType.Info, DBChangeType.Insert);
+            ToChange(ItemType.Info, DBChangeType.Insert, () =>
+            {
+                var mod = creator.MakeInfo();
+                conn.Insert(mod, typeof(EntryInfoType));
+            });
 		}
 
 		public void Edit (EntryInfoType editing)
 		{
-			creator.MakeInfo (editing);
-			conn.Update (editing, typeof(EntryInfoType));
-            Changed(ItemType.Info, DBChangeType.Edit);
+            ToChange(ItemType.Info, DBChangeType.Edit, () =>
+            {
+                creator.MakeInfo(editing);
+                conn.Update(editing, typeof(EntryInfoType));
+            });
 		}
 
 		public void Remove (EntryInfoType removing)
 		{
-			conn.Delete (removing);
-            Changed(ItemType.Info, DBChangeType.Delete);
+            ToChange(ItemType.Info, DBChangeType.Delete, () =>
+            {
+                conn.Delete(removing);
+            });
 		}
 
 		#endregion

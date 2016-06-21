@@ -1,4 +1,4 @@
-roblems with PCL {{{
+:oblems with PCL {{{
 it wouldnt load if it was a superscope ns/asm of the including droid ns/asm.  Wouldnt load the App class with that ns "conflict".  With the "asm" conflict, I got random binding errors even though the asm directives were ok NPE and stuff.  Guessits xamarin framework assuming around non-exotic ns/asm setups.}}}
 flectors are fucked?{{{
  - well, adding an entry with an info doesnt work, crashes during flector. I did change te impl of those.  I cant breakpoint it either...sth strange maybe VS+Xamarin? Dunno.  I'm tracing instead.

@@ -8,49 +8,42 @@ using System.Collections.ObjectModel;
 
 namespace Consonance.XamarinFormsView.PCL
 {
-	public delegate InfoManageView CreateImanHandler (bool choice, bool manage);
 	class UserInputWrapper : IUserInput
     {
 		public static Action<String> message = delegate { };
-		readonly CreateImanHandler iman;
-		public ViewTask<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType mt, IObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
+        public ViewTask<InfoLineVM> InfoView(bool choose, bool manage, InfoManageType mt, IObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
 		{
             TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs>();
-			var tt = getCurrent ();
-			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
-			bool choiceEnabled = (calltype & InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
-			bool manageEnabled = (calltype & InfoCallType.AllowManage) == InfoCallType.AllowManage;
+            var tt = srv.Current;
+            TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
             InfoManageView iman_c = null;
             App.platform.UIThread (() => {
-				iman_c = iman (choiceEnabled, manageEnabled);
+                iman_c = new InfoManageView(choose, manage);
+                srv.AttachToCommander(iman_c, mt);
 				iman_c.Title = mt == InfoManageType.In ? tt.dialect.InputInfoPlural : tt.dialect.OutputInfoPlural;
 				iman_c.Items = toManage;
 				iman_c.initiallySelectedItem = iman_c.selectedItem = initiallySelected; // null works.
-				iman_c.imt = mt;
 				iman_c.completedTask = tcs;
-                nav.PushAsync(iman_c).ContinueWith(t => pushed.SetResult(new EventArgs()));
+                srv.nav.PushAsync(iman_c).ContinueWith(t => pushed.SetResult(new EventArgs()));
 			});
-            return new ViewTask<InfoLineVM>(() => nav.RemoveOrPopAsync(iman_c), pushed.Task, tcs.Task); // return result, or initial if it gave null (wich is null if it really was and no change)
+            return new ViewTask<InfoLineVM>(() => srv.nav.RemoveOrPopAsync(iman_c), pushed.Task, tcs.Task); // return result, or initial if it gave null (wich is null if it really was and no change)
 		}
 
-		readonly Func<IAbstractedTracker> getCurrent;
-		readonly Page root;
-		INavigation nav { get { return root.Navigation; } }
-		public UserInputWrapper(Page root, CreateImanHandler iman, Func<IAbstractedTracker> getCurrent)
+        readonly CommonServices srv;
+		public UserInputWrapper(CommonServices srv)
         {
-			this.getCurrent = getCurrent;
-			this.iman = iman;
-			this.root = root;
+            this.srv = srv;
 			pv.chosen += v => pv_callback(v);
 			message = s => Message (s);
+            fv = new InfoFindView(new ValueRequestFactory(srv));
         }
 
-		InfoFindView fv = new InfoFindView();
+		readonly InfoFindView fv;
 		public Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd)
 		{
 			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
             App.platform.UIThread ( async () => {
-				await nav.PushAsync(fv);
+				await srv.nav.PushAsync(fv);
 				tcs.SetResult (await fv.Choose (ifnd));
 			});
 			return tcs.Task;
@@ -78,23 +71,23 @@ namespace Consonance.XamarinFormsView.PCL
 				foreach (var pi in choose_from)
 					pv.mPlanChoices.Add (pi);
 				pv.choicey = null;
-				await nav.PushAsync (pv);
+				await srv.nav.PushAsync (pv);
 				tcs.SetResult (new EventArgs ());
 			});
-			return new ViewTask<int> (() => nav.RemoveOrPopAsync (pv),tcs.Task,res.Task);
+			return new ViewTask<int> (() => srv.nav.RemoveOrPopAsync (pv),tcs.Task,res.Task);
 		}
 
 		public async Task WarnConfirm(string action, Promise confirmed)
         {
 			TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool> ();
-            App.platform.UIThread(async () => tcs.SetResult(await root.DisplayAlert ("Warning", action, "OK", "Cancel")));
+            App.platform.UIThread(async () => tcs.SetResult(await srv.root.DisplayAlert ("Warning", action, "OK", "Cancel")));
 			if(await tcs.Task) await confirmed ();
         }
 		public async Task Message(string msg)
 		{
 			TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool> ();
 			App.platform.UIThread (async () => {
-				await root.DisplayAlert ("Message", msg, "OK");
+				await srv.root.DisplayAlert ("Message", msg, "OK");
 				tcs.SetResult (false);
 			});
 			await tcs.Task;

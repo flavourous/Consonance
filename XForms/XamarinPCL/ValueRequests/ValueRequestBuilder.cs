@@ -14,11 +14,13 @@ namespace Consonance.XamarinFormsView.PCL
 {
     class ValueRequestBuilder : IValueRequestBuilder
     {
-		INavigation nav;
-		public ValueRequestBuilder(INavigation nav)
+        
+		readonly CommonServices srv;
+		public ValueRequestBuilder(CommonServices srv)
 		{
-			this.nav = nav;
-		}
+            this.srv = srv;
+            this.requestFactory = new ValueRequestFactory(srv);
+        }
 		public ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
 		{
 		    ValueRequestView vrv = null;
@@ -71,9 +73,9 @@ namespace Consonance.XamarinFormsView.PCL
 				PageCompletedHandler(true); // begin cycle
 
 				// push the view - configure a callback to set the "im pushed" task.
-				nav.PushAsync (vrv).ContinueWith(t=> tcs_push.SetResult(new EventArgs())); // push first.
+				srv.nav.PushAsync (vrv).ContinueWith(t=> tcs_push.SetResult(new EventArgs())); // push first.
 			});
-			return new ViewTask<bool> (() => nav.RemoveOrPopAsync (vrv),tcs_push.Task, tcs_all.Task);
+			return new ViewTask<bool> (() => srv.nav.RemoveOrPopAsync (vrv),tcs_push.Task, tcs_all.Task);
         }
 
 		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)
@@ -99,15 +101,26 @@ namespace Consonance.XamarinFormsView.PCL
 			}
 		}
 
-		readonly ValueRequestFactory vrf = new ValueRequestFactory();
-		public IValueRequestFactory requestFactory { get { return vrf; } }
+        public IValueRequestFactory requestFactory { get; private set; }
     }
 
 	class ValueRequestFactory : IValueRequestFactory
 	{
+        readonly CommonServices srv;
+        public ValueRequestFactory(CommonServices srv)
+        {
+            this.srv = srv;
+        }
+
 		#region IValueRequestFactory implementation
 		public IValueRequest<string> StringRequestor (string name) { return RequestCreator<String, StringRequest> (name); }
-		public IValueRequest<InfoSelectValue> InfoLineVMRequestor (string name) { return RequestCreator<InfoSelectValue, InfoSelectRequest> (name); }
+		public IValueRequest<InfoLineVM> InfoLineVMRequestor (string name, InfoManageType mt)
+        {
+            return RequestCreator<InfoLineVM, InfoSelectRequest>(name, true, isr =>
+            {
+                isr.requestit = ivm => srv.U_InfoView(true, true, mt, ivm);
+            });
+        }
 		public IValueRequest<DateTime> DateTimeRequestor (string name) { return RequestCreator<DateTime, DateTimeRequest> (name); }
         public IValueRequest<DateTime> DateRequestor(string name) { return RequestCreator<DateTime, DateRequest>(name); }
         public IValueRequest<DateTime?> nDateRequestor(string name) { return RequestCreator<DateTime?, nDateRequest>(name); }
@@ -120,11 +133,11 @@ namespace Consonance.XamarinFormsView.PCL
 		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return RequestCreator<OptionGroupValue, OptionGroupValueRequest> (name); }
 		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name); }
 		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name); }
-		#endregion
+        #endregion
 
-		IValueRequest<T> RequestCreator<T, V>(String name, bool showName = true) where V : View, new()
+        IValueRequest<T> RequestCreator<T, V>(String name, bool showName = true, Action<V> init = null) where V : View, new()
 		{
-            return new ValueRequestVM<T, V>(name, showName);
+            return new ValueRequestVM<T, V>(name, showName, init);
 		}
 	}
 		
@@ -140,10 +153,12 @@ namespace Consonance.XamarinFormsView.PCL
 	{
 		public bool showName { get; private set; }
 		public String name { get; set; }
-		public ValueRequestVM(String name, bool showName)
+        readonly Action<V> init;
+		public ValueRequestVM(String name, bool showName, Action<V> init)
 		{
 			this.name=name;
 			this.showName = showName;
+            this.init = init;
 		}
 
 		#region IValueRequest implementation
@@ -158,7 +173,10 @@ namespace Consonance.XamarinFormsView.PCL
             {
                 return new Func<ValueRequestTemplate>(() =>
                 {
-                    return new ValueRequestTemplate(new V()) { BindingContext = this };
+                    var v = new V();
+                    var ret = new ValueRequestTemplate(v) { BindingContext = this };
+                    init?.Invoke(v);
+                    return ret;
                 });
             }
         }

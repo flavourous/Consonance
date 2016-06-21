@@ -14,23 +14,23 @@ namespace Consonance.XamarinFormsView.PCL
 	{
         public class MTVM : INotifyPropertyChanged
         {
-    		// Tab Names
-	    	private String mInTabName = "In";
-		    public String InTabName { get { return mInTabName; } set { mInTabName = value; OnPropertyChanged("InTabName"); } }
-		    private String mOutTabName = "Out";
-		    public String OutTabName { get { return mOutTabName; } set { mOutTabName = value; OnPropertyChanged("OutTabName"); } }
+            // Tab Names
+            private String mInTabName = "In";
+            public String InTabName { get { return mInTabName; } set { mInTabName = value; OnPropertyChanged("InTabName"); } }
+            private String mOutTabName = "Out";
+            public String OutTabName { get { return mOutTabName; } set { mOutTabName = value; OnPropertyChanged("OutTabName"); } }
             private String mInManageName = "Manage";
             public String InManageName { get { return mInManageName; } set { mInManageName = value; OnPropertyChanged("InManageName"); } }
             private String mOutManageName = "Manage";
             public String OutManageName { get { return mOutManageName; } set { mOutManageName = value; OnPropertyChanged("OutManageName"); } }
 
-            // List items
-            private ObservableCollection<EntryLineVM> mInItems = new ObservableCollection<EntryLineVM>();
-            public ObservableCollection<EntryLineVM> InItems { get { return mInItems; } }
-            private ObservableCollection<EntryLineVM> mOutItems = new ObservableCollection<EntryLineVM>();
-            public ObservableCollection<EntryLineVM> OutItems { get { return mOutItems; } }
-            private ObservableCollection<TrackerInstanceVM> mPlanItems = new ObservableCollection<TrackerInstanceVM>();
-            public ObservableCollection<TrackerInstanceVM> PlanItems { get { return mPlanItems; } }
+            private IObservableCollection<EntryLineVM> inItems;
+            private IObservableCollection<EntryLineVM> outItems;
+            private IObservableCollection<InfoLineVM> inInfos;
+            private IObservableCollection<InfoLineVM> outInfos;
+            private IObservableCollection<TrackerInstanceVM> planItems;
+            private IObservableCollection<TrackerTracksVM> inTrack;
+            private IObservableCollection<TrackerTracksVM> outTrack;
 
             // selected item
             private TrackerInstanceVM mSelectedPlanItem;
@@ -52,15 +52,15 @@ namespace Consonance.XamarinFormsView.PCL
                 }
             }
 
+            public IObservableCollection<EntryLineVM> InItems { get { return inItems; } set { inItems = value; OnPropertyChanged("InItems"); } }
+            public IObservableCollection<EntryLineVM> OutItems { get { return outItems; } set { outItems = value; OnPropertyChanged("OutItems"); } }
+            public IObservableCollection<InfoLineVM> InInfos { get { return inInfos; } set { inInfos = value; OnPropertyChanged("InInfos"); } }
+            public IObservableCollection<InfoLineVM> OutInfos { get { return outInfos; } set { outInfos = value; OnPropertyChanged("OutInfos"); } }
+            public IObservableCollection<TrackerInstanceVM> PlanItems { get { return planItems; } set { planItems = value; OnPropertyChanged("PlanItems"); } }
+            public IObservableCollection<TrackerTracksVM> InTrack { get { return inTrack; } set { inTrack = value; OnPropertyChanged("InTrack"); } }
+            public IObservableCollection<TrackerTracksVM> OutTrack { get { return outTrack; } set { outTrack = value; OnPropertyChanged("OutTrack"); } }
 
             public Action<TrackerInstanceVM> OnPlanSelected = delegate { };
-
-            // tracks
-            private IEnumerable<TrackerTracksVM> inTrack;
-            public IEnumerable<TrackerTracksVM> InTrack { get { return inTrack; }  set { inTrack = value; OnPropertyChanged("InTrack"); } }
-            private IEnumerable<TrackerTracksVM> outTrack;
-            public IEnumerable<TrackerTracksVM> OutTrack { get { return outTrack; }  set { outTrack = value; OnPropertyChanged("OutTrack"); } }
-
             public event PropertyChangedEventHandler PropertyChanged = delegate { };
             public void OnPropertyChanged(string prop)
             {
@@ -76,6 +76,7 @@ namespace Consonance.XamarinFormsView.PCL
 			BindingContext = viewmodel;
 		}
 		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = daypagerPlan.BindingContext = value; } }
+
 
         void OnPlanSelected(TrackerInstanceVM use)
         {

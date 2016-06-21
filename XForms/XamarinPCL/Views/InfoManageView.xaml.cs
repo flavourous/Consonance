@@ -44,7 +44,6 @@ namespace Consonance.XamarinFormsView.PCL
 			);
 		}
 		public TaskCompletionSource<InfoLineVM> completedTask;
-		public InfoManageType imt;
 		public InfoManageView (bool choice, bool manage)
 		{
 			InitializeComponent ();
@@ -71,19 +70,19 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 
 		// info hooks
-		public event Action<InfoManageType> ItemAdd = delegate { };
-		void OnItemAdd(Object s, EventArgs ea) { ItemAdd(imt); }
-		public event Action<InfoManageType, InfoLineVM> ItemEdit = delegate { };
+		public event Action ItemAdd = delegate { };
+		void OnItemAdd(Object s, EventArgs ea) { ItemAdd(); }
+		public event Action<InfoLineVM> ItemEdit = delegate { };
 		void OnItemEdit(Object s, EventArgs e) {
 			var b = (((MenuItem)s).BindingContext as InfoLineVM);
 			if (b != Nothingable.noth)
-				ItemEdit (imt, b);
+				ItemEdit (b);
 		}
-		public event Action<InfoManageType, InfoLineVM> ItemDelete = delegate { };
+		public event Action<InfoLineVM> ItemDelete = delegate { };
 		void OnItemDelete(Object s, EventArgs e) {
 			var b = (((MenuItem)s).BindingContext as InfoLineVM);
 			if (b != Nothingable.noth)
-				ItemDelete (imt, b); 
+				ItemDelete (b); 
 		}
 	}
 	public class Nothingable : ObservableCollectionProxy<InfoLineVM, IObservableCollection<InfoLineVM>>

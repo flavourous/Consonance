@@ -4,6 +4,7 @@ using Xamarin.Forms;
 using System.Collections.Generic;
 using System.Collections;
 using System.Diagnostics;
+using System.Collections.Specialized;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -29,12 +30,27 @@ namespace Consonance.XamarinFormsView.PCL
         public static readonly BindableProperty ItemsProperty = BindableProperty.Create("Items", typeof(IEnumerable), typeof(VStacker), null, BindingMode.OneWay, null, (bo, oldv, newv) =>
            {
                var vs = bo as VStacker;
-               vs.ms.Children.Clear();
-               if (newv != null)
-                   foreach (var b in newv as IEnumerable)
-                       vs.ms.Children.Add(vs.c(b));
-               vs.ItemsChanged();
+               vs.SetItems(newv as IEnumerable);
+               var nv = newv as INotifyCollectionChanged;
+               if (nv != null) nv.CollectionChanged += vs.ch;
+               var ov = oldv as INotifyCollectionChanged;
+               if (ov != null) ov.CollectionChanged -= vs.ch;
            });
+        void ch(object o, NotifyCollectionChangedEventArgs e)
+        {
+            SetItems(o as IEnumerable);
+        }
+        void SetItems(IEnumerable newv)
+        {
+            App.platform.UIThread(() =>
+            {
+                ms.Children.Clear();
+                if (newv != null)
+                    foreach (var b in newv as IEnumerable)
+                        ms.Children.Add(c(b));
+                ItemsChanged();
+            });
+        }
     }
 	public class TTView : VStacker
 	{

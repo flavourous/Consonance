@@ -79,23 +79,54 @@ namespace Consonance.XamarinFormsView.PCL
 			MainPage = navigator;
             navigator.Popped += Navigator_Popped;
 
-			// instantiate wrappers
-			viewWrapper = new ViewWrapper(main);
-			bld = defaultBuilder = new ValueRequestBuilder(navigator.Navigation);
-			planCommandWrapper = new PlanCommandsWrapper(defaultBuilder, main);
-			userInputWrapper = new UserInputWrapper(navigator, (c,m) => {
-				var im = new InfoManageView (c,m);
-				planCommandWrapper.Attach(im);
-				return im;
-			}, () => viewWrapper.currentTrackerInstance.sender as IAbstractedTracker);
+            // Common services DI container
+            CommonServices.Attacher Attach_Services;
+            CommonServices services = new CommonServices(out Attach_Services);
 
+            // instantiate wrappers
+            userInputWrapper = new UserInputWrapper(services);
+            bld = defaultBuilder = new ValueRequestBuilder(services);
+			planCommandWrapper = new PlanCommandsWrapper(main, services);
+			viewWrapper = new ViewWrapper(main, services);
+
+            // Initialise services
+            Attach_Services(navigator, userInputWrapper, viewWrapper, defaultBuilder, planCommandWrapper);
         }
 
+    }
 
-        protected override void OnStart()
+    // In lieu of resolving the coupling of those 4 Wrappers, I'll do this.
+    class CommonServices
+    {
+        UserInputWrapper u;
+        ViewWrapper v;
+        ValueRequestBuilder def_b;
+        PlanCommandsWrapper c;
+        NavigationPage nroot;
+
+        public delegate void Attacher(NavigationPage nroot, UserInputWrapper u, ViewWrapper v, ValueRequestBuilder def_b, PlanCommandsWrapper c);
+        public CommonServices(out Attacher atch) { atch = Attach; }
+
+        void Attach(NavigationPage nroot, UserInputWrapper u, ViewWrapper v, ValueRequestBuilder def_b, PlanCommandsWrapper c)
         {
-            base.OnStart();
+            this.nroot = nroot;
+            this.u = u;
+            this.v = v;
+            this.def_b = def_b;
+            this.c = c;
         }
 
+        public IAbstractedTracker Current { get { return v.currentTrackerInstance.sender as IAbstractedTracker; } }
+        public IValueRequestBuilder DefaultBuilder { get { return def_b; } }
+        public IValueRequestBuilder CreateNewBuilder() { return new ValueRequestBuilder(this); }
+        public void AttachToCommander(InfoManageView mv, InfoManageType mt) { c.Attach(mv, mt); }
+        public INavigation nav { get { return nroot.Navigation; } }
+        public Page root { get { return nroot; } }
+        public ViewTask<InfoLineVM> U_InfoView(bool choose, bool manage, InfoManageType mt, InfoLineVM initially_selected)
+        {
+            return u.InfoView(choose, manage, mt,
+                mt == InfoManageType.In ? v.main.viewmodel.InInfos : v.main.viewmodel.OutInfos
+                , initially_selected);
+        }
     }
 }

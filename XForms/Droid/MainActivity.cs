@@ -18,8 +18,8 @@ namespace Consonance.XamarinFormsView.Droid
 			base.OnCreate (bundle);
 			global::Xamarin.Forms.Forms.Init (this, bundle);
             var myap = new App();
-            myap.Presentation(new Platform());
             LoadApplication (myap);
+            myap.Presentation(new Platform());
 		}
 	}
 }

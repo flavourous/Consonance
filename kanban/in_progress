@@ -21,6 +21,11 @@ cause yeah...
 }}}
 loading state doesnt show{{{
 got dialog now...latched.  but, it doesnt usually appear. could insist it appears for atleast a few seconds by delaying the callback on shown
+ok that sucked.  Ive mved to proper datasources, IVMlist, that have a busy bool too.  each changetype is mapped into an action that busies that source whil data for it is being got.  dal hands off changes via "willchange" event, taskmapper executes as a prior, before goting toget new data, and releaseing the busy.
+
+view just needs to respect the busy flag now and show something sensible.
+
+this was a big refactor.
 }}}
 ttview has 1 item after removing last plan{{{
 not sure why. also doesnt hide when items.count==0...

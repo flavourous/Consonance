@@ -13,33 +13,23 @@ using SQLite.Net.Interop;
 using System.Reflection;
 using SQLite.Net.Attributes;
 using System.Runtime.CompilerServices;
+using System.Collections.Specialized;
+using System.Collections;
 
 namespace Consonance
 {
-    public interface IChangeTrigger
-    {
-        event Action Changed;
-    }
-    // this one really used for mangeinfo data supply.
-    public class ChangeTriggerList<T> : List<T>, IChangeTrigger
-    {
-        #region IChangeTrigger implementation
-        public event Action Changed = delegate { };
-        public void OnChanged() { Changed(); }
-        #endregion
-    }
-
+    /// <summary>
+    /// Command router for entry and info actions
+    /// </summary>
     class PlanCommandManager
     {
-        readonly Func<String, ILoadingState> loader;
         readonly Func<TrackerInstanceVM> getCurrent;
         readonly Func<String, Task> message;
-        public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String, Task> message, Func<String, ILoadingState> loader)
+        public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String, Task> message)
         {
             // remember it
             this.getCurrent = getCurrent;
             this.message = message;
-            this.loader = loader;
 
             // commanding for pland
             commands.eat.add += View_addeatitem;
@@ -57,16 +47,16 @@ namespace Consonance
         }
 
         void View_addeatitem(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddIn(cd, bld)); }
-        void View_removeeatitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveIn(vm), LoadingStateStrings.Default); }
+        void View_removeeatitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveIn(vm)); }
         void View_editeatitem(EntryLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditIn(vm, bld)); }
         void View_addeatinfo(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddInInfo(bld)); }
-        void View_removeeatinfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveInInfo(vm), LoadingStateStrings.Default); }
+        void View_removeeatinfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveInInfo(vm)); }
         void View_editeatinfo(InfoLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditInInfo(vm, bld)); }
         void View_addburnitem(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddOut(cd, bld)); }
-        void View_removeburnitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOut(vm), LoadingStateStrings.Default); }
+        void View_removeburnitem(EntryLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOut(vm)); }
         void View_editburnitem(EntryLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditOut(vm, bld)); }
         void View_addburninfo(IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.AddOutInfo(bld)); }
-        void View_removeburninfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOutInfo(vm), LoadingStateStrings.Default); }
+        void View_removeburninfo(InfoLineVM vm) { VerifyDiet((cdh, cd) => cdh.RemoveOutInfo(vm)); }
         void View_editburninfo(InfoLineVM vm, IValueRequestBuilder bld) { VerifyDiet((cdh, cd) => cdh.EditOutInfo(vm, bld)); }
 
         public void VerifyDiet(Action<IAbstractedTracker, TrackerInstanceVM> acty, String load = null)
@@ -74,51 +64,45 @@ namespace Consonance
             var cd = getCurrent();
             if (cd == null) // ping the view about being stupid.
                 message("You need to create a tracker before you can do that");
-            else
-            {
-                if (load != null)
-                {
-                    var lstate = loader(load);
-                    PlatformGlobal.Run(() =>
-                    {
-                        acty(cd.sender as IAbstractedTracker, cd);
-                        lstate.Complete();
-                    });
-                }
-                else acty(cd.sender as IAbstractedTracker, cd); // i dont think these need threading either...
-            }
+            else acty(cd.sender as IAbstractedTracker, cd); // dont thread here, just route. DAL will thread.
         }
     }
 
+    /// <summary>
+    /// Stub thunk shim whatever.  
+    /// For accessing platform stuff on IPlatform of native implimentations within presenter.
+    /// </summary>
     static class PlatformGlobal
     {
-		public static IPlatform platform;
-		public static Task Run (Func<Task> asyncMethod){ return platform.TaskOps.RunTask(asyncMethod); }
-		public static Task Run (Action syncMethod){ return platform.TaskOps.RunTask(syncMethod); }
-		public static Task<T> Run<T> (Func<Task<T>> asyncMethod){ return platform.TaskOps.RunTask(asyncMethod); }
-		public static Task<T> Run<T> (Func<T> syncMethod) { return platform.TaskOps.RunTask(syncMethod); }
-	}
+        public static IPlatform platform;
+        public static Task Run(Func<Task> asyncMethod) { return platform.TaskOps.RunTask(asyncMethod); }
+        public static Task Run(Action syncMethod) { return platform.TaskOps.RunTask(syncMethod); }
+        public static Task<T> Run<T>(Func<Task<T>> asyncMethod) { return platform.TaskOps.RunTask(asyncMethod); }
+        public static Task<T> Run<T>(Func<T> syncMethod) { return platform.TaskOps.RunTask(syncMethod); }
+    }
+
     public class Presenter
-	{
-		// Singleton logic - lazily created
-		static Presenter singleton;
-		//public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
-		public static async Task PresentTo(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
-		{
-			PlatformGlobal.platform = platform;
-			singleton = new Presenter ();
-			await singleton.PresentToImpl (view, platform, input, commands, defBuilder);
-		}
-		SQLiteConnection conn;
-		
-		// present app logic domain to this view.
-		IView view;
-		IUserInput input;
-		PlanCommandManager pcm_refholder;
-		Task PresentToImpl(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
-		{
-			// Start fast!
-			return PlatformGlobal.Run (() => {
+    {
+        #region initialisation of app presentation
+        // Singleton logic - lazily created
+        static Presenter singleton;
+        //public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
+        public static async Task PresentTo(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
+        {
+            PlatformGlobal.platform = platform;
+            singleton = new Presenter();
+            await singleton.PresentToImpl(view, platform, input, commands, defBuilder);
+        }
+        SQLiteConnection conn;
+
+        // present app logic domain to this view.
+        IView view;
+        IUserInput input;
+        PlanCommandManager pcm_refholder;
+        Task PresentToImpl(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
+        {
+            // Start fast!
+            return PlatformGlobal.Run(() => {
 
                 // load DB
                 var datapath = platform.filesystem.AppData;
@@ -127,244 +111,310 @@ namespace Consonance
                 //platform.filesystem.Delete(maindbpath);
                 //byte[] file = platform.filesystem.ReadFile(maindbpath);
                 conn = new SQLiteConnection(platform.sqlite, maindbpath, false);
-                
+
                 Debug.WriteLine("PresntToImpl: presenting");
-				this.view = view;
-				this.input = input;
-				AddDietPair (CalorieDiets.simple.model, CalorieDiets.simple.presenter, defBuilder);
-				AddDietPair (CalorieDiets.scav.model, CalorieDiets.scav.presenter, defBuilder);
-				AddDietPair (Budgets.simpleBudget.model, Budgets.simpleBudget.presenter, defBuilder);
+                this.view = view;
+                this.input = input;
+                AddDietPair(CalorieDiets.simple.model, CalorieDiets.simple.presenter, defBuilder);
+                AddDietPair(CalorieDiets.scav.model, CalorieDiets.scav.presenter, defBuilder);
+                AddDietPair(Budgets.simpleBudget.model, Budgets.simpleBudget.presenter, defBuilder);
 
-				Debug.WriteLine("PresntToImpl: commands");
-				// commanding...
-				view.plan.add += Handleadddietinstance;
-				view.plan.select += View_trackerinstanceselected;
-				view.plan.remove += Handleremovedietinstance;
-				view.plan.edit += View_editdietinstance;
+                Debug.WriteLine("PresntToImpl: commands");
+                // commanding...
+                view.plan.add += Handleadddietinstance;
+                view.plan.select += View_trackerinstanceselected;
+                view.plan.remove += Handleremovedietinstance;
+                view.plan.edit += View_editdietinstance;
 
-				// more commanding...
-				view.changeday += ChangeDay;
-				view.manageInfo += View_manageInfo;
+                // more commanding...
+                view.changeday += ChangeDay;
 
-				pcm_refholder = new PlanCommandManager (commands, () => view.currentTrackerInstance, input.Message, view.PushLoading);
+                // command router
+                pcm_refholder = new PlanCommandManager(commands, () => view.currentTrackerInstance, input.Message);
 
-				// setup view
-				Debug.WriteLine("PresntToImpl: Change day");
-				ChangeDay (DateTime.UtcNow);
-				Debug.WriteLine("PresntToImpl: pushing");
-				PushDietInstances ();
-			});
-		}
+                // set vm datasources
+                view.SetInstances(tracker_instances);
+                view.SetEatLines(inEntries);
+                view.SetBurnLines(outEntries);
+                view.SetEatInfos(inInfos);
+                view.SetBurnInfos(outInfos);
+                view.SetEatTrack(inTracks);
+                view.SetBurnTrack(outTracks);
+                InitMaps();
 
-		void View_manageInfo (InfoManageType obj)
-		{
-			pcm_refholder.VerifyDiet ((cdh, cd) => {
-				using (var hk = new HookedInfoLines (cdh, obj))
-					input.InfoView (InfoCallType.AllowManage, obj, hk.lines, null);
-			});
-		}
-			
-		void View_trackerinstanceselected (TrackerInstanceVM obj)
-		{
-			PlatformGlobal.Run (() => {
-                // yeah, it was selected....cant stack overflow here...
-                //view.currentTrackerInstance = obj;
-                Debug.WriteLine("Beginning tracker selection");
-				PushEatLines (obj);
-				PushBurnLines (obj);
-				PushTracking (obj);
-                Debug.WriteLine("Tracker selection completed");
+                // setup view
+                ChangeDay(DateTime.UtcNow);
+                TaskMapper(DietVMChangeType.Instances, null);
             });
-		}
+        }
 
-		DateTime ds,de;
-		void ChangeDay(DateTime to)
-		{
-			PlatformGlobal.Run (() => {
-				ds = to.StartOfDay();
-				de = ds.AddDays (1);
-				view.day = ds;
-				var ti = view.currentTrackerInstance;
-				if (ti != null) {
-					PushEatLines (ti);
-					PushBurnLines (ti);
-					PushTracking (ti);
-				}
-			});
-		}
+        // vm holders
+        ReplacingVMList<TrackerInstanceVM> tracker_instances = new ReplacingVMList<TrackerInstanceVM>();
+        ReplacingVMList<EntryLineVM> inEntries = new ReplacingVMList<EntryLineVM>();
+        ReplacingVMList<EntryLineVM> outEntries = new ReplacingVMList<EntryLineVM>();
+        ReplacingVMList<InfoLineVM> inInfos = new ReplacingVMList<InfoLineVM>();
+        ReplacingVMList<InfoLineVM> outInfos = new ReplacingVMList<InfoLineVM>();
+        ReplacingVMList<TrackerTracksVM> inTracks = new ReplacingVMList<TrackerTracksVM>();
+        ReplacingVMList<TrackerTracksVM> outTracks = new ReplacingVMList<TrackerTracksVM>();
 
-		// There is no reason to thread these - we want to block UI while view transitions are made, and not much work is done. //
-		void Handleadddietinstance ()
-		{
-			List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker> (dietHandlers);
-			List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM> ();
-			foreach (var ad in saveDiets) dietnames.Add (ad.details);
-			var chooseViewTask = input.ChoosePlan ("Select Diet Type", dietnames, -1);
-			chooseViewTask.Completed.ContinueWith (async index => {
-				var addViewTask = saveDiets [index.Result].StartNewTracker ();
-				await addViewTask;
-				await chooseViewTask.Pop ();
-			});
-		}
-		void View_editdietinstance (TrackerInstanceVM obj)
-		{
-			(obj.sender as IAbstractedTracker).EditTracker (obj);
-		}
-		// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+        #endregion
 
-        // This one however immediately does work! //
-		void Handleremovedietinstance (TrackerInstanceVM obj)
-		{
-            var ls = view.PushLoading(LoadingStateStrings.Default);
+        #region handlers that end up mapped to tasks later
+        void View_trackerinstanceselected(TrackerInstanceVM obj)
+        {
+            TaskMapper(DietVMChangeType.EatInfos | DietVMChangeType.BurnInfos | DietVMChangeType.EatEntries | DietVMChangeType.BurnEntries, null);
+        }
+        DateTime ds, de;
+        void ChangeDay(DateTime to)
+        {
+            ds = to.StartOfDay();
+            de = ds.AddDays(1);
+            view.day = ds;
+            TaskMapper(DietVMChangeType.EatEntries | DietVMChangeType.BurnEntries, null);
+        }
+        void Handleadddietinstance()
+        {
+            List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker>(dietHandlers);
+            List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM>();
+            foreach (var ad in saveDiets) dietnames.Add(ad.details);
+            var chooseViewTask = input.ChoosePlan("Select Diet Type", dietnames, -1);
+            chooseViewTask.Completed.ContinueWith(async index => {
+                var addViewTask = saveDiets[index.Result].StartNewTracker();
+                await addViewTask;
+                await chooseViewTask.Pop();
+            });
+        }
+        void View_editdietinstance(TrackerInstanceVM obj)
+        {
+            (obj.sender as IAbstractedTracker).EditTracker(obj);
+        }
+        void Handleremovedietinstance(TrackerInstanceVM obj)
+        {
+            (obj.sender as IAbstractedTracker).RemoveTracker(obj);
+        }
+        #endregion
+
+        #region tracker registry
+        List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
+        void AddDietPair<D, E, Ei, B, Bi>(ITrackModel<D, E, Ei, B, Bi> dietModel, ITrackerPresenter<D, E, Ei, B, Bi> dietPresenter, IValueRequestBuilder defBuilder)
+            where D : TrackerInstance, new()
+            where E : BaseEntry, new()
+            where Ei : BaseInfo, new()
+            where B : BaseEntry, new()
+            where Bi : BaseInfo, new()
+        {
+            var presentationHandler = new TrackerPresentationAbstractionHandler<D, E, Ei, B, Bi>(defBuilder, input, conn, dietModel, dietPresenter);
+            dietHandlers.Add(presentationHandler);
+            presentationHandler.ViewModelsToChange += HandleViewModelChange;
+        }
+
+        void HandleViewModelChange(IAbstractedTracker sender, DietVMToChangeEventArgs args)
+        {
+            // Always map instances, only map entries if of current instance
+            var ti = view.currentTrackerInstance;
+            if (args.changeType == DietVMChangeType.Instances || (ti != null && Object.ReferenceEquals(ti.sender, sender)))
+                TaskMapper(args.changeType, args.toChange);
+        }
+        #endregion
+
+        // Actions and Tasks:
+        //
+        // Actions
+        // 1) DC - Instances - get&push instances and maybe fire (4)
+        // 2) DC - Current Entries - get&push entries + tracking
+        // 3) DC - Current Infos - get&push infos + tracking
+        // 4) sel - Instance - get&push entries,infos + tracking
+        // 5) sel - Day - get&push entries + tracking
+        //
+        // Tasks
+        // 0) Associated from DAL (eg edit datbase)
+        // 1) get&push instances
+        // 2) get&push entries
+        // 3) get&push infos
+        // 4) get&push trackings
+
+        Dictionary<DietVMChangeType, IBusyMaker[]> busyMap;
+        Dictionary<DietVMChangeType, Action<TrackerInstanceVM>> taskMap;
+        Dictionary<DietVMChangeType, DietVMChangeType[]> cMap;
+        void InitMaps()
+        {
+            cMap = new Dictionary<DietVMChangeType, DietVMChangeType[]>
+            {
+                { DietVMChangeType.Instances, new[] {  DietVMChangeType.Tracking } },
+                { DietVMChangeType.EatEntries,new[] { DietVMChangeType.Tracking } },
+                { DietVMChangeType.BurnEntries,new[] { DietVMChangeType.Tracking} },
+            };
+            busyMap = new Dictionary<DietVMChangeType, IBusyMaker[]>
+            {
+                { DietVMChangeType.Instances, new IBusyMaker[] { tracker_instances } },
+                { DietVMChangeType.EatEntries, new IBusyMaker[] { inEntries, inTracks, outTracks } },
+                { DietVMChangeType.BurnEntries,new IBusyMaker[] { outEntries, inTracks, outTracks } },
+                { DietVMChangeType.EatInfos, new IBusyMaker[] { inInfos } },
+                { DietVMChangeType.BurnInfos,new IBusyMaker[] { outInfos } }
+            };
+            taskMap = new Dictionary<DietVMChangeType, Action<TrackerInstanceVM>>
+            {
+                { DietVMChangeType.Instances,ti=>
+                    {
+                        List<TrackerInstanceVM> toreplace = new List<TrackerInstanceVM>();
+                        foreach (var dh in dietHandlers)
+                            toreplace.AddRange(dh.Instances());
+                        tracker_instances.SetItems(toreplace);
+                    }
+                },
+                {DietVMChangeType.EatEntries,ti=>
+                    {
+                        var ad = (ti?.sender) as IAbstractedTracker;
+                        inEntries.SetItems(ad?.InEntries(ti, ds, de));
+                    }
+                 },
+                {DietVMChangeType.BurnEntries, ti=>
+                    {
+                        var ad = (ti?.sender) as IAbstractedTracker;
+                        outEntries.SetItems(ad?.OutEntries(ti, ds, de));
+                    }
+                },
+                {DietVMChangeType.EatInfos, ti=>
+                    {
+                        var ad = (ti?.sender) as IAbstractedTracker;
+                        inInfos.SetItems(ad?.InInfos(false));
+                    }
+                },
+                {DietVMChangeType.BurnInfos, ti=>
+                    {
+                        var ad = (ti?.sender) as IAbstractedTracker;
+                        outInfos.SetItems(ad?.OutInfos(false));
+                    }
+                },
+                { DietVMChangeType.Tracking, ti=> SetTracking(ti) }
+            };
+        }
+
+
+        void SetTracking(TrackerInstanceVM cti)
+        {
+            // creators
+            Func<TrackerInstanceVM, TrackerTracksVM> git = lti => new TrackerTracksVM { instance = lti, tracks = (lti.sender as IAbstractedTracker).GetInTracking(lti, ds) };
+            Func<TrackerInstanceVM, TrackerTracksVM> got = lti => new TrackerTracksVM { instance = lti, tracks = (lti.sender as IAbstractedTracker).GetOutTracking(lti, ds) };
+
+            // results (current first)
+            List<TrackerTracksVM> in_t = new List<TrackerTracksVM>();
+            List<TrackerTracksVM> out_t = new List<TrackerTracksVM>();
+            if(cti!=null)
+            {
+                in_t.Add(git(cti));
+                out_t.Add(got(cti));
+            }
+
+            foreach (var d in tracker_instances)
+            {
+                if (!OriginatorVM.OriginatorEquals(d, cti))
+                {
+                    in_t.Add(git(d));
+                    out_t.Add(got(d));
+                }
+            }
+            inTracks.SetItems(in_t);
+            outTracks.SetItems(out_t);
+        }
+
+        void TaskMapper(DietVMChangeType action, Action prior)
+        {
+            // Set Busy
+            List<Action> madeBusy = new List<Action>();
+            foreach (var flag in ((uint)action).SplitAsFlags())
+                foreach(var bl in busyMap[(DietVMChangeType)flag])
+                    madeBusy.Add(bl.BusyMaker());
+
+            // remember currently selected dude
+            var cs = view.currentTrackerInstance;
+
+            // begin task
             PlatformGlobal.Run(() =>
             {
-                (obj.sender as IAbstractedTracker).RemoveTracker(obj);
-                ls.Complete();
+                // run the prior to make this state true
+                prior?.Invoke();
+
+                // Coaelsecse attachde tasks (1 run iit)
+                var flags = ((uint)action).SplitAsFlags();
+                foreach (var flag in flags)
+                {
+                    var f = (DietVMChangeType)flag;
+                    if(cMap.ContainsKey(f))
+                        foreach (var connected in cMap[f])
+                            action |= connected;
+                }
+
+                // run associated tasks
+                foreach (var flag in ((uint)action).SplitAsFlags())
+                    taskMap[(DietVMChangeType)flag](cs);
+
+                // change current tracker if either old one is no more, or, we didnt have one selected.
+                if (tracker_instances.items.FindAll(i => OriginatorVM.OriginatorEquals(i, cs)).Count == 0 && tracker_instances.Count > 0)
+                    view.currentTrackerInstance = tracker_instances[0]; // is possible for TaskMapper to be recalled before this returns
+
+                // complete busies off
+                foreach (var b in madeBusy) b();
             });
-		}
-        // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
-
-        void PushEatLines(TrackerInstanceVM ti)
-		{
-            var ls = view.PushLoading(LoadingStateStrings.Default);
-            var ad = ti.sender as IAbstractedTracker;
-			var eatEntries = ad.InEntries (ti, ds, de);
-			view.SetEatLines (eatEntries);
-            ls.Complete();
         }
-		void PushBurnLines(TrackerInstanceVM ti)
-		{
-            var ls = view.PushLoading(LoadingStateStrings.Default);
-            var ad = ti.sender as IAbstractedTracker;
-			var burnEntries = ad.OutEntries (ti, ds, de);
-			view.SetBurnLines (burnEntries);
-            ls.Complete();
-		}
-		void PushTracking(TrackerInstanceVM tii)
-		{
-            var ls = view.PushLoading(LoadingStateStrings.Default);
-            SetViewTrackerTracks (tii, ti => (ti.sender as IAbstractedTracker).GetInTracking (ti, ds), view.SetEatTrack);
-			SetViewTrackerTracks (tii, ti => (ti.sender as IAbstractedTracker).GetOutTracking (ti, ds), view.SetBurnTrack);
-            ls.Complete();
+    }
+
+    #region view interfaces
+    public delegate bool Predicate();
+    public delegate Task Promise();
+    public delegate Task Promise<T>(T arg);
+
+    interface IBusyMaker
+    {
+        Action BusyMaker();
+    }
+    class ReplacingVMList<T> : ObservableCollectionList<T>, IVMList<T>, IBusyMaker
+    {
+        public bool busy { get { return bc > 0; } }
+        protected int bc = 0;
+        public Action BusyMaker()
+        {
+            bc++;
+            OnPropertyChanged("busy");
+            return () => { bc--; OnPropertyChanged("busy"); };
         }
-		void SetViewTrackerTracks(TrackerInstanceVM current, Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor, Action<TrackerTracksVM,IEnumerable<TrackerTracksVM>> viewSetter)
-		{
-			var v = processor (current);
-			viewSetter (
-				new TrackerTracksVM () { 
-					tracks = processor (current), 
-					instance = current
-				},
-				OtherOnes (current, lastBuild, processor)
-			);
-		}
-		IEnumerable<TrackerTracksVM> OtherOnes (TrackerInstanceVM curr, List<TrackerInstanceVM> last, Func<TrackerInstanceVM, IEnumerable<TrackingInfoVM>> processor)
-		{
-			foreach (var d in last)
-				if (d != curr && d.tracked)
-					yield return new TrackerTracksVM () {
-						tracks = processor (d),
-						instance = d
-					};
-		}
 
-		List<TrackerInstanceVM> lastBuild = new  List<TrackerInstanceVM>();
-		void PushDietInstances()
-		{
-			Debug.WriteLine("PushDietInstances: loading state");
-            var ls = view.PushLoading(LoadingStateStrings.Default);
-            Debug.WriteLine("PushDietInstances: clearing");
-			lastBuild.Clear ();	
-			Debug.WriteLine("PushDietInstances: figuring");
-			bool currentRemoved = view.currentTrackerInstance != null;
-			foreach (var dh in dietHandlers)
-				foreach (var d in dh.Instances ()) {
-					if (currentRemoved && OriginatorVM.OriginatorEquals (d, view.currentTrackerInstance)) // that checks db id and table, if originator is correctly set.
-						currentRemoved = false;
-					lastBuild.Add (d);
-				}
-			Debug.WriteLine ("Setting Trackers");
-			view.SetInstances (lastBuild);
-			// change current diet if we have to.
-			if (currentRemoved || view.currentTrackerInstance == null) {
-				if (lastBuild.Count > 0) {
-					view.currentTrackerInstance = lastBuild [0];
-					PushEatLines (lastBuild [0]);
-					PushBurnLines (lastBuild [0]);
-				} else {
-					view.SetEatLines (new EntryLineVM[0]);
-					view.SetBurnLines (new EntryLineVM[0]);
-					view.SetEatTrack (null, new TrackerTracksVM[0]);
-					view.SetBurnTrack (null, new TrackerTracksVM[0]);
-				}
-			}
-            if(view.currentTrackerInstance != null)
-                PushTracking(view.currentTrackerInstance);
-            ls.Complete();
-		}
-			
-		List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
-		void AddDietPair<D,E,Ei,B,Bi>(ITrackModel<D,E,Ei,B,Bi> dietModel, ITrackerPresenter<D,E,Ei,B,Bi> dietPresenter, IValueRequestBuilder defBuilder)
-			where D : TrackerInstance, new()
-			where E  : BaseEntry,new() 
-			where Ei : BaseInfo,new() 
-			where B  : BaseEntry,new() 
-			where Bi : BaseInfo,new() 
-		{
-			var presentationHandler = new TrackerPresentationAbstractionHandler<D,E,Ei,B,Bi> (defBuilder, input, conn, dietModel, dietPresenter);
-			dietHandlers.Add (presentationHandler);
-			presentationHandler.ViewModelsChanged += HandleViewModelsChanged;
-		}
+        public List<T> items { get { return backing; } }
 
-		void HandleViewModelsChanged (IAbstractedTracker sender, DietVMChangeEventArgs args)
-		{
-			// we want these from any registered tracker
-			if (args.changeType == DietVMChangeType.Instances)
-				PushDietInstances ();
-			
-			// check its from the active tracker]
-			var ti = view.currentTrackerInstance;
-			if (ti != null && Object.ReferenceEquals (ti.sender, sender)) {
-				switch (args.changeType) {
-					case DietVMChangeType.EatEntries: PushEatLines (ti); break;
-					case DietVMChangeType.BurnEntries: PushBurnLines (ti); break;
-				}
-			}
-
-			// need to do if instances changes, or if any eat/burn changed in case tracked..so just do.
-			PushTracking (ti);
-		}
-	}
-
-	public delegate bool Predicate();
-	public delegate Task Promise();
-	public delegate Task Promise<T>(T arg);
-    public static class LoadingStateStrings
-    {
-        public const String Default = "Loading";
+        public void SetItems(IEnumerable<T> items)
+        {
+            backing.Clear();
+            backing.AddRange(items ?? new T[0]);
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        }
     }
-	public interface ILoadingState
+    public interface IVMList<T> : IObservableCollection<T>, IVMList
     {
-        void Complete();
     }
+    public interface IVMList : INotifyPropertyChanged
+    {
+        bool busy { get; }
+    }
+
 	/// <summary>
 	/// definition on the application view
 	/// </summary>
 	public interface IView
 	{
-        ILoadingState PushLoading(String name);
-		void SetEatTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others);
-		void SetBurnTrack(TrackerTracksVM current, IEnumerable<TrackerTracksVM> others);
-		void SetEatLines (IEnumerable<EntryLineVM> lineitems);
-		void SetBurnLines (IEnumerable<EntryLineVM> lineitems);
-		void SetInstances (IEnumerable<TrackerInstanceVM> instanceitems);
-		event Action<DateTime> changeday;
+        // This only needs to be set up once.
+		void SetEatTrack(IVMList<TrackerTracksVM> tracks_current_first);
+		void SetBurnTrack(IVMList<TrackerTracksVM> tracks_current_first);
+		void SetEatLines (IVMList<EntryLineVM> lineitems);
+		void SetBurnLines (IVMList<EntryLineVM> lineitems);
+        void SetEatInfos(IVMList<InfoLineVM> lineitems);
+        void SetBurnInfos(IVMList<InfoLineVM> lineitems);
+        void SetInstances (IVMList<TrackerInstanceVM> instanceitems);
+
+        event Action<DateTime> changeday;
 		DateTime day { get; set; }
 		TrackerInstanceVM currentTrackerInstance { get; set; }
 		ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get; }
-		event Action<InfoManageType> manageInfo;
 	}
-	public enum InfoManageType { In, Out };
 	public interface IPlatform
 	{
         Task UIThread(Action method);
@@ -433,8 +483,6 @@ namespace Consonance
 			this.Completed = completed;
 		}
 	}
-	[Flags]
-	public enum InfoCallType { AllowManage = 1, AllowSelect = 2 };
 	public interface IUserInput
 	{
 		// User Input
@@ -442,7 +490,6 @@ namespace Consonance
 		ViewTask<int> ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
 		Task WarnConfirm (String action, Promise confirmed);
 		Task Message(String msg);
-		ViewTask<InfoLineVM> InfoView(InfoCallType calltype, InfoManageType imt, IObservableCollection<InfoLineVM> toManage,InfoLineVM initiallySelected); // which ends up calling this one
 		Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd);
 	}
 	public interface IValueRequestBuilder
@@ -457,10 +504,11 @@ namespace Consonance
 	{
 		public long value; // I think this works?
 	}
-	public interface IValueRequestFactory
+    public enum InfoManageType { In, Out };
+    public interface IValueRequestFactory
 	{
 		IValueRequest<String> StringRequestor(String name);
-		IValueRequest<InfoSelectValue> InfoLineVMRequestor(String name);
+		IValueRequest<InfoLineVM> InfoLineVMRequestor(String name, InfoManageType imt);
 		IValueRequest<DateTime> DateTimeRequestor(String name);
         IValueRequest<DateTime> DateRequestor(String name);
         IValueRequest<DateTime?> nDateRequestor(String name);
@@ -474,7 +522,11 @@ namespace Consonance
 		IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
 		IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
 	}
-	public class RecurrsEveryPatternValue : INotifyPropertyChanged
+    #endregion
+    
+    #region value types for valuerequests
+
+    public class RecurrsEveryPatternValue : INotifyPropertyChanged
 	{
         private DateTime patternFixed;
         public DateTime PatternFixed
@@ -583,17 +635,7 @@ namespace Consonance
 			return sb.ToString ();
 		}
 	}
-	public class InfoSelectValue
-	{
-		public InfoLineVM selected {get;set;}
-		public event Func<Task> choose = async delegate { await Task.Yield(); };
-		public async Task OnChoose() { await choose(); }
-
-		public override string ToString ()
-		{
-			return string.Format ("Selected={0}", selected == null ? "None" : selected.name);
-		}
-	}
+	
 	public interface IValueRequest<V>
 	{
 		Object request { get; }  // used by view to encapsulate viewbuilding lookups
@@ -604,4 +646,6 @@ namespace Consonance
 		bool valid { get; set; } // if we want to check the value set is ok
 		bool read_only { get; set; } // if we want to check the value set is ok
 	}
+    #endregion
+
 }

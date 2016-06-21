@@ -6,14 +6,14 @@ namespace Consonance.XamarinFormsView.PCL
 {
     class DefbuilderCommandWrapper<T> : ICollectionEditorBoundCommands<T>
     {
-		readonly IValueRequestBuilder bld;
-		public DefbuilderCommandWrapper(IValueRequestBuilder bld)
+		readonly CommonServices srv;
+		public DefbuilderCommandWrapper(CommonServices srv)
 		{
-			this.bld = bld;
+            this.srv = srv;
 		}
-		public void OnAdd() { add (bld); }
+		public void OnAdd() { add (srv.DefaultBuilder); }
 		public void OnRemove(T rem) { remove (rem); }
-		public void OnEdit(T ed) { edit (ed, bld); }
+		public void OnEdit(T ed) { edit (ed, srv.DefaultBuilder); }
 		public event Action<IValueRequestBuilder> add = delegate { };
 		public event Action<T> remove = delegate { };
 		public event Action<T, IValueRequestBuilder> edit = delegate { };
@@ -26,13 +26,13 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			return mt == InfoManageType.In ? inInfoBacker : outInfoBacker;
 		}
-		public PlanCommandsWrapper(IValueRequestBuilder defBuilder, MainTabs main)
+		public PlanCommandsWrapper(MainTabs main, CommonServices srv)
 		{
 			// Ready Backers
-			inBacker = new DefbuilderCommandWrapper<EntryLineVM> (defBuilder);
-			outBacker = new DefbuilderCommandWrapper<EntryLineVM> (defBuilder);
-			inInfoBacker = new DefbuilderCommandWrapper<InfoLineVM> (defBuilder);
-			outInfoBacker = new DefbuilderCommandWrapper<InfoLineVM> (defBuilder);
+			inBacker = new DefbuilderCommandWrapper<EntryLineVM> (srv);
+			outBacker = new DefbuilderCommandWrapper<EntryLineVM> (srv);
+			inInfoBacker = new DefbuilderCommandWrapper<InfoLineVM> (srv);
+			outInfoBacker = new DefbuilderCommandWrapper<InfoLineVM> (srv);
 
 			// hooks on the main tabs
 			main.AddIn += inBacker.OnAdd;
@@ -43,12 +43,12 @@ namespace Consonance.XamarinFormsView.PCL
 			main.OutItemDelete += outBacker.OnRemove;
 
 		}
-		public void Attach(InfoManageView iman)
+		public void Attach(InfoManageView iman, InfoManageType mt)
 		{
 			// hooks on the info manager...
-			iman.ItemAdd += mt => imtSwitch(mt).OnAdd();
-			iman.ItemEdit += (mt,m) => imtSwitch(mt).OnEdit(m);
-			iman.ItemDelete += (mt,m) => imtSwitch(mt).OnRemove(m);
+			iman.ItemAdd += () => imtSwitch(mt).OnAdd();
+			iman.ItemEdit += m => imtSwitch(mt).OnEdit(m);
+			iman.ItemDelete += m => imtSwitch(mt).OnRemove(m);
 		}
         public ICollectionEditorBoundCommands<EntryLineVM> eat { get { return inBacker; } }
 		public ICollectionEditorBoundCommands<InfoLineVM> eatinfo { get { return inInfoBacker; } }

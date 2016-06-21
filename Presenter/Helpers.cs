@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Collections.Specialized;
+using System.Runtime.CompilerServices;
 
 namespace Consonance
 {
@@ -48,49 +49,77 @@ namespace Consonance
 		public virtual event NotifyCollectionChangedEventHandler CollectionChanged {  add { toProxy.CollectionChanged += value; } remove { toProxy.CollectionChanged -= value; } } 
 	}
 
-	class HookedInfoLines : IDisposable
-	{
-		readonly InfoManageType imt;
-		readonly IAbstractedTracker cdh;
-		public readonly ObservableCollectionProxy<InfoLineVM, ObservableCollection<InfoLineVM>> lines;
-		public HookedInfoLines(IAbstractedTracker cdh, InfoManageType imt)
-		{
-			this.imt = imt;
-			this.cdh = cdh;
-			this.lines = new ObservableCollectionProxy<InfoLineVM, ObservableCollection<InfoLineVM>> (new ObservableCollection<InfoLineVM> ());
-			cdh.ViewModelsChanged += Cdh_ViewModelsChanged;;
-			PushInLinesAndFire ();
-		}
+    public class ObservableCollectionList<T> : IObservableCollection<T>
+    {
+        protected readonly List<T> backing = new List<T>();
 
-		void Cdh_ViewModelsChanged (IAbstractedTracker sender, DietVMChangeEventArgs args)
-		{
-			PushInLinesAndFire ();
-		}
+        public bool Contains(T item) { return backing.Contains(item); }
+        public void CopyTo(T[] array, int arrayIndex) { backing.CopyTo(array, arrayIndex); }
+        public IEnumerator<T> GetEnumerator() { return backing.GetEnumerator(); }
+        public int IndexOf(T item) { return backing.IndexOf(item); }
+        public int Count { get { return backing.Count; } }
+        public bool IsReadOnly { get { return false; } }
+        IEnumerator IEnumerable.GetEnumerator() { return backing.GetEnumerator(); }
 
-		#region IDisposable implementation
-		public void Dispose ()
-		{
-			cdh.ViewModelsChanged -= Cdh_ViewModelsChanged;;
-		}
-		#endregion
+        public event NotifyCollectionChangedEventHandler CollectionChanged = delegate { };
+        protected void OnCollectionChanged(NotifyCollectionChangedEventArgs cea) { CollectionChanged(this, cea); }
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        protected void OnPropertyChanged([CallerMemberName] String m = null) { PropertyChanged(this, new PropertyChangedEventArgs(m)); }
 
-		void PushInLinesAndFire()
-		{
-			lines.Clear ();
-			switch (imt) {
-			case InfoManageType.In:
-				foreach (var ii in cdh.InInfos (false))
-					lines.Add (ii);
-				break;
-			case InfoManageType.Out:
-				foreach (var oi in cdh.OutInfos (false))
-					lines.Add (oi);
-				break;
-			}
-		}
-	}
+        public T this[int index]
+        {
+            get { return backing[index]; }
+            set
+            {
+                var old = backing[index];
+                backing[index] = value;
+                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, value, old, index));
+            }
+        }
 
-	public interface IRequestStorageHelper
+        public void Add(T item)
+        {
+            backing.Add(item);
+            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, backing.Count - 1));
+            PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+        }
+
+        public void Clear()
+        {
+            backing.Clear();
+            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+        }
+
+
+        public void Insert(int index, T item)
+        {
+            backing.Insert(index, item);
+            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
+            PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+        }
+
+        public bool Remove(T item)
+        {
+            if (backing.Remove(item))
+            {
+                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
+                PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+                return true;
+            }
+            return false;
+        }
+
+        public void RemoveAt(int index)
+        {
+            var item = backing[index];
+            backing.RemoveAt(index);
+            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
+            PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+        }
+    }
+
+    public interface IRequestStorageHelper
 	{
 		void Reset();
 		event Action requestChanged;

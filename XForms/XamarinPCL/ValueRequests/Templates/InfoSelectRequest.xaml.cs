@@ -8,17 +8,25 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public partial class InfoSelectRequest : ContentView
 	{
-		public InfoSelectRequest ()
-		{
-			InitializeComponent ();
-		}
+        public String manage_title { get; set; }
+        public InfoManageType mt { get; set; }
+        public Func<InfoLineVM,ViewTask<InfoLineVM>> requestit { get; set; }
+        public InfoSelectRequest()
+        {
+            InitializeComponent();
+        }
         bool block_reentrancy = false;
 		public async void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
 		{
             if (block_reentrancy) return;
-			var vm = BindingContext as IValueRequest<InfoSelectValue>;
             block_reentrancy = true;
-			await vm.value.OnChoose();
+
+			var vm = BindingContext as IValueRequest<InfoLineVM>;
+            var vr = requestit(vm.value);
+            await vr.Pushed;
+            var ivm = await vr.Completed;
+            vm.value = ivm == Nothingable.noth ? null : ivm;
+            await vr.Pop();
             block_reentrancy = false;
         }
 	}
@@ -27,8 +35,8 @@ namespace Consonance.XamarinFormsView.PCL
 		#region IValueConverter implementation
 		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			var sv = value as InfoSelectValue;
-			return sv == null || sv.selected == null ? "None" : sv.selected.name;
+			var sv = value as InfoLineVM;
+			return sv == null ? "None" : sv.name;
 		}
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{

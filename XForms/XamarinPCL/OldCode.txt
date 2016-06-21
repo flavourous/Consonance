@@ -1,0 +1,83 @@
+﻿
+ 
+ === THis one was dialog push/pop loading state ===
+
+readonly Dictionary<String, int> lkeys = new Dictionary<string, int>();
+        readonly ContentPage loader = new ContentPage { Content = new Label { Text = "" } ,  WidthRequest= 100, HeightRequest = 75};
+        class LS : ILoadingState
+        {
+            readonly String key;
+            readonly ViewWrapper vw;
+            public LS(ViewWrapper vw, String key) { this.vw = vw; this.key = key; }
+            public void Complete()
+            {
+                // async but ordered
+                App.platform.UIThread(() =>
+                {
+                    if (--vw.lkeys[key] == 0)
+                    {
+                        vw.lkeys.Remove(key);
+                        vw.DisplayProgress(false);
+                    }
+                });
+            }
+        }
+        Object ll = new object();
+        bool awaitingCallback = false, wantshow = false, isshow = false;
+        void DisplayProgress(bool? wantShow) // callbacks with null
+        {
+            lock (ll)
+            {
+                if (wantShow.HasValue) wantshow = wantShow.Value; // store request
+                if (awaitingCallback && wantShow.HasValue) return; // cause we'll be recalled
+                if (!wantShow.HasValue) awaitingCallback = false; // we are now being recalled
+                
+                if(wantshow != isshow)
+                {
+                    awaitingCallback = true;
+                    (main as TabbedPage).CurrentPage.IsBusy = isshow = wantshow;
+                    
+                    CallbackDisplayProgressWithDelay(isshow ? TimeSpan.FromSeconds(5) : TimeSpan.Zero);
+                    //if (isshow = wantshow)
+                    //    main.Navigation.PushModalAsync(loader)
+                    //        .ContinueWith(t => CallbackDisplayProgressWithDelay(TimeSpan.FromSeconds(10)));
+                    //else
+                    //    main.Navigation.PopModalAsync()
+                    //        .ContinueWith(t => CallbackDisplayProgressWithDelay(TimeSpan.Zero));
+                }
+            }
+        }
+
+        void CallbackDisplayProgressWithDelay(TimeSpan delay)
+        {
+            App.platform.UIThread(async () =>
+            {
+                await Task.Delay(delay);
+                DisplayProgress(null);
+            });
+        }
+        class DL : ILoadingState { public void Complete() { } }
+        public ILoadingState PushLoading(String key)
+        {
+            // async but ordered
+            App.platform.UIThread(() =>
+            {
+                // show?
+                var show = lkeys.Count == 0;
+
+                // push counter
+                if (!lkeys.ContainsKey(key)) lkeys[key] = 1;
+                else lkeys[key]++;
+
+                // display
+                if (show)
+                {
+                    (loader.Content as Label).Text = "";
+                    DisplayProgress(true);
+                }
+
+                // set text
+                (loader.Content as Label).Text = String.Join("\n", lkeys.Keys);
+            });
+            return new LS(this, key);
+        }

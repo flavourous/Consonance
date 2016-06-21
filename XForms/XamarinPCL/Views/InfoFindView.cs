@@ -8,13 +8,14 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public partial class InfoFindView : ContentPage
 	{
-		public InfoFindView ()
+		public InfoFindView (IValueRequestFactory bfact)
 		{
+            myFactory = bfact;
 			InitializeComponent ();
 			BindingContext = this;
 		}
 		public ObservableCollection<InfoLineVM> Items { get; set; }
-		ValueRequestFactory myFactory = new ValueRequestFactory();
+		readonly IValueRequestFactory myFactory;
 		TaskCompletionSource<InfoLineVM> tcs;
 		IFindList<InfoLineVM> finder;
 		public Task<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd)

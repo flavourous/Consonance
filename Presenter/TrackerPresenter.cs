@@ -167,7 +167,7 @@ namespace Consonance
 		IEnumerable<InfoLineVM> OutInfos (bool onlycomplete);
 		IFindList<InfoLineVM> InFinder {get;}
 		IFindList<InfoLineVM> OutFinder {get;}
-		event DietVMChangeEventHandler ViewModelsChanged;
+		event DietVMChangeEventHandler ViewModelsToChange;
 		// entry ones
 		Task AddIn (TrackerInstanceVM diet, IValueRequestBuilder bld);
 		void RemoveIn (EntryLineVM evm);
@@ -182,12 +182,14 @@ namespace Consonance
 		void RemoveOutInfo (InfoLineVM ivm);
 		Task EditOutInfo (InfoLineVM ivm, IValueRequestBuilder bld);
 	}
-	enum DietVMChangeType { None, Instances, EatEntries, BurnEntries, EatInfos, BurnInfos };
-	class DietVMChangeEventArgs
+    [Flags]
+	enum DietVMChangeType { None =0, Instances=1, EatEntries=2, BurnEntries=4, EatInfos=8, BurnInfos=16, Tracking = 32 /*meta*/ };
+	class DietVMToChangeEventArgs
 	{
 		public DietVMChangeType changeType;
+        public Action toChange;
 	}
-	delegate void DietVMChangeEventHandler(IAbstractedTracker sender, DietVMChangeEventArgs args);
+	delegate void DietVMChangeEventHandler(IAbstractedTracker sender, DietVMToChangeEventArgs args);
 	delegate TrackerInstanceVM DVMPuller();
 	/// <summary>
 	/// This contains all the code which the app would want to do to get viewmodels out of
@@ -229,10 +231,10 @@ namespace Consonance
 			this.presenter = presenter;
 			this.modelHandler = new TrackerModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
 			this.conn = conn;
-            modelHandler.Changed += (t, ct) => ViewModelsChanged(this, new DietVMChangeEventArgs { changeType = t });
+            modelHandler.ToChange += (t, ct, a) => ViewModelsToChange(this, new DietVMToChangeEventArgs { changeType = t, toChange = a });
 		}
 
-		public event DietVMChangeEventHandler ViewModelsChanged = delegate { };
+		public event DietVMChangeEventHandler ViewModelsToChange = delegate { };
 		public IEnumerable<TrackerInstanceVM> Instances()
 		{
 			foreach (var dt in modelHandler.GetTrackers())
@@ -391,30 +393,9 @@ namespace Consonance
 
 			// get a request object for infos
 			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
-			var infoRequest = getValues.requestFactory.InfoLineVMRequestor (info_plural);
+            var infoRequest = getValues.requestFactory.InfoLineVMRequestor(info_plural, true_if_in ? InfoManageType.In : InfoManageType.Out);
 			infoRequest.valid = true; // always true
-			Func<Task> chooseDelegate = null;
-            chooseDelegate = async () =>
-            {
-                TaskCompletionSource<EventArgs> pushed_shim_sadface = new TaskCompletionSource<EventArgs>();
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                PlatformGlobal.Run(async () =>
-                {
-                    var imt = true_if_in ? InfoManageType.In : InfoManageType.Out;
-                    using (var hk = new HookedInfoLines(this, imt))
-                    {
-                        var vtres = getInput.InfoView(InfoCallType.AllowManage | InfoCallType.AllowSelect, imt, hk.lines, infoRequest.value.selected);
-                        await vtres.Pushed;
-                        pushed_shim_sadface.SetResult(new EventArgs());
-                        var res = await vtres.Completed;
-                        infoRequest.value = new InfoSelectValue() { selected = res }; // like this fires changed
-                        infoRequest.value.choose += chooseDelegate; // but re hook needed then!
-                    }
-                });
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                await pushed_shim_sadface.Task;
-                Debug.WriteLine("choosedelegatecompleted");
-            };
+			
 			InfoLineVM sinfo = null;
 			if(editing != null && editing.infoinstanceid.HasValue)
 			{
@@ -423,12 +404,11 @@ namespace Consonance
 				sinfo.originator = imod; // dont forget to set this this time...
 			}
 
-			infoRequest.value = new InfoSelectValue () { selected = sinfo }; // has to....
-			infoRequest.value.choose += chooseDelegate;
+            infoRequest.value = sinfo;
 		
 			// Set up for editing
 			Func<BindingList<Object>> flds = () => {
-				var si = infoRequest.value.selected;
+				var si = infoRequest.value;
 				if (si == null)
 					return editing == null ?
 						creator.CreationFields (getValues.requestFactory) :
@@ -439,7 +419,7 @@ namespace Consonance
 						creator.EditFields (editing, getValues.requestFactory, si.originator as I);
 			};
 			Action editit = () => {
-				var si = infoRequest.value.selected;
+				var si = infoRequest.value;
 				if (si == null) {
 					if (editing == null) handler.Add (diet);
 					else handler.Edit (editing, diet);						
