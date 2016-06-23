@@ -88,6 +88,9 @@
     <Compile Include="Views\ChoosePlanView.xaml.cs">
       <DependentUpon>ChoosePlanView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Controls\BusyList.xaml.cs">
+      <DependentUpon>BusyList.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Controls\DayPagerView.xaml.cs">
       <DependentUpon>DayPagerView.xaml</DependentUpon>
     </Compile>
@@ -246,6 +249,12 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ValueRequests\Templates\nDateTimeRequest.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Views\Controls\BusyList.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <SubType>Designer</SubType>
     </EmbeddedResource>

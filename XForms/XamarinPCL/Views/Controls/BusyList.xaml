@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Consonance.XamarinFormsView.PCL.BusyList"
+             x:Name="main_cv"
+             >
+  <Grid>
+    <ListView 
+      HasUnevenRows="{Binding HasUnevenRows, Source={x:Reference main_cv}}" 
+      SelectedItem="{Binding SelectedItem, Source={x:Reference main_cv}, Mode=TwoWay}" 
+      ItemsSource="{Binding ItemsSource, Source={x:Reference main_cv}}"
+      ItemTemplate="{Binding ItemTemplate, Source={x:Reference main_cv}}"
+     />
+    <Frame x:Name="LoadFrame" BackgroundColor="#44444444">
+      <StackLayout VerticalOptions="Center">
+        <ActivityIndicator HorizontalOptions="Center" IsRunning="True"/>
+        <Label HorizontalOptions="Center">Loading</Label>
+      </StackLayout>
+    </Frame>
+  </Grid>
+</ContentView>

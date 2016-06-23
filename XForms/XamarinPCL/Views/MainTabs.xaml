@@ -11,8 +11,8 @@
 				<RowDefinition Height="auto" />
 				<RowDefinition Height="auto" />
 			</Grid.RowDefinitions>
-			<ListView ItemsSource="{Binding InItems}" HasUnevenRows="true">
-				<ListView.ItemTemplate>
+			<l:BusyList ItemsSource="{Binding InItems}" HasUnevenRows="true">
+				<l:BusyList.ItemTemplate>
 					<DataTemplate>
 						<ViewCell>
 							<ViewCell.ContextActions>
@@ -22,8 +22,8 @@
 							<l:EntryLineVM_Row />
 						</ViewCell>
 					</DataTemplate>
-				</ListView.ItemTemplate>
-			</ListView>
+				</l:BusyList.ItemTemplate>
+			</l:BusyList>
 			<l:TTView Grid.Row="1" Items="{Binding InTrack}" />
 			<l:DayPagerView Grid.Row="2" x:Name="daypagerIn" />
 		</Grid>
@@ -39,8 +39,8 @@
 				<RowDefinition Height="auto" />
 				<RowDefinition Height="auto" />
 			</Grid.RowDefinitions>
-			<ListView ItemsSource="{Binding OutItems}" HasUnevenRows="true">
-				<ListView.ItemTemplate>
+			<l:BusyList ItemsSource="{Binding OutItems}" HasUnevenRows="true">
+				<l:BusyList.ItemTemplate>
 					<DataTemplate>
 						<ViewCell>
 							<ViewCell.ContextActions>
@@ -50,8 +50,8 @@
 							<l:EntryLineVM_Row />
 						</ViewCell>
 					</DataTemplate>
-				</ListView.ItemTemplate>
-			</ListView>
+				</l:BusyList.ItemTemplate>
+			</l:BusyList>
 			<l:TTView Grid.Row="1" Items="{Binding OutTrack}" />
 			<l:DayPagerView Grid.Row="2" x:Name="daypagerOut" />
 		</Grid>
@@ -66,8 +66,8 @@
 				<RowDefinition Height="*" />
 				<RowDefinition Height="auto" />
 			</Grid.RowDefinitions>
-			<ListView HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem, Mode=OneWayToSource}" x:Name="PlanList" ItemsSource="{Binding PlanItems}">
-				<ListView.ItemTemplate>
+			<l:BusyList HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem, Mode=OneWayToSource}" x:Name="PlanList" ItemsSource="{Binding PlanItems}">
+				<l:BusyList.ItemTemplate>
 					<DataTemplate>
 						<ViewCell>
 							<ViewCell.ContextActions>
@@ -77,8 +77,8 @@
 							<l:TrackerInstanceVM_Row />
 						</ViewCell>
 					</DataTemplate>
-				</ListView.ItemTemplate>
-			</ListView>
+				</l:BusyList.ItemTemplate>
+			</l:BusyList>
 			<l:DayPagerView Grid.Row="1" x:Name="daypagerPlan" />
 		</Grid>
 	</ContentPage>

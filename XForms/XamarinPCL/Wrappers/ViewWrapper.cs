@@ -21,8 +21,14 @@ namespace Consonance.XamarinFormsView.PCL
             this.main = main;
             this.srv = srv;
 			main.daypagerContext = this;
-			main.InInfoManage += () => srv.U_InfoView(false, true, InfoManageType.In, null);
-			main.OutInfoManage += () => srv.U_InfoView(false, true, InfoManageType.Out, null);
+            main.InInfoManage += () => InfoView(InfoManageType.In);
+			main.OutInfoManage += () => InfoView(InfoManageType.Out);
+        }
+        void InfoView(InfoManageType mt)
+        {
+            if(currentTrackerInstance == null)
+                UserInputWrapper.message("Create a plan first!");
+            else srv.U_InfoView(false, true, InfoManageType.In, null);
         }
         // IView Properly //
 		public TrackerInstanceVM currentTrackerInstance 
