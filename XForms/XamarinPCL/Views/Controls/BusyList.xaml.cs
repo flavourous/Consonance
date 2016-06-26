@@ -28,13 +28,16 @@ namespace Consonance.XamarinFormsView.PCL
         Object taskOrderingLock = new object();
         Task lastAnim;
 
-        public static readonly BindableProperty LoadingAnimatorProperty = BindableProperty.Create("Loading", typeof(bool), typeof(BusyList), false, BindingMode.OneWay, null, ActivateLoader);
+        public bool IsLoading { get { return (bool)GetValue(IsLoadingProperty); } set { SetValue(IsLoadingProperty, value); } }
+        public static readonly BindableProperty IsLoadingProperty = BindableProperty.Create("IsLoading", typeof(bool), typeof(BusyList), true, BindingMode.OneWay, null, ActivateLoader);
+
         static void ActivateLoader(BindableObject busyList, object oldvalue, object newValue)
         {
-            
-            if ((bool)oldvalue == (bool)newValue) return;
             var bl = busyList as BusyList;
             var blf = bl.LoadFrame as Frame;
+
+            if ((bool)oldvalue == (bool)newValue) return;
+
             lock (bl.taskOrderingLock)
             {
                 bl.lastAnim = bl.lastAnim.ContinueAfter(async () =>
@@ -79,7 +82,6 @@ namespace Consonance.XamarinFormsView.PCL
             ts.SetResult(null);
             lastAnim = ts.Task;
             InitializeComponent();
-            SetBinding(LoadingAnimatorProperty, new Binding("ItemsSource.busy", BindingMode.OneWay, null, null, null, this));
         }
     }
 }

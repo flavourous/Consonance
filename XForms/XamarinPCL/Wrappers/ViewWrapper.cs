@@ -38,14 +38,20 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		
         // passons
-        public void SetEatTrack(IVMList<TrackerTracksVM> others) { App.platform.UIThread(() => main.viewmodel.InTrack = others); }
-        public void SetBurnTrack(IVMList<TrackerTracksVM> others) { App.platform.UIThread(() => main.viewmodel.OutTrack = others); }
-        public void SetEatLines(IVMList<EntryLineVM> lineitems) { App.platform.UIThread(() => main.viewmodel.InItems = lineitems); }
-        public void SetBurnLines(IVMList<EntryLineVM> lineitems) { App.platform.UIThread(() => main.viewmodel.OutItems = lineitems); }
-        public void SetEatInfos(IVMList<InfoLineVM> lineInfos) { App.platform.UIThread(() => main.viewmodel.InInfos = lineInfos); }
-        public void SetBurnInfos(IVMList<InfoLineVM> lineInfos) { App.platform.UIThread(() => main.viewmodel.OutInfos = lineInfos); }
-        public void SetInstances(IVMList<TrackerInstanceVM> instanceitems) { App.platform.UIThread(() => main.viewmodel.PlanItems = instanceitems); }
+        public void SetEatTrack(IVMList<TrackerTracksVM> others) { SetIVM(others,v => main.viewmodel.InTrack = v); }
+        public void SetBurnTrack(IVMList<TrackerTracksVM> others) { SetIVM(others,v => main.viewmodel.OutTrack = v); }
+        public void SetEatLines(IVMList<EntryLineVM> lineitems) { SetIVM(lineitems,v => main.viewmodel.InItems = v); }
+        public void SetBurnLines(IVMList<EntryLineVM> lineitems) { SetIVM(lineitems, v => main.viewmodel.OutItems = v); }
+        public void SetEatInfos(IVMList<InfoLineVM> lineInfos) { SetIVM(lineInfos,v => main.viewmodel.InInfos = v); }
+        public void SetBurnInfos(IVMList<InfoLineVM> lineInfos) { SetIVM(lineInfos, v => main.viewmodel.OutInfos = v); }
+        public void SetInstances(IVMList<TrackerInstanceVM> instanceitems) { SetIVM(instanceitems, v => main.viewmodel.PlanItems = v); }
 			
+        void SetIVM<T>(IVMList<T> list, Action<IVMList<T>> setter)
+        {
+            list.Dispatcher = a => App.platform.UIThread(a);
+            App.platform.UIThread(() => setter(list));
+        }
+
 		// plan commands
         public ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get { return this; } }
         public event Action add { add { main.AddPlan += value; } remove { main.AddPlan -= value; } }

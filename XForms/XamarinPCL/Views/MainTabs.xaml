@@ -11,7 +11,7 @@
 				<RowDefinition Height="auto" />
 				<RowDefinition Height="auto" />
 			</Grid.RowDefinitions>
-			<l:BusyList ItemsSource="{Binding InItems}" HasUnevenRows="true">
+			<l:BusyList ItemsSource="{Binding InItems}" HasUnevenRows="true" IsLoading="{Binding InItems.busy}">
 				<l:BusyList.ItemTemplate>
 					<DataTemplate>
 						<ViewCell>
@@ -39,7 +39,7 @@
 				<RowDefinition Height="auto" />
 				<RowDefinition Height="auto" />
 			</Grid.RowDefinitions>
-			<l:BusyList ItemsSource="{Binding OutItems}" HasUnevenRows="true">
+			<l:BusyList ItemsSource="{Binding OutItems}" HasUnevenRows="true" IsLoading="{Binding OutItems.busy}">
 				<l:BusyList.ItemTemplate>
 					<DataTemplate>
 						<ViewCell>
@@ -66,7 +66,8 @@
 				<RowDefinition Height="*" />
 				<RowDefinition Height="auto" />
 			</Grid.RowDefinitions>
-			<l:BusyList HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem, Mode=OneWayToSource}" x:Name="PlanList" ItemsSource="{Binding PlanItems}">
+			<l:BusyList HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem, Mode=OneWayToSource}" 
+                  x:Name="PlanList" ItemsSource="{Binding PlanItems}"  IsLoading="{Binding PlanItems.busy}">
 				<l:BusyList.ItemTemplate>
 					<DataTemplate>
 						<ViewCell>

@@ -149,20 +149,25 @@ namespace Consonance
         }
 
         // vm holders
-        ReplacingVMList<TrackerInstanceVM> tracker_instances = new ReplacingVMList<TrackerInstanceVM>();
-        ReplacingVMList<EntryLineVM> inEntries = new ReplacingVMList<EntryLineVM>();
-        ReplacingVMList<EntryLineVM> outEntries = new ReplacingVMList<EntryLineVM>();
-        ReplacingVMList<InfoLineVM> inInfos = new ReplacingVMList<InfoLineVM>();
-        ReplacingVMList<InfoLineVM> outInfos = new ReplacingVMList<InfoLineVM>();
-        ReplacingVMList<TrackerTracksVM> inTracks = new ReplacingVMList<TrackerTracksVM>();
-        ReplacingVMList<TrackerTracksVM> outTracks = new ReplacingVMList<TrackerTracksVM>();
+        ReplacingVMList<TrackerInstanceVM> tracker_instances = new ReplacingVMList<TrackerInstanceVM>("instances");
+        ReplacingVMList<EntryLineVM> inEntries = new ReplacingVMList<EntryLineVM>("in");
+        ReplacingVMList<EntryLineVM> outEntries = new ReplacingVMList<EntryLineVM>("out");
+        ReplacingVMList<InfoLineVM> inInfos = new ReplacingVMList<InfoLineVM>("in.i");
+        ReplacingVMList<InfoLineVM> outInfos = new ReplacingVMList<InfoLineVM>("out.i");
+        ReplacingVMList<TrackerTracksVM> inTracks = new ReplacingVMList<TrackerTracksVM>("in.t");
+        ReplacingVMList<TrackerTracksVM> outTracks = new ReplacingVMList<TrackerTracksVM>("out.t");
 
         #endregion
 
         #region handlers that end up mapped to tasks later
         void View_trackerinstanceselected(TrackerInstanceVM obj)
         {
-            TaskMapper(DietVMChangeType.EatInfos | DietVMChangeType.BurnInfos | DietVMChangeType.EatEntries | DietVMChangeType.BurnEntries, null);
+            TaskMapper(
+                DietVMChangeType.EatInfos | 
+                DietVMChangeType.BurnInfos | 
+                DietVMChangeType.EatEntries | 
+                DietVMChangeType.BurnEntries, 
+                null);
         }
         DateTime ds, de;
         void ChangeDay(DateTime to)
@@ -367,16 +372,28 @@ namespace Consonance
     interface IBusyMaker
     {
         Action BusyMaker();
+        String name { get; }
     }
     class ReplacingVMList<T> : ObservableCollectionList<T>, IVMList<T>, IBusyMaker
     {
+        public string name { get; set; }
+        public ReplacingVMList(String name)
+        {
+            this.name = name;
+        }
+
         public bool busy { get { return bc > 0; } }
         protected int bc = 0;
         public Action BusyMaker()
         {
             bc++;
+            BC();
+            return () => { bc--; BC(); };
+        }
+
+        public void BC()
+        {
             OnPropertyChanged("busy");
-            return () => { bc--; OnPropertyChanged("busy"); };
         }
 
         public List<T> items { get { return backing; } }
@@ -385,13 +402,12 @@ namespace Consonance
         {
             backing.Clear();
             backing.AddRange(items ?? new T[0]);
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
     }
     public interface IVMList<T> : IObservableCollection<T>, IVMList
     {
     }
-    public interface IVMList : INotifyPropertyChanged
+    public interface IVMList : INotifyPropertyChanged, ICanDispatch
     {
         bool busy { get; }
     }

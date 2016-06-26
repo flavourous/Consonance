@@ -49,22 +49,38 @@ namespace Consonance
 		public virtual event NotifyCollectionChangedEventHandler CollectionChanged {  add { toProxy.CollectionChanged += value; } remove { toProxy.CollectionChanged -= value; } } 
 	}
 
-    public class ObservableCollectionList<T> : IObservableCollection<T>
+    public interface ICanDispatch
     {
+        Action<Action> Dispatcher { get; set; }
+    }
+    public class ObservableCollectionList<T> : IObservableCollection<T>, ICanDispatch
+    {
+        public ObservableCollectionList()
+        {
+            this.Dispatcher = a => a();
+        }
+        public Action<Action> Dispatcher { get; set; }
+
         protected readonly List<T> backing = new List<T>();
 
         public bool Contains(T item) { return backing.Contains(item); }
         public void CopyTo(T[] array, int arrayIndex) { backing.CopyTo(array, arrayIndex); }
-        public IEnumerator<T> GetEnumerator() { return backing.GetEnumerator(); }
         public int IndexOf(T item) { return backing.IndexOf(item); }
         public int Count { get { return backing.Count; } }
         public bool IsReadOnly { get { return false; } }
-        IEnumerator IEnumerable.GetEnumerator() { return backing.GetEnumerator(); }
+        public virtual IEnumerator<T> GetEnumerator() { return backing.GetEnumerator(); }
+        IEnumerator IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
 
         public event NotifyCollectionChangedEventHandler CollectionChanged = delegate { };
-        protected void OnCollectionChanged(NotifyCollectionChangedEventArgs cea) { CollectionChanged(this, cea); }
+        protected void OnCollectionChanged(NotifyCollectionChangedEventArgs cea)
+        {
+            Dispatcher(() => CollectionChanged(this, cea));
+        }
         public event PropertyChangedEventHandler PropertyChanged = delegate { };
-        protected void OnPropertyChanged([CallerMemberName] String m = null) { PropertyChanged(this, new PropertyChangedEventArgs(m)); }
+        protected void OnPropertyChanged([CallerMemberName] String m = null)
+        {
+            Dispatcher(() => PropertyChanged(this, new PropertyChangedEventArgs(m)));
+        }
 
         public T this[int index]
         {
@@ -73,38 +89,42 @@ namespace Consonance
             {
                 var old = backing[index];
                 backing[index] = value;
-                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, value, old, index));
+                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, value, old, index));
             }
         }
 
         public void Add(T item)
         {
             backing.Add(item);
-            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, backing.Count - 1));
-            PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+            OnPropertyChanged("Count");
+            OnPropertyChanged("Item[]");
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, backing.Count - 1));
         }
 
         public void Clear()
         {
             backing.Clear();
-            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-            PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+            OnPropertyChanged("Count");
+            OnPropertyChanged("Item[]");
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 
 
         public void Insert(int index, T item)
         {
             backing.Insert(index, item);
-            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
-            PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+            OnPropertyChanged("Count");
+            OnPropertyChanged("Item[]");
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
         }
 
         public bool Remove(T item)
         {
             if (backing.Remove(item))
             {
-                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
-                PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+                OnPropertyChanged("Count");
+                OnPropertyChanged("Item[]");
+                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
                 return true;
             }
             return false;
@@ -114,8 +134,9 @@ namespace Consonance
         {
             var item = backing[index];
             backing.RemoveAt(index);
-            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
-            PropertyChanged(this, new PropertyChangedEventArgs("Count"));
+            OnPropertyChanged("Count");
+            OnPropertyChanged("Item[]");
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
         }
     }
 
