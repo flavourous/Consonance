@@ -1,5 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ContentPage Title="Choose a plan" xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.ChoosePlanView">
+<ContentPage Title="Choose a plan"
+             xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+             x:Class="Consonance.XamarinFormsView.PCL.ChoosePlanView">
 	<Grid>
 		<ListView x:Name="lv" IsGroupingEnabled="true" HasUnevenRows="true"  ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey}">
 			<ListView.GroupHeaderTemplate>
@@ -18,12 +22,11 @@
 								<ColumnDefinition Width="auto"/>
 							</Grid.ColumnDefinitions>
 							<Grid.RowDefinitions>
-								<RowDefinition Height="30"/>
+								<RowDefinition Height="auto"/>
 								<RowDefinition Height="auto"/>
 							</Grid.RowDefinitions>
-							<Label Text="{Binding name}" FontSize="16" HorizontalOptions="Fill" VerticalOptions="CenterAndExpand" />
-							<Label Grid.Column="1" IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Center" Text="Choose" />
-							<Button Grid.Column="1" Clicked="DoChoose" IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Center" HeightRequest="30" />
+							<Label Text="{Binding name}" FontSize="16" HorizontalOptions="Fill" VerticalOptions="Start" />
+							<l:TextSizedButton Grid.Column="1" Clicked="DoChoose" IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Start" Text="Choose" />
 							<Label IsVisible="{Binding selected}" Text="{Binding description}" HorizontalOptions="Fill" VerticalOptions="Start" Grid.Row="1" Grid.ColumnSpan="2" />
 						</Grid>
 					</ViewCell>

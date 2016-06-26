@@ -1,9 +1,11 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.InfoFindView">
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.InfoFindView">
 	<StackLayout Orientation="Vertical">
 	  <Picker SelectedIndexChanged="UseMode" x:Name="smodes"/>
 	  <StackLayout Orientation="Vertical" x:Name="requestStack" HeightRequest="50"/> <!--fixme how to do heughtmaybe?-->
-	  <Button Text="Search" Clicked="DoFind"/>
+    <l:TextSizedButton Text="Search" Clicked="DoFind"/>
       <ListView ItemsSource="{Binding Items}" x:Name="InfoList">
         <ListView.ItemTemplate>
           <DataTemplate>
@@ -13,6 +15,6 @@
 	       </DataTemplate>
         </ListView.ItemTemplate>
       </ListView>
-      <Button Text="Choose" Clicked="OnChosen"/>
+    <l:TextSizedButton Text="Choose" Clicked="OnChosen"/>
     </StackLayout>
 </ContentPage>

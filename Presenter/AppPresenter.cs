@@ -260,6 +260,10 @@ namespace Consonance
                         foreach (var dh in dietHandlers)
                             toreplace.AddRange(dh.Instances());
                         tracker_instances.SetItems(toreplace);
+
+                        // change current tracker if either old one is no more, or, we didnt have one selected.
+                        if (tracker_instances.items.FindAll(i => OriginatorVM.OriginatorEquals(i, ti)).Count == 0)
+                                view.currentTrackerInstance = tracker_instances.Count > 0 ? tracker_instances[0] : null; // is possible for TaskMapper to be recalled before this returns
                     }
                 },
                 {DietVMChangeType.EatEntries,ti=>
@@ -347,11 +351,7 @@ namespace Consonance
 
                 // run associated tasks
                 foreach (var flag in ((uint)action).SplitAsFlags())
-                    taskMap[(DietVMChangeType)flag](cs);
-
-                // change current tracker if either old one is no more, or, we didnt have one selected.
-                if (tracker_instances.items.FindAll(i => OriginatorVM.OriginatorEquals(i, cs)).Count == 0 && tracker_instances.Count > 0)
-                    view.currentTrackerInstance = tracker_instances[0]; // is possible for TaskMapper to be recalled before this returns
+                    taskMap[(DietVMChangeType)flag](cs);              
 
                 // complete busies off
                 foreach (var b in madeBusy) b();

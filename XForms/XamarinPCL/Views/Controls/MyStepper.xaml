@@ -17,17 +17,15 @@
 	</ContentView.Resources>
 	<Grid>
 		<Grid.RowDefinitions>
-			<RowDefinition Height="30"/>
+			<RowDefinition Height="auto"/>
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="50"/>
 			<ColumnDefinition Width="auto"/>
 			<ColumnDefinition Width="50"/>
 		</Grid.ColumnDefinitions>
-		<Button Grid.Column="0" Clicked="OnPrev"/>
-		<Label Grid.Column="0" x:Name="prev" HorizontalOptions="Center" VerticalOptions="Center">-</Label>
+		<l:TextSizedButton Grid.Column="0" x:Name="prev" HorizontalOptions="Center" VerticalOptions="Center" Clicked="OnPrev">-</l:TextSizedButton>
 		<Label Grid.Column="1" VerticalOptions="Center" x:Name="displayLabel"/>
-		<Button Grid.Column="2" Clicked="OnNext"/>
-		<Label Grid.Column="2" x:Name="next" HorizontalOptions="Center" VerticalOptions="Center">+</Label>
+    <l:TextSizedButton Grid.Column="2" x:Name="next" HorizontalOptions="Center" VerticalOptions="Center" Clicked="OnNext">+</l:TextSizedButton>
 	</Grid>
 </ContentView>

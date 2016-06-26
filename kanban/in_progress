@@ -9,24 +9,3 @@ so, invention can be done with a ValueRequestBuilder? the big challenge is that 
 
 mapping of the ORM to types is based largely on name, and will work if there are matching properties.  So it should work OK, if we can make types that is.
 }}}
-deleting plan causes ripple?{{{
-delete plan with entries causes ui refresh for each entry as they are deleted? maybe just 3 (1 per table) either way, should only be one refresh.  Perhaps should suspend/resume the DAL?
-}}}
-worried about my button size hacks {{{
-involves a lot of absolute or relative size changes...not sure if it's cross-device compatible. or even on same os with different settings.
-the textsizedbutton is good though. if i can find a way to remove the h and v hacks?
-}}}
-hide ttv when no items{{{
-cause yeah...
-}}}
-loading state doesnt show{{{
-got dialog now...latched.  but, it doesnt usually appear. could insist it appears for atleast a few seconds by delaying the callback on shown
-ok that sucked.  Ive mved to proper datasources, IVMlist, that have a busy bool too.  each changetype is mapped into an action that busies that source whil data for it is being got.  dal hands off changes via "willchange" event, taskmapper executes as a prior, before goting toget new data, and releaseing the busy.
-
-view just needs to respect the busy flag now and show something sensible.
-
-this was a big refactor.
-}}}
-ttview has 1 item after removing last plan{{{
-not sure why. also doesnt hide when items.count==0...
-}}}

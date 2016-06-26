@@ -1,5 +1,3 @@
-:oblems with PCL {{{
-it wouldnt load if it was a superscope ns/asm of the including droid ns/asm.  Wouldnt load the App class with that ns "conflict".  With the "asm" conflict, I got random binding errors even though the asm directives were ok NPE and stuff.  Guessits xamarin framework assuming around non-exotic ns/asm setups.}}}
 flectors are fucked?{{{
  - well, adding an entry with an info doesnt work, crashes during flector. I did change te impl of those.  I cant breakpoint it either...sth strange maybe VS+Xamarin? Dunno.  I'm tracing instead.
  - so GetDeclaredProperty we replaced for the PCL with, will not get properties of superclasses, only those declared on the class inspecting. abstracted into IPlatform and acutlay the plats are implimenting with GetProperty.
@@ -172,4 +170,27 @@ should be farmed off
 check others?
 add/edit are intentionally not threaded (immediate action is to push view)
 remove however does a lot of work, got lumped in with that logic.
+}}}
+deleting plan causes ripple?{{{
+delete plan with entries causes ui refresh for each entry as they are deleted? maybe just 3 (1 per table) either way, should only be one refresh.  Perhaps should suspend/resume the DAL?
+}}}
+loading state doesnt show{{{
+got dialog now...latched.  but, it doesnt usually appear. could insist it appears for atleast a few seconds by delaying the callback on shown
+ok that sucked.  Ive mved to proper datasources, IVMlist, that have a busy bool too.  each changetype is mapped into an action that busies that source whil data for it is being got.  dal hands off changes via "willchange" event, taskmapper executes as a prior, before goting toget new data, and releaseing the busy.
+
+view just needs to respect the busy flag now and show something sensible.
+
+this was a big refactor.
+}}}
+ttview has 1 item after removing last plan{{{
+not sure why. also doesnt hide when items.count==0...
+}}}
+hide ttv when no items{{{
+cause yeah...
+}}}
+worried about my button size hacks {{{
+involves a lot of absolute or relative size changes...not sure if it's cross-device compatible. or even on same os with different settings.
+the textsizedbutton is good though. if i can find a way to remove the h and v hacks?
+using textsizedbutton now, but, theres something on ttview that sucks still when its fillmode and expanding...
+ok - textsizedbuton working. trick is to hook invalidatemeasure to sucessfully measure the label size. then to update the width/height of the grid cell - not heightrequest or any of those.
 }}}

@@ -9,15 +9,6 @@
 	<StackLayout Orientation="Horizontal">
 		<Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
 		<Label LineBreakMode="WordWrap" Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
-		<Grid IsVisible="{Binding selected, Converter={StaticResource withChooseable}}" HorizontalOptions="End" x:Name="gg">
-			<Grid.RowDefinitions>
-				<RowDefinition Height="30"/>
-			</Grid.RowDefinitions>
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="auto"/>
-			</Grid.ColumnDefinitions>
-			<Label HorizontalOptions="Center" VerticalOptions="Center" Text="Choose" />
-			<Button Clicked="OnChosen"/>
-		</Grid>
+		<l:TextSizedButton Clicked="OnChosen" Text="Choose" IsVisible="{Binding selected, Converter={StaticResource withChooseable}}" HorizontalOptions="End" x:Name="gg"/>
 	</StackLayout>
 </ContentView>

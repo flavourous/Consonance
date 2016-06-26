@@ -42,10 +42,10 @@ namespace Consonance.XamarinFormsView.PCL
                     Debug.WriteLine("view selecting tracker");
                     if (value == mSelectedPlanItem) return; // block reentrency
                     var use = PlanItems.Contains(value) ? value : null;
-                    InTabName = value.dialect.InputEntryVerb;
-                    OutTabName = value.dialect.OutputEntryVerb;
-                    InManageName = value.dialect.InputInfoPlural;
-                    OutManageName = value.dialect.OutputInfoPlural;
+                    InTabName = value?.dialect?.InputEntryVerb ?? "In";
+                    OutTabName = value?.dialect?.OutputEntryVerb ?? "Out";
+                    InManageName = value?.dialect?.InputInfoPlural ?? "Manage";
+                    OutManageName = value?.dialect?.OutputInfoPlural ?? "Manage";
                     mSelectedPlanItem = use;
                     OnPlanSelected(use);
                     Debug.WriteLine("view finsihed selecting tracker");

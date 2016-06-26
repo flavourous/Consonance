@@ -1,5 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.InfoManageView">
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.InfoManageView">
 	<ContentPage.Resources>
 		<ResourceDictionary>
 			<DataTemplate x:Key="dt_none">
@@ -35,15 +37,14 @@
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="*"/>
-			<RowDefinition Height="30"/>
+			<RowDefinition Height="auto"/>
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="*"/>
-			<ColumnDefinition Width="30"/>
+			<ColumnDefinition Width="auto"/>
 		</Grid.ColumnDefinitions>
   		<ListView Grid.ColumnSpan="2" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem, Mode=TwoWay}" x:Name="infoList"  HasUnevenRows="true" />
   		<Label Grid.Row="1" HorizontalTextAlignment="End" VerticalOptions="Center">Add New</Label>
-  		<Label FontSize="18" Grid.Row="1" Grid.Column="1" VerticalOptions="Center" HorizontalOptions="Center">+</Label>
-  		<Button VerticalOptions="FillAndExpand" Clicked="OnItemAdd" HorizontalOptions="FillAndExpand" Grid.Row="1" Grid.Column="1"/>
+  		<l:TextSizedButton FontSize="18" Grid.Row="1" Grid.Column="1" VerticalOptions="Center" HorizontalOptions="Center" Clicked="OnItemAdd" >+</l:TextSizedButton>
 	</Grid>
 </ContentPage>

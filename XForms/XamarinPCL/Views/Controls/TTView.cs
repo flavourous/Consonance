@@ -44,10 +44,25 @@ namespace Consonance.XamarinFormsView.PCL
         {
             App.platform.UIThread(() =>
             {
+                bool attempting = true;
+                List<Object> vms = new List<object>();
+                while(attempting)
+                {
+                    try
+                    {
+                        vms.Clear();
+                        foreach (var v in newv as IEnumerable)
+                            vms.Add(v);
+                    }
+                    catch { continue; }
+                    attempting = false;
+                }
+
                 ms.Children.Clear();
                 if (newv != null)
-                    foreach (var b in newv as IEnumerable)
+                    foreach (var b in vms)
                         ms.Children.Add(c(b));
+
                 ItemsChanged();
             });
         }
@@ -108,7 +123,6 @@ namespace Consonance.XamarinFormsView.PCL
         }
         void ProcExp()
         {
-            b.vhack = expanded ? 18 : 5;
             b.Text = expanded ? "Less" : "More";
             for (int i = 1; i < oc.Children.Count; i++)
                 oc.Children[i].IsVisible = expanded;
