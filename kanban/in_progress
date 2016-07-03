@@ -8,4 +8,12 @@ future expanded trackyhelpers with >1 quant,track,entryvar and other relations c
 so, invention can be done with a ValueRequestBuilder? the big challenge is that the trackyhelper needs type inputs.  Can we generate types at runtime reliably and reproducably?
 
 mapping of the ORM to types is based largely on name, and will work if there are matching properties.  So it should work OK, if we can make types that is.
+
+ - just reorganising bits
+ - need that quantifier choice! helpy is placing on info with creators and stuff.
+ - ok done, is simpler now. need combo request request is all (and testing)
+}}}
+need multiple quantifiers {{{
+cause, might be a serving, or grams or whatever!
+or. or we can say "oh it's name depends on the info instance"
 }}}

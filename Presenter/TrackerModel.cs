@@ -93,13 +93,15 @@ namespace Consonance
             InputEntryVerb, OutputEntryVerb, 
             InputInfoPlural, OutputInfoPlural,
             InputInfoVerbPast, OutputInfoVerbPast;
-
+        public readonly String TrackerTypeName;
         public TrackerDialect(
+            String TrackerTypeName,
             String InputEntryVerb, String OutpuEntryVerb, 
             String InputInfoPlural, String OutputInfoPlural,
             String InputInfoVerbPast, String OutputInfoVerbPast
             )
 		{
+            this.TrackerTypeName = TrackerTypeName;
 			this.InputEntryVerb = InputEntryVerb;
 			this.OutputEntryVerb = OutpuEntryVerb;
 			this.InputInfoPlural = InputInfoPlural;

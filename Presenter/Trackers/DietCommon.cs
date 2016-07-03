@@ -2,24 +2,18 @@
 
 namespace Consonance
 {
-    public abstract class BaseEatEntry : BaseEntry 
+    public abstract class BaseEatEntry : HBaseEntry 
 	{
-		public double? grams { get; set; }		
 	}
-	public abstract class BaseBurnEntry : BaseEntry 
+	public abstract class BaseBurnEntry : HBaseEntry 
 	{ 
-		public TimeSpan? duration { get; set; }
 	}
-	public class FireInfo : BaseInfo 
+	public class FireInfo : HBaseInfo 
 	{
-		public TimeSpan duration {get;set;}
 		public double? calories {get;set;}
 	}
-	public class FoodInfo : BaseInfo
+	public class FoodInfo : HBaseInfo
 	{
-		// Amount Info
-		public double grams { get; set; }
-
 		// Nutrient Info
 		public double? calories { get; set; }
 		public double? carbohydrate { get; set; }

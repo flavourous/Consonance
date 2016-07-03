@@ -63,6 +63,9 @@
     <Compile Include="ValueRequests\Templates\IntRequest.xaml.cs">
       <DependentUpon>IntRequest.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ValueRequests\Templates\MultiRequestCombo.xaml.cs">
+      <DependentUpon>MultiRequestCombo.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ValueRequests\Templates\OptionGroupValueRequest.xaml.cs">
       <DependentUpon>OptionGroupValueRequest.xaml</DependentUpon>
     </Compile>
@@ -255,6 +258,12 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Views\Controls\BusyList.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ValueRequests\Templates\MultiRequestCombo.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <SubType>Designer</SubType>
     </EmbeddedResource>

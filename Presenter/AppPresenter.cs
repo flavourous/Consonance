@@ -521,6 +521,7 @@ namespace Consonance
 		public long value; // I think this works?
 	}
     public enum InfoManageType { In, Out };
+    // dont forget this is client facing
     public interface IValueRequestFactory
 	{
 		IValueRequest<String> StringRequestor(String name);
@@ -537,10 +538,22 @@ namespace Consonance
 		IValueRequest<OptionGroupValue> OptionGroupRequestor(String name);
 		IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
 		IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
+        IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name);
 	}
     #endregion
     
     #region value types for valuerequests
+
+    public class MultiRequestOptionValue
+    {
+        public readonly IEnumerable IValueRequestOptions;
+        public int SelectedRequest { get; private set; }
+        public MultiRequestOptionValue(IEnumerable IValueRequestOptions, int InitiallySelectedRequest )
+        {
+            this.IValueRequestOptions = IValueRequestOptions;
+            SelectedRequest = InitiallySelectedRequest;
+        }
+    }
 
     public class RecurrsEveryPatternValue : INotifyPropertyChanged
 	{
