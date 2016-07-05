@@ -27,6 +27,7 @@ namespace Consonance.XamarinFormsView.PCL
             MeasureInvalidated += TextSizedButton_MeasureInvalidated;
         }
 
+        public double FontSize { get { return l.FontSize; } set { l.FontSize = value; InvalidateMeasure(); } }
         public String Text { get { return l.Text; } set { l.Text = value; InvalidateMeasure(); } }
         public event EventHandler Clicked { add { b.Clicked += value; } remove { b.Clicked -= value; } }
 

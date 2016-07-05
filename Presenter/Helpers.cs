@@ -144,7 +144,7 @@ namespace Consonance
 	{
 		void Reset();
 		event Action requestChanged;
-		bool requestValid {set;}
+		bool requestValid { get; set; }
 		Object requestValue { get; set; }
 		object CGet (IValueRequestFactory fact, Func<IValueRequestFactory, Func<String, Object>> FindRequestDelegate);
 	}
@@ -171,14 +171,21 @@ namespace Consonance
 		{
 			return CGet ((Func<String, IValueRequest<V>>)FindRequestDelegate (fact));
 		}
-		public bool requestValid { set { request.valid = value; } }
+		public bool requestValid { get { return request.valid; } set { request.valid = value; } }
 		#endregion
 
 		public IValueRequest<V> request { get; private set; }
 		readonly String name;
 		readonly Func<V> defaultValue = () => default(V);
 		readonly Action validate;
-		public RequestStorageHelper(String requestName, Func<V> defaultValue, Action validate)
+        public RequestStorageHelper(String requestName, Func<V,V> defaultValue, Action validate)
+        {
+            this.validate = validate;
+            this.defaultValue = () => defaultValue(request.value);
+            name = requestName;
+            request = new DummyValueRequest<V> {  };
+        }
+        public RequestStorageHelper(String requestName, Func<V> defaultValue, Action validate)
 		{
 			this.validate = validate;
 			this.defaultValue = defaultValue;

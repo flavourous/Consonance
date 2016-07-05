@@ -119,7 +119,7 @@ namespace Consonance
 		#region IReflectedHelpyQuants implementation
         public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", "calories", 0.0); } }
         public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", "calories", 0.0) }; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.Double("Grams", 0, 100) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.Double("Grams", 0, 100.0), InfoQuantifier.Double("Servings", 1, 1.0) }; } }
         public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<FoodInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
 		#endregion

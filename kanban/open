@@ -14,4 +14,9 @@ upgrade paths for trackyhelpers{{{
 when we add multuple quants, we need to migrate our simplecaldiet to a mquantcaldiet.  That can be done statically.
 
 What about user invented ones? we have the type generator in theory, so we can do?
+
+we already added multiple quants to helpy...still thinkys tho
+}}}
+error handling (insights) {{{
+used custom now, just impl insights.
 }}}

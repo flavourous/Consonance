@@ -148,18 +148,19 @@ namespace Consonance
         public readonly int QuantifierID;
         public readonly VRVConnectedValue ConnectedValue;
         public readonly Func<double, String> DisplayConversion;
-        private InfoQuantifier(int id, VRVConnectedValue vcv)
+        private InfoQuantifier(int id, VRVConnectedValue vcv, Func<double, String> dc)
         {
             QuantifierID = id;
             ConnectedValue = vcv;
+            DisplayConversion = dc;
         }
         // a double column injected into the info, and an id for which infoquantifier
         // a double column injected into the entry for amount - already foreign keys info
         // this gives textual description, and gets a valuerequest, and converts vrv into doubles for storage.
 
-        public static InfoQuantifier Double(String name, int uid, double dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d > 0.0, name, "quantity", f => f.DoubleRequestor, d => d, d => d)); }
-        public static InfoQuantifier Integer(String name, int uid,  int dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d > 0, name, "quantity", f => f.IntRequestor, d => (double)d, d => (int)d)); }
-        public static InfoQuantifier Duration(String name, int uid, TimeSpan dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d.TotalHours > 0.0, name, "quantity", f => f.TimeSpanRequestor, d => d.TotalHours, d => TimeSpan.FromHours(d))); }
+        public static InfoQuantifier Double(String name, int uid, double dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d > 0.0, name, "quantity", f => f.DoubleRequestor, d => d, d => d), d=>d.ToString("F2")); }
+        public static InfoQuantifier Integer(String name, int uid,  int dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d > 0, name, "quantity", f => f.IntRequestor, d => (double)d, d => (int)d), d=>d.ToString()); }
+        public static InfoQuantifier Duration(String name, int uid, TimeSpan dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d.TotalHours > 0.0, name, "quantity", f => f.TimeSpanRequestor, d => d.TotalHours, d => TimeSpan.FromHours(d)), d => TimeSpan.FromHours(d).WithSuffix()); }
     }
     public interface IReflectedHelpyQuants<I>
     {
@@ -296,19 +297,40 @@ namespace Consonance
 			this.IsInfoComplete = quant.InfoComplete;
 			this.quant = quant;
 
-            // Get these ready!
-            measureOptionContainers = (from q in quant.quantifier_choices select
-                                       new MeasureOptionsContainer
-                                       {
-                                           quant = q, // cause ordering?
-                                           requestStorage = q.ConnectedValue.CreateHelper(() => {/* validation */}),
-                                           entryFlector = new Flecter<E>(q.ConnectedValue.fieldName),
-                                           infoFlector = new Flecter<I>(q.ConnectedValue.fieldName)
-                                       }).ToList();
+            // ready this
+            Action ValidateCurrentAmount = () =>
+            {
+                var rv = measureAndOptionsRequest.request.value;
+                var irv = measureOptionContainers[rv.SelectedRequest];
+                measureAndOptionsRequest.requestValid = irv.requestStorage.requestValid;
+            };
 
-            // and this dude
-            MultiRequestOptionValue mrv = new MultiRequestOptionValue(from q in measureOptionContainers select q.requestStorage, 0);
-            measureAndOptionsRequest = new RequestStorageHelper<MultiRequestOptionValue>("Amount", () => mrv, () => {/* validation */});
+            // Get these ready!
+            measureOptionContainers = new List<MeasureOptionsContainer>();
+            foreach (var q in quant.quantifier_choices)
+            {
+                IRequestStorageHelper rs = null;
+                rs = q.ConnectedValue.CreateHelper(() => rs.requestValid = q.ConnectedValue.ValidateHelper(new[] { rs }));
+                measureOptionContainers.Add(new MeasureOptionsContainer
+                {
+                    quant = q, // 'cause ordering?
+                    requestStorage = rs,
+                    entryFlector = new Flecter<E>(q.ConnectedValue.fieldName),
+                    infoFlector = new Flecter<I>(q.ConnectedValue.fieldName)
+                });
+                rs.requestChanged += ValidateCurrentAmount;
+            }
+
+            // and this dudes
+            Func<MultiRequestOptionValue, MultiRequestOptionValue> deffer = d =>
+            {
+                if (d == null) return null;
+                foreach (var dd in measureOptionContainers)
+                    dd.requestStorage.Reset(); // wont get resetted by other dudes, hidden by the composition.
+                d.SelectedRequest = 0;
+                return d;
+            };
+            measureAndOptionsRequest = new RequestStorageHelper<MultiRequestOptionValue>("Amount", deffer, ValidateCurrentAmount);
 
             // we need a direct request for no info creation - and posssssibly one of each for the ones on info that might not exist.
             // also need one for info quantity.
@@ -331,9 +353,13 @@ namespace Consonance
         I currInfo;
 		void SetupInfoObservers(I info)
 		{
+            //get this in early
+            currInfo = info;
+
             // Check the ClearListeners - it happens on reset and Cget.
             if (info != null)  // so that mesquant is cgetted
             {
+
                 //but this might cause dangling stuff
                 if (currentMeasureOption != null)
                     currentMeasureOption.requestStorage.requestChanged -= MeasureQuantity_request_changed;
@@ -343,14 +369,16 @@ namespace Consonance
                 if (usedquant.Count() != 1)
                     throw new ArgumentException("Got " + usedquant.Count() + " possibilities for quantifiers!");
                 currentMeasureOption = usedquant.First();
-
-                // watch for changes on it
-                currentMeasureOption.requestStorage.requestChanged += MeasureQuantity_request_changed;
-                MeasureQuantity_request_changed();
             }
             else currentMeasureOption = null;
-			trackedQuantity.request.read_only = (currInfo = info) != null;
+			trackedQuantity.request.read_only = info != null;
 		}
+        void BeginObserving()
+        {
+            // watch for changes on it
+            currentMeasureOption.requestStorage.requestChanged += MeasureQuantity_request_changed;
+            MeasureQuantity_request_changed();
+        }
 		void MeasureQuantity_request_changed ()
 		{
             // update the calories field with a calc
@@ -393,6 +421,7 @@ namespace Consonance
             var blo = new BindingList<Object>() { trackedQuantity.CGet(factory.DoubleRequestor), currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate) };
 			ProcessRequestsForInfo (blo, factory, info);
 			defaulter.PushInDefaults(null, blo, factory);
+            BeginObserving();
 			return blo;
 		}
 
@@ -432,7 +461,7 @@ namespace Consonance
             // thats cause these pop up if any are "missing" on selected info.
 			List<double> vals = new List<double> ();
 			foreach (var tv in forMissingInfoQuantities)
-				vals.Add (tv*fac);
+				vals.Add (tv.request.value*fac);
 			return quant.Calcluate (vals.ToArray ());
 		}
 
@@ -466,7 +495,8 @@ namespace Consonance
 			currentMeasureOption.requestStorage.requestValue = currentMeasureOption.entryFlector.Get (toEdit);
 			ProcessRequestsForInfo (blo, factory, info); // initially, no, we'll add none...but maybe subsequently.
 			defaulter.PushInDefaults (toEdit, blo, factory);
-			return blo;
+            BeginObserving();
+            return blo;
 		}
 
 		public E Edit (E toEdit, I info, bool shouldComplete)
@@ -486,6 +516,7 @@ namespace Consonance
 		public BindingList<object> InfoFields (IValueRequestFactory factory)
 		{
             // get request options
+            measureAndOptionsRequest.request.value = new MultiRequestOptionValue((from q in measureOptionContainers select q.requestStorage.CGet(factory, q.quant.ConnectedValue.FindRequestorDelegate)).ToArray(), 0);
             var rv = new BindingList<Object>() { infoNameRequest.CGet(factory.StringRequestor), measureAndOptionsRequest.CGet(factory.IValueRequestOptionGroupRequestor) };
 			foreach (var iv in forMissingInfoQuantities)
 				rv.Add (iv.CGet (factory.DoubleRequestor));
@@ -499,7 +530,7 @@ namespace Consonance
             if(usedquant.Count != 1) throw new ArgumentException("Got " + usedquant.Count() + " possibilities for quantifiers!");
 
             var qi = measureOptionContainers.IndexOf(usedquant[0]);
-            measureAndOptionsRequest.request.value = new MultiRequestOptionValue(from q in measureOptionContainers select q.requestStorage, qi);
+            measureAndOptionsRequest.request.value.SelectedRequest = qi;
             var amt = usedquant[0].infoFlector.Get(item);
             usedquant[0].requestStorage.requestValue = usedquant[0].quant.ConnectedValue.ConvertDataToRequestValue(amt);
 
@@ -642,11 +673,12 @@ namespace Consonance
 		}
         KVPList<String, double> GetIK<A>(IReflectedHelpyQuants<A> q, Flecter<A> f, A info) where A : HBaseInfo
         {
-            var uq = GetQuant(info.id, helpy.input.quantifier_choices);
+            var uq = GetQuant(info.quantifierID, helpy.input.quantifier_choices);
+            Flecter<A> afl = new Flecter<A>(uq.ConnectedValue.fieldName);
             return new KVPList<string, double>
                     {
-                        { q.tracked, (double)f.Get(info) },
-                        { uq.ConnectedValue.name, (double)f.Get(info) }
+                        { q.tracked.name, (double)f.Get(info) },
+                        { uq.ConnectedValue.name, (double)afl.Get(info) }
                     };
         }
 		public InfoLineVM GetRepresentation (InInfo info)

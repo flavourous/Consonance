@@ -28,7 +28,7 @@ namespace Consonance.XamarinFormsView.PCL
         {
             if(currentTrackerInstance == null)
                 UserInputWrapper.message("Create a plan first!");
-            else srv.U_InfoView(false, true, InfoManageType.In, null);
+            else srv.U_InfoView(false, true, mt, null);
         }
         // IView Properly //
 		public TrackerInstanceVM currentTrackerInstance 

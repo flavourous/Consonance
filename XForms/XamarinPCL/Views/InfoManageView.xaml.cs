@@ -28,7 +28,7 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		public InfoLineVM initiallySelectedItem { get; set; }
 
-		Nothingable _Items;
+        IObservableCollection<InfoLineVM> _Items;
 		public IObservableCollection<InfoLineVM> Items
 		{
 			get { return _Items; }
@@ -49,12 +49,16 @@ namespace Consonance.XamarinFormsView.PCL
 			InitializeComponent ();
 			BindingContext = this;
 
+            // menuitems and actual itemtemplate
             String res = "dt_none";
             if (choice && manage) res = "dt_both";
             else if (choice) res = "dt_choose";
             else if (manage) res = "dt_manage";
 			infoList.ItemTemplate = Resources [res] as DataTemplate;
-		}
+
+            // add button
+            if (!manage) ToolbarItems.Remove(AddToolbarItem);
+        }
 		protected override bool OnBackButtonPressed ()
 		{
 			completedTask.SetResult (initiallySelectedItem); // signals no selection change

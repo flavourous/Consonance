@@ -7,6 +7,6 @@
 	</ContentView.Resources>
 	<StackLayout Orientation="Horizontal" HorizontalOptions="FillAndExpand">
 		<Label Text="{Binding value, Converter={StaticResource isvc}}" HorizontalOptions="CenterAndExpand" VerticalOptions="Center" x:Name="lblInfo"/>
-    <l:TextSizedButton Clicked="OnChoose">Change</l:TextSizedButton>
+    <l:TextSizedButton Clicked="OnChoose" Text="Change"/>
 	</StackLayout>
 </ContentView>

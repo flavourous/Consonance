@@ -402,6 +402,9 @@ namespace Consonance
         {
             backing.Clear();
             backing.AddRange(items ?? new T[0]);
+            OnPropertyChanged("Count");
+            OnPropertyChanged("Item[]");
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
     }
     public interface IVMList<T> : IObservableCollection<T>, IVMList
@@ -547,7 +550,7 @@ namespace Consonance
     public class MultiRequestOptionValue
     {
         public readonly IEnumerable IValueRequestOptions;
-        public int SelectedRequest { get; private set; }
+        public int SelectedRequest { get; set; }
         public MultiRequestOptionValue(IEnumerable IValueRequestOptions, int InitiallySelectedRequest )
         {
             this.IValueRequestOptions = IValueRequestOptions;

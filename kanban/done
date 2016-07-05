@@ -194,3 +194,14 @@ the textsizedbutton is good though. if i can find a way to remove the h and v ha
 using textsizedbutton now, but, theres something on ttview that sucks still when its fillmode and expanding...
 ok - textsizedbuton working. trick is to hook invalidatemeasure to sucessfully measure the label size. then to update the width/height of the grid cell - not heightrequest or any of those.
 }}}
+need multiple quantifiers {{{
+cause, might be a serving, or grams or whatever!
+or. or we can say "oh it's name depends on the info instance"
+yeah - impl across helpy and HelpyBaseInfos via creators and IDs
+}}}
+burn tab infos goes to in tab infos? {{{
+probabby just after moving to view the collections fully, not calling rigt one
+}}}
+manageinfo not responding to changes{{{
+but i think it fires...
+}}}

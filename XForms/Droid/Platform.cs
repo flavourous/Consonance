@@ -68,8 +68,10 @@ namespace Consonance.XamarinFormsView
 		void HandleException(Exception h)
 		{
 			Debug.WriteLine (h);
-			UIThread (() => showError (h.ToString (), () => { throw h; }));
-		}
+			//UIThread (() => showError (h.ToString (), () => { throw h; }));
+            Device.BeginInvokeOnMainThread(() => { throw h; });
+            throw h;
+        }
 
         public bool CreateDirectory(string ifdoesntexist)
         {
