@@ -65,7 +65,7 @@ namespace Consonance
 		public IReflectedHelpyQuants<FireInfo> output { get { return _output; } }
 		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Calorie diet", "Simple calorie-control diet with a daily target.  If enabled, weekly tracking starts from the start date of the diet.", "Diet");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Diet", "Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public String trackedname { get { return "calories"; } }
 		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
@@ -90,7 +90,7 @@ namespace Consonance
 		public IReflectedHelpyQuants<FireInfo> output { get { return _output; } }
 		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Scavenger calorie diet", "Calorie controlled diet, using periods of looser control followed by periods of stronger control.", "Diet");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Diet", "Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public String trackedname { get { return "calories"; } }
 		public VRVConnectedValue[] instanceValueFields { get { return new[] { 
@@ -119,7 +119,7 @@ namespace Consonance
 		#region IReflectedHelpyQuants implementation
         public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", "calories", 0.0); } }
         public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", "calories", 0.0) }; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.Double("Grams", 0, 100.0), InfoQuantifier.Double("Servings", 1, 1.0) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Grams", 0, 100.0), InfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Servings", 1, 1.0) }; } }
         public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<FoodInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
 		#endregion
@@ -129,7 +129,7 @@ namespace Consonance
 		#region IReflectedHelpyQuants implementation
 		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", "calories", 0.0); } }
 		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", "calories", 0.0) }; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.Duration("Duration", 0, TimeSpan.Zero) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Duration, "Duration", 0, 0.0) }; } }
         public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<FireInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
 		#endregion

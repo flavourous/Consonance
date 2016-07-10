@@ -20,14 +20,14 @@ EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\LibSharpHelp\LibSharpHelp.projitems*{7e0e5aeb-4591-4161-b39e-b50569c802f1}*SharedItemsImports = 13
-		..\LibSharpHelp\LibSharpHelp.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
-		..\LibRTP\LibRTP\LibRTP.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
 		Presenter\Consonance.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
+		..\LibRTP\LibRTP\LibRTP.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
 		..\LibRTP\LibRTP\LibRTP.projitems*{1c3091eb-5350-48f8-aa8a-51e7d4656da0}*SharedItemsImports = 13
 		Presenter\Consonance.projitems*{2459c065-28a0-451f-8537-2ae6a1af57b3}*SharedItemsImports = 13
-		..\LibSharpHelp\LibSharpHelp.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
-		..\LibRTP\LibRTP\LibRTP.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
 		Presenter\Consonance.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
+		..\LibRTP\LibRTP\LibRTP.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Ad-Hoc|Any CPU = Ad-Hoc|Any CPU

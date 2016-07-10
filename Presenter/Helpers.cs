@@ -8,8 +8,10 @@ using System.Runtime.CompilerServices;
 
 namespace Consonance
 {
+    
+
     // proxy just needs this collection of interfaces, not the one we combine here...
-	public interface IObservableCollection<T> : INotifyCollectionChanged, INotifyPropertyChanged,  IList<T> { }
+    public interface IObservableCollection<T> : INotifyCollectionChanged, INotifyPropertyChanged,  IList<T> { }
 	public class ObservableCollectionProxy<T, ProxyConstraint> : IObservableCollection<T>
 		where ProxyConstraint : INotifyCollectionChanged, INotifyPropertyChanged,  IList<T>
 	{

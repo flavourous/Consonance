@@ -107,7 +107,7 @@ namespace Consonance
                 // load DB
                 var datapath = platform.filesystem.AppData;
                 platform.CreateDirectory(datapath);
-                var maindbpath = Path.Combine(datapath, "manydiet.db");
+                var maindbpath = Path.Combine(datapath, "Consonance.db");
                 //platform.filesystem.Delete(maindbpath);
                 //byte[] file = platform.filesystem.ReadFile(maindbpath);
                 conn = new SQLiteConnection(platform.sqlite, maindbpath, false);
@@ -115,9 +115,13 @@ namespace Consonance
                 Debug.WriteLine("PresntToImpl: presenting");
                 this.view = view;
                 this.input = input;
+
+                // Builtins
                 AddDietPair(CalorieDiets.simple.model, CalorieDiets.simple.presenter, defBuilder);
                 AddDietPair(CalorieDiets.scav.model, CalorieDiets.scav.presenter, defBuilder);
                 AddDietPair(Budgets.simpleBudget.model, Budgets.simpleBudget.presenter, defBuilder);
+
+                // Inventors
 
                 Debug.WriteLine("PresntToImpl: commands");
                 // commanding...
@@ -144,7 +148,7 @@ namespace Consonance
 
                 // setup view
                 ChangeDay(DateTime.UtcNow);
-                TaskMapper(DietVMChangeType.Instances, null);
+                TaskMapper(DietVMChangeType.Instances, null, true);
             });
         }
 
@@ -167,7 +171,7 @@ namespace Consonance
                 DietVMChangeType.BurnInfos | 
                 DietVMChangeType.EatEntries | 
                 DietVMChangeType.BurnEntries, 
-                null);
+                null, true);
         }
         DateTime ds, de;
         void ChangeDay(DateTime to)
@@ -175,7 +179,7 @@ namespace Consonance
             ds = to.StartOfDay();
             de = ds.AddDays(1);
             view.day = ds;
-            TaskMapper(DietVMChangeType.EatEntries | DietVMChangeType.BurnEntries, null);
+            TaskMapper(DietVMChangeType.EatEntries | DietVMChangeType.BurnEntries, null, true);
         }
         void Handleadddietinstance()
         {
@@ -201,7 +205,8 @@ namespace Consonance
 
         #region tracker registry
         List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
-        void AddDietPair<D, E, Ei, B, Bi>(ITrackModel<D, E, Ei, B, Bi> dietModel, ITrackerPresenter<D, E, Ei, B, Bi> dietPresenter, IValueRequestBuilder defBuilder)
+        public class AddDietPairState { public Action remove; public IAbstractedDAL dal;  }
+        public AddDietPairState AddDietPair<D, E, Ei, B, Bi>(ITrackModel<D, E, Ei, B, Bi> dietModel, ITrackerPresenter<D, E, Ei, B, Bi> dietPresenter, IValueRequestBuilder defBuilder)
             where D : TrackerInstance, new()
             where E : BaseEntry, new()
             where Ei : BaseInfo, new()
@@ -211,14 +216,25 @@ namespace Consonance
             var presentationHandler = new TrackerPresentationAbstractionHandler<D, E, Ei, B, Bi>(defBuilder, input, conn, dietModel, dietPresenter);
             dietHandlers.Add(presentationHandler);
             presentationHandler.ViewModelsToChange += HandleViewModelChange;
+
+            // helpers callers to undo what they did!
+            return new AddDietPairState
+            {
+                remove = () =>
+                    {
+                        // removal action
+                        presentationHandler.ViewModelsToChange -= HandleViewModelChange;
+                        dietHandlers.Remove(presentationHandler);
+                    },
+                dal = presentationHandler.modelHandler
+            };
         }
 
-        void HandleViewModelChange(IAbstractedTracker sender, DietVMToChangeEventArgs args)
+        void HandleViewModelChange(IAbstractedTracker sender, DietVMToChangeEventArgs<DietVMChangeType> args)
         {
-            // Always map instances, only map entries if of current instance
+            // Always map everything cause it needs to be actioned at least!
             var ti = view.currentTrackerInstance;
-            if (args.changeType == DietVMChangeType.Instances || (ti != null && Object.ReferenceEquals(ti.sender, sender)))
-                TaskMapper(args.changeType, args.toChange);
+            TaskMapper(args.changeType, args.toChange, args.changeType == DietVMChangeType.Instances || (ti != null && Object.ReferenceEquals(ti.sender, sender)));
         }
         #endregion
 
@@ -327,13 +343,17 @@ namespace Consonance
             outTracks.SetItems(out_t);
         }
 
-        void TaskMapper(DietVMChangeType action, Action prior)
+        void TaskMapper(DietVMChangeType action, Func<Action> prior, bool perform_mapping)
         {
             // Set Busy
             List<Action> madeBusy = new List<Action>();
-            foreach (var flag in ((uint)action).SplitAsFlags())
-                foreach(var bl in busyMap[(DietVMChangeType)flag])
-                    madeBusy.Add(bl.BusyMaker());
+
+            if (perform_mapping)
+            {
+                foreach (var flag in ((uint)action).SplitAsFlags())
+                    foreach (var bl in busyMap[(DietVMChangeType)flag])
+                        madeBusy.Add(bl.BusyMaker());
+            }
 
             // remember currently selected dude
             var cs = view.currentTrackerInstance;
@@ -342,24 +362,30 @@ namespace Consonance
             PlatformGlobal.Run(() =>
             {
                 // run the prior to make this state true
-                prior?.Invoke();
+                var after = prior?.Invoke();
 
-                // Coaelsecse attachde tasks (1 run iit)
-                var flags = ((uint)action).SplitAsFlags();
-                foreach (var flag in flags)
+                if (perform_mapping)
                 {
-                    var f = (DietVMChangeType)flag;
-                    if(cMap.ContainsKey(f))
-                        foreach (var connected in cMap[f])
-                            action |= connected;
+                    // Coaelsecse attachde tasks (1 run iit)
+                    var flags = ((uint)action).SplitAsFlags();
+                    foreach (var flag in flags)
+                    {
+                        var f = (DietVMChangeType)flag;
+                        if (cMap.ContainsKey(f))
+                            foreach (var connected in cMap[f])
+                                action |= connected;
+                    }
+
+                    // run associated tasks
+                    foreach (var flag in ((uint)action).SplitAsFlags())
+                        taskMap[(DietVMChangeType)flag](cs);
+                    
+                    // run anything to be done after mapping completed.
+                    after?.Invoke();
+
+                    // complete busies off
+                    foreach (var b in madeBusy) b();
                 }
-
-                // run associated tasks
-                foreach (var flag in ((uint)action).SplitAsFlags())
-                    taskMap[(DietVMChangeType)flag](cs);              
-
-                // complete busies off
-                foreach (var b in madeBusy) b();
             });
         }
     }
@@ -443,7 +469,14 @@ namespace Consonance
         IFSOps filesystem { get; }
         bool CreateDirectory(String ifdoesntexist);
         PropertyInfo GetPropertyInfo(Type T, String property);
+        MethodInfo GetMethodInfo(Type T, String method);
+        IEmissionPlatform emit { get; }
 	}
+    public interface IEmissionPlatform
+    {
+        Type CreateClass(String classname, Type baseclass, String[] propnames, Type[] proptypes);
+        bool TypeExists(String typename);
+    }
     public interface IFSOps
     {
         string AppData { get; }
@@ -542,7 +575,8 @@ namespace Consonance
 		IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
 		IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
         IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name);
-	}
+        IValueRequest<MultiRequestListValue> IValueRequestItemsListRequestor(String name);
+    }
     #endregion
     
     #region value types for valuerequests
@@ -555,6 +589,17 @@ namespace Consonance
         {
             this.IValueRequestOptions = IValueRequestOptions;
             SelectedRequest = InitiallySelectedRequest;
+        }
+    }
+
+    public class MultiRequestListValue
+    {
+        public readonly IEnumerable IValueRequestOptions;
+        public Object[][] Items { get; set; }
+        public MultiRequestListValue(IEnumerable IValueRequestOptions, Object[][] initItems)
+        {
+            this.IValueRequestOptions = IValueRequestOptions;
+            Items = initItems;
         }
     }
 

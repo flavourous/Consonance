@@ -151,23 +151,27 @@ namespace Consonance
 		IEnumerable<TrackingInfoVM> DetermineOutTrackingForDay(DietInstType di, EntryRetriever<EatType> eats, EntryRetriever<BurnType> burns, DateTime dayStart);
 	}
 
-	interface IAbstractedTracker
+    interface IViewModelHandler<T,S,C>
+    {
+        IEnumerable<T> Instances();
+        Task StartNewTracker();
+        void RemoveTracker(T dvm, bool warn = true);
+        Task EditTracker(T dvm);
+        event DietVMChangeEventHandler<S,C> ViewModelsToChange;
+    }
+
+	interface IAbstractedTracker : IViewModelHandler<TrackerInstanceVM, IAbstractedTracker, DietVMChangeType>
 	{
 		TrackerDetailsVM details { get; }
 		TrackerDialect dialect  { get; }
-		IEnumerable<TrackerInstanceVM> Instances();
 		IEnumerable<EntryLineVM>  InEntries (TrackerInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<EntryLineVM>  OutEntries(TrackerInstanceVM instance, DateTime start, DateTime end);
 		IEnumerable<TrackingInfoVM> GetInTracking (TrackerInstanceVM instance, DateTime day);
 		IEnumerable<TrackingInfoVM> GetOutTracking (TrackerInstanceVM instance, DateTime day);
-		Task StartNewTracker();
-		void RemoveTracker (TrackerInstanceVM dvm);
-		Task EditTracker (TrackerInstanceVM dvm);
 		IEnumerable<InfoLineVM> InInfos (bool onlycomplete);
 		IEnumerable<InfoLineVM> OutInfos (bool onlycomplete);
 		IFindList<InfoLineVM> InFinder {get;}
 		IFindList<InfoLineVM> OutFinder {get;}
-		event DietVMChangeEventHandler ViewModelsToChange;
 		// entry ones
 		Task AddIn (TrackerInstanceVM diet, IValueRequestBuilder bld);
 		void RemoveIn (EntryLineVM evm);
@@ -184,12 +188,12 @@ namespace Consonance
 	}
     [Flags]
 	enum DietVMChangeType { None =0, Instances=1, EatEntries=2, BurnEntries=4, EatInfos=8, BurnInfos=16, Tracking = 32 /*meta*/ };
-	class DietVMToChangeEventArgs
+	class DietVMToChangeEventArgs<T>
 	{
-		public DietVMChangeType changeType;
-        public Action toChange;
+		public T changeType;
+        public Func<Action> toChange;
 	}
-	delegate void DietVMChangeEventHandler(IAbstractedTracker sender, DietVMToChangeEventArgs args);
+	delegate void DietVMChangeEventHandler<S,T>(S sender, DietVMToChangeEventArgs<T> args);
 	delegate TrackerInstanceVM DVMPuller();
 	/// <summary>
 	/// This contains all the code which the app would want to do to get viewmodels out of
@@ -213,7 +217,7 @@ namespace Consonance
 		readonly IValueRequestBuilder instanceBuilder;
 		readonly IUserInput getInput;
 		readonly ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
-		readonly TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
+		public readonly TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
 		readonly SQLiteConnection conn;
 		public TrackerPresentationAbstractionHandler(
 			IValueRequestBuilder instanceBuilder,
@@ -231,10 +235,10 @@ namespace Consonance
 			this.presenter = presenter;
 			this.modelHandler = new TrackerModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
 			this.conn = conn;
-            modelHandler.ToChange += (t, ct, a) => ViewModelsToChange(this, new DietVMToChangeEventArgs { changeType = t, toChange = a });
+            modelHandler.ToChange += (t, ct, a) => ViewModelsToChange(this, new DietVMToChangeEventArgs<DietVMChangeType> { changeType = t, toChange = a });
 		}
 
-		public event DietVMChangeEventHandler ViewModelsToChange = delegate { };
+		public event DietVMChangeEventHandler<IAbstractedTracker, DietVMChangeType> ViewModelsToChange = delegate { };
 		public IEnumerable<TrackerInstanceVM> Instances()
 		{
 			foreach (var dt in modelHandler.GetTrackers())
@@ -361,11 +365,11 @@ namespace Consonance
 			});
 			return vt.Pushed;
 		}
-		public void RemoveTracker (TrackerInstanceVM dvm)
+		public void RemoveTracker (TrackerInstanceVM dvm, bool warn = true)
 		{
 			var diet = dvm.originator as DietInstType;
 			int ct = 0;
-			if ((ct = modelHandler.outhandler.Count (diet) + modelHandler.inhandler.Count (diet)) > 0)
+			if ((ct = modelHandler.outhandler.Count (diet) + modelHandler.inhandler.Count (diet)) > 0 && warn) 
 				getInput.WarnConfirm (
 					"That instance still has " + ct + " entries, they will be removed if you continue.",
 					async () => await PlatformGlobal.Run(() => modelHandler.RemoveTracker (diet))

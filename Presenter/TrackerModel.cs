@@ -6,6 +6,7 @@ using LibRTP;
 using SQLite.Net.Attributes;
 using SQLite.Net;
 using LibSharpHelp;
+using System.Threading.Tasks;
 
 namespace Consonance
 {
@@ -67,10 +68,20 @@ namespace Consonance
 	}
 
 
-	#endregion
+    #endregion
 
-	#region DIET_PLAN_INTERFACES
-	public interface ITrackModel<D,Te,Tei,Tb,Tbi>
+    // creates stuff from pages - shared.
+    public interface ICreateable<T> where T : BaseDB
+    {
+        // creator for dietinstance
+        IEnumerable<GetValuesPage> CreationPages(IValueRequestFactory factory);
+        IEnumerable<GetValuesPage> EditPages(T editing, IValueRequestFactory factory);
+        T New();
+        void Edit(T toEdit);
+    }
+
+    #region DIET_PLAN_INTERFACES
+    public interface ITrackModel<D,Te,Tei,Tb,Tbi> : ICreateable<D>
 		where D : TrackerInstance
 		where Te  : BaseEntry
 		where Tei : BaseInfo
@@ -80,12 +91,6 @@ namespace Consonance
 		// creates items
 		IEntryCreation<Te,Tei> increator { get; }
 		IEntryCreation<Tb,Tbi> outcreator { get; }
-
-		// creator for dietinstance
-		IEnumerable<GetValuesPage> CreationPages(IValueRequestFactory factory);
-		IEnumerable<GetValuesPage> EditPages(D editing, IValueRequestFactory factory);
-		D New();
-		void Edit (D toEdit);
 	}
 	public class TrackerDialect
 	{
@@ -93,15 +98,12 @@ namespace Consonance
             InputEntryVerb, OutputEntryVerb, 
             InputInfoPlural, OutputInfoPlural,
             InputInfoVerbPast, OutputInfoVerbPast;
-        public readonly String TrackerTypeName;
         public TrackerDialect(
-            String TrackerTypeName,
             String InputEntryVerb, String OutpuEntryVerb, 
             String InputInfoPlural, String OutputInfoPlural,
             String InputInfoVerbPast, String OutputInfoVerbPast
             )
 		{
-            this.TrackerTypeName = TrackerTypeName;
 			this.InputEntryVerb = InputEntryVerb;
 			this.OutputEntryVerb = OutpuEntryVerb;
 			this.InputInfoPlural = InputInfoPlural;
@@ -168,19 +170,24 @@ namespace Consonance
 	#endregion
 
 	#region DIET_MODELS_PRESENTER_HANDLER
+    public interface IAbstractedDAL
+    {
+        void DeleteAll(Action after);
+    }
+
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
 	delegate void EntryCallback(BaseEntry entry);
 
     enum ItemType { Instance, Entry, Info };
     public enum DBChangeType { Insert, Delete, Edit };
-	class TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType>
+	class TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDAL
 		where DietInstType : TrackerInstance, new()
 		where EatType : BaseEntry, new()
 		where EatInfoType : BaseInfo, new()
 		where BurnType : BaseEntry, new()
 		where BurnInfoType : BaseInfo, new()
 	{
-        public event Action<DietVMChangeType, DBChangeType, Action> ToChange = delegate { };
+        public event Action<DietVMChangeType, DBChangeType, Func<Action>> ToChange = delegate { };
 
         readonly SQLiteConnection conn;
 		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
@@ -213,6 +220,7 @@ namespace Consonance
             {
                 var di = model.New();
                 conn.Insert(di as DietInstType);
+                return null;
             });
 		}
 		public void EditTracker(DietInstType diet)
@@ -221,6 +229,7 @@ namespace Consonance
             {
                 model.Edit(diet);
                 conn.Update(diet);
+                return null;
             });
 		}
 		public void RemoveTracker(DietInstType rem)
@@ -230,6 +239,19 @@ namespace Consonance
                 conn.Table<EatType>().Delete(et => et.trackerinstanceid == rem.id);
                 conn.Table<BurnType>().Delete(et => et.trackerinstanceid == rem.id);
                 conn.Delete<DietInstType>(rem.id);
+                return null;
+            });
+        }
+        public void DeleteAll(Action after)
+        {
+            ToChange(DietVMChangeType.EatEntries | DietVMChangeType.EatInfos | DietVMChangeType.BurnEntries| DietVMChangeType.BurnInfos | DietVMChangeType.Instances, DBChangeType.Delete, () =>
+            {
+                conn.DeleteAll<EatType>();
+                conn.DeleteAll<EatInfoType>();
+                conn.DeleteAll<BurnType>();
+                conn.DeleteAll<BurnInfoType>();
+                conn.DeleteAll<DietInstType>();
+                return after;
             });
         }
 		public IEnumerable<DietInstType> GetTrackers()
@@ -268,7 +290,7 @@ namespace Consonance
 		where EntryType : BaseEntry, new()
 		where EntryInfoType : BaseInfo, new()
 	{
-        public event Action<ItemType, DBChangeType, Action> ToChange = delegate { };
+        public event Action<ItemType, DBChangeType, Func<Action>> ToChange = delegate { };
 		readonly SQLiteConnection conn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
 		public EntryHandler(SQLiteConnection conn, IEntryCreation<EntryType, EntryInfoType> creator)
@@ -295,6 +317,7 @@ namespace Consonance
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = info.id;
                 conn.Insert(ent as EntryType);
+                return null;
             });
 		}
 		public void Add (D diet)
@@ -305,6 +328,7 @@ namespace Consonance
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = null;
                 conn.Insert(ent as EntryType);
+                return null;
             });
 		}
 		public void Edit(EntryType ent, D diet, EntryInfoType info)
@@ -315,6 +339,7 @@ namespace Consonance
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = info.id;
                 conn.Update(ent as EntryType);
+                return null;
             });
 		}
 		public void Edit(EntryType ent, D diet)
@@ -325,6 +350,7 @@ namespace Consonance
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = null;
                 conn.Update(ent as EntryType);
+                return null;
             });
 		}
 		public void Remove (params EntryType[] tets)
@@ -334,6 +360,7 @@ namespace Consonance
                 // FIXME drop where?
                 foreach (var tet in tets)
                     conn.Delete<EntryType>(tet.id);
+                return null;
             });
 		}
 		delegate bool RecurrGetter(byte[] data, out IRecurr rec);
@@ -382,6 +409,7 @@ namespace Consonance
             {
                 var mod = creator.MakeInfo();
                 conn.Insert(mod, typeof(EntryInfoType));
+                return null;
             });
 		}
 
@@ -391,6 +419,7 @@ namespace Consonance
             {
                 creator.MakeInfo(editing);
                 conn.Update(editing, typeof(EntryInfoType));
+                return null;
             });
 		}
 
@@ -399,6 +428,7 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Delete, () =>
             {
                 conn.Delete(removing);
+                return null;
             });
 		}
 

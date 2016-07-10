@@ -40,7 +40,7 @@ namespace Consonance
 		public SimpleTrackerHolder(IExtraRelfectedHelpy<Ii,Oi> helpy)
 		{
 			model = new SimpleTrackyHelpy<T, I,Ii, O, Oi> (helpy);
-			presenter = new SimpleTrackyHelpyPresenter<T, I,Ii, O, Oi> (helpy.TrackerDetails, helpy.TrackerDialect, helpy);
+			presenter = new SimpleTrackyHelpyPresenter<T, I,Ii, O, Oi> (helpy);
 		}
 	}
 
@@ -133,6 +133,10 @@ namespace Consonance
 			);
         }
 
+        public static VRVConnectedValue FromTypec<T, D>(D defaultValue, Predicate<T> validateit, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest, Func<T, D> RequestToData, Func<D, T> DataToRequest)
+        {
+            return FromType<T, D>(DataToRequest(defaultValue), d => validateit((T)d[0]), name, field, directRequest, RequestToData, DataToRequest);
+        }
         public static VRVConnectedValue FromType<T, D>(T defaultValue, Predicate<T> validateit, String name, String field, Func<IValueRequestFactory, Func<String, IValueRequest<T>>> directRequest, Func<T, D> RequestToData, Func<D, T> DataToRequest)
         {
             return FromType<T, D>(defaultValue, d => validateit((T)d[0]), name, field, directRequest, RequestToData, DataToRequest);
@@ -145,6 +149,7 @@ namespace Consonance
 	}
     public sealed class InfoQuantifier
     {
+        public enum InfoQuantifierTypes {  Double, Integer, Duration };
         public readonly int QuantifierID;
         public readonly VRVConnectedValue ConnectedValue;
         public readonly Func<double, String> DisplayConversion;
@@ -158,9 +163,25 @@ namespace Consonance
         // a double column injected into the entry for amount - already foreign keys info
         // this gives textual description, and gets a valuerequest, and converts vrv into doubles for storage.
 
-        public static InfoQuantifier Double(String name, int uid, double dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d > 0.0, name, "quantity", f => f.DoubleRequestor, d => d, d => d), d=>d.ToString("F2")); }
-        public static InfoQuantifier Integer(String name, int uid,  int dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d > 0, name, "quantity", f => f.IntRequestor, d => (double)d, d => (int)d), d=>d.ToString()); }
-        public static InfoQuantifier Duration(String name, int uid, TimeSpan dv) { return new InfoQuantifier(uid, VRVConnectedValue.FromType(dv, d => d.TotalHours > 0.0, name, "quantity", f => f.TimeSpanRequestor, d => d.TotalHours, d => TimeSpan.FromHours(d)), d => TimeSpan.FromHours(d).WithSuffix()); }
+        public static InfoQuantifier FromType(InfoQuantifierTypes t, String name, int uid, double dv)
+        {
+            return index[t](name, uid, dv);
+        }
+        static Dictionary<InfoQuantifierTypes, Func<String, int, double, InfoQuantifier>> index = new Dictionary<InfoQuantifierTypes, Func<String, int, double, InfoQuantifier>>
+        {
+            {
+                InfoQuantifierTypes.Double,
+                (name,uid, dv) =>new InfoQuantifier(uid, VRVConnectedValue.FromTypec(dv, d => d > 0.0, name, "quantity", f => f.DoubleRequestor, d => d, d => d), d=>d.ToString("F2"))
+            },
+            {
+                InfoQuantifierTypes.Integer,
+                (name,uid, dv) =>new InfoQuantifier(uid, VRVConnectedValue.FromTypec(dv, d => d > 0, name, "quantity", f => f.IntRequestor, d => (double)d, d => (int)d), d=>d.ToString())
+            },
+            {
+                InfoQuantifierTypes.Duration,
+                (name,uid, dv) =>new InfoQuantifier(uid, VRVConnectedValue.FromTypec(dv, d => d.TotalHours > 0.0, name, "quantity", f => f.TimeSpanRequestor, d => d.TotalHours, d => TimeSpan.FromHours(d)), d => TimeSpan.FromHours(d).WithSuffix())
+            },
+        };
     }
     public interface IReflectedHelpyQuants<I>
     {
@@ -199,7 +220,7 @@ namespace Consonance
 		public SimpleTrackyHelpy(IExtraRelfectedHelpy<InInfo,OutInfo> helpy) 
 		{
 			this.helpy = helpy; 
-			defaultTrackerStuff = new DefaultTrackerInstanceRequests (helpy.TrackerDialect.TrackerTypeName);
+			defaultTrackerStuff = new DefaultTrackerInstanceRequests (helpy.TrackerDetails.category);
 			inc = new HelpedCreation<In, InInfo> (helpy.input);
 			ouc = new HelpedCreation<Out, OutInfo> (helpy.output);
 			this.trackflectors = helpy.instanceValueFields.MakeList(s => new Flecter<Inst> (s.fieldName));
@@ -573,9 +594,9 @@ namespace Consonance
 		where     Out : HBaseEntry, new()
 		where OutInfo : HBaseInfo, new()
 	{
-		public TrackerDetailsVM details { get; private set; }
-		public TrackerDialect dialect { get; private set; }
-		readonly IReflectedHelpy<InInfo,OutInfo> helpy;
+		public TrackerDetailsVM details { get { return helpy.TrackerDetails; } }
+		public TrackerDialect dialect { get { return helpy.TrackerDialect; } }
+		readonly IExtraRelfectedHelpy<InInfo,OutInfo> helpy;
 
         Dictionary<int, VRVConnectedValue> qcv_in = new Dictionary<int, VRVConnectedValue>();
         Dictionary<int, VRVConnectedValue> qcv_out = new Dictionary<int, VRVConnectedValue>();
@@ -583,11 +604,9 @@ namespace Consonance
 		Flecter<OutInfo> OutInfoTrack;
 		Flecter<In> InTrack;
 		Flecter<Out> OutTrack;
-		public SimpleTrackyHelpyPresenter(TrackerDetailsVM details, TrackerDialect dialect, IReflectedHelpy<InInfo,OutInfo> helpy)
+		public SimpleTrackyHelpyPresenter(IExtraRelfectedHelpy<InInfo,OutInfo> helpy)
 		{
 			this.helpy = helpy;
-			this.details = details;
-			this.dialect = dialect;
 
 			InInfoTrack = new Flecter<InInfo> (helpy.input.tracked.fieldName);
 			OutInfoTrack = new Flecter<OutInfo> (helpy.output.tracked.fieldName);

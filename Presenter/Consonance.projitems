@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)AppPresenter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerPresenter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)InfoFindersManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\SimpleTrackyHelpyInventionV1.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ValueRequestFactory_FinderAdapter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\SimpleTrackyHelpy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerTemplates\Defaulters.cs" />
@@ -22,7 +23,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Helpers.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)TrackerTemplates\" />
     <Folder Include="$(MSBuildThisFileDirectory)Trackers\" />
   </ItemGroup>
 </Project>

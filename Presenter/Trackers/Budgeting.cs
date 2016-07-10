@@ -50,9 +50,8 @@ namespace Consonance
 		public IReflectedHelpyQuants<ExpenditureInfo> output { get { return _output; } }
 		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Finance budget", "Track spending goals and other finances.", "Finance");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Finance", "Earn", "Spend", "Incomes", "Expenses", "Earned", "Spent");
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ( "Earn", "Spend", "Incomes", "Expenses", "Earned", "Spent");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
-		public String trackedname { get { return "amount"; } }
 		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
 					VRVConnectedValue.FromType(0.0, "Target", "budget", f=>f.DoubleRequestor)
 				}; } } // creating an instance
@@ -72,7 +71,7 @@ namespace Consonance
 		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", "amount", 0.0) }; } }
 		public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<IncomeInfo, bool>> InfoComplete { get { return fi => true; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.Integer("Quantity", 0, 1) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) }; } }
 		#endregion
 	}
 	class SimpleBudget_HelpyOut : IReflectedHelpyQuants<ExpenditureInfo>
@@ -82,7 +81,7 @@ namespace Consonance
         public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", "amount", 0.0) }; } }
 		public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get { return fi => true; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.Integer("Quantity", 0, 1) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.FromType( InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) }; } }
         #endregion
     }				
 
