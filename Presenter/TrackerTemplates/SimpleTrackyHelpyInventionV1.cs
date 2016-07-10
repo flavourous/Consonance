@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Consonance.TrackerTemplates
+namespace Consonance.Invention
 {
     // higer scope stuff
     class TrackerTypesContainer
@@ -20,7 +20,7 @@ namespace Consonance.TrackerTemplates
         public Type instance, input, output, inputinfo, outputinfo;
     }
 
-    class InventedTrackerVM : OriginatorVM
+    public class InventedTrackerVM : OriginatorVM
     {
         public String name { get; set; }
         public String description { get; set; }
@@ -73,7 +73,7 @@ namespace Consonance.TrackerTemplates
     /// 
     /// Also lets you make and edit them.
     /// </summary>
-    class SimpleTrackyHelpyInventionV1 : IViewModelHandler<InventedTrackerVM, SimpleTrackyHelpyInventionV1, EventArgs> // FIXME combines presentation and modelling since it's simple
+    class SimpleTrackyHelpyInventionV1 : IViewModelObserver<InventedTrackerVM, SimpleTrackyHelpyInventionV1, EventArgs> // FIXME combines presentation and modelling since it's simple
     {
         readonly SQLiteConnection conn;
         readonly Presenter pres;
@@ -85,7 +85,7 @@ namespace Consonance.TrackerTemplates
         /// </summary>
         /// <param name="conn"></param>
         /// <param name="registerto"></param>
-        private SimpleTrackyHelpyInventionV1(SQLiteConnection conn, Presenter registerto, IValueRequestBuilder builder, IUserInput input)
+        public SimpleTrackyHelpyInventionV1(SQLiteConnection conn, Presenter registerto, IValueRequestBuilder builder, IUserInput input)
         {
             // appriase the presneter(it constructs us) of invented things.  Let it add/edit remove them.
             // behind the scenese, manage registration of tracker types through all that

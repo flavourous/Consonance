@@ -15,6 +15,8 @@ using SQLite.Net.Attributes;
 using System.Runtime.CompilerServices;
 using System.Collections.Specialized;
 using System.Collections;
+using Consonance.Invention;
+using System.Linq;
 
 namespace Consonance
 {
@@ -83,6 +85,7 @@ namespace Consonance
 
     public class Presenter
     {
+        
         #region initialisation of app presentation
         // Singleton logic - lazily created
         static Presenter singleton;
@@ -122,6 +125,17 @@ namespace Consonance
                 AddDietPair(Budgets.simpleBudget.model, Budgets.simpleBudget.presenter, defBuilder);
 
                 // Inventors
+                var basic = new SimpleTrackyHelpyInventionV1(conn, this, defBuilder, input);
+                inventors.Add(new InventorType
+                {
+                    name = "Basic",
+                    category = "Inventors",
+                    description = "Create basic tracker type which tracks a single quantitiy",
+                    inventor = basic
+                });
+                basic.ViewModelsToChange += (o, e) =>
+                    TaskMapper(TrackerChangeType.Inventions | TrackerChangeType.Instances, e.toChange, true);
+
 
                 Debug.WriteLine("PresntToImpl: commands");
                 // commanding...
@@ -129,6 +143,9 @@ namespace Consonance
                 view.plan.select += View_trackerinstanceselected;
                 view.plan.remove += Handleremovedietinstance;
                 view.plan.edit += View_editdietinstance;
+                view.invention.add += Invention_add;
+                view.invention.edit += Invention_edit;
+                view.invention.remove += Invention_remove;
 
                 // more commanding...
                 view.changeday += ChangeDay;
@@ -137,6 +154,7 @@ namespace Consonance
                 pcm_refholder = new PlanCommandManager(commands, () => view.currentTrackerInstance, input.Message);
 
                 // set vm datasources
+                view.SetInventions(inventions);
                 view.SetInstances(tracker_instances);
                 view.SetEatLines(inEntries);
                 view.SetBurnLines(outEntries);
@@ -148,11 +166,43 @@ namespace Consonance
 
                 // setup view
                 ChangeDay(DateTime.UtcNow);
-                TaskMapper(DietVMChangeType.Instances, null, true);
+                TaskMapper(TrackerChangeType.Instances | TrackerChangeType.Inventions, null, true);
+            });
+        }
+
+        class InventorType
+        {
+            public String name;
+            public String description;
+            public String category;
+            public IViewModelHandler<InventedTrackerVM> inventor;
+        }
+        readonly IList<InventorType> inventors = new List<InventorType>();
+
+        private void Invention_remove(InventedTrackerVM obj)
+        {
+            (obj.originator as IViewModelHandler<InventedTrackerVM>).RemoveTracker(obj);
+        }
+        private void Invention_edit(InventedTrackerVM obj)
+        {
+            (obj.originator as IViewModelHandler<InventedTrackerVM>).EditTracker(obj);
+        }
+        private void Invention_add()
+        {
+            if (inventors.Count == 1) inventors[0].inventor.StartNewTracker();
+
+            // or choose.
+            var names = (from i in inventors select new TrackerDetailsVM(i.name, i.description, i.category)).ToList();
+            var chooseViewTask = input.ChoosePlan("Select invention type", names, -1);
+            chooseViewTask.Completed.ContinueWith(async index => {
+                var addViewTask = inventors[index.Result].inventor.StartNewTracker();
+                await addViewTask;
+                await chooseViewTask.Pop();
             });
         }
 
         // vm holders
+        ReplacingVMList<InventedTrackerVM> inventions = new ReplacingVMList<InventedTrackerVM>("inventions");
         ReplacingVMList<TrackerInstanceVM> tracker_instances = new ReplacingVMList<TrackerInstanceVM>("instances");
         ReplacingVMList<EntryLineVM> inEntries = new ReplacingVMList<EntryLineVM>("in");
         ReplacingVMList<EntryLineVM> outEntries = new ReplacingVMList<EntryLineVM>("out");
@@ -167,10 +217,10 @@ namespace Consonance
         void View_trackerinstanceselected(TrackerInstanceVM obj)
         {
             TaskMapper(
-                DietVMChangeType.EatInfos | 
-                DietVMChangeType.BurnInfos | 
-                DietVMChangeType.EatEntries | 
-                DietVMChangeType.BurnEntries, 
+                TrackerChangeType.EatInfos | 
+                TrackerChangeType.BurnInfos | 
+                TrackerChangeType.EatEntries | 
+                TrackerChangeType.BurnEntries, 
                 null, true);
         }
         DateTime ds, de;
@@ -179,7 +229,7 @@ namespace Consonance
             ds = to.StartOfDay();
             de = ds.AddDays(1);
             view.day = ds;
-            TaskMapper(DietVMChangeType.EatEntries | DietVMChangeType.BurnEntries, null, true);
+            TaskMapper(TrackerChangeType.EatEntries | TrackerChangeType.BurnEntries, null, true);
         }
         void Handleadddietinstance()
         {
@@ -230,11 +280,11 @@ namespace Consonance
             };
         }
 
-        void HandleViewModelChange(IAbstractedTracker sender, DietVMToChangeEventArgs<DietVMChangeType> args)
+        void HandleViewModelChange(IAbstractedTracker sender, DietVMToChangeEventArgs<TrackerChangeType> args)
         {
             // Always map everything cause it needs to be actioned at least!
             var ti = view.currentTrackerInstance;
-            TaskMapper(args.changeType, args.toChange, args.changeType == DietVMChangeType.Instances || (ti != null && Object.ReferenceEquals(ti.sender, sender)));
+            TaskMapper(args.changeType, args.toChange, args.changeType == TrackerChangeType.Instances || (ti != null && Object.ReferenceEquals(ti.sender, sender)));
         }
         #endregion
 
@@ -254,28 +304,37 @@ namespace Consonance
         // 3) get&push infos
         // 4) get&push trackings
 
-        Dictionary<DietVMChangeType, IBusyMaker[]> busyMap;
-        Dictionary<DietVMChangeType, Action<TrackerInstanceVM>> taskMap;
-        Dictionary<DietVMChangeType, DietVMChangeType[]> cMap;
+        Dictionary<TrackerChangeType, IBusyMaker[]> busyMap;
+        Dictionary<TrackerChangeType, Action<TrackerInstanceVM>> taskMap;
+        Dictionary<TrackerChangeType, TrackerChangeType[]> cMap;
         void InitMaps()
         {
-            cMap = new Dictionary<DietVMChangeType, DietVMChangeType[]>
+            cMap = new Dictionary<TrackerChangeType, TrackerChangeType[]>
             {
-                { DietVMChangeType.Instances, new[] {  DietVMChangeType.Tracking } },
-                { DietVMChangeType.EatEntries,new[] { DietVMChangeType.Tracking } },
-                { DietVMChangeType.BurnEntries,new[] { DietVMChangeType.Tracking} },
+                { TrackerChangeType.Instances, new[] {  TrackerChangeType.Tracking } },
+                { TrackerChangeType.EatEntries,new[] { TrackerChangeType.Tracking } },
+                { TrackerChangeType.BurnEntries,new[] { TrackerChangeType.Tracking} },
             };
-            busyMap = new Dictionary<DietVMChangeType, IBusyMaker[]>
+            busyMap = new Dictionary<TrackerChangeType, IBusyMaker[]>
             {
-                { DietVMChangeType.Instances, new IBusyMaker[] { tracker_instances } },
-                { DietVMChangeType.EatEntries, new IBusyMaker[] { inEntries, inTracks, outTracks } },
-                { DietVMChangeType.BurnEntries,new IBusyMaker[] { outEntries, inTracks, outTracks } },
-                { DietVMChangeType.EatInfos, new IBusyMaker[] { inInfos } },
-                { DietVMChangeType.BurnInfos,new IBusyMaker[] { outInfos } }
+                { TrackerChangeType.Instances, new IBusyMaker[] { inventions } },
+                { TrackerChangeType.Instances, new IBusyMaker[] { tracker_instances } },
+                { TrackerChangeType.EatEntries, new IBusyMaker[] { inEntries, inTracks, outTracks } },
+                { TrackerChangeType.BurnEntries,new IBusyMaker[] { outEntries, inTracks, outTracks } },
+                { TrackerChangeType.EatInfos, new IBusyMaker[] { inInfos } },
+                { TrackerChangeType.BurnInfos,new IBusyMaker[] { outInfos } }
             };
-            taskMap = new Dictionary<DietVMChangeType, Action<TrackerInstanceVM>>
+            taskMap = new Dictionary<TrackerChangeType, Action<TrackerInstanceVM>>
             {
-                { DietVMChangeType.Instances,ti=>
+                { TrackerChangeType.Inventions,ti=>
+                    {
+                        List<InventedTrackerVM> toreplace = new List<InventedTrackerVM>();
+                        foreach(var iv in inventors)
+                            toreplace.AddRange(iv.inventor.Instances());
+                        inventions.SetItems(toreplace);
+                    }
+                },
+                { TrackerChangeType.Instances,ti=>
                     {
                         List<TrackerInstanceVM> toreplace = new List<TrackerInstanceVM>();
                         foreach (var dh in dietHandlers)
@@ -287,31 +346,31 @@ namespace Consonance
                                 view.currentTrackerInstance = tracker_instances.Count > 0 ? tracker_instances[0] : null; // is possible for TaskMapper to be recalled before this returns
                     }
                 },
-                {DietVMChangeType.EatEntries,ti=>
+                {TrackerChangeType.EatEntries,ti=>
                     {
                         var ad = (ti?.sender) as IAbstractedTracker;
                         inEntries.SetItems(ad?.InEntries(ti, ds, de));
                     }
                  },
-                {DietVMChangeType.BurnEntries, ti=>
+                {TrackerChangeType.BurnEntries, ti=>
                     {
                         var ad = (ti?.sender) as IAbstractedTracker;
                         outEntries.SetItems(ad?.OutEntries(ti, ds, de));
                     }
                 },
-                {DietVMChangeType.EatInfos, ti=>
+                {TrackerChangeType.EatInfos, ti=>
                     {
                         var ad = (ti?.sender) as IAbstractedTracker;
                         inInfos.SetItems(ad?.InInfos(false));
                     }
                 },
-                {DietVMChangeType.BurnInfos, ti=>
+                {TrackerChangeType.BurnInfos, ti=>
                     {
                         var ad = (ti?.sender) as IAbstractedTracker;
                         outInfos.SetItems(ad?.OutInfos(false));
                     }
                 },
-                { DietVMChangeType.Tracking, ti=> SetTracking(ti) }
+                { TrackerChangeType.Tracking, ti=> SetTracking(ti) }
             };
         }
 
@@ -343,7 +402,7 @@ namespace Consonance
             outTracks.SetItems(out_t);
         }
 
-        void TaskMapper(DietVMChangeType action, Func<Action> prior, bool perform_mapping)
+        void TaskMapper(TrackerChangeType action, Func<Action> prior, bool perform_mapping)
         {
             // Set Busy
             List<Action> madeBusy = new List<Action>();
@@ -351,7 +410,7 @@ namespace Consonance
             if (perform_mapping)
             {
                 foreach (var flag in ((uint)action).SplitAsFlags())
-                    foreach (var bl in busyMap[(DietVMChangeType)flag])
+                    foreach (var bl in busyMap[(TrackerChangeType)flag])
                         madeBusy.Add(bl.BusyMaker());
             }
 
@@ -370,7 +429,7 @@ namespace Consonance
                     var flags = ((uint)action).SplitAsFlags();
                     foreach (var flag in flags)
                     {
-                        var f = (DietVMChangeType)flag;
+                        var f = (TrackerChangeType)flag;
                         if (cMap.ContainsKey(f))
                             foreach (var connected in cMap[f])
                                 action |= connected;
@@ -378,7 +437,7 @@ namespace Consonance
 
                     // run associated tasks
                     foreach (var flag in ((uint)action).SplitAsFlags())
-                        taskMap[(DietVMChangeType)flag](cs);
+                        taskMap[(TrackerChangeType)flag](cs);
                     
                     // run anything to be done after mapping completed.
                     after?.Invoke();
@@ -454,12 +513,14 @@ namespace Consonance
         void SetEatInfos(IVMList<InfoLineVM> lineitems);
         void SetBurnInfos(IVMList<InfoLineVM> lineitems);
         void SetInstances (IVMList<TrackerInstanceVM> instanceitems);
+        void SetInventions(IVMList<InventedTrackerVM> inventionitems);
 
         event Action<DateTime> changeday;
 		DateTime day { get; set; }
 		TrackerInstanceVM currentTrackerInstance { get; set; }
-		ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get; }
-	}
+		ICollectionEditorSelectableLooseCommands<TrackerInstanceVM> plan { get; }
+        ICollectionEditorLooseCommands<InventedTrackerVM> invention { get; }
+    }
 	public interface IPlatform
 	{
         Task UIThread(Action method);
@@ -503,11 +564,14 @@ namespace Consonance
 		event Action<T> remove;
 		event Action<T, IValueRequestBuilder> edit;
 	}
-	public interface ICollectionEditorLooseCommands<T>
-	{
+    public interface ICollectionEditorLooseCommands<T>
+    {
 		event Action add;
 		event Action<T> remove;
 		event Action<T> edit;
+    }
+    public interface ICollectionEditorSelectableLooseCommands<T> : ICollectionEditorLooseCommands<T>
+	{
 		event Action<T> select;
 	}
 	interface IViewTask 

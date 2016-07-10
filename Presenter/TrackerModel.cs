@@ -187,7 +187,7 @@ namespace Consonance
 		where BurnType : BaseEntry, new()
 		where BurnInfoType : BaseInfo, new()
 	{
-        public event Action<DietVMChangeType, DBChangeType, Func<Action>> ToChange = delegate { };
+        public event Action<TrackerChangeType, DBChangeType, Func<Action>> ToChange = delegate { };
 
         readonly SQLiteConnection conn;
 		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
@@ -203,20 +203,20 @@ namespace Consonance
 			outhandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (conn, model.outcreator);
             outhandler.ToChange += (c, t, p) => ToChange(Convert(c, false), t, p);
         }
-        DietVMChangeType Convert(ItemType itp, bool input)
+        TrackerChangeType Convert(ItemType itp, bool input)
         {
             switch (itp)
             {
                 default:
-                case ItemType.Instance: return DietVMChangeType.Instances;
-                case ItemType.Entry: return input ? DietVMChangeType.EatEntries : DietVMChangeType.BurnEntries;
-                case ItemType.Info: return input ? DietVMChangeType.EatInfos: DietVMChangeType.BurnInfos;
+                case ItemType.Instance: return TrackerChangeType.Instances;
+                case ItemType.Entry: return input ? TrackerChangeType.EatEntries : TrackerChangeType.BurnEntries;
+                case ItemType.Info: return input ? TrackerChangeType.EatInfos: TrackerChangeType.BurnInfos;
             }
         }
 	
 		public void StartNewTracker()
 		{
-            ToChange(DietVMChangeType.Instances, DBChangeType.Insert, () =>
+            ToChange(TrackerChangeType.Instances, DBChangeType.Insert, () =>
             {
                 var di = model.New();
                 conn.Insert(di as DietInstType);
@@ -225,7 +225,7 @@ namespace Consonance
 		}
 		public void EditTracker(DietInstType diet)
 		{
-            ToChange(DietVMChangeType.Instances, DBChangeType.Edit, () =>
+            ToChange(TrackerChangeType.Instances, DBChangeType.Edit, () =>
             {
                 model.Edit(diet);
                 conn.Update(diet);
@@ -234,7 +234,7 @@ namespace Consonance
 		}
 		public void RemoveTracker(DietInstType rem)
 		{
-            ToChange(DietVMChangeType.EatEntries | DietVMChangeType.BurnEntries | DietVMChangeType.Instances, DBChangeType.Delete, () =>
+            ToChange(TrackerChangeType.EatEntries | TrackerChangeType.BurnEntries | TrackerChangeType.Instances, DBChangeType.Delete, () =>
             {
                 conn.Table<EatType>().Delete(et => et.trackerinstanceid == rem.id);
                 conn.Table<BurnType>().Delete(et => et.trackerinstanceid == rem.id);
@@ -244,7 +244,7 @@ namespace Consonance
         }
         public void DeleteAll(Action after)
         {
-            ToChange(DietVMChangeType.EatEntries | DietVMChangeType.EatInfos | DietVMChangeType.BurnEntries| DietVMChangeType.BurnInfos | DietVMChangeType.Instances, DBChangeType.Delete, () =>
+            ToChange(TrackerChangeType.EatEntries | TrackerChangeType.EatInfos | TrackerChangeType.BurnEntries| TrackerChangeType.BurnInfos | TrackerChangeType.Instances, DBChangeType.Delete, () =>
             {
                 conn.DeleteAll<EatType>();
                 conn.DeleteAll<EatInfoType>();

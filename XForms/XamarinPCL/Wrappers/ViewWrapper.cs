@@ -10,7 +10,7 @@ using LibSharpHelp;
 
 namespace Consonance.XamarinFormsView.PCL
 {
-	class ViewWrapper : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, INotifyPropertyChanged
+	class ViewWrapper : IView, ICollectionEditorSelectableLooseCommands<TrackerInstanceVM>, INotifyPropertyChanged
     {
 		static int? mainID;
 		public readonly MainTabs main;
@@ -53,7 +53,7 @@ namespace Consonance.XamarinFormsView.PCL
         }
 
 		// plan commands
-        public ICollectionEditorLooseCommands<TrackerInstanceVM> plan { get { return this; } }
+        public ICollectionEditorSelectableLooseCommands<TrackerInstanceVM> plan { get { return this; } }
         public event Action add { add { main.AddPlan += value; } remove { main.AddPlan -= value; } }
 		public event Action<TrackerInstanceVM> select { add { main.PlanItemSelected += value; } remove { main.PlanItemSelected -= value; } }
 		public event Action<TrackerInstanceVM> remove { add { main.PlanItemDelete += value; } remove { main.PlanItemDelete -= value; } }

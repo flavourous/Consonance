@@ -151,16 +151,20 @@ namespace Consonance
 		IEnumerable<TrackingInfoVM> DetermineOutTrackingForDay(DietInstType di, EntryRetriever<EatType> eats, EntryRetriever<BurnType> burns, DateTime dayStart);
 	}
 
-    interface IViewModelHandler<T,S,C>
+    interface IViewModelHandler<T>
     {
         IEnumerable<T> Instances();
         Task StartNewTracker();
         void RemoveTracker(T dvm, bool warn = true);
         Task EditTracker(T dvm);
+    }
+
+    interface IViewModelObserver<T,S,C> : IViewModelHandler<T>
+    {
         event DietVMChangeEventHandler<S,C> ViewModelsToChange;
     }
 
-	interface IAbstractedTracker : IViewModelHandler<TrackerInstanceVM, IAbstractedTracker, DietVMChangeType>
+	interface IAbstractedTracker : IViewModelObserver<TrackerInstanceVM, IAbstractedTracker, TrackerChangeType>
 	{
 		TrackerDetailsVM details { get; }
 		TrackerDialect dialect  { get; }
@@ -187,7 +191,16 @@ namespace Consonance
 		Task EditOutInfo (InfoLineVM ivm, IValueRequestBuilder bld);
 	}
     [Flags]
-	enum DietVMChangeType { None =0, Instances=1, EatEntries=2, BurnEntries=4, EatInfos=8, BurnInfos=16, Tracking = 32 /*meta*/ };
+	enum TrackerChangeType {
+        None =0,
+        Inventions = 1>>0,
+        Instances =1>>1,
+        EatEntries =1>>2,
+        BurnEntries =1>>3,
+        EatInfos =1>>4,
+        BurnInfos =1>>5,
+        Tracking = 1>>6 /*meta*/ ,
+    };
 	class DietVMToChangeEventArgs<T>
 	{
 		public T changeType;
@@ -235,10 +248,10 @@ namespace Consonance
 			this.presenter = presenter;
 			this.modelHandler = new TrackerModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
 			this.conn = conn;
-            modelHandler.ToChange += (t, ct, a) => ViewModelsToChange(this, new DietVMToChangeEventArgs<DietVMChangeType> { changeType = t, toChange = a });
+            modelHandler.ToChange += (t, ct, a) => ViewModelsToChange(this, new DietVMToChangeEventArgs<TrackerChangeType> { changeType = t, toChange = a });
 		}
 
-		public event DietVMChangeEventHandler<IAbstractedTracker, DietVMChangeType> ViewModelsToChange = delegate { };
+		public event DietVMChangeEventHandler<IAbstractedTracker, TrackerChangeType> ViewModelsToChange = delegate { };
 		public IEnumerable<TrackerInstanceVM> Instances()
 		{
 			foreach (var dt in modelHandler.GetTrackers())
