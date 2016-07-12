@@ -113,6 +113,7 @@ namespace Consonance.XamarinFormsView
         }
 
         public PropertyInfo GetPropertyInfo(Type t, String p) { return t.GetProperty(p); }
+        public MethodInfo GetMethodInfo(Type t, String m) { return t.GetMethod(m); }
         readonly FileSystem FF = new FileSystem();
         public IFSOps filesystem { get { return FF; } }
         static int uiThread;

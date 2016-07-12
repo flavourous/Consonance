@@ -59,7 +59,7 @@
 	<ContentPage Title="Plan">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddPlanClick" />
-			<ToolbarItem Text="Invent" />
+			<ToolbarItem Text="Invent" Clicked="ManageInvention"/>
 		</ContentPage.ToolbarItems>
 		<Grid>
 			<Grid.RowDefinitions>

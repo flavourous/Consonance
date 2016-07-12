@@ -5,6 +5,7 @@ using Xamarin.Forms;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.ObjectModel;
+using Consonance.Invention;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -28,6 +29,19 @@ namespace Consonance.XamarinFormsView.PCL
 			});
             return new ViewTask<InfoLineVM>(() => srv.nav.RemoveOrPopAsync(iman_c), pushed.Task, tcs.Task); // return result, or initial if it gave null (wich is null if it really was and no change)
 		}
+
+        public ViewTask<EventArgs> ManageInvention(IObservableCollection<InventedTrackerVM> toManage)
+        {
+            TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs>();
+            InventionManageView iman_c = null;
+            App.platform.UIThread(() => {
+                iman_c = new InventionManageView();
+                srv.AttachToCommander(iman_c);
+                iman_c.Items = toManage;
+                srv.nav.PushAsync(iman_c).ContinueWith(t => pushed.SetResult(new EventArgs()));
+            });
+            return new ViewTask<EventArgs>(() => srv.nav.RemoveOrPopAsync(iman_c), pushed.Task, null); // return result, or initial if it gave null (wich is null if it really was and no change)
+        }
 
         readonly CommonServices srv;
 		public UserInputWrapper(CommonServices srv)

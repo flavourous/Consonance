@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.ComponentModel;
 using LibSharpHelp;
+using Consonance.Invention;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -23,6 +24,7 @@ namespace Consonance.XamarinFormsView.PCL
 			main.daypagerContext = this;
             main.InInfoManage += () => InfoView(InfoManageType.In);
 			main.OutInfoManage += () => InfoView(InfoManageType.Out);
+            main.manageInvention += () => srv.Invent();
         }
         void InfoView(InfoManageType mt)
         {
@@ -45,7 +47,8 @@ namespace Consonance.XamarinFormsView.PCL
         public void SetEatInfos(IVMList<InfoLineVM> lineInfos) { SetIVM(lineInfos,v => main.viewmodel.InInfos = v); }
         public void SetBurnInfos(IVMList<InfoLineVM> lineInfos) { SetIVM(lineInfos, v => main.viewmodel.OutInfos = v); }
         public void SetInstances(IVMList<TrackerInstanceVM> instanceitems) { SetIVM(instanceitems, v => main.viewmodel.PlanItems = v); }
-			
+        public void SetInventions(IVMList<InventedTrackerVM> items) { SetIVM(items, v => main.viewmodel.InventedPlans = v); }
+
         void SetIVM<T>(IVMList<T> list, Action<IVMList<T>> setter)
         {
             list.Dispatcher = a => App.platform.UIThread(a);
@@ -59,14 +62,17 @@ namespace Consonance.XamarinFormsView.PCL
 		public event Action<TrackerInstanceVM> remove { add { main.PlanItemDelete += value; } remove { main.PlanItemDelete -= value; } }
 		public event Action<TrackerInstanceVM> edit { add { main.PlanItemEdit += value; } remove { main.PlanItemEdit -= value; } }
 
-		// dayyys
-		public void ChangeDay(DateTime day) { changeday(day); }
+        // dayyys
+        public void ChangeDay(DateTime day) { changeday(day); }
 		public event Action<DateTime> changeday = delegate { };
 		private DateTime mday;
 		public DateTime day { get { return mday; } set { mday = value; OnPropertyChanged ("day"); } }
 
-		#region INotifyPropertyChanged implementation
-		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        // invention, is add/edit/remove on another screen soooo let it be set??
+        public ICollectionEditorLooseCommands<InventedTrackerVM> invention { get; set; }
+
+        #region INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
 		public void OnPropertyChanged(String property)
 		{
             App.platform.UIThread(() => PropertyChanged(this, new PropertyChangedEventArgs(property)));

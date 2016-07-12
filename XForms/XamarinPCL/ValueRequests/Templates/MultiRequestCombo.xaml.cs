@@ -28,7 +28,28 @@ namespace Consonance.XamarinFormsView.PCL
 				Bc_PropertyChanged (bc, new PropertyChangedEventArgs ("value"));
 			}
 		}
-		void SIC(object sender, EventArgs args)
+        void Bc_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (brent) return;
+            if (e.PropertyName == "value")
+            {
+                var bc = BindingContext as IValueRequest<MultiRequestOptionValue>;
+                brent = true; // this will alter selectedindex, which will alter the bound selectedoption, which we dont want to do.
+                psel.Items.Clear();
+                vrts.Clear();
+                brent = false;
+                // ok, value could be null!
+                if (bc.value != null && bc.value.IValueRequestOptions != null)
+                {
+                    vrts.AddAll(from t in bc.value.IValueRequestOptions.OfType<Func<ValueRequestTemplate>>() select t());
+                    foreach (var ivr in vrts)
+                        psel.Items.Add((ivr.BindingContext as IValueRequestVM).name);
+                    psel.SelectedIndex = bc.value.SelectedRequest;
+                }
+                else psel.SelectedIndex = -1;
+            }
+        }
+        void SIC(object sender, EventArgs args)
 		{
 			if (brent) return;
 			var bc = BindingContext as IValueRequest<MultiRequestOptionValue>;	
@@ -40,24 +61,7 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 		bool brent = false;
         List<ValueRequestTemplate> vrts = new List<ValueRequestTemplate>();
-		void Bc_PropertyChanged (object sender, PropertyChangedEventArgs e)
-		{
-			if (brent) return;
-			if (e.PropertyName == "value") {
-				var bc = BindingContext as IValueRequest<MultiRequestOptionValue>;	
-				brent = true; // this will alter selectedindex, which will alter the bound selectedoption, which we dont want to do.
-				psel.Items.Clear ();
-                vrts.Clear();
-				brent = false;
-				// ok, value could be null!
-				if (bc.value != null && bc.value.IValueRequestOptions != null) {
-                    vrts.AddAll(from t in bc.value.IValueRequestOptions.OfType<Func<ValueRequestTemplate>>() select t());
-                    foreach (var ivr in vrts)
-                        psel.Items.Add((ivr.BindingContext as IValueRequestVM).name);
-					psel.SelectedIndex = bc.value.SelectedRequest;
-				} else psel.SelectedIndex = -1;
-			}
-		}
+		
 	}
 }
 

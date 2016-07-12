@@ -87,39 +87,44 @@ namespace Consonance.XamarinFormsView.PCL
             userInputWrapper = new UserInputWrapper(services);
             bld = defaultBuilder = new ValueRequestBuilder(services);
 			planCommandWrapper = new PlanCommandsWrapper(main, services);
+            var inventCommandWrapper = new InventionCommandManager();
 			viewWrapper = new ViewWrapper(main, services);
+            viewWrapper.invention = inventCommandWrapper;
 
             // Initialise services
-            Attach_Services(navigator, userInputWrapper, viewWrapper, defaultBuilder, planCommandWrapper);
+            Attach_Services(navigator, userInputWrapper, viewWrapper, defaultBuilder, planCommandWrapper, inventCommandWrapper);
         }
 
     }
 
-    // In lieu of resolving the coupling of those 4 Wrappers, I'll do this.
+    // In lieu of resolving the coupling of those Wrappers, I'll do this.
     class CommonServices
     {
         UserInputWrapper u;
         ViewWrapper v;
         ValueRequestBuilder def_b;
         PlanCommandsWrapper c;
+        InventionCommandManager ic;
         NavigationPage nroot;
 
-        public delegate void Attacher(NavigationPage nroot, UserInputWrapper u, ViewWrapper v, ValueRequestBuilder def_b, PlanCommandsWrapper c);
+        public delegate void Attacher(NavigationPage nroot, UserInputWrapper u, ViewWrapper v, ValueRequestBuilder def_b, PlanCommandsWrapper c, InventionCommandManager ic);
         public CommonServices(out Attacher atch) { atch = Attach; }
 
-        void Attach(NavigationPage nroot, UserInputWrapper u, ViewWrapper v, ValueRequestBuilder def_b, PlanCommandsWrapper c)
+        void Attach(NavigationPage nroot, UserInputWrapper u, ViewWrapper v, ValueRequestBuilder def_b, PlanCommandsWrapper c, InventionCommandManager ic)
         {
             this.nroot = nroot;
             this.u = u;
             this.v = v;
             this.def_b = def_b;
             this.c = c;
+            this.ic = ic;
         }
 
         public IAbstractedTracker Current { get { return v.currentTrackerInstance?.sender as IAbstractedTracker; } }
         public IValueRequestBuilder DefaultBuilder { get { return def_b; } }
         public IValueRequestBuilder CreateNewBuilder() { return new ValueRequestBuilder(this); }
         public void AttachToCommander(InfoManageView mv, InfoManageType mt) { c.Attach(mv, mt); }
+        public void AttachToCommander(InventionManageView mv) { mv.icm = ic; }
         public INavigation nav { get { return nroot.Navigation; } }
         public Page root { get { return nroot; } }
         public ViewTask<InfoLineVM> U_InfoView(bool choose, bool manage, InfoManageType mt, InfoLineVM initially_selected)
@@ -127,6 +132,10 @@ namespace Consonance.XamarinFormsView.PCL
             return u.InfoView(choose, manage, mt,
                 mt == InfoManageType.In ? v.main.viewmodel.InInfos : v.main.viewmodel.OutInfos
                 , initially_selected);
+        }
+        public ViewTask<EventArgs> Invent()
+        {
+            return u.ManageInvention(v.main.viewmodel.InventedPlans);
         }
     }
 }

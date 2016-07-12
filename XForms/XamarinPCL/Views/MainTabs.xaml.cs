@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using Consonance.Invention;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -31,6 +32,7 @@ namespace Consonance.XamarinFormsView.PCL
             private IObservableCollection<TrackerInstanceVM> planItems;
             private IObservableCollection<TrackerTracksVM> inTrack;
             private IObservableCollection<TrackerTracksVM> outTrack;
+            private IObservableCollection<InventedTrackerVM> inventedPlans;
 
             // selected item
             private TrackerInstanceVM mSelectedPlanItem;
@@ -59,6 +61,7 @@ namespace Consonance.XamarinFormsView.PCL
             public IObservableCollection<TrackerInstanceVM> PlanItems { get { return planItems; } set { planItems = value; OnPropertyChanged("PlanItems"); } }
             public IObservableCollection<TrackerTracksVM> InTrack { get { return inTrack; } set { inTrack = value; OnPropertyChanged("InTrack"); } }
             public IObservableCollection<TrackerTracksVM> OutTrack { get { return outTrack; } set { outTrack = value; OnPropertyChanged("OutTrack"); } }
+            public IObservableCollection<InventedTrackerVM> InventedPlans { get { return inventedPlans; } set { inventedPlans = value; OnPropertyChanged("InventedPlans"); } }
 
             public Action<TrackerInstanceVM> OnPlanSelected = delegate { };
             public event PropertyChangedEventHandler PropertyChanged = delegate { };
@@ -84,12 +87,15 @@ namespace Consonance.XamarinFormsView.PCL
             PlanItemSelected(use);
         }
 
-		//////////////
-		// Commands //
-		//////////////
+        public event Action manageInvention = delegate { };
+        void ManageInvention(Object sender, EventArgs args) { manageInvention(); }
 
-		/// Plan
-		public event Action AddPlan = delegate { };
+        //////////////
+        // Commands //
+        //////////////
+
+        /// Plan
+        public event Action AddPlan = delegate { };
 		void AddPlanClick(Object sender, EventArgs args) { AddPlan(); }
 		public event Action<TrackerInstanceVM> PlanItemEdit = delegate { };
 		void OnPlanItemEdit(Object s, EventArgs e) { PlanItemEdit ((((MenuItem)s).BindingContext as TrackerInstanceVM)); }
