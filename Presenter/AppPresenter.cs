@@ -529,6 +529,7 @@ namespace Consonance
 		void Attach (Action<String, Action> showError);
         IFSOps filesystem { get; }
         bool CreateDirectory(String ifdoesntexist);
+        PropertyInfo[] GetPropertyInfos(Type T);
         PropertyInfo GetPropertyInfo(Type T, String property);
         MethodInfo GetMethodInfo(Type T, String method);
         IEmissionPlatform emit { get; }

@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Consonance.XamarinFormsView.InventionManageView">
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Add" Clicked="OnItemAdd" x:Name="AddToolbarItem"/>
+  </ContentPage.ToolbarItems>
+  <ListView Grid.ColumnSpan="2" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem, Mode=TwoWay}" x:Name="infoList"  HasUnevenRows="true" >
+    <ListView.ItemTemplate>
+      <DataTemplate x:Key="dt_manage">
+        <ViewCell>
+          <ViewCell.ContextActions>
+            <MenuItem Clicked="OnItemEdit" Text="Edit" />
+            <MenuItem Clicked="OnItemDelete" Text="Delete" />
+          </ViewCell.ContextActions>
+          <StackLayout Orientation="Horizontal">
+            <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
+            <Label Text="{Binding description}" FontSize="10" HorizontalOptions="StartAndExpand"/>
+          </StackLayout>
+        </ViewCell>
+      </DataTemplate>
+    </ListView.ItemTemplate>
+  </ListView>
+</ContentPage>

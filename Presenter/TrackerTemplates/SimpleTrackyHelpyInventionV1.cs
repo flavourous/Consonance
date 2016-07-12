@@ -26,13 +26,42 @@ namespace Consonance.Invention
         public String description { get; set; }
     }
 
+    
+
     // model stuff
     class SimpleTrackyHelpyInventionV1Model : BaseDB
     {
         // functional
         public String tracked { get; set; }
-        public SimpleTrackyInfoQuantifierDescriptor[] qod_in { get; set; }
-        public SimpleTrackyInfoQuantifierDescriptor[] qod_out { get; set; }
+
+        FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor> _qod_in;
+        public IEnumerable<SimpleTrackyInfoQuantifierDescriptor> qod_in
+        {
+            get
+            {
+                if (_qod_in == null) _qod_in = new FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this);
+                return _qod_in.Get();
+            }
+            set
+            {
+                if (_qod_in == null) _qod_in = new FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this);
+                _qod_in.Set(value);
+            }
+        }
+        FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor> _qod_out;
+        public IEnumerable<SimpleTrackyInfoQuantifierDescriptor> qod_out
+        {
+            get
+            {
+                if (_qod_out == null) _qod_out = new FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this);
+                return _qod_out.Get();
+            }
+            set
+            {
+                if (_qod_out == null) _qod_out = new FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this);
+                _qod_out.Set(value);
+            }
+        }
 
         // managment
         public String tablename_tracker { get; set; }
@@ -56,8 +85,46 @@ namespace Consonance.Invention
         public String OutputInfoVerbPast { get; set; }
     }
 
+    class FK<T,O> where T : BaseDB where O : BaseDB
+    {
+        readonly PropertyInfo fkmember;
+        readonly T on;
+        readonly SQLiteConnection conn;
+        public FK(T on, SQLiteConnection conn)
+        {
+            this.on = on;
+            this.conn = conn;
+            foreach (var pi in PlatformGlobal.platform.GetPropertyInfos(typeof(O)))
+            {
+                var fkp = pi.GetCustomAttribute<ForeignKeyAttribute>() as ForeignKeyAttribute;
+                if (fkp != null && fkp.To == typeof(O))
+                    fkmember = pi;
+            }
+        }
+        public IEnumerable<O> Get()
+        {
+            var right = Expression.Constant(on.id);
+            var left = Expression.Property(Expression.Variable(typeof(O)), fkmember);
+            var expr = Expression.Equal(left, right);
+            var lambda = Expression.Lambda(expr, Expression.Parameter(typeof(O))).Compile();
+            var res = from f in conn.Table<O>() where (bool)lambda.DynamicInvoke(f) select f;
+        }
+        public void Set(IEnumerable<O> values)
+        {
+
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+    sealed class ForeignKeyAttribute : Attribute
+    {
+        public Type To { get; set; }
+    }
+
     class SimpleTrackyInfoQuantifierDescriptor : BaseDB
     {
+        [ForeignKey(To = typeof(SimpleTrackyHelpyInventionV1Model))]
+        public int helpymodel { get; set; }
         public InfoQuantifier.InfoQuantifierTypes type { get; set; }
         public double defaultvalue { get; set; }
         public String Name { get; set; }
@@ -95,8 +162,8 @@ namespace Consonance.Invention
             this.input = input;
 
             // ensure tables
-            conn.CreateTable<SimpleTrackyHelpyInventionV1Model>();
             conn.CreateTable<SimpleTrackyInfoQuantifierDescriptor>();
+            conn.CreateTable<SimpleTrackyHelpyInventionV1Model>();
         }
 
         // Here we pass viewmodels about invented trackers - the view can display and command them in a managing view
@@ -262,8 +329,8 @@ namespace Consonance.Invention
                         if (inout == 0) inq.Add(qd);
                         else outq.Add(qd);
                     }
-                    mod.qod_in = inq.ToArray();
-                    mod.qod_out = outq.ToArray();
+                    mod.qod_in = inq;
+                    mod.qod_out = outq;
                 };
                 return ret;
             }
