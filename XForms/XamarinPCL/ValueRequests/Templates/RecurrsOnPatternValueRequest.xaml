@@ -1,5 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentView xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.RecurrsOnPatternValueRequest">
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:xlib="clr-namespace:XLib;assembly=Consonance.XamarinFormsView.PCL"
+             xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.RecurrsOnPatternValueRequest">
 	<ContentView.Resources>
 		<ResourceDictionary>
 			<l:RecurrsOnPatternValueRequestConverter x:Key="rConverter"/>
@@ -22,25 +24,25 @@
 			<RowDefinition Height="auto" />
 		</Grid.RowDefinitions>
     <Label Grid.Row="0" Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=prefix-day}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daycolor}"/>
-		<Entry Grid.Row="0" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=dayval}" Keyboard="Numeric"
+		<xlib:IvalEntry Grid.Row="0" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=dayval}" Keyboard="Numeric"
 			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daybox}"/>
 		<Label Grid.Row="0" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=suffix-day}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=daycolor}"/>
 		<Switch Grid.Row="0" Grid.Column="3" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=day}" HorizontalOptions="End"/>
 
     <Label Grid.Row="1" Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=prefix-week}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekcolor}"/>
-		<Entry Grid.Row="1" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekval}" Keyboard="Numeric"
+		<xlib:IvalEntry Grid.Row="1" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekval}" Keyboard="Numeric"
 			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekbox}"/>
 		<Label Grid.Row="1" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=suffix-week}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=weekcolor}"/>
 		<Switch Grid.Row="1" Grid.Column="3" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=week}" HorizontalOptions="End"/>
 
     <Label Grid.Row="2" Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=prefix-month}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthcolor}"/>
-		<Entry Grid.Row="2" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthval}" Keyboard="Numeric"
+		<xlib:IvalEntry Grid.Row="2" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthval}" Keyboard="Numeric"
 			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthbox}"/>
 		<Label Grid.Row="2" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=suffix-month}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=monthcolor}"/>
 		<Switch Grid.Row="2" Grid.Column="3" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=month}" HorizontalOptions="End"/>
 
     <Label Grid.Row="3" Grid.Column="0" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=prefix-year}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearcolor}"/>
-		<Entry Grid.Row="3" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearval}" Keyboard="Numeric"
+		<xlib:IvalEntry Grid.Row="3" Grid.Column="1" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearval}" Keyboard="Numeric"
 			IsEnabled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearbox}"/>
 		<Label Grid.Row="3" Grid.Column="2" Text="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=suffix-year}" TextColor="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=yearcolor}"/>
 		<Switch Grid.Row="3" Grid.Column="3" IsToggled="{Binding value, Converter={StaticResource rConverter}, ConverterParameter=year}" HorizontalOptions="End"/>

@@ -14,25 +14,38 @@ namespace Consonance.XamarinFormsView.PCL
 {
     class ValueRequestBuilder : IValueRequestBuilder
     {
-        
 		readonly CommonServices srv;
 		public ValueRequestBuilder(CommonServices srv)
 		{
             this.srv = srv;
             this.requestFactory = new ValueRequestFactory(srv);
         }
-		public ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
-		{
-		    ValueRequestView vrv = null;
+
+        public IValueRequest<TabularDataRequestValue> GenerateTableRequest()
+        {
+            return new ValueRequestVM<TabularDataRequestValue, ContentView>(null, false, delegate { });
+        }
+
+        public ViewTask<bool> GetValuesWithList(IEnumerable<GetValuesPage> requestPages, IValueRequest<TabularDataRequestValue> list)
+        {
+            var vv = new ValueRequestView();
+            vv.ListyMode(list);
+            return GetValuesImpl(requestPages, vv);
+        }
+
+        public ViewTask<bool> GetValues(IEnumerable<GetValuesPage> requestPages)
+        {
+            return GetValuesImpl(requestPages, new ValueRequestView());
+        }
+
+        ViewTask<bool> GetValuesImpl(IEnumerable<GetValuesPage> requestPages, ValueRequestView vrv)
+        { 
 			TaskCompletionSource<bool> tcs_all = new TaskCompletionSource<bool> ();
 			TaskCompletionSource<EventArgs> tcs_push = new TaskCompletionSource<EventArgs> ();
 			App.platform.UIThread(() => {
                 // We're returning tasks to indicate bits in here completing, so this begininvoke is alright
                 // ...i always seem to have trouble when awaiting PushAsync :/ so im making this method not wait on any ui ops
                 // even though it should yield appropriately
-
-				// Create the view!
-				vrv = new ValueRequestView ();
 
 				// Handler for when the requests we putting in change...
 				ListChangedEventHandler leh = (s,e) =>
@@ -62,14 +75,14 @@ namespace Consonance.XamarinFormsView.PCL
 					else
 					{
                         // set up the next page.
-					    npage++;
+                        npage++;
                         vrv.ignorevalidity = true; // dont redbox stuff thats wrong. yet.
 						vrv.Title = pages[npage].title;
 						(lastPushed = pages[npage]).valuerequestsChanegd = leh; // testy 
 						leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
 					}
 				};
-				vrv.completed += PageCompletedHandler;
+				vrv.completed = PageCompletedHandler;
 				PageCompletedHandler(true); // begin cycle
 
 				// push the view - configure a callback to set the "im pushed" task.
@@ -82,18 +95,18 @@ namespace Consonance.XamarinFormsView.PCL
 		{
 			switch (e.ListChangedType) {
 			case ListChangedType.Reset:
-				vrv.ClearRows ();
+				vrv.vlist.ClearRows ();
 				foreach (var ob in requests)
-					vrv.AddRow ((ob as Func<ValueRequestTemplate>)());
+					vrv.vlist.AddRow ((ob as Func<ValueRequestTemplate>)());
 				break;
 			case ListChangedType.ItemAdded:
-				vrv.InsertRow (e.NewIndex, (requests [e.NewIndex] as Func<ValueRequestTemplate>)());
+				vrv.vlist.InsertRow (e.NewIndex, (requests [e.NewIndex] as Func<ValueRequestTemplate>)());
 				break;
 			case ListChangedType.ItemChanged:
 				// do not #care
 				break;
 			case ListChangedType.ItemDeleted:
-				vrv.RemoveRow (e.OldIndex);
+				vrv.vlist.RemoveRow (e.OldIndex);
                 break;
 			case ListChangedType.ItemMoved:
 				// do not #care
@@ -134,7 +147,6 @@ namespace Consonance.XamarinFormsView.PCL
 		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name); }
 		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name); }
         public IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name) { return RequestCreator<MultiRequestOptionValue, MultiRequestCombo>(name); }
-        public IValueRequest<MultiRequestListValue> IValueRequestItemsListRequestor(string name) { return RequestCreator<MultiRequestListValue, MultiRequestList>(name); }
         #endregion
 
         IValueRequest<T> RequestCreator<T, V>(String name, bool showName = true, Action<V> init = null) where V : View, new()
@@ -150,6 +162,7 @@ namespace Consonance.XamarinFormsView.PCL
         bool valid { get; }
         bool ignorevalid { get; set; }
         void ClearPropChanged();
+        void RaiseValueChanged();
     }
 	class ValueRequestVM<T,V> : IValueRequest<T>, IValueRequestVM where V : View, new()
 	{
@@ -159,7 +172,7 @@ namespace Consonance.XamarinFormsView.PCL
 		public ValueRequestVM(String name, bool showName, Action<V> init)
 		{
 			this.name=name;
-			this.showName = showName;
+			this.showName = showName && name != null;
             this.init = init;
 		}
 
@@ -167,6 +180,7 @@ namespace Consonance.XamarinFormsView.PCL
 		public event Action ValueChanged = delegate { };
 		public void ClearListeners () { ValueChanged = delegate { }; }
         public void ClearPropChanged() { PropertyChanged = delegate { }; }
+        public void RaiseValueChanged() { OnPropertyChanged("value"); }
 
         // Request will reference the view that this VM is bound to 
 		public object request

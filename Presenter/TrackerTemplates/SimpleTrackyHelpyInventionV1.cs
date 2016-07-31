@@ -26,7 +26,28 @@ namespace Consonance.Invention
         public String description { get; set; }
     }
 
-    
+    public class KeyTo<T> where T : BaseDB
+    {
+        public static SQLiteConnection conn;
+        readonly Expression<Func<T, bool>> match;
+        readonly Action<T> set;
+        public KeyTo(Expression<Func<T, bool>> match, Action<T> set)
+        {
+            this.match = match;
+            this.set = set;
+        }
+        public IEnumerable<T> Get()
+        {
+            return conn.Table<T>().Where(match);
+        }
+        public void Set(IEnumerable<T> values)
+        {
+            // reset.
+            conn.Table<T>().Delete(match);
+            foreach (var v in values) set(v);
+            conn.InsertAll(values);
+        }
+    }
 
     // model stuff
     class SimpleTrackyHelpyInventionV1Model : BaseDB
@@ -34,32 +55,24 @@ namespace Consonance.Invention
         // functional
         public String tracked { get; set; }
 
-        FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor> _qod_in;
-        public IEnumerable<SimpleTrackyInfoQuantifierDescriptor> qod_in
+        KeyTo<SimpleTrackyInfoQuantifierDescriptor> _qod_in;
+        public KeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_in
         {
             get
             {
-                if (_qod_in == null) _qod_in = new FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this);
-                return _qod_in.Get();
-            }
-            set
-            {
-                if (_qod_in == null) _qod_in = new FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this);
-                _qod_in.Set(value);
+                return _qod_in ?? new KeyTo<SimpleTrackyInfoQuantifierDescriptor>
+                (s => s.helpymodel == id && s.helpyproperty == 0,
+                s => { s.helpymodel = id; s.helpyproperty = 0; });
             }
         }
-        FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor> _qod_out;
-        public IEnumerable<SimpleTrackyInfoQuantifierDescriptor> qod_out
+        KeyTo<SimpleTrackyInfoQuantifierDescriptor> _qod_out;
+        public KeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_out
         {
             get
             {
-                if (_qod_out == null) _qod_out = new FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this);
-                return _qod_out.Get();
-            }
-            set
-            {
-                if (_qod_out == null) _qod_out = new FK<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this);
-                _qod_out.Set(value);
+                return _qod_out ?? new KeyTo<SimpleTrackyInfoQuantifierDescriptor>
+                (s => s.helpymodel == id && s.helpyproperty == 1,
+                s => { s.helpymodel = id; s.helpyproperty = 1; });
             }
         }
 
@@ -84,36 +97,7 @@ namespace Consonance.Invention
         public String InputInfoVerbPast { get; set; }
         public String OutputInfoVerbPast { get; set; }
     }
-
-    class FK<T,O> where T : BaseDB where O : BaseDB
-    {
-        readonly PropertyInfo fkmember;
-        readonly T on;
-        readonly SQLiteConnection conn;
-        public FK(T on, SQLiteConnection conn)
-        {
-            this.on = on;
-            this.conn = conn;
-            foreach (var pi in PlatformGlobal.platform.GetPropertyInfos(typeof(O)))
-            {
-                var fkp = pi.GetCustomAttribute<ForeignKeyAttribute>() as ForeignKeyAttribute;
-                if (fkp != null && fkp.To == typeof(O))
-                    fkmember = pi;
-            }
-        }
-        public IEnumerable<O> Get()
-        {
-            var right = Expression.Constant(on.id);
-            var left = Expression.Property(Expression.Variable(typeof(O)), fkmember);
-            var expr = Expression.Equal(left, right);
-            var lambda = Expression.Lambda(expr, Expression.Parameter(typeof(O))).Compile();
-            var res = from f in conn.Table<O>() where (bool)lambda.DynamicInvoke(f) select f;
-        }
-        public void Set(IEnumerable<O> values)
-        {
-
-        }
-    }
+    
 
     [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
     sealed class ForeignKeyAttribute : Attribute
@@ -123,8 +107,12 @@ namespace Consonance.Invention
 
     class SimpleTrackyInfoQuantifierDescriptor : BaseDB
     {
-        [ForeignKey(To = typeof(SimpleTrackyHelpyInventionV1Model))]
+        
+
+        // relation
         public int helpymodel { get; set; }
+        public int helpyproperty { get; set; }
+
         public InfoQuantifier.InfoQuantifierTypes type { get; set; }
         public double defaultvalue { get; set; }
         public String Name { get; set; }
@@ -160,6 +148,9 @@ namespace Consonance.Invention
             this.pres = registerto;
             this.build = builder;
             this.input = input;
+
+            // helper
+            KeyTo<BaseDB>.conn = conn;
 
             // ensure tables
             conn.CreateTable<SimpleTrackyInfoQuantifierDescriptor>();
@@ -251,19 +242,25 @@ namespace Consonance.Invention
 
         class RequestPage
         {
-            private RequestPage() { }
+            private RequestPage(GetValuesPage page, Action<SimpleTrackyHelpyInventionV1Model> set, IValueRequest<TabularDataRequestValue> tdr = null)
+            {
+                this.page = page;
+                this.set = set;
+                this.tdr = tdr;
+            }
 
-            public GetValuesPage page { get; private set; }
-            public Action<SimpleTrackyHelpyInventionV1Model> set { get; private set; }
+            public readonly IValueRequest<TabularDataRequestValue> tdr;
+            public readonly GetValuesPage page;
+            public readonly Action<SimpleTrackyHelpyInventionV1Model> set;
+            
 
             public static RequestPage Page1(IValueRequestFactory fac)
             {
-                var ret = new RequestPage();
-                ret.page = new GetValuesPage("What's it called?");
+                var page = new GetValuesPage("What's it called?");
                 var p1vr = (from s in new[] { "Name", "Description", "Category", "Tracking" }
                             select fac.StringRequestor(s)).ToArray();
-                ret.page.SetList(new BindingList<object> { from p in p1vr select p.request });
-                ret.set = mod =>
+                page.SetList(new BindingList<object>((from p in p1vr select p.request).ToList()));
+                Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
                 {
                     //stuff
                     mod.Name = p1vr[0].value;
@@ -272,18 +269,18 @@ namespace Consonance.Invention
                     mod.TrackedName = p1vr[3].value;
                     mod.tracked = HelpyGenV1.DBName(mod.TrackedName);
                 };
-                return ret;
+                foreach (var vr in p1vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value);
+                return new RequestPage(page,set);
             }
             public static RequestPage Page2(IValueRequestFactory fac)
             {
-                var ret = new RequestPage();
-                ret.page = new GetValuesPage("How are entries called?");
+                var page = new GetValuesPage("How are entries called?");
                 var p2vr = (from s in new[] {
                         "InputEntryVerb","OutputEntryVerb","InputInfoPlural",
                         "OutputInfoPlural","InputInfoVerbPast","OutputInfoVerbPast" }
                             select fac.StringRequestor(s)).ToArray();
-                ret.page.SetList(new BindingList<object> { from p in p2vr select p.request });
-                ret.set = mod =>
+                page.SetList(new BindingList<object> (( from p in p2vr select p.request ).ToList()));
+                Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
                 {
                     mod.InputEntryVerb = p2vr[0].value;
                     mod.OutputEntryVerb = p2vr[1].value;
@@ -292,27 +289,38 @@ namespace Consonance.Invention
                     mod.InputInfoVerbPast = p2vr[4].value;
                     mod.OutputInfoVerbPast = p2vr[5].value;
                 };
-                return ret;
+                foreach (var vr in p2vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value); ;
+                return new RequestPage(page,set);
             }
-            public static RequestPage Page3(IValueRequestFactory fac)
+            public static RequestPage Page3(IValueRequestFactory fac, IValueRequest<TabularDataRequestValue> megalist)
             {
-                var ret = new RequestPage();
-                ret.page = new GetValuesPage("How can infos be quantified?");
-                var megalist = fac.IValueRequestItemsListRequestor("Descriptor");
+                var page = new GetValuesPage("How can infos be quantified?");
                 var ioreq = fac.OptionGroupRequestor("For");
                 ioreq.value = new OptionGroupValue(new[] { "Input", "Output" });
                 var nreq = fac.StringRequestor("Name");
-                var dvalmor = fac.IValueRequestOptionGroupRequestor("Default and Value");
-                dvalmor.value = new MultiRequestOptionValue(new[]
-                    {
-                        fac.DoubleRequestor("Number").request,
-                        fac.IntRequestor("Quantity").request,
-                        fac.TimeSpanRequestor("Duration").request,
-                    }, 0);
+                var dvalmor = fac.IValueRequestOptionGroupRequestor("Type");
+
+                var qnr = fac.DoubleRequestor("Number");
+                var qqr = fac.IntRequestor("Quantity");
+                var qdr = fac.TimeSpanRequestor("Duration");
+                var vls = new Func<Object>[] { () => qnr.value, () => qqr.value, () => qdr.value };
+
+                dvalmor.value = new MultiRequestOptionValue(new[] { qnr.request, qqr.request, qdr.request, }, 0);
                 var sdef = new Func<Object, double>[] { d => (double)d, d => (double)(int)d, d => ((TimeSpan)d).TotalHours };
-                megalist.value = new MultiRequestListValue(new[] { ioreq.request, nreq.request, dvalmor.request }, new object[0][]);
-                ret.page.SetList(new BindingList<object> { megalist });
-                ret.set = mod =>
+                var addr = fac.ActionRequestor("Add");
+
+                String[] headers = new[] { "For", "Name", "Units", "Default" };
+                megalist.value = new TabularDataRequestValue(headers);
+
+                addr.ValueChanged += () =>
+                {
+                    var ot = (InfoQuantifier.InfoQuantifierTypes)dvalmor.value.SelectedRequest;
+                    var ov = vls[dvalmor.value.SelectedRequest]();
+                    megalist.value.Items.Add(new object[] { ioreq.value.SelectedOption, nreq.value, ot, ov });
+                };
+
+                page.SetList(new BindingList<object> { ioreq.request, nreq.request, dvalmor.request, addr.request, megalist.request });
+                Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
                 {
                     // get quantifiers
                     int i = 0;
@@ -321,7 +329,7 @@ namespace Consonance.Invention
                         outq = new List<SimpleTrackyInfoQuantifierDescriptor>();
                     foreach (var q in megalist.value.Items)
                     {
-                        var inout = (q[0] as OptionGroupValue).SelectedOption;
+                        var inout = (int)q[0];
                         var name = (q[1] as String);
                         var qtype = (int)q[2];
                         var qdef = q[3];
@@ -329,10 +337,13 @@ namespace Consonance.Invention
                         if (inout == 0) inq.Add(qd);
                         else outq.Add(qd);
                     }
-                    mod.qod_in = inq;
-                    mod.qod_out = outq;
+                    mod.qod_in.Set(inq);
+                    mod.qod_out.Set(outq);
                 };
-                return ret;
+                megalist.value.Items.CollectionChanged += (a,b) => megalist.valid = megalist.value.Items.Count > 0;
+                nreq.ValueChanged += () => nreq.valid = !String.IsNullOrWhiteSpace(nreq.value);
+                dvalmor.valid = ioreq.valid = true;
+                return new RequestPage(page, set, megalist);
             }
         }
 
@@ -340,9 +351,10 @@ namespace Consonance.Invention
         {
             var page1 = RequestPage.Page1(build.requestFactory);
             var page2 = RequestPage.Page2(build.requestFactory);
-            var page3 = RequestPage.Page3(build.requestFactory);
+            var page3 = RequestPage.Page3(build.requestFactory, build.GenerateTableRequest());
             
-            var vt = build.GetValues(new[] { page1.page, page2.page, page3.page });
+            //var vt = build.GetValues(new[] { page1.page, page2.page, page3.page });
+            var vt = build.GetValuesWithList(new[] {  page3.page }, page3.tdr);
             vt.Completed.ContinueWith(async rt => { 
                 await vt.Pop();
                 if (rt.Result)
@@ -497,11 +509,11 @@ namespace Consonance.Invention
             iirhq.trackedField = it.tracked;
             iirhq.trackedName = it.TrackedName;
             PlatformGlobal.platform.GetPropertyInfo(input_irhq, "InfoComplete").SetValue(iirhq, iidi);
-            iirhq.quantifier_choices = (from f in it.qod_in select InfoQuantifier.FromType(f.type, f.Name, f.id, f.defaultvalue)).ToArray();
+            iirhq.quantifier_choices = (from f in it.qod_in.Get() select InfoQuantifier.FromType(f.type, f.Name, f.id, f.defaultvalue)).ToArray();
             oirhq.trackedField = it.tracked;
             oirhq.trackedName = it.TrackedName;
             PlatformGlobal.platform.GetPropertyInfo(output_irhq, "InfoComplete").SetValue(oirhq, oidi);
-            oirhq.quantifier_choices = (from f in it.qod_out select InfoQuantifier.FromType(f.type, f.Name, f.id, f.defaultvalue)).ToArray();
+            oirhq.quantifier_choices = (from f in it.qod_out.Get() select InfoQuantifier.FromType(f.type, f.Name, f.id, f.defaultvalue)).ToArray();
 
             // build the helpy!
             model = Activator.CreateInstance(tht, sthi);

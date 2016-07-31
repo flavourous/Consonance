@@ -77,7 +77,7 @@ namespace Consonance.XamarinFormsView.PCL
 			InitializeComponent ();
             viewmodel.OnPlanSelected = this.OnPlanSelected;
 			BindingContext = viewmodel;
-		}
+        }
 		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = daypagerPlan.BindingContext = value; } }
 
 

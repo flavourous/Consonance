@@ -42,9 +42,6 @@
     <Compile Include="ValueConverters.cs" />
     <Compile Include="ValueRequests\Templates\ActionRequest.cs" />
     <Compile Include="ValueRequests\Templates\BarcodeRequest.cs" />
-    <Compile Include="ValueRequests\Templates\MultiRequestList.xaml.cs">
-      <DependentUpon>MultiRequestList.xaml</DependentUpon>
-    </Compile>
     <Compile Include="ValueRequests\Templates\DateRequest.xaml.cs">
       <DependentUpon>DateRequest.xaml</DependentUpon>
     </Compile>
@@ -85,12 +82,14 @@
       <DependentUpon>TimeSpanRequest.xaml</DependentUpon>
     </Compile>
     <Compile Include="ValueRequests\ValueRequestBuilder.cs" />
+    <Compile Include="ValueRequests\ValueRequestList.xaml.cs">
+      <DependentUpon>ValueRequestList.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ValueRequests\ValueRequestLister.cs" />
     <Compile Include="ValueRequests\ValueRequestTemplate.xaml.cs">
       <DependentUpon>ValueRequestTemplate.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ValueRequests\ValueRequestView.xaml.cs">
-      <DependentUpon>ValueRequestView.xaml</DependentUpon>
-    </Compile>
+    <Compile Include="ValueRequests\ValueRequestView.cs" />
     <Compile Include="Views\ChoosePlanView.xaml.cs">
       <DependentUpon>ChoosePlanView.xaml</DependentUpon>
     </Compile>
@@ -128,7 +127,10 @@
     <Compile Include="Wrappers\PlanCommandsWrapper.cs" />
     <Compile Include="Wrappers\ViewWrapper.cs" />
     <Compile Include="XLib\BindingStackLayout.cs" />
+    <Compile Include="XLib\ColWatcher.cs" />
+    <Compile Include="XLib\EquallyDistributedLayout.cs" />
     <Compile Include="XLib\GridView.cs" />
+    <Compile Include="XLib\IvalEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="SQLite.Net, Version=3.1.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -212,10 +214,6 @@
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="ValueRequests\ValueRequestView.xaml">
-      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="Views\ChoosePlanView.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <SubType>Designer</SubType>
@@ -284,7 +282,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="ValueRequests\Templates\MultiRequestList.xaml">
+    <EmbeddedResource Include="ValueRequests\ValueRequestList.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
       <SubType>Designer</SubType>
     </EmbeddedResource>

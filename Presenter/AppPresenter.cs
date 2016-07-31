@@ -190,15 +190,18 @@ namespace Consonance
         private void Invention_add()
         {
             if (inventors.Count == 1) inventors[0].inventor.StartNewTracker();
-
-            // or choose.
-            var names = (from i in inventors select new TrackerDetailsVM(i.name, i.description, i.category)).ToList();
-            var chooseViewTask = input.ChoosePlan("Select invention type", names, -1);
-            chooseViewTask.Completed.ContinueWith(async index => {
-                var addViewTask = inventors[index.Result].inventor.StartNewTracker();
-                await addViewTask;
-                await chooseViewTask.Pop();
-            });
+            else
+            {
+                // or choose.
+                var names = (from i in inventors select new TrackerDetailsVM(i.name, i.description, i.category)).ToList();
+                var chooseViewTask = input.ChoosePlan("Select invention type", names, -1);
+                chooseViewTask.Completed.ContinueWith(async index =>
+                {
+                    var addViewTask = inventors[index.Result].inventor.StartNewTracker();
+                    await addViewTask;
+                    await chooseViewTask.Pop();
+                });
+            }
         }
 
         // vm holders
@@ -317,7 +320,7 @@ namespace Consonance
             };
             busyMap = new Dictionary<TrackerChangeType, IBusyMaker[]>
             {
-                { TrackerChangeType.Instances, new IBusyMaker[] { inventions } },
+                { TrackerChangeType.Inventions, new IBusyMaker[] { inventions } },
                 { TrackerChangeType.Instances, new IBusyMaker[] { tracker_instances } },
                 { TrackerChangeType.EatEntries, new IBusyMaker[] { inEntries, inTracks, outTracks } },
                 { TrackerChangeType.BurnEntries,new IBusyMaker[] { outEntries, inTracks, outTracks } },
@@ -529,7 +532,6 @@ namespace Consonance
 		void Attach (Action<String, Action> showError);
         IFSOps filesystem { get; }
         bool CreateDirectory(String ifdoesntexist);
-        PropertyInfo[] GetPropertyInfos(Type T);
         PropertyInfo GetPropertyInfo(Type T, String property);
         MethodInfo GetMethodInfo(Type T, String method);
         IEmissionPlatform emit { get; }
@@ -613,9 +615,11 @@ namespace Consonance
 	{
 		// get generic set of values on a page thing
 		ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages);
+        ViewTask<bool> GetValuesWithList(IEnumerable<GetValuesPage> requestPages, IValueRequest<TabularDataRequestValue> list);
+        IValueRequest<TabularDataRequestValue> GenerateTableRequest();
 
-		// VRO Factory Method
-		IValueRequestFactory requestFactory { get; }
+        // VRO Factory Method
+        IValueRequestFactory requestFactory { get; }
 	}
 	public class Barcode
 	{
@@ -640,7 +644,6 @@ namespace Consonance
 		IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
 		IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
         IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name);
-        IValueRequest<MultiRequestListValue> IValueRequestItemsListRequestor(String name);
     }
     #endregion
     
@@ -657,14 +660,14 @@ namespace Consonance
         }
     }
 
-    public class MultiRequestListValue
+    public class TabularDataRequestValue
     {
-        public readonly IEnumerable IValueRequestOptions;
-        public Object[][] Items { get; set; }
-        public MultiRequestListValue(IEnumerable IValueRequestOptions, Object[][] initItems)
+        public String[] Headers { get; private set; }
+        public ObservableCollection<Object[]> Items { get; private set; }
+        public TabularDataRequestValue(String[] headers)
         {
-            this.IValueRequestOptions = IValueRequestOptions;
-            Items = initItems;
+            Headers = headers;
+            Items = new ObservableCollection<Object[]>();
         }
     }
 

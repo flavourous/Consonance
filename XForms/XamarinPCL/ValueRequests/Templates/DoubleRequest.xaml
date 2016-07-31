@@ -2,6 +2,7 @@
 <ContentView 
 	xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL"
 	xmlns="http://xamarin.com/schemas/2014/forms" 
+    xmlns:xlib="clr-namespace:XLib;assembly=Consonance.XamarinFormsView.PCL"
 	xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
 	x:Class="Consonance.XamarinFormsView.PCL.DoubleRequest">
 	<ContentView.Resources>
@@ -10,7 +11,7 @@
 		</ResourceDictionary>
 	</ContentView.Resources>
 	<Grid>
-		<Entry Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=true}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" Keyboard="Numeric"/>
+		<xlib:IvalEntry Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=true}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" Keyboard="Numeric"/>
 		<Label Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=false}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 	</Grid>
 </ContentView>

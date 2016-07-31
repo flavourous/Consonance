@@ -193,13 +193,13 @@ namespace Consonance
     [Flags]
 	enum TrackerChangeType {
         None =0,
-        Inventions = 1>>0,
-        Instances =1>>1,
-        EatEntries =1>>2,
-        BurnEntries =1>>3,
-        EatInfos =1>>4,
-        BurnInfos =1>>5,
-        Tracking = 1>>6 /*meta*/ ,
+        Inventions = 1<<0,
+        Instances =1<<1,
+        EatEntries =1<<2,
+        BurnEntries =1<<3,
+        EatInfos =1<<4,
+        BurnInfos =1<<5,
+        Tracking = 1<<6 /*meta*/ ,
     };
 	class DietVMToChangeEventArgs<T>
 	{

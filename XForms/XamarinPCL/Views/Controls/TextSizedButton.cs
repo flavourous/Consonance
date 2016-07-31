@@ -27,8 +27,18 @@ namespace Consonance.XamarinFormsView.PCL
             MeasureInvalidated += TextSizedButton_MeasureInvalidated;
         }
 
+        public String Text { get { return (String)GetValue(TextProperty); } set { SetValue(TextProperty, value); } }
+        public static readonly BindableProperty TextProperty = BindableProperty.Create("Text", typeof(String), typeof(TextSizedButton), null, BindingMode.OneWay, null, TextChanged);
+        public static void TextChanged(BindableObject obj, Object oldValue, Object newValue)
+        {
+            TextSizedButton sender = obj as TextSizedButton;
+            String oldText = oldValue as String;
+            String newText = newValue as String;
+            sender.l.Text = newText;
+            sender.InvalidateMeasure();
+        }
+
         public double FontSize { get { return l.FontSize; } set { l.FontSize = value; InvalidateMeasure(); } }
-        public String Text { get { return l.Text; } set { l.Text = value; InvalidateMeasure(); } }
         public event EventHandler Clicked { add { b.Clicked += value; } remove { b.Clicked -= value; } }
 
         private void TextSizedButton_MeasureInvalidated(object sender, EventArgs e)
