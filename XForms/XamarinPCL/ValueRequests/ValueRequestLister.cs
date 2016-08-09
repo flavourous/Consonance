@@ -36,7 +36,7 @@ namespace Consonance.XamarinFormsView.PCL
         public static readonly BindableProperty UseSourceProperty = BindableProperty.Create("UseSource", typeof(Object), typeof(ValueRequestLister), null);
 
         readonly ColWatcher cw;
-        readonly IValueRequest<TabularDataRequestValue> td;
+        public readonly IValueRequest<TabularDataRequestValue> td;
         public ValueRequestLister(ListView hook, IValueRequest<TabularDataRequestValue> tabdata)
         {
             realheader = new ContentView { Content = new Frame() };

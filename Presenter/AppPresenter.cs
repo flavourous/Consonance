@@ -335,7 +335,7 @@ namespace Consonance
                         foreach(var iv in inventors)
                             toreplace.AddRange(iv.inventor.Instances());
                         inventions.SetItems(toreplace);
-                    }
+                    }   
                 },
                 { TrackerChangeType.Instances,ti=>
                     {
@@ -534,13 +534,8 @@ namespace Consonance
         bool CreateDirectory(String ifdoesntexist);
         PropertyInfo GetPropertyInfo(Type T, String property);
         MethodInfo GetMethodInfo(Type T, String method);
-        IEmissionPlatform emit { get; }
 	}
-    public interface IEmissionPlatform
-    {
-        Type CreateClass(String classname, Type baseclass, String[] propnames, Type[] proptypes);
-        bool TypeExists(String typename);
-    }
+    
     public interface IFSOps
     {
         string AppData { get; }
@@ -615,7 +610,6 @@ namespace Consonance
 	{
 		// get generic set of values on a page thing
 		ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages);
-        ViewTask<bool> GetValuesWithList(IEnumerable<GetValuesPage> requestPages, IValueRequest<TabularDataRequestValue> list);
         IValueRequest<TabularDataRequestValue> GenerateTableRequest();
 
         // VRO Factory Method

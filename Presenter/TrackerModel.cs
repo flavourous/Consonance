@@ -7,6 +7,7 @@ using SQLite.Net.Attributes;
 using SQLite.Net;
 using LibSharpHelp;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Consonance
 {
@@ -117,6 +118,7 @@ namespace Consonance
 		public readonly String title;
 		BindingList<Object> boundrequests = new BindingList<object>();
 		public IList<Object> valuerequests { get { return boundrequests; } }
+        public IValueRequest<TabularDataRequestValue> listyRequest { get; private set; }
 		public ListChangedEventHandler valuerequestsChanegd = delegate { };
 		void Newlist_ListChanged (object sender, ListChangedEventArgs e)
 		{
@@ -134,6 +136,10 @@ namespace Consonance
 			boundrequests = newlist;
 			Newlist_ListChanged (boundrequests, new ListChangedEventArgs (ListChangedType.Reset, -1));
 		}
+        public void SetListyRequest(IValueRequest<TabularDataRequestValue> listyRequest)
+        {
+            this.listyRequest = listyRequest;
+        }
 	}
 	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
 	{
@@ -178,6 +184,114 @@ namespace Consonance
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
 	delegate void EntryCallback(BaseEntry entry);
 
+    interface ICheckedConn
+    {
+        void Update<T>(T item) where T : class;
+        IEnumerable<T> All<T>() where T : class;
+        IEnumerable<T> Where<T>(Expression<Func<T,bool>> pred) where T : class;
+        int Count<T>() where T : class;
+        int CountWhere<T>(Expression<Func<T, bool>> pred) where T : class;
+        void CreateTable<T>() where T : class;
+        void Delete<T>(int id) where T : class;
+        void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : class;
+        void DeleteAll<T>() where T : class;
+        void Insert<T>(T item) where T : class;
+    }
+    interface IModelRouter
+    {
+        bool GetTableRoute(Type t, out String tabl, out String[] columns, out Type[] colTypes);
+        Object MapFromTable(Type t, Object[] values);
+        Object[] MapToTable(Type t, Object o);
+    }
+    class NoModelRouter : IModelRouter
+    {
+        public bool GetTableRoute(Type t, out string tabl, out string[] columns, out Type[] colTypes)
+        {
+            columns = null; colTypes = null; tabl = null; return false;
+        }
+        public object MapFromTable(Type t, object[] values) { throw new NotImplementedException(); }
+        public object[] MapToTable(Type t, object o) { throw new NotImplementedException(); }
+    }
+    class SQliteCheckedConnection : ICheckedConn
+    {
+        // Check against the custom table mapped type.
+        readonly SQLiteConnection conn;
+        readonly IModelRouter router;
+        public SQliteCheckedConnection(SQLiteConnection conn, IModelRouter router)
+        {
+            this.conn = conn;
+            this.router = router;
+            
+        }
+
+        public IEnumerable<T> All<T>() where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Count<T>() where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public int CountWhere<T>(Expression<Func<T, bool>> pred) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CreateTable<T>() where T : class
+        {
+            String t;
+            String[] cols;
+            Type[] types;
+            if (router.GetTableRoute(typeof(T), out t, out cols, out types))
+            {
+                var ntps = cols.Zip(types, (name, type) =>
+                {
+                    String tn = "";
+                    if (type == typeof(String)) tn = "TEXT";
+                    else if (type == typeof(int)) tn = "INTEGER";
+                    else if (type == typeof(double)) tn = "REAL";
+                    else throw new NotImplementedException("No map to mysql for " + type.Name);
+                    return name + " " + tn;
+                });
+                var qry = String.Format("CREATE TABLE {0}({1})", t, String.Join(", ", ntps));
+                conn.Execute(qry);
+            }
+            else conn.CreateTable<T>();
+        }
+
+        public void Delete<T>(int id) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeleteAll<T>() where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Insert<T>(T item) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Update<T>(T item) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<T> Where<T>(Expression<Func<T, bool>> pred) where T : class
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     enum ItemType { Instance, Entry, Info };
     public enum DBChangeType { Insert, Delete, Edit };
 	class TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDAL
@@ -189,18 +303,18 @@ namespace Consonance
 	{
         public event Action<TrackerChangeType, DBChangeType, Func<Action>> ToChange = delegate { };
 
-        readonly SQLiteConnection conn;
+        readonly ICheckedConn conn;
 		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
 		public readonly EntryHandler<DietInstType, EatType, EatInfoType> inhandler;
 		public readonly EntryHandler<DietInstType, BurnType, BurnInfoType> outhandler;
 		public TrackerModelAccessLayer(SQLiteConnection conn, ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
 		{
-			this.conn = conn;
+            this.conn = new SQliteCheckedConnection(conn, model as IModelRouter ?? new NoModelRouter());
 			this.model = model;
-			conn.CreateTable<DietInstType> ();
-			inhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (conn, model.increator);
+			this.conn.CreateTable<DietInstType> ();
+			inhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (this.conn, model.increator);
             inhandler.ToChange+= (c, t, p) => ToChange(Convert(c, true), t, p);
-			outhandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (conn, model.outcreator);
+			outhandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (this.conn, model.outcreator);
             outhandler.ToChange += (c, t, p) => ToChange(Convert(c, false), t, p);
         }
         TrackerChangeType Convert(ItemType itp, bool input)
@@ -236,8 +350,8 @@ namespace Consonance
 		{
             ToChange(TrackerChangeType.EatEntries | TrackerChangeType.BurnEntries | TrackerChangeType.Instances, DBChangeType.Delete, () =>
             {
-                conn.Table<EatType>().Delete(et => et.trackerinstanceid == rem.id);
-                conn.Table<BurnType>().Delete(et => et.trackerinstanceid == rem.id);
+                conn.DeleteWhere<EatType>(et => et.trackerinstanceid == rem.id);
+                conn.DeleteWhere<BurnType>(et => et.trackerinstanceid == rem.id);
                 conn.Delete<DietInstType>(rem.id);
                 return null;
             });
@@ -256,7 +370,7 @@ namespace Consonance
         }
 		public IEnumerable<DietInstType> GetTrackers()
 		{
-			var tab = conn.Table<DietInstType> ();
+			var tab = conn.All<DietInstType> ();
 			return tab;
 		}
 //		public IEnumerable<DietInstType> GetTrackers(DateTime st, DateTime en)
@@ -291,9 +405,9 @@ namespace Consonance
 		where EntryInfoType : BaseInfo, new()
 	{
         public event Action<ItemType, DBChangeType, Func<Action>> ToChange = delegate { };
-		readonly SQLiteConnection conn;
+		readonly ICheckedConn conn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
-		public EntryHandler(SQLiteConnection conn, IEntryCreation<EntryType, EntryInfoType> creator)
+		public EntryHandler(ICheckedConn conn, IEntryCreation<EntryType, EntryInfoType> creator)
 		{
 			this.conn = conn;
 			this.creator = creator;
@@ -371,9 +485,9 @@ namespace Consonance
 		public IEnumerable<EntryType> Get (D diet, DateTime start, DateTime end)
 		{
 			// Get the noraml and repeating ones, then repeat the repeating ones
-			var normalQuery = conn.Table<EntryType> ().Where 
+			var normalQuery = conn.Where<EntryType>
 				(d => d.trackerinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end && d.repeatType == RecurranceType.None);
-			var repeatersQuery = conn.Table<EntryType> ().Where
+			var repeatersQuery = conn.Where<EntryType>
 				(d => d.trackerinstanceid == diet.id && d.repeatType != RecurranceType.None);
 			foreach (var ent in normalQuery) yield return ent;
 
@@ -392,11 +506,11 @@ namespace Consonance
 		}
 		public int Count ()
 		{
-			return conn.Table<EntryType> ().Count ();
+            return conn.Count<EntryType>();
 		}
 		public int Count (D diet)
 		{
-			return conn.Table<EntryType> ().Where(e=>e.trackerinstanceid==diet.id).Count ();
+            return conn.CountWhere<EntryType>(e => e.trackerinstanceid == diet.id);
 		}
 
 		#endregion
@@ -408,7 +522,7 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Insert, () =>
             {
                 var mod = creator.MakeInfo();
-                conn.Insert(mod, typeof(EntryInfoType));
+                conn.Insert<EntryInfoType>(mod);
                 return null;
             });
 		}
@@ -418,7 +532,7 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Edit, () =>
             {
                 creator.MakeInfo(editing);
-                conn.Update(editing, typeof(EntryInfoType));
+                conn.Update<EntryInfoType>(editing);
                 return null;
             });
 		}
@@ -427,7 +541,7 @@ namespace Consonance
 		{
             ToChange(ItemType.Info, DBChangeType.Delete, () =>
             {
-                conn.Delete(removing);
+                conn.Delete<EntryInfoType>(removing.id);
                 return null;
             });
 		}

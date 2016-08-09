@@ -26,13 +26,6 @@ namespace Consonance.XamarinFormsView.PCL
             return new ValueRequestVM<TabularDataRequestValue, ContentView>(null, false, delegate { });
         }
 
-        public ViewTask<bool> GetValuesWithList(IEnumerable<GetValuesPage> requestPages, IValueRequest<TabularDataRequestValue> list)
-        {
-            var vv = new ValueRequestView();
-            vv.ListyMode(list);
-            return GetValuesImpl(requestPages, vv);
-        }
-
         public ViewTask<bool> GetValues(IEnumerable<GetValuesPage> requestPages)
         {
             return GetValuesImpl(requestPages, new ValueRequestView());
@@ -58,30 +51,35 @@ namespace Consonance.XamarinFormsView.PCL
 				int npage = -1; // init hack
 				Action<bool> PageCompletedHandler =null;
                 GetValuesPage lastPushed = null;
-				PageCompletedHandler = suc =>
-				{
-					// Either way we need to unhook the previous page
-					if(!suc || npage+1 >= pages.Count) 
-					{
-						// We're done
-						vrv.completed -= PageCompletedHandler;
+                PageCompletedHandler = suc =>
+                {
+                    // Either way we need to unhook the previous page
+                    if (!suc || npage + 1 >= pages.Count)
+                    {
+                        // We're done
+                        vrv.completed -= PageCompletedHandler;
                         if (npage >= 0)
                         {
                             pages[npage].valuerequests.Clear();
                             pages[npage].valuerequestsChanegd = delegate { };
                         }
                         tcs_all.SetResult(suc);
-					}
-					else
-					{
+                    }
+                    else
+                    {
                         // set up the next page.
                         npage++;
                         vrv.ignorevalidity = true; // dont redbox stuff thats wrong. yet.
-						vrv.Title = pages[npage].title;
-						(lastPushed = pages[npage]).valuerequestsChanegd = leh; // testy 
-						leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
-					}
-				};
+                        vrv.Title = pages[npage].title;
+                        (lastPushed = pages[npage]).valuerequestsChanegd = leh; 
+                        leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
+
+                        // already UI thread for pagecomplete handler
+                        var plr = pages[npage].listyRequest;
+                        if (plr != null) vrv.ListyMode(plr);
+                        else vrv.NormalMode();
+                    }
+                };
 				vrv.completed = PageCompletedHandler;
 				PageCompletedHandler(true); // begin cycle
 

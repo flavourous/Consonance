@@ -23,6 +23,7 @@ namespace Consonance.XamarinFormsView.PCL
             {
                 if (me.NavigationStack[me.NavigationStack.Count - 1] == page)
                 {
+                    Debug.WriteLine("Navigation Extension: Popping {0}", page);
                     await me.PopAsync();
                 }
                 else
@@ -31,6 +32,7 @@ namespace Consonance.XamarinFormsView.PCL
                     me.RemovePage(page);
                     await Task.Yield();
                 }
+                Debug.WriteLine("Navigation Extension: Ok, done.");
             }
         }
 	}
@@ -70,13 +72,13 @@ namespace Consonance.XamarinFormsView.PCL
         }
 
         public App()
-		{
-			// some pages.
-			var main = new MainTabs();
+        {
+            // some pages.
+            var main = new MainTabs();
             var navigator = new NavigationPage(main);
 
-			// The root page of your application
-			MainPage = navigator;
+            // The root page of your application
+            MainPage = navigator;
             navigator.Popped += Navigator_Popped;
 
             // Common services DI container
@@ -86,13 +88,14 @@ namespace Consonance.XamarinFormsView.PCL
             // instantiate wrappers
             userInputWrapper = new UserInputWrapper(services);
             bld = defaultBuilder = new ValueRequestBuilder(services);
-			planCommandWrapper = new PlanCommandsWrapper(main, services);
+            planCommandWrapper = new PlanCommandsWrapper(main, services);
             var inventCommandWrapper = new InventionCommandManager();
-			viewWrapper = new ViewWrapper(main, services);
+            viewWrapper = new ViewWrapper(main, services);
             viewWrapper.invention = inventCommandWrapper;
 
             // Initialise services
             Attach_Services(navigator, userInputWrapper, viewWrapper, defaultBuilder, planCommandWrapper, inventCommandWrapper);
+
         }
 
     }

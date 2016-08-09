@@ -118,6 +118,12 @@ namespace Consonance.XamarinFormsView
         public IFSOps filesystem { get { return FF; } }
         static int uiThread;
         Action<String, Action> showError = (ex, a) => a();
+        /// <summary>
+        /// WARNING: if you execute something asynchronous in here, any problems are likely to be COMPLETEY lost.
+        /// use begininbokeonmainthread, with an async void in that case. You gotta await, wait or continueation that shit. In this context.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
         public Task UIThread(Action method)
         {
             TaskCompletionSource<EventArgs> tc = new TaskCompletionSource<EventArgs>();
