@@ -93,10 +93,38 @@ namespace Consonance
         public static async Task PresentTo(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
         {
             PlatformGlobal.platform = platform;
+
+            
+
             singleton = new Presenter();
             await singleton.PresentToImpl(view, platform, input, commands, defBuilder);
         }
         SQLiteConnection conn;
+
+        class TestTable : BaseDB
+        {
+            public String dat { get; set; }
+        }
+        class TC : IModelRouter
+        {
+            public bool GetTableRoute<T>(out string tabl, out string[] columns, out Type[] colTypes)
+            {
+                tabl = "loltable";
+                columns = null;
+                colTypes = null;
+                return true;
+            }
+
+            public T MapFromTable<T>(object[] values)
+            {
+                throw new NotImplementedException();
+            }
+
+            public object[] MapToTable<T>(T o)
+            {
+                throw new NotImplementedException();
+            }
+        }
 
         // present app logic domain to this view.
         IView view;
@@ -114,6 +142,11 @@ namespace Consonance
                 //platform.filesystem.Delete(maindbpath);
                 //byte[] file = platform.filesystem.ReadFile(maindbpath);
                 conn = new SQLiteConnection(platform.sqlite, maindbpath, false);
+
+                // TESTE!
+                Debugger.Break();
+                SQliteCheckedConnection cc = new SQliteCheckedConnection(conn, new TC());
+                cc.CreateTable<TestTable>();
 
                 Debug.WriteLine("PresntToImpl: presenting");
                 this.view = view;
@@ -133,8 +166,7 @@ namespace Consonance
                     description = "Create basic tracker type which tracks a single quantitiy",
                     inventor = basic
                 });
-                basic.ViewModelsToChange += (o, e) =>
-                    TaskMapper(TrackerChangeType.Inventions | TrackerChangeType.Instances, e.toChange, true);
+                basic.ViewModelsToChange += (o, e) => TaskMapper(TrackerChangeType.Inventions, e.toChange, true);
 
 
                 Debug.WriteLine("PresntToImpl: commands");

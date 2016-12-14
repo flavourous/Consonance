@@ -36,7 +36,7 @@ namespace Consonance
 		where T : TrackerInstance, new()
         where E : CalorieDietEatEntry, new()
         where B : CalorieDietBurnEntry, new()
-	{ public CalHold(IExtraRelfectedHelpy<FoodInfo,FireInfo> helpy) : base(helpy) { } }
+	{ public CalHold(IExtraRelfectedHelpy<T,FoodInfo,FireInfo> helpy) : base(helpy) { } }
 
 	// Diet factory methods
     
@@ -57,8 +57,20 @@ namespace Consonance
     public class CalorieDiet_Scav_BurnEntry : CalorieDietBurnEntry { }
 
     // Implimentations
-    public class CalorieDiet_SimpleTemplate : IExtraRelfectedHelpy<FoodInfo, FireInfo>
+    public class CalorieDiet_SimpleTemplate : IExtraRelfectedHelpy<CalorieDietInstance_Simple, FoodInfo, FireInfo>
 	{
+        static class Acc
+        {
+            public static Object g_calorieLimit(Object i) { return ((CalorieDietInstance_Simple)i).calorieLimit; }
+            public static void s_calorieLimit(Object i, Object v) { ((CalorieDietInstance_Simple)i).calorieLimit = (double)v; }
+
+            public static Object g_trackDaily(Object i) { return ((CalorieDietInstance_Simple)i).trackDaily; }
+            public static void s_trackDaily(Object i, Object v) { ((CalorieDietInstance_Simple)i).trackDaily = (bool)v; }
+
+            public static Object g_trackWeekly(Object i) { return ((CalorieDietInstance_Simple)i).trackWeekly; }
+            public static void s_trackWeekly(Object i, Object v) { ((CalorieDietInstance_Simple)i).trackWeekly = (bool)v; }
+        }
+
 		readonly IReflectedHelpyQuants<FoodInfo> _input = new CalDiet_HelpyIn();
 		public IReflectedHelpyQuants<FoodInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<FireInfo> _output = new CalDiet_HelpyOut();
@@ -67,11 +79,10 @@ namespace Consonance
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
 		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
-		public String trackedname { get { return "calories"; } }
 		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
-				VRVConnectedValue.FromType (0.0, "Calorie Limit", "calorieLimit", f => f.DoubleRequestor),
-				VRVConnectedValue.FromType (true, "Track Daily", "trackDaily", f => f.BoolRequestor),
-				VRVConnectedValue.FromType (false, "Track Weekly", "trackWeekly", f => f.BoolRequestor)
+				VRVConnectedValue.FromType (0.0, "Calorie Limit", Acc.g_calorieLimit, Acc.s_calorieLimit, f => f.DoubleRequestor),
+				VRVConnectedValue.FromType (true, "Track Daily", Acc.g_trackDaily, Acc.s_trackDaily, f => f.BoolRequestor),
+				VRVConnectedValue.FromType (false, "Track Weekly", Acc.g_trackWeekly, Acc.s_trackWeekly, f => f.BoolRequestor)
 			}; } } // creating an instance
         public SimpleTrackyTarget[] Calcluate(object[] fieldValues)
         {
@@ -82,9 +93,24 @@ namespace Consonance
         }
 	}
 
-	public class CalorieDiet_Scavenger : IExtraRelfectedHelpy<FoodInfo, FireInfo>
+	public class CalorieDiet_Scavenger : IExtraRelfectedHelpy<CalorieDietInstance_Scav, FoodInfo, FireInfo>
 	{
-		readonly IReflectedHelpyQuants<FoodInfo> _input = new CalDiet_HelpyIn();
+        static class Acc
+        {
+            public static Object g_nLooseDays(Object i) { return ((CalorieDietInstance_Scav)i).nLooseDays; }
+            public static void s_nLooseDays(Object i, Object v) { ((CalorieDietInstance_Scav)i).nLooseDays = (int)v; }
+
+            public static Object g_looseCalorieLimit(Object i) { return ((CalorieDietInstance_Scav)i).looseCalorieLimit; }
+            public static void s_looseCalorieLimit(Object i, Object v) { ((CalorieDietInstance_Scav)i).looseCalorieLimit = (double)v; }
+
+            public static Object g_nStrictDays(Object i) { return ((CalorieDietInstance_Scav)i).nStrictDays; }
+            public static void s_nStrictDays(Object i, Object v) { ((CalorieDietInstance_Scav)i).nStrictDays = (int)v; }
+
+            public static Object g_strictCalorieLimit(Object i) { return ((CalorieDietInstance_Scav)i).strictCalorieLimit; }
+            public static void s_strictCalorieLimit(Object i, Object v) { ((CalorieDietInstance_Scav)i).strictCalorieLimit = (double)v; }
+        }
+
+        readonly IReflectedHelpyQuants<FoodInfo> _input = new CalDiet_HelpyIn();
 		public IReflectedHelpyQuants<FoodInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<FireInfo> _output = new CalDiet_HelpyOut();
 		public IReflectedHelpyQuants<FireInfo> output { get { return _output; } }
@@ -92,12 +118,11 @@ namespace Consonance
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
 		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
-		public String trackedname { get { return "calories"; } }
 		public VRVConnectedValue[] instanceValueFields { get { return new[] { 
-					VRVConnectedValue.FromType(0, v => (int)v[0] > 0, "Loose days", "nLooseDays", f=>f.IntRequestor ), 
-					VRVConnectedValue.FromType(0.0, "Calories", "looseCalorieLimit", f=>f.DoubleRequestor ), 
-					VRVConnectedValue.FromType(0, v => (int)v[2] > 0, "Strict days", "nStrictDays", f=>f.IntRequestor ), 
-					VRVConnectedValue.FromType(0.0, "Calories", "strictCalorieLimit", f=>f.DoubleRequestor ) 
+					VRVConnectedValue.FromType(0, v => (int)v[0] > 0, "Loose days",Acc.g_nLooseDays,Acc.s_nLooseDays, f=>f.IntRequestor ), 
+					VRVConnectedValue.FromType(0.0, "Calories", Acc.g_looseCalorieLimit, Acc.s_looseCalorieLimit, f=>f.DoubleRequestor ), 
+					VRVConnectedValue.FromType(0, v => (int)v[2] > 0, "Strict days", Acc.g_nStrictDays, Acc.s_nStrictDays, f=>f.IntRequestor ), 
+					VRVConnectedValue.FromType(0.0, "Calories", Acc.g_strictCalorieLimit, Acc.s_strictCalorieLimit, f=>f.DoubleRequestor ) 
 			}; } } // creating an instance
 		public SimpleTrackyTarget[] Calcluate(object[] fieldValues) 
 		{
@@ -117,9 +142,9 @@ namespace Consonance
 	class CalDiet_HelpyIn : IReflectedHelpyQuants<FoodInfo>
 	{
 		#region IReflectedHelpyQuants implementation
-        public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", "calories", 0.0); } }
-        public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", "calories", 0.0) }; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Grams", 0, 100.0), InfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Servings", 1, 1.0) }; } }
+        public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories",o=>((CalorieDietEatEntry)o).calories,(o,v)=>((CalorieDietEatEntry)o).calories=v, 0.0); } }
+        public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FoodInfo)o).calories ?? 0.0, (o, v) => ((FoodInfo)o).calories = v, 0.0) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Grams", 0, 100.0), HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Servings", 1, 1.0) }; } }
         public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<FoodInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
 		#endregion
@@ -127,9 +152,9 @@ namespace Consonance
 	class CalDiet_HelpyOut : IReflectedHelpyQuants<FireInfo>
 	{
 		#region IReflectedHelpyQuants implementation
-		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", "calories", 0.0); } }
-		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", "calories", 0.0) }; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Duration, "Duration", 0, 0.0) }; } }
+		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", o => ((CalorieDietBurnEntry)o).calories, (o, v) => ((CalorieDietBurnEntry)o).calories = v, 0.0); } }
+		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FireInfo)o).calories ?? 0.0, (o, v) => ((FireInfo)o).calories = v, 0.0) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Duration, "Duration", 0, 0.0) }; } }
         public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<FireInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
 		#endregion

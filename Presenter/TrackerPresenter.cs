@@ -207,7 +207,6 @@ namespace Consonance
         public Func<Action> toChange;
 	}
 	delegate void DietVMChangeEventHandler<S,T>(S sender, DietVMToChangeEventArgs<T> args);
-	delegate TrackerInstanceVM DVMPuller();
 	/// <summary>
 	/// This contains all the code which the app would want to do to get viewmodels out of
 	/// implimentations, and retains the generic definitions therefore.

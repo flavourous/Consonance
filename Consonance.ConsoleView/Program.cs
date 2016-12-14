@@ -32,6 +32,16 @@ namespace Consonance.ConsoleView
         {
             AppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         }
+
+        public void Delete(string file)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] ReadFile(string file)
+        {
+            throw new NotImplementedException();
+        }
     }
     class CPlat : IPlatform, ITasks
 	{
@@ -88,6 +98,11 @@ namespace Consonance.ConsoleView
         public bool CreateDirectory(string ifdoesntexist)
         {
             return System.IO.Directory.CreateDirectory(ifdoesntexist).Exists;
+        }
+
+        public MethodInfo GetMethodInfo(Type T, string method)
+        {
+            throw new NotImplementedException();
         }
         #endregion
     }

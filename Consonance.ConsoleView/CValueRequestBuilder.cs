@@ -123,11 +123,17 @@ namespace Consonance.ConsoleView
 			pcp.ok = doNext;
 			MainClass.consolePager.Push (pcp);
 			doNext ();
-			var vt = new ViewTask<bool> (() => MainClass.consolePager.Pop(pcp), pushed.Task, chosen.Task);
+			var vt = new ViewTask<bool> (() => Task.FromResult(MainClass.consolePager.Pop(pcp)), pushed.Task, chosen.Task);
 			pushed.SetResult(null);
 			return vt;
 		}
-		public IValueRequestFactory requestFactory { get; private set; }
+
+        public IValueRequest<TabularDataRequestValue> GenerateTableRequest()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IValueRequestFactory requestFactory { get; private set; }
 		#endregion
 	}
 	class CValueRequestFactory : IValueRequestFactory
@@ -141,7 +147,7 @@ namespace Consonance.ConsoleView
 		public IValueRequest<bool> BoolRequestor (string name) { return new RequestFromString<bool> (name, bool.Parse); }
 		public IValueRequest<EventArgs> ActionRequestor (string name) { return new RequestFromString<EventArgs> (name, s => { return new EventArgs (); }); }
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new RequestFromString<Barcode> (name, s => new Barcode () { value = long.Parse (s) });}
-		public IValueRequest<InfoSelectValue> InfoLineVMRequestor (string name) { return new RequestFromString<InfoSelectValue> (name, isv => isv.OnChoose ()); }
+		public IValueRequest<InfoLineVM> InfoLineVMRequestor (string name, InfoManageType imt) { return new RequestFromString<InfoLineVM> (name, isv => null); }
 		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name)  {
 			return new RequestFromString<OptionGroupValue> (name, (s, ogv) => {
 				var idx = int.Parse (s);
@@ -209,8 +215,23 @@ namespace Consonance.ConsoleView
 				}
 			);
 		}
-		#endregion
-	}
+
+        public IValueRequest<DateTime> DateTimeRequestor(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IValueRequest<DateTime?> nDateRequestor(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(string name)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+    }
 
 	interface IValueRequestFromString 
 	{
@@ -246,12 +267,12 @@ namespace Consonance.ConsoleView
 				if (onlyAct != null)
 				{
 					onlyAct (value);
-					final = changed; 
+					final = ValueChanged; 
 				}
 				else if (actOnExisting != null) 
 				{
 					actOnExisting (s, value);
-					final = changed;
+					final = ValueChanged;
 				} else
 					value = cdel (s); 
 			} catch(Exception exp) {
@@ -263,14 +284,14 @@ namespace Consonance.ConsoleView
 		}
 		public event Action Invalidated = delegate { };
 		#region IValueRequest implementation
-		public event Action changed = delegate { };
-		public void ClearListeners () { changed = delegate { }; }
+		public event Action ValueChanged = delegate { };
+		public void ClearListeners () { ValueChanged = delegate { }; }
 		public object request { get { return this; } }
 
 		T mvalue;
 		public T value { 
 			get { return mvalue; } 
-			set { mvalue = value; Invalidated (); changed(); } 
+			set { mvalue = value; Invalidated (); ValueChanged(); } 
 		}
 		bool menabled;
 		public bool enabled{ 

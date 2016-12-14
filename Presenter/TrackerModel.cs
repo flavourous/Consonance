@@ -8,6 +8,7 @@ using SQLite.Net;
 using LibSharpHelp;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Reflection;
 
 namespace Consonance
 {
@@ -184,34 +185,42 @@ namespace Consonance
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
 	delegate void EntryCallback(BaseEntry entry);
 
+    
+
+
     interface ICheckedConn
     {
-        void Update<T>(T item) where T : class;
-        IEnumerable<T> All<T>() where T : class;
-        IEnumerable<T> Where<T>(Expression<Func<T,bool>> pred) where T : class;
-        int Count<T>() where T : class;
-        int CountWhere<T>(Expression<Func<T, bool>> pred) where T : class;
-        void CreateTable<T>() where T : class;
-        void Delete<T>(int id) where T : class;
-        void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : class;
-        void DeleteAll<T>() where T : class;
-        void Insert<T>(T item) where T : class;
+        void Update<T>(T item) where T : BaseDB;
+        IEnumerable<T> All<T>() where T : BaseDB;
+        IEnumerable<T> Where<T>(Expression<Func<T,bool>> pred) where T : BaseDB;
+        int Count<T>() where T : BaseDB;
+        int CountWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB;
+        void CreateTable<T>() where T : BaseDB;
+        void Delete<T>(int id) where T : BaseDB;
+        void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB;
+        void DeleteAll<T>() where T : BaseDB;
+        void Insert<T>(T item) where T : BaseDB;
     }
+
+    // The trouble is with converting the predicates to sql, which is difficult to do without
+    // direction from the router.  Perhaps the mapping should be just to a dictionary always...
+    // If the predicates are on dicts, should be able to generate the queries?
     interface IModelRouter
     {
-        bool GetTableRoute(Type t, out String tabl, out String[] columns, out Type[] colTypes);
-        Object MapFromTable(Type t, Object[] values);
-        Object[] MapToTable(Type t, Object o);
+        bool GetTableRoute<T>(out String tabl, out String[] columns, out Type[] colTypes);
+        T MapFromTable<T>(Object[] values);
+        Object[] MapToTable<T>(T o);
     }
     class NoModelRouter : IModelRouter
     {
-        public bool GetTableRoute(Type t, out string tabl, out string[] columns, out Type[] colTypes)
+        public bool GetTableRoute<T>(out string tabl, out string[] columns, out Type[] colTypes)
         {
             columns = null; colTypes = null; tabl = null; return false;
         }
-        public object MapFromTable(Type t, object[] values) { throw new NotImplementedException(); }
-        public object[] MapToTable(Type t, object o) { throw new NotImplementedException(); }
+        public T MapFromTable<T>(object[] values) { throw new NotImplementedException(); }
+        public object[] MapToTable<T>(T o) { throw new NotImplementedException(); }
     }
+
     class SQliteCheckedConnection : ICheckedConn
     {
         // Check against the custom table mapped type.
@@ -221,74 +230,96 @@ namespace Consonance
         {
             this.conn = conn;
             this.router = router;
-            
         }
 
-        public IEnumerable<T> All<T>() where T : class
+        Dictionary<Type, TableMapping> cache = new Dictionary<Type, TableMapping>();
+        bool GetTableMap<T>(out TableMapping map)
         {
-            throw new NotImplementedException();
-        }
-
-        public int Count<T>() where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public int CountWhere<T>(Expression<Func<T, bool>> pred) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CreateTable<T>() where T : class
-        {
-            String t;
-            String[] cols;
-            Type[] types;
-            if (router.GetTableRoute(typeof(T), out t, out cols, out types))
+            var t = typeof(T);
+            if (cache.ContainsKey(t))
             {
-                var ntps = cols.Zip(types, (name, type) =>
-                {
-                    String tn = "";
-                    if (type == typeof(String)) tn = "TEXT";
-                    else if (type == typeof(int)) tn = "INTEGER";
-                    else if (type == typeof(double)) tn = "REAL";
-                    else throw new NotImplementedException("No map to mysql for " + type.Name);
-                    return name + " " + tn;
-                });
-                var qry = String.Format("CREATE TABLE {0}({1})", t, String.Join(", ", ntps));
-                conn.Execute(qry);
+                map = cache[t];
+                return map != null;
             }
+
+            map = null;
+            String tn; String[] c; Type[] ct;
+            if (!router.GetTableRoute<T>(out tn, out c, out ct))
+                return false;
+
+            var holder = t.GetTypeInfo().DeclaredProperties.Where(p => p.GetCustomAttributes().Any(a => a is ColumnAccessorAttribute)).First();
+
+            // make the map
+            map = conn.GetMapping<T>().WithMutatedSchema(
+                tn,
+                Enumerable.Range(0, c.Length).Select(i => new TableMapping.AdHocColumn(c[i], ct[i], holder))
+                );
+
+            return true;
+        }
+
+        TableQuery<T> GetTQ<T>() where T : class
+        {
+            TableMapping map;
+            return GetTableMap<T>(out map) ? conn.Table<T>(map) : conn.Table<T>();
+        }
+
+        public IEnumerable<T> All<T>() where T : BaseDB
+        {
+            return GetTQ<T>();
+        }
+
+        public int Count<T>() where T : BaseDB
+        {
+            return GetTQ<T>().Count();
+        }
+
+        public int CountWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB
+        {
+            return GetTQ<T>().Count(pred);
+        }
+
+        public void CreateTable<T>() where T : BaseDB
+        {
+            TableMapping map;
+            if (GetTableMap<T>(out map)) conn.CreateTable(map);
             else conn.CreateTable<T>();
         }
 
-        public void Delete<T>(int id) where T : class
+        public void Delete<T>(int id) where T : BaseDB
         {
-            throw new NotImplementedException();
+            GetTQ<T>().Delete(d => d.id == id);
         }
 
-        public void DeleteAll<T>() where T : class
+        public void DeleteAll<T>() where T : BaseDB
         {
-            throw new NotImplementedException();
+            TableMapping map;
+            if (GetTableMap<T>(out map)) conn.DeleteAll(map);
+            else conn.DeleteAll<T>();
         }
 
-        public void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : class
+        public void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB
         {
-            throw new NotImplementedException();
+            GetTQ<T>().Delete(pred);
         }
 
-        public void Insert<T>(T item) where T : class
+        public void Insert<T>(T item) where T : BaseDB
         {
-            throw new NotImplementedException();
+            TableMapping map;
+            if (GetTableMap<T>(out map)) conn.Insert(item,map);
+            else conn.Insert(item);
         }
 
-        public void Update<T>(T item) where T : class
+        public void Update<T>(T item) where T : BaseDB
         {
-            throw new NotImplementedException();
+            TableMapping map;
+            if (GetTableMap<T>(out map)) conn.Update(item, map);
+            else conn.Update(item);
         }
 
-        public IEnumerable<T> Where<T>(Expression<Func<T, bool>> pred) where T : class
+        public IEnumerable<T> Where<T>(Expression<Func<T, bool>> pred) where T : BaseDB
         {
-            throw new NotImplementedException();
+            return GetTQ<T>().Where(pred);
         }
     }
 

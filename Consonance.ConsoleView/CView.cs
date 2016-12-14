@@ -4,17 +4,19 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using System.Linq.Expressions;
+using Consonance.Invention;
 
 namespace Consonance.ConsoleView
 {
-	class CView : IView, ICollectionEditorLooseCommands<TrackerInstanceVM>, IConsolePage
+	class CView : IView, ICollectionEditorSelectableLooseCommands<TrackerInstanceVM>, IConsolePage
 	{
+        enum LoadThings {  BurnItems, EatItems, Instances };
 		Dictionary<LoadThings,bool> aloads = new Dictionary<LoadThings, bool> {
 			{ LoadThings.BurnItems, false },
 			{ LoadThings.EatItems, false },
 			{ LoadThings.Instances, false }
 		};
-		public void SetLoadingState (LoadThings thing, bool active)
+		void SetLoadingState (LoadThings thing, bool active)
 		{
 			aloads [thing] = active;
 			pageChanged = true;
@@ -40,7 +42,7 @@ namespace Consonance.ConsoleView
 				int maxRows = Math.Min (10, ManyMax (inlines.Count, outlines.Count, instances.Count));
 				int colWid = 20;
 				if (currentTrackerInstance != null)
-					pdb.Append (RowString (colWid, "Index", currentTrackerInstance.dialect.InputEntryVerb, currentTrackerInstance.dialect.OutputEntrytVerb, "Plan"));
+					pdb.Append (RowString (colWid, "Index", currentTrackerInstance.dialect.InputEntryVerb, currentTrackerInstance.dialect.OutputEntryVerb, "Plan"));
 				else
 					pdb.Append (RowString (colWid, "Index", "In", "Out", "Plan"));
 				pdb.AppendLine ();
@@ -87,7 +89,7 @@ namespace Consonance.ConsoleView
 			foreach (var t in tt.tracks) {
 				double bal = (from v in t.inValues select v.value).Sum ();
 				bal -= (from v in t.outValues select v.value).Sum ();
-				sb.AppendFormat ("{0}: {1}/{2}   ", t.valueName, bal, t.targetValue);
+				sb.AppendFormat ("{0}: {1}/{2}   ", t.targetValueName, bal, t.targetValue);
 			}
 			return sb.ToString();
 		}
@@ -114,7 +116,7 @@ namespace Consonance.ConsoleView
 		public ConsolePageAction[] pageActions {
 			get {
 				String inName = currentTrackerInstance == null ? "In" : currentTrackerInstance.dialect.InputEntryVerb;
-				String outName = currentTrackerInstance == null ? "Out" : currentTrackerInstance.dialect.OutputEntrytVerb;
+				String outName = currentTrackerInstance == null ? "Out" : currentTrackerInstance.dialect.OutputEntryVerb;
 				return new [] {
 					new ConsolePageAction () {
 						name = "tracker actions",
@@ -189,7 +191,7 @@ namespace Consonance.ConsoleView
 		// Some events on this view.
 		public event Action<DateTime> changeday = delegate { };
 		public event Action<InfoManageType> manageInfo = delegate { };
-		public ICollectionEditorLooseCommands<TrackerInstanceVM> plan {  get { return this; } }
+		public ICollectionEditorSelectableLooseCommands<TrackerInstanceVM> plan {  get { return this; } }
 		#region ICollectionEditorLooseCommands implementation
 		public event Action add = delegate { };
 		public event Action<TrackerInstanceVM> remove = delegate { };
@@ -199,32 +201,47 @@ namespace Consonance.ConsoleView
 
 		// Data incoming
 		IReadOnlyList<EntryLineVM> inlines = new List<EntryLineVM>(), outlines= new List<EntryLineVM>();
-		public void SetEatLines (IEnumerable<EntryLineVM> lineitems) { inlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
-		public void SetBurnLines (IEnumerable<EntryLineVM> lineitems) { outlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
+		public void SetEatLines (IVMList<EntryLineVM> lineitems) { inlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
+		public void SetBurnLines (IVMList<EntryLineVM> lineitems) { outlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
 
-		IReadOnlyList<TrackerInstanceVM> instances= new List<TrackerInstanceVM>();
-		public void SetInstances (IEnumerable<TrackerInstanceVM> instanceitems) { instances = new List<TrackerInstanceVM> (instanceitems); pageChanged = true; }
+        IReadOnlyList<InfoLineVM> ininfos = new List<InfoLineVM>(), outinfos = new List<InfoLineVM>();
+        public void SetEatInfos(IVMList<InfoLineVM> lineitems) { ininfos = new List<InfoLineVM>(lineitems); pageChanged = true; }
+        public void SetBurnInfos(IVMList<InfoLineVM> lineitems) { outinfos = new List<InfoLineVM>(lineitems); pageChanged = true; }
+
+        IReadOnlyList<TrackerInstanceVM> instances= new List<TrackerInstanceVM>();
+		public void SetInstances (IVMList<TrackerInstanceVM> instanceitems) { instances = new List<TrackerInstanceVM> (instanceitems); pageChanged = true; }
 
 		IReadOnlyList<TrackerTracksVM> inTracks = new List<TrackerTracksVM>(), outTracks= new List<TrackerTracksVM>();
-		public void SetEatTrack (TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { 
+		public void SetEatTrack (IVMList<TrackerTracksVM> others) { 
 			var its = new List<TrackerTracksVM> (others);
-			if(current != null) its.Insert(0, current);
 			inTracks = its;
 			pageChanged = true;
 		}
-		public void SetBurnTrack (TrackerTracksVM current, IEnumerable<TrackerTracksVM> others) { 
+		public void SetBurnTrack (IVMList<TrackerTracksVM> others) { 
 			var its = new List<TrackerTracksVM> (others);
-			if(current != null) its.Insert(0, current);
 			outTracks = its;
 			pageChanged = true;
 		}
 
-		// Some data members
-		DateTime mday;
+        public void SetInventions(IVMList<InventedTrackerVM> inventionitems)
+        {
+            throw new NotImplementedException();
+        }
+
+        // Some data members
+        DateTime mday;
 		public DateTime day { get{ return mday; } set { mday = value; pageChanged = true; } }
 		TrackerInstanceVM mcti;
 		public TrackerInstanceVM currentTrackerInstance { get{ return mcti; } set { mcti = value; pageChanged = true; } }
-		#endregion
-	}
+
+        public ICollectionEditorLooseCommands<InventedTrackerVM> invention
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+        #endregion
+    }
 }
 

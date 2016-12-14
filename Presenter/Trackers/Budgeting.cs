@@ -31,7 +31,7 @@ namespace Consonance
 
 	public class SBH : SimpleTrackerHolder<SimpleBudgetInstance_Simple, SimpleBudgetEatEntry, IncomeInfo, SimpleBudgetBurnEntry, ExpenditureInfo>
 	{
-		public SBH(IExtraRelfectedHelpy<IncomeInfo, ExpenditureInfo> h) : base(h) {
+		public SBH(IExtraRelfectedHelpy<SimpleBudgetInstance_Simple, IncomeInfo, ExpenditureInfo> h) : base(h) {
 		}
 	}
 
@@ -42,7 +42,7 @@ namespace Consonance
 	}
 
 	// Implimentations
-	public class SimpleBudget_SimpleTemplate : IExtraRelfectedHelpy<IncomeInfo, ExpenditureInfo>
+	public class SimpleBudget_SimpleTemplate : IExtraRelfectedHelpy<SimpleBudgetInstance_Simple, IncomeInfo, ExpenditureInfo>
 	{
 		readonly IReflectedHelpyQuants<IncomeInfo> _input = new SimpleBudget_HelpyIn();
 		public IReflectedHelpyQuants<IncomeInfo> input { get { return _input; } }
@@ -53,7 +53,10 @@ namespace Consonance
 		readonly TrackerDialect _TrackerDialect = new TrackerDialect ( "Earn", "Spend", "Incomes", "Expenses", "Earned", "Spent");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
-					VRVConnectedValue.FromType(0.0, "Target", "budget", f=>f.DoubleRequestor)
+					VRVConnectedValue.FromType(0.0, "Target", 
+                    o=>((SimpleBudgetInstance_Simple)o).budget,
+                    (o,v)=>((SimpleBudgetInstance_Simple)o).budget = (double)v,
+                    f=>f.DoubleRequestor)
 				}; } } // creating an instance
 		public SimpleTrackyTarget[] Calcluate(object[] fieldValues) 
 		{ 
@@ -67,21 +70,21 @@ namespace Consonance
 	class SimpleBudget_HelpyIn : IReflectedHelpyQuants<IncomeInfo>
 	{
 		#region IReflectedHelpyQuants implementation
-		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Amount", "amount", 0.0); } }
-		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", "amount", 0.0) }; } }
+		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Amount", o=>((SimpleBudgetEatEntry)o).amount, (o,v) => ((SimpleBudgetEatEntry)o).amount=v, 0.0); } }
+		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", o => ((IncomeInfo)o).amount, (o, v) => ((IncomeInfo)o).amount = v, 0.0) }; } }
 		public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<IncomeInfo, bool>> InfoComplete { get { return fi => true; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) }; } }
 		#endregion
 	}
 	class SimpleBudget_HelpyOut : IReflectedHelpyQuants<ExpenditureInfo>
 	{
         #region IReflectedHelpyQuants implementation
-        public InstanceValue<double> tracked { get { return new InstanceValue<double>("Amount", "amount", 0.0); } }
-        public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", "amount", 0.0) }; } }
+        public InstanceValue<double> tracked { get { return new InstanceValue<double>("Amount", o => ((SimpleBudgetBurnEntry)o).amount, (o, v) => ((SimpleBudgetBurnEntry)o).amount = v, 0.0); } }
+        public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", o => ((ExpenditureInfo)o).amount, (o, v) => ((ExpenditureInfo)o).amount = v, 0.0) }; } }
 		public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get { return fi => true; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { InfoQuantifier.FromType( InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) }; } }
+        public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType( InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) }; } }
         #endregion
     }				
 
