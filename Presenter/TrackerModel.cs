@@ -27,7 +27,10 @@ namespace Consonance
 	{
 		[PrimaryKey, AutoIncrement]
 		public int id{ get; set; }
-	}
+
+        [ColumnAccessor, Ignore] // allow on all for simples.
+        public IDictionary<String, Object> AdHoc { get; } = new Dictionary<String, Object>();
+    }
     public abstract class BaseEntry : BaseDB
 	{
 		// keys
@@ -180,6 +183,7 @@ namespace Consonance
     public interface IAbstractedDAL
     {
         void DeleteAll(Action after);
+        void CountAll(out int instances, out int entries, out int infos);
     }
 
 	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
@@ -208,8 +212,6 @@ namespace Consonance
     interface IModelRouter
     {
         bool GetTableRoute<T>(out String tabl, out String[] columns, out Type[] colTypes);
-        T MapFromTable<T>(Object[] values);
-        Object[] MapToTable<T>(T o);
     }
     class NoModelRouter : IModelRouter
     {
@@ -386,6 +388,12 @@ namespace Consonance
                 conn.Delete<DietInstType>(rem.id);
                 return null;
             });
+        }
+        public void CountAll(out int instances, out int entries, out int infos)
+        {
+            instances = conn.Count<DietInstType>();
+            entries = conn.Count<BurnType>() + conn.Count<EatType>();
+            infos = conn.Count<EatInfoType>() + conn.Count<BurnInfoType>();
         }
         public void DeleteAll(Action after)
         {

@@ -6,14 +6,26 @@ using LibRTP;
 
 namespace Consonance
 {
-	
-	// Models
-	public abstract class CalorieDietEatEntry : BaseEatEntry
+
+    // Models
+    static class ICaloriesHelper
+    {
+        public static double Get(Object icl)
+        {
+            return ((ICalories)icl).calories;
+        }
+        public static void Set(Object icl, double v)
+        {
+            ((ICalories)icl).calories = v;
+        }
+    }
+    interface ICalories { double calories { get; set; } }
+	public abstract class CalorieDietEatEntry : BaseEatEntry, ICalories
 	{
 		public double calories { get; set; } // eaten.
 	}
-	public abstract class CalorieDietBurnEntry : BaseBurnEntry
-	{
+	public abstract class CalorieDietBurnEntry : BaseBurnEntry, ICalories
+    {
 		public double calories { get; set; } // burned...
 	}
 	// need seperate instance classes, otherwise get confused about which instances belong to which model/API
@@ -71,7 +83,8 @@ namespace Consonance
             public static void s_trackWeekly(Object i, Object v) { ((CalorieDietInstance_Simple)i).trackWeekly = (bool)v; }
         }
 
-		readonly IReflectedHelpyQuants<FoodInfo> _input = new CalDiet_HelpyIn();
+        public InstanceValue<double> tracked_on_entries { get { return new InstanceValue<double>("Calories", ICaloriesHelper.Get, ICaloriesHelper.Set, 0.0); } }
+        readonly IReflectedHelpyQuants<FoodInfo> _input = new CalDiet_HelpyIn();
 		public IReflectedHelpyQuants<FoodInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<FireInfo> _output = new CalDiet_HelpyOut();
 		public IReflectedHelpyQuants<FireInfo> output { get { return _output; } }
@@ -110,8 +123,10 @@ namespace Consonance
             public static void s_strictCalorieLimit(Object i, Object v) { ((CalorieDietInstance_Scav)i).strictCalorieLimit = (double)v; }
         }
 
+
+        public InstanceValue<double> tracked_on_entries { get { return new InstanceValue<double>("Calories",ICaloriesHelper.Get, ICaloriesHelper.Set, 0.0); } }
         readonly IReflectedHelpyQuants<FoodInfo> _input = new CalDiet_HelpyIn();
-		public IReflectedHelpyQuants<FoodInfo> input { get { return _input; } }
+        public IReflectedHelpyQuants<FoodInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<FireInfo> _output = new CalDiet_HelpyOut();
 		public IReflectedHelpyQuants<FireInfo> output { get { return _output; } }
 		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Scavenger calorie diet", "Calorie controlled diet, using periods of looser control followed by periods of stronger control.", "Diet");
@@ -142,7 +157,6 @@ namespace Consonance
 	class CalDiet_HelpyIn : IReflectedHelpyQuants<FoodInfo>
 	{
 		#region IReflectedHelpyQuants implementation
-        public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories",o=>((CalorieDietEatEntry)o).calories,(o,v)=>((CalorieDietEatEntry)o).calories=v, 0.0); } }
         public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FoodInfo)o).calories ?? 0.0, (o, v) => ((FoodInfo)o).calories = v, 0.0) }; } }
         public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Grams", 0, 100.0), HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Servings", 1, 1.0) }; } }
         public double Calcluate (double[] values) { return values [0]; }
@@ -152,7 +166,6 @@ namespace Consonance
 	class CalDiet_HelpyOut : IReflectedHelpyQuants<FireInfo>
 	{
 		#region IReflectedHelpyQuants implementation
-		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Calories", o => ((CalorieDietBurnEntry)o).calories, (o, v) => ((CalorieDietBurnEntry)o).calories = v, 0.0); } }
 		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FireInfo)o).calories ?? 0.0, (o, v) => ((FireInfo)o).calories = v, 0.0) }; } }
         public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Duration, "Duration", 0, 0.0) }; } }
         public double Calcluate (double[] values) { return values [0]; }

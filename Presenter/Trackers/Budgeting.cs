@@ -5,15 +5,13 @@ using LibRTP;
 
 namespace Consonance
 {
-	// Models
-	public class SimpleBudgetEatEntry : HBaseEntry
-	{
-		public double amount { get; set; } // eaten..
-	}
-	public class SimpleBudgetBurnEntry : HBaseEntry
-	{
-		public double amount { get; set; } // burned...
-	}
+    // Models
+    public class SimpleBudgetEntry : HBaseEntry
+    {
+        public double amount { get; set; } // eaten..
+    }
+    public class SimpleBudgetEatEntry : SimpleBudgetEntry { }
+    public class SimpleBudgetBurnEntry : SimpleBudgetEntry { }
 	// need seperate instance classes, otherwise get confused about which instances belong to which model/API
 	public class SimpleBudgetInstance_Simple : TrackerInstance 
 	{
@@ -44,7 +42,8 @@ namespace Consonance
 	// Implimentations
 	public class SimpleBudget_SimpleTemplate : IExtraRelfectedHelpy<SimpleBudgetInstance_Simple, IncomeInfo, ExpenditureInfo>
 	{
-		readonly IReflectedHelpyQuants<IncomeInfo> _input = new SimpleBudget_HelpyIn();
+        public InstanceValue<double> tracked_on_entries { get { return new InstanceValue<double>("Amount", o => ((SimpleBudgetEntry)o).amount, (o, v) => ((SimpleBudgetEntry)o).amount = v, 0.0); } }
+        readonly IReflectedHelpyQuants<IncomeInfo> _input = new SimpleBudget_HelpyIn();
 		public IReflectedHelpyQuants<IncomeInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<ExpenditureInfo> _output = new SimpleBudget_HelpyOut();
 		public IReflectedHelpyQuants<ExpenditureInfo> output { get { return _output; } }
@@ -70,7 +69,6 @@ namespace Consonance
 	class SimpleBudget_HelpyIn : IReflectedHelpyQuants<IncomeInfo>
 	{
 		#region IReflectedHelpyQuants implementation
-		public InstanceValue<double> tracked { get { return new InstanceValue<double>("Amount", o=>((SimpleBudgetEatEntry)o).amount, (o,v) => ((SimpleBudgetEatEntry)o).amount=v, 0.0); } }
 		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", o => ((IncomeInfo)o).amount, (o, v) => ((IncomeInfo)o).amount = v, 0.0) }; } }
 		public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<IncomeInfo, bool>> InfoComplete { get { return fi => true; } }
@@ -80,7 +78,6 @@ namespace Consonance
 	class SimpleBudget_HelpyOut : IReflectedHelpyQuants<ExpenditureInfo>
 	{
         #region IReflectedHelpyQuants implementation
-        public InstanceValue<double> tracked { get { return new InstanceValue<double>("Amount", o => ((SimpleBudgetBurnEntry)o).amount, (o, v) => ((SimpleBudgetBurnEntry)o).amount = v, 0.0); } }
         public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", o => ((ExpenditureInfo)o).amount, (o, v) => ((ExpenditureInfo)o).amount = v, 0.0) }; } }
 		public double Calcluate (double[] values) { return values [0]; }
 		public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get { return fi => true; } }

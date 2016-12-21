@@ -15,7 +15,22 @@ using System.Threading.Tasks;
 
 namespace Consonance.Invention
 {
-    // Global viewmovel for all diet inventors
+
+    // interface for an as yet unknown lib to generate and evaluate expressions from stringys
+    #region String equation evaluator
+    interface IStringEquationFactory
+    {
+        IStringEquation Create(String equation, params String[] args);
+    }
+    interface IStringEquation
+    {
+        String equation { get; }
+        String[] arguments { get; }
+        double calculate(params double[] args);
+    }
+    #endregion
+
+    // Global viewmovel for all diet inventors..move
     public class InventedTrackerVM : OriginatorVM
     {
         public String name { get; set; }
@@ -39,9 +54,9 @@ namespace Consonance.Invention
         int pid, mid, id;
         public KeyTo(int id, int pid, int mid)
         {
-            this.mid = mid;
-            this.pid = pid;
-            this.id = id;
+            this.mid = mid; // id of model (class)  
+            this.pid = pid; // id of prop on model
+            this.id = id; // id of instance of model connecting to.
         }
         public IEnumerable<T> Get()
         {
@@ -65,7 +80,7 @@ namespace Consonance.Invention
         }
         public void Clear()
         {
-            GlobalForKeyTo.conn.DeleteAll<T>();
+            GlobalForKeyTo.conn.Table<T>().Delete(t => t.fk_mid == mid && t.fk_pid == pid);
         }
     }
     #endregion
@@ -82,31 +97,52 @@ namespace Consonance.Invention
     {
         const int keyto_id = 1;
 
-        // functional
-        public String tracked { get; set; }
+        // helper
+        public void DeleteAllForiegnKeyedThings()
+        {
+            qod_in.Clear();
+            qod_out.Clear();
+            targets.Clear();
+        }
 
+        // Quantifier types foriegn relationship
+        int qod_in_pid = 1, qod_out_pid = 2;
         KeyTo<SimpleTrackyInfoQuantifierDescriptor> _qod_out, _qod_in;
         public KeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_in
         {
-            get { return _qod_in ?? (_qod_in = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(id, 1, keyto_id)); }
+            get { return _qod_in ?? (_qod_in = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(id, qod_in_pid, keyto_id)); }
         }
         public KeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_out
         {
-            get { return _qod_out ?? (_qod_out = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(id, 1, keyto_id)); }
+            get { return _qod_out ?? (_qod_out = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(id, qod_out_pid, keyto_id)); }
         }
 
+
+        // Note: SimpleTrackyHelpy Deals with Targets of one quantity (e.g. calories)
+        // so you can have many of these, but all describe the same 
+        // Tracker targets foriegn relationship
+        int targets_pid = 3;
+        KeyTo<SimpleTrackyTrackingTargetDescriptor> _targets;
+        public KeyTo<SimpleTrackyTrackingTargetDescriptor> targets
+        {
+            get { return _targets ?? (_targets = new KeyTo<SimpleTrackyTrackingTargetDescriptor>(id, targets_pid, keyto_id)); }
+        }
+        public String target_args { get; set; } // comma seperated, used by targets equations.
+
+        // Entries
+        public String tracked { get; set; }
+        public String inargs { get; set; }
+        public String inequation { get; set; }
+        public String outargs { get; set; }
+        public String outequation { get; set; }
+
         // managment
-        public String tablename_tracker { get; set; }
-        public String tablename_input { get; set; }
-        public String tablename_inputinfo { get; set; }
-        public String tablename_output { get; set; }
-        public String tablename_outputinfo { get; set; }
+        public Guid uid { get; set; }
 
         // descriptional
         public String Name { get; set; }
         public String Description { get; set; }
         public String Category { get; set; }
-        public String TrackedName { get; set; }
 
         // dialect
         public String InputEntryVerb { get; set; }
@@ -121,6 +157,25 @@ namespace Consonance.Invention
         public InfoQuantifier.InfoQuantifierTypes type { get; set; }
         public double defaultvalue { get; set; }
         public String Name { get; set; }
+    }
+    class SimpleTrackyTrackingTargetDescriptor : KeyableBaseDB
+    {
+        // note on equations, "1" is an equation
+        
+        // display config
+        public String name { get; set; }
+        public bool Tracked { get; set; } // appearing in bar graphs etc (null means instance defined)
+        public bool Shown { get; set; } // shown on tracker list VM thingy or not
+
+        // Aggregation calc
+        public String targetRange { get; set; } // fixed or calc (either e.g. "1" or "12*arg2")
+        public AggregateRangeType rangetype { get; set; } // fixed or user, no calc.
+
+        // Target calc
+        public String targertPattern { get; set; } // spec for below eg "1,2,1" (fixed) or "arg1*arg2+arg3, arg2" (from calc / args).  so the same.
+        public String patternTarget { get; set; } // same for values - should match in count of above.
+        //public int[] targetPattern { get; set; } 
+        //public double[] patternTarget { get; set; } //always spec in trackerinstance / calculatd from
     }
     #endregion
 
@@ -155,7 +210,7 @@ namespace Consonance.Invention
         public static SimpleTrackyInventionRequestPages Page1(IValueRequestFactory fac)
         {
             var page = new GetValuesPage("What's it called?");
-            var p1vr = (from s in new[] { "Name", "Description", "Category", "Tracking" }
+            var p1vr = (from s in new[] { "Name", "Description", "Category" }
                         select fac.StringRequestor(s)).ToArray();
             page.SetList(new BindingList<object>((from p in p1vr select p.request).ToList()));
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
@@ -164,8 +219,6 @@ namespace Consonance.Invention
                 mod.Name = p1vr[0].value;
                 mod.Description = p1vr[1].value;
                 mod.Category = p1vr[2].value;
-                mod.TrackedName = p1vr[3].value;
-                mod.tracked = mod.TrackedName.ToNiceAscii();
             };
             foreach (var vr in p1vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value);
             return new SimpleTrackyInventionRequestPages(page, set);
@@ -294,6 +347,8 @@ namespace Consonance.Invention
         // REMEMBER - dont do any actions - fire this TOCHANGED with a prior to complete the change. Presenter handles it.
         public event DietVMChangeEventHandler<SimpleTrackyHelpyInventionV1, EventArgs> ViewModelsToChange = delegate { };
 
+        Dictionary<InventedTrackerVM, SimpleTrackyHelperCreator.Holdy> registered = new Dictionary<InventedTrackerVM, SimpleTrackyHelperCreator.Holdy>();
+
         // this can get spammed - it's a good oppertunity to provide diet registraions cause you'll get "busy"
         // status, but, need to protect against those spams case only need reg once
         public IEnumerable<InventedTrackerVM> Instances()
@@ -302,18 +357,60 @@ namespace Consonance.Invention
             foreach (var it in conn.Table<SimpleTrackyHelpyInventionV1Model>())
             {
                 var vm = Present(it);
+                if (!registered.ContainsKey(vm))
+                {
+                    var pp = registered[vm] = SimpleTrackyHelperCreator.Create(it);
+                    pp.state = pres.AddDietPair(pp.model, pp.pres, build);
+                }
+                vm.sender = it;
                 // set sender? :/
                 yield return vm;
             }
         }
 
-        public void RemoveTracker(InventedTrackerVM dvm, bool warn = true)
+        public void RemoveTracker(InventedTrackerVM dvm, bool warn = true) // dereigster
         {
-            throw new NotImplementedException();
-            return;
-        }
+            // Get some info
+            var handler = registered[dvm];
+            int nTrackers = 0, nTotalEntries =0, nTotalInfos=0;
+            handler.state.dal.CountAll(out nTrackers, out nTotalEntries, out nTotalInfos);
 
-        public Task StartNewTracker()
+            // Define the removal action...
+            Action Removal = () =>
+            {
+                // Pass to the TaskMapper (if you look) for the inventor to run in the pool...
+                ViewModelsToChange(this, new DietVMToChangeEventArgs<EventArgs>
+                {
+                    //...which will run this when progress is showing etc
+                    toChange = () =>
+                    {
+                        // the handler for the invented tracker is asked to delete everything (it will also call toChange of its own - 2x progress, one for trackers, one for inventor.
+                        handler.state.dal.DeleteAll(() =>
+                        {
+                            // clear foreign keys on invented tracker
+                            (dvm.sender as SimpleTrackyHelpyInventionV1Model).DeleteAllForiegnKeyedThings();
+                            // AFTER that is done, we delete the inventor modelrow
+                            conn.Delete(dvm.sender);
+                            // and we deregister the whole thing from the apppresenter
+                            handler.state.remove();
+                        });
+                        return null; // prior, but no post action (do nothing after this is all done)
+                     },
+                    changeType=  new EventArgs() // we dont have a changetype on this handler. just "it changed".
+                });
+            };
+
+            // If we have some data, show a warning!
+            if ((nTrackers + nTotalInfos + nTotalEntries > 0) && warn)
+                input.WarnConfirm(
+                    String.Format("That inventor still has {0} instances with {1} entries and {2} infos, they will be removed if you continue.",
+                    nTrackers, nTotalEntries, nTotalInfos
+                    ),
+                    async () => await PlatformGlobal.Run(Removal) // warnconfirm needs a promise, so lazily do this. could wrap a TaskCompleteionSource instead in a helper or sth.
+                );
+            else Removal(); // otherwise, just go for it.
+        }
+        public Task StartNewTracker() // instances() handles registration
         {
             var page1 = SimpleTrackyInventionRequestPages.Page1(build.requestFactory);
             var page2 = SimpleTrackyInventionRequestPages.Page2(build.requestFactory);
@@ -345,7 +442,6 @@ namespace Consonance.Invention
             });
             return vt.Pushed;
         }
-
         public Task EditTracker(InventedTrackerVM dvm)
         {
             var mod = dvm.originator as SimpleTrackyHelpyInventionV1Model;
@@ -387,24 +483,194 @@ namespace Consonance.Invention
 
     static class SimpleTrackyHelperCreator
     {
-        public class IInfo : HBaseInfo { }
-        public class IEntry : HBaseEntry { }
-        class tt : IExtraRelfectedHelpy<TrackerInstance, IInfo, IInfo>
+        class RoutedHelpyModel : SimpleTrackyHelpy<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>, IModelRouter
         {
-            public IReflectedHelpyQuants<IInfo> input { get; set; }
-            public VRVConnectedValue[] instanceValueFields { get; set; }
-            public IReflectedHelpyQuants<IInfo> output { get; set; }
-            public TrackerDetailsVM TrackerDetails { get; set; }
-            public TrackerDialect TrackerDialect { get; set; }
-            public SimpleTrackyTarget[] Calcluate(object[] fieldValues)
+            readonly SimpleTrackyHelpyInventionV1Model model;
+            public RoutedHelpyModel(InventedTracker tmh, SimpleTrackyHelpyInventionV1Model model) : base(tmh)
             {
-                throw new NotImplementedException();
+                info = new Dictionary<Type, desc>
+                {
+                    { typeof(TrackerInstance), new desc(model.uid.ToString(),model.target_args.Split(',')) },
+                };
+                throw new NotImplementedException("need more table routes");
             }
+
+            readonly Dictionary<Type, desc> info;
+            class desc
+            {
+                public String table; public String[] cols; public Type[] types;
+                public desc(String tn, String[] args)
+                {
+                    table = tn;
+                    types = Enumerable.Repeat<Type>(typeof(double), args.Length).ToArray();
+                    cols = args;
+                }
+            }
+
+            public bool GetTableRoute<T>(out string tabl, out string[] columns, out Type[] colTypes)
+            {
+                desc dsc = info?[typeof(T)];
+                tabl = dsc?.table;
+                columns = dsc?.cols;
+                colTypes = dsc?.types;
+                return dsc != null;
+            }
+
         }
 
-        public static SimpleTrackyHelpy<TrackerInstance, IEntry, IInfo, IEntry, IInfo> Create()
+        public class IInInfo : HBaseInfo { }
+        public class IInEntry : HBaseEntry { }
+        public class IOutInfo : HBaseInfo { }
+        public class IOutEntry : HBaseEntry { }
+        class InventedTracker : IExtraRelfectedHelpy<TrackerInstance, IInInfo, IOutInfo>
         {
-            return new SimpleTrackyHelpy<TrackerInstance, IEntry, IInfo, IEntry, IInfo>(new tt());
+            static String NiceArgName(String arg)
+            {
+                return arg[0].ToString().ToUpper() 
+                    + arg.Substring(1).Replace('_', ' ');
+            }
+            static Func<Object,T> ArgGet<T>(String name)
+            {
+                return o => (T)((BaseDB)o).AdHoc[name];
+            }
+            static Action<Object, T> ArgSet<T>(String name)
+            {
+                return (o,v) => ((BaseDB)o).AdHoc[name] = v;
+            }
+            static Func<Object, double> InfoGet(String name)
+            {
+                return o => (double?)((BaseDB)o).AdHoc[name] ?? 0.0;
+            }
+            static Action<Object, double> InfoSet(String name)
+            {
+                return (o, v) => ((BaseDB)o).AdHoc[name] = v;
+            }
+
+            public TrackerDetailsVM TrackerDetails { get; private set; }
+            public TrackerDialect TrackerDialect { get; private set; }
+            public VRVConnectedValue[] instanceValueFields { get; private set; }
+            public InstanceValue<double> tracked_on_entries { get; private set; }
+            public IReflectedHelpyQuants<IInInfo> input { get; private set; }
+            public IReflectedHelpyQuants<IOutInfo> output { get; private set; }
+
+            class TargetEquationsRet
+            {
+                public SimpleTrackyTrackingTargetDescriptor des;
+                public IStringEquation range_equation;
+                public IStringEquation[] target_patterns;
+                public IStringEquation[] pattern_targets;
+            }
+            static TargetEquationsRet TargetEquations(SimpleTrackyTrackingTargetDescriptor des, IStringEquationFactory seq,String[]Args)
+            {
+                var n = 0;
+                var peq = des.targertPattern.Split(',');
+                var teq = des.patternTarget.Split(',');
+                Debug.Assert((n=peq.Length) == teq.Length, "Error in pattern equation lengths");
+
+                var ret = new TargetEquationsRet
+                {
+                    des = des,
+                    range_equation = seq.Create(des.targetRange, Args),
+                    target_patterns = new IStringEquation[n],
+                    pattern_targets = new IStringEquation[n]
+                };
+
+                for (int i = 0; i < n; i++)
+                {
+                    ret.target_patterns[i] = seq.Create(peq[i], Args);
+                    ret.pattern_targets[i] = seq.Create(teq[i], Args);
+                }
+
+                return ret;
+            }
+            readonly TargetEquationsRet[] targets;
+            public InventedTracker(SimpleTrackyHelpyInventionV1Model model, IStringEquationFactory seq)
+            {
+                
+                TrackerDetails = new TrackerDetailsVM(model.Name, model.Description, model.Category);
+                TrackerDialect = new TrackerDialect(
+                    model.InputEntryVerb, model.OutputEntryVerb,
+                    model.InputInfoPlural, model.OutputInfoPlural,
+                    model.InputInfoVerbPast, model.OutputInfoVerbPast);
+
+                // Args used in all equations for a tracker
+                var Args = model.target_args.Split(',');
+                instanceValueFields = (from m in Args select VRVConnectedValue.FromType(
+                                        0.0, NiceArgName(m), ArgGet<Object>(m), ArgSet<Object>(m), d => d.DoubleRequestor)
+                                       ).ToArray();
+
+                // cached the equaion espression thing
+                targets = (from des in model.targets.Get() select TargetEquations(des, seq, Args)).ToArray();
+
+                tracked_on_entries = new InstanceValue<double>
+                    (
+                    NiceArgName(model.tracked), 
+                    ArgGet<double>(model.tracked), ArgSet<double>(model.tracked), 
+                    0.0
+                    );
+                input = new ITT<IInInfo>
+                {
+                    quantifier_choices = GetIQ(model.qod_in),
+                    InfoComplete = GenIC<IInInfo>(model.inargs.Split(',')),
+                    calculation = (from a in model.inargs.Split(',')
+                                   select new InstanceValue<double>(NiceArgName(a),
+                                   InfoGet(a), InfoSet(a), 0.0)).ToArray(),
+                    equation = seq.Create(model.inequation, model.inargs)
+                };
+                output = new ITT<IOutInfo>
+                {
+                    quantifier_choices = GetIQ(model.qod_out),
+                    InfoComplete = GenIC<IOutInfo>(model.inargs.Split(',')),
+                    calculation = (from a in model.outargs.Split(',')
+                                   select new InstanceValue<double>(NiceArgName(a),
+                                   InfoGet(a), InfoSet(a), 0.0)).ToArray(),
+                    equation = seq.Create(model.outequation, model.outargs)
+                };
+            }
+
+            public SimpleTrackyTarget[] Calcluate(object[] fieldValues)
+            {
+                var dv = (from f in fieldValues select f is double ? (double)f : 0.0).ToArray();
+                return (from t in targets
+                 select new SimpleTrackyTarget(
+                     t.des.name, t.des.Tracked, t.des.Shown,
+                     (int)t.range_equation.calculate(dv), t.des.rangetype,
+                     (from s in t.target_patterns select s.calculate(dv)).Cast<int>().ToArray(),
+                     (from s in t.pattern_targets select s.calculate(dv)).ToArray())
+                     ).ToArray();
+            }
+        }
+        class ITT<T> : IReflectedHelpyQuants<T> where T : HBaseInfo
+        {
+            public IStringEquation equation { get; set; }
+            public InstanceValue<double>[] calculation { get; set; }
+            public Expression<Func<T, bool>> InfoComplete { get; set; }
+            public InfoQuantifier[] quantifier_choices { get; set; }
+            public double Calcluate(double[] values) { return equation.calculate(values); }
+        }
+
+        public class Holdy
+        {
+            public Presenter.AddDietPairState state;
+            public ITrackModel<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> model;
+            public ITrackerPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> pres;
+        }
+
+        static InfoQuantifier[] GetIQ(KeyTo<SimpleTrackyInfoQuantifierDescriptor> k2)
+        {
+            return (from q in k2.Get()
+                    select HelpyInfoQuantifier.FromType(q.type, q.Name, q.id,
+                    q.defaultvalue)).ToArray();
+        }
+        static Expression<Func<T,bool>> GenIC<T>(String[] args) where T : BaseDB
+        {
+            return d => args.All(s => d.AdHoc[s] != null);
+        }
+
+        public static Holdy Create(SimpleTrackyHelpyInventionV1Model model, IStringEquationFactory exp)
+        {
+            var irh = new InventedTracker(model, exp);
+            return new Holdy { model = new RoutedHelpyModel(irh, model), pres = new SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>(irh) };
         }
     }
 }

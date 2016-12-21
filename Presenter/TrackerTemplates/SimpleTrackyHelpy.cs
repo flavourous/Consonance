@@ -84,6 +84,7 @@ namespace Consonance
 		SimpleTrackyTarget[] Calcluate(Object[] fieldValues); 
 
 		// Entries and infos
+        InstanceValue<double> tracked_on_entries { get; } // global now its not a property name
 		IReflectedHelpyQuants<InInfo> input { get; }
 		IReflectedHelpyQuants<OutInfo> output { get; }
 	}
@@ -193,7 +194,6 @@ namespace Consonance
     public interface IReflectedHelpyQuants<I>
     {
         // these expect type double
-        InstanceValue<double> tracked { get; }
         InstanceValue<double>[] calculation { get; } // these are the fields we want to take from/store to the info
         InfoQuantifier[] quantifier_choices { get; }
         double Calcluate(double[] values); // obvs
@@ -227,8 +227,8 @@ namespace Consonance
 		{
 			this.helpy = helpy; 
 			defaultTrackerStuff = new DefaultTrackerInstanceRequests (helpy.TrackerDetails.category);
-			inc = new HelpedCreation<In, InInfo> (helpy.input);
-			ouc = new HelpedCreation<Out, OutInfo> (helpy.output);
+			inc = new HelpedCreation<In, InInfo> (helpy.input, helpy.tracked_on_entries);
+			ouc = new HelpedCreation<Out, OutInfo> (helpy.output, helpy.tracked_on_entries);
 			this.flectyRequests = helpy.instanceValueFields.MakeList (s => new IRSPair<Inst>(s.CreateHelper (Validate), s));
 		}
 		void Validate()
@@ -299,12 +299,14 @@ namespace Consonance
         }
         readonly IReadOnlyList<InfoDataContainer> forMissingInfoQuantities; // pull these as needed
 		readonly IReflectedHelpyQuants<I> quant;
+        readonly InstanceValue<double> tracked;
 		readonly DefaultEntryRequests defaulter = new DefaultEntryRequests ();
 		readonly RequestStorageHelper<String> infoNameRequest;
-		public HelpedCreation(IReflectedHelpyQuants<I> quant)
+		public HelpedCreation(IReflectedHelpyQuants<I> quant, InstanceValue<double> tracked)
 		{
 			this.IsInfoComplete = quant.InfoComplete;
 			this.quant = quant;
+            this.tracked = tracked;
 
             // ready this
             Action ValidateCurrentAmount = () =>
@@ -341,7 +343,7 @@ namespace Consonance
 
             // we need a direct request for no info creation - and posssssibly one of each for the ones on info that might not exist.
             // also need one for info quantity.
-            trackedQuantity = new RequestStorageHelper<double>(quant.tracked.name, () => quant.tracked.defaultValue, () => trackedQuantity.request.valid = true); // it's same on tinfo and entries
+            trackedQuantity = new RequestStorageHelper<double>(tracked.name, () => tracked.defaultValue, () => trackedQuantity.request.valid = true); // it's same on tinfo and entries
 
             var l = new List<InfoDataContainer> ();
 			foreach (var q in quant.calculation) {
@@ -412,7 +414,7 @@ namespace Consonance
 		public E Create ()
 		{
 			var rv = new E ();
-            quant.tracked.valueSetter (rv, trackedQuantity.request.value);
+            tracked.valueSetter (rv, trackedQuantity.request.value);
 			defaulter.Set (rv);
 			return rv;
 		}
@@ -451,7 +453,7 @@ namespace Consonance
             // techniacllly only need to set amount field, cause, info will be set too. and the val is calculated!
             // but i think that calc only happens here during creation and editing
 			currentMeasureOption.quant.ConnectedValue.valueSetter (rv, amount);
-            quant.tracked.valueSetter(rv, res);
+            tracked.valueSetter(rv, res);
 			defaulter.Set (rv);
 			return rv;
 		}
@@ -476,7 +478,7 @@ namespace Consonance
 			defaulter.PushInDefaults (toEdit, rp, factory);
            
 			// init request objects - defaulter did both
-			trackedQuantity.request.value = quant.tracked.valueGetter(toEdit);
+			trackedQuantity.request.value = tracked.valueGetter(toEdit);
 
 			// give it back
 			SetupInfoObservers (null); // doesnt involve quantities
@@ -487,7 +489,7 @@ namespace Consonance
 		{
 			// commit edit...simple one
 			defaulter.Set(toEdit);
-			quant.tracked.valueSetter(toEdit, trackedQuantity.request.value);
+			tracked.valueSetter(toEdit, trackedQuantity.request.value);
 			return toEdit;
 		}
 
@@ -510,7 +512,7 @@ namespace Consonance
             double res = CalcVal ((double)amount, info);
 
             currentMeasureOption.quant.ConnectedValue.valueSetter(toEdit, amount);
-            quant.tracked.valueSetter(toEdit, res);
+            tracked.valueSetter(toEdit, res);
 			return toEdit;
 		}
 
@@ -611,7 +613,7 @@ namespace Consonance
                 TimeSpan.Zero,
                 entry.entryName,
                 info == null ? noninfo : QuantyGet(helpy.input, entry, info),
-                new KVPList<string, double> { { helpy.input.tracked.name, helpy.input.tracked.valueGetter(entry) } }
+                new KVPList<string, double> { { helpy.tracked_on_entries.name, helpy.tracked_on_entries.valueGetter(entry) } }
             );
 		}
 		public EntryLineVM GetRepresentation (Out entry, OutInfo info)
@@ -621,7 +623,7 @@ namespace Consonance
                 TimeSpan.Zero,
                 entry.entryName,
                 info == null ? noninfo : QuantyGet(helpy.output,entry, info),
-                new KVPList<string, double> { { helpy.output.tracked.name, helpy.output.tracked.valueGetter(entry) } }
+                new KVPList<string, double> { { helpy.tracked_on_entries.name, helpy.tracked_on_entries.valueGetter(entry) } }
             );
 		}
 
@@ -644,10 +646,10 @@ namespace Consonance
 			foreach (var target in GetTargets(entry)) {
                 if (!target.Shown) continue;
 				if (target.DayPattern.Length == 1)
-					kl.Add (helpy.input.tracked.name + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
+					kl.Add (helpy.tracked_on_entries.name + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
 				else
 					for (int i = 0; i < target.DayPattern.Length; i++)
-						kl.Add (helpy.input.tracked.name + " for " + TimeSpan.FromDays (target.DayPattern [i]).WithSuffix (true), target.DayTargets [i]);	
+						kl.Add (helpy.tracked_on_entries.name + " for " + TimeSpan.FromDays (target.DayPattern [i]).WithSuffix (true), target.DayTargets [i]);	
 			}
 			return new TrackerInstanceVM(
 				dialect,
@@ -663,7 +665,7 @@ namespace Consonance
             var uq = GetQuant(info.quantifierID, helpy.input.quantifier_choices);
             return new KVPList<string, double>
                     {
-                        { q.tracked.name, (double)q.tracked.valueGetter(info) },
+                        { helpy.tracked_on_entries.name, helpy.tracked_on_entries.valueGetter(info) },
                         { uq.ConnectedValue.name, (double)uq.ConnectedValue.valueGetter(info) }
                     };
         }
@@ -711,11 +713,11 @@ namespace Consonance
 		{
 			List<TrackingElementVM> vin = new List<TrackingElementVM> (), vout = new List<TrackingElementVM> ();
 			foreach (var ient in eats(s, e)) {
-				var v = helpy.input.tracked.valueGetter(ient);
+				var v = helpy.tracked_on_entries.valueGetter(ient);
 				vin.Add (new TrackingElementVM () { value = v , name = ient.entryName });
 			}
 			foreach (var oent in burns(s,e)) {
-				var v = helpy.output.tracked.valueGetter(oent);
+				var v = helpy.tracked_on_entries.valueGetter(oent);
 				vout.Add (new TrackingElementVM () { value = v, name = oent.entryName });
 			}
 			invals = vin.ToArray ();
