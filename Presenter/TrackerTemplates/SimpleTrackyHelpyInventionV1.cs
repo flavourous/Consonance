@@ -78,6 +78,11 @@ namespace Consonance.Invention
                 GlobalForKeyTo.conn.Insert(v);
             }
         }
+        public void Replace(IEnumerable<T> values)
+        {
+            Clear();
+            Add(values);
+        }
         public void Clear()
         {
             GlobalForKeyTo.conn.Table<T>().Delete(t => t.fk_mid == mid && t.fk_pid == pid);
@@ -95,8 +100,6 @@ namespace Consonance.Invention
     #region Tracker descriptor created by the simple inventor
     class SimpleTrackyHelpyInventionV1Model : BaseDB
     {
-        const int keyto_id = 1;
-
         // helper
         public void DeleteAllForiegnKeyedThings()
         {
@@ -104,6 +107,8 @@ namespace Consonance.Invention
             qod_out.Clear();
             targets.Clear();
         }
+
+        const int keyto_id = 1;
 
         // Quantifier types foriegn relationship
         int qod_in_pid = 1, qod_out_pid = 2;
@@ -164,7 +169,7 @@ namespace Consonance.Invention
         
         // display config
         public String name { get; set; }
-        public bool Tracked { get; set; } // appearing in bar graphs etc (null means instance defined)
+        public bool Track { get; set; } // can tracking be toggled in instance
         public bool Shown { get; set; } // shown on tracker list VM thingy or not
 
         // Aggregation calc
@@ -207,7 +212,7 @@ namespace Consonance.Invention
         public readonly Action<SimpleTrackyHelpyInventionV1Model> set;
 
 
-        public static SimpleTrackyInventionRequestPages Page1(IValueRequestFactory fac)
+        public static SimpleTrackyInventionRequestPages TrackerDescriptionPage(IValueRequestFactory fac)
         {
             var page = new GetValuesPage("What's it called?");
             var p1vr = (from s in new[] { "Name", "Description", "Category" }
@@ -223,7 +228,7 @@ namespace Consonance.Invention
             foreach (var vr in p1vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value);
             return new SimpleTrackyInventionRequestPages(page, set);
         }
-        public static SimpleTrackyInventionRequestPages Page2(IValueRequestFactory fac)
+        public static SimpleTrackyInventionRequestPages EntryDescriptionPage(IValueRequestFactory fac)
         {
             var page = new GetValuesPage("How are entries called?");
             var p2vr = (from s in new[] {
@@ -243,7 +248,7 @@ namespace Consonance.Invention
             foreach (var vr in p2vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value); ;
             return new SimpleTrackyInventionRequestPages(page, set);
         }
-        public static SimpleTrackyInventionRequestPages Page3(IValueRequestFactory fac, IValueRequest<TabularDataRequestValue> megalist)
+        public static SimpleTrackyInventionRequestPages InfoQuantifiersPage(IValueRequestFactory fac, IValueRequest<TabularDataRequestValue> megalist)
         {
             var page = new GetValuesPage("How can infos be quantified?");
             var ioreq = fac.OptionGroupRequestor("For");
@@ -298,14 +303,100 @@ namespace Consonance.Invention
                     if (inout == 0) inq.Add(qd);
                     else outq.Add(qd);
                 }
-                mod.qod_in.Clear();
-                mod.qod_out.Clear();
-                mod.qod_in.Add(inq);
-                mod.qod_out.Add(outq);
+                mod.qod_in.Replace(inq);
+                mod.qod_out.Replace(outq);
             };
             megalist.value.Items.CollectionChanged += (a, b) => megalist.valid = megalist.value.Items.Count > 0;
             addr.valid = nreq.valid = dvalmor.valid = ioreq.valid = true; // not used - the list is...
             page.SetListyRequest(megalist);
+            return new SimpleTrackyInventionRequestPages(page, set);
+        }
+        public static SimpleTrackyInventionRequestPages TargetDesciptorsPage(IValueRequestFactory fac, IValueRequest<TabularDataRequestValue> megalist)
+        {
+            var page = new GetValuesPage("What targets should be calculated?");
+
+
+            var nreq = fac.StringRequestor("Name");
+            var argreq = fac.StringRequestor("Equation arguments");
+            var rreq = fac.StringRequestor("Target range equation");
+            var rtreq = fac.OptionGroupRequestor("Target range Type");
+            rtreq.value = new OptionGroupValue(new[] { "Days from start", "Days about now" });
+            var peqreq = fac.StringRequestor("Pattern equations");
+            var teqreq = fac.StringRequestor("Target equations");
+            var addr = fac.ActionRequestor("Add");
+
+            String[] headers = new[] { "Name", "Range", "Type", "Patterns", "Targets" };
+            megalist.value = new TabularDataRequestValue(headers);
+
+            addr.ValueChanged += () =>
+            {
+                var ot = (AggregateRangeType)rtreq.value.SelectedOption;
+                var ots = rtreq.value.OptionNames[rtreq.value.SelectedOption];
+                megalist.value.Items.Add(new Stringy[] {
+                        new Stringy(nreq.value,nreq.value),
+                        new Stringy(rreq.value,rreq.value),
+                        new Stringy(ots,ot),
+                        new Stringy(peqreq.value,peqreq.value),
+                        new Stringy(teqreq.value,teqreq.value),
+                    });
+            };
+
+            // FIXME which one?
+            megalist.ValueChanged += () => megalist.valid = megalist.value.Items.Count > 0;
+            megalist.value.Items.CollectionChanged += (a, b) => megalist.valid = megalist.value.Items.Count > 0;
+
+            page.SetList(new BindingList<object> { nreq, rreq, rtreq, argreq, peqreq, teqreq });
+            Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
+            {
+                // get targets
+                var targets = new List<SimpleTrackyTrackingTargetDescriptor>();
+                foreach (var q in megalist.value.Items)
+                {
+                    var qq = q as Stringy[];
+                    targets.Add(new SimpleTrackyTrackingTargetDescriptor {
+                        name = qq[0].o as String,
+                        targetRange = qq[1].o as String,
+                        rangetype = (AggregateRangeType)qq[2].o,
+                        targertPattern = qq[3].o as String,
+                        patternTarget = qq[4].o as String,
+                    });
+                }
+                mod.targets.Replace(targets);
+                mod.target_args = argreq.value;
+            };
+
+            Action ValidateEquations = () =>
+            {
+                argreq.valid = !String.IsNullOrWhiteSpace(argreq.value);
+                bool sameNumberOfEquations = peqreq.value.Split(',').Count() == teqreq.value.Split(',').Count();
+                bool equationsAreValid = true;
+                peqreq.valid = teqreq.valid = rreq.valid = sameNumberOfEquations && equationsAreValid;
+            };
+
+            addr.valid = nreq.valid = rtreq.valid = true; // not used - the list is...
+            argreq.ValueChanged += ValidateEquations;
+            rreq.ValueChanged += ValidateEquations;
+            peqreq.ValueChanged += ValidateEquations;
+            teqreq.ValueChanged += ValidateEquations;
+            page.SetListyRequest(megalist);
+            return new SimpleTrackyInventionRequestPages(page, set);
+        }
+        public static SimpleTrackyInventionRequestPages EntryInfoEquations(IValueRequestFactory fac)
+        {
+            var page = new GetValuesPage("What are the equations for entries?");
+            var p2vr = (from s in new[] {
+                        "Input Arguments","Input Equation",
+                        "Output Arguments","Output Equation" }
+                        select fac.StringRequestor(s)).ToArray();
+            page.SetList(new BindingList<object>((from p in p2vr select p.request).ToList()));
+            Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
+            {
+                mod.inargs = p2vr[0].value;
+                mod.inequation = p2vr[1].value;
+                mod.outargs = p2vr[2].value;
+                mod.outequation = p2vr[3].value;
+            };
+            foreach (var vr in p2vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value); ;
             return new SimpleTrackyInventionRequestPages(page, set);
         }
     }
@@ -338,6 +429,7 @@ namespace Consonance.Invention
 
             // ensure tables
             conn.CreateTable<SimpleTrackyInfoQuantifierDescriptor>();
+            conn.CreateTable<SimpleTrackyTrackingTargetDescriptor>();
             conn.CreateTable<SimpleTrackyHelpyInventionV1Model>();
         }
 
@@ -412,9 +504,9 @@ namespace Consonance.Invention
         }
         public Task StartNewTracker() // instances() handles registration
         {
-            var page1 = SimpleTrackyInventionRequestPages.Page1(build.requestFactory);
-            var page2 = SimpleTrackyInventionRequestPages.Page2(build.requestFactory);
-            var page3 = SimpleTrackyInventionRequestPages.Page3(build.requestFactory, build.GenerateTableRequest());
+            var page1 = SimpleTrackyInventionRequestPages.TrackerDescriptionPage(build.requestFactory);
+            var page2 = SimpleTrackyInventionRequestPages.EntryDescriptionPage(build.requestFactory);
+            var page3 = SimpleTrackyInventionRequestPages.InfoQuantifiersPage(build.requestFactory, build.GenerateTableRequest());
 
             var vt = build.GetValues(new[] { page1.page, page2.page, page3.page });
             vt.Completed.ContinueAfter(async () =>
@@ -446,8 +538,8 @@ namespace Consonance.Invention
         {
             var mod = dvm.originator as SimpleTrackyHelpyInventionV1Model;
             // these are safe to change
-            var page1 = SimpleTrackyInventionRequestPages.Page1(build.requestFactory);
-            var page2 = SimpleTrackyInventionRequestPages.Page2(build.requestFactory);
+            var page1 = SimpleTrackyInventionRequestPages.TrackerDescriptionPage(build.requestFactory);
+            var page2 = SimpleTrackyInventionRequestPages.EntryDescriptionPage(build.requestFactory);
             var vt = build.GetValues(new[] { page1.page, page2.page });
             vt.Completed.ContinueWith(async rt => {
                 await vt.Pop();
@@ -595,12 +687,15 @@ namespace Consonance.Invention
 
                 // Args used in all equations for a tracker
                 var Args = model.target_args.Split(',');
-                instanceValueFields = (from m in Args select VRVConnectedValue.FromType(
-                                        0.0, NiceArgName(m), ArgGet<Object>(m), ArgSet<Object>(m), d => d.DoubleRequestor)
-                                       ).ToArray();
 
                 // cached the equaion espression thing
                 targets = (from des in model.targets.Get() select TargetEquations(des, seq, Args)).ToArray();
+
+                instanceValueFields = 
+                    (
+                        from m in Args select VRVConnectedValue.FromType(
+                        0.0, NiceArgName(m), ArgGet<Object>(m), ArgSet<Object>(m), d => d.DoubleRequestor)
+                    ).ToArray();
 
                 tracked_on_entries = new InstanceValue<double>
                     (
@@ -633,7 +728,7 @@ namespace Consonance.Invention
                 var dv = (from f in fieldValues select f is double ? (double)f : 0.0).ToArray();
                 return (from t in targets
                  select new SimpleTrackyTarget(
-                     t.des.name, t.des.Tracked, t.des.Shown,
+                     t.des.name, t.des.Track, t.des.Shown,
                      (int)t.range_equation.calculate(dv), t.des.rangetype,
                      (from s in t.target_patterns select s.calculate(dv)).Cast<int>().ToArray(),
                      (from s in t.pattern_targets select s.calculate(dv)).ToArray())
