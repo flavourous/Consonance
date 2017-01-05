@@ -42,7 +42,6 @@ namespace Consonance
 	// Implimentations
 	public class SimpleBudget_SimpleTemplate : IExtraRelfectedHelpy<SimpleBudgetInstance_Simple, IncomeInfo, ExpenditureInfo>
 	{
-        public InstanceValue<double> tracked_on_entries { get { return new InstanceValue<double>("Amount", o => ((SimpleBudgetEntry)o).amount, (o, v) => ((SimpleBudgetEntry)o).amount = v, 0.0); } }
         readonly IReflectedHelpyQuants<IncomeInfo> _input = new SimpleBudget_HelpyIn();
 		public IReflectedHelpyQuants<IncomeInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<ExpenditureInfo> _output = new SimpleBudget_HelpyOut();
@@ -60,7 +59,7 @@ namespace Consonance
 		public SimpleTrackyTarget[] Calcluate(object[] fieldValues) 
 		{ 
 			List<SimpleTrackyTarget> targs = new List<SimpleTrackyTarget> ();
-			targs.Add (new SimpleTrackyTarget("Balance",true,true, 1, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
+			targs.Add (new SimpleTrackyTarget("Balance","balance",true,true, 1, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues [0] }));
 			return targs.ToArray ();
 		}
 	}
@@ -68,21 +67,33 @@ namespace Consonance
 	// entry stuff...
 	class SimpleBudget_HelpyIn : IReflectedHelpyQuants<IncomeInfo>
 	{
-		#region IReflectedHelpyQuants implementation
-		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", o => ((IncomeInfo)o).amount, (o, v) => ((IncomeInfo)o).amount = v, 0.0) }; } }
-		public double Calcluate (double[] values) { return values [0]; }
-		public Expression<Func<IncomeInfo, bool>> InfoComplete { get { return fi => true; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) }; } }
-		#endregion
-	}
-	class SimpleBudget_HelpyOut : IReflectedHelpyQuants<ExpenditureInfo>
-	{
         #region IReflectedHelpyQuants implementation
-        public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Amount", o => ((ExpenditureInfo)o).amount, (o, v) => ((ExpenditureInfo)o).amount = v, 0.0) }; } }
-		public double Calcluate (double[] values) { return values [0]; }
-		public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get { return fi => true; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType( InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) }; } }
+        public InstanceValue<double>[] calculation { get; } = new[] { new InstanceValue<double>("Amount", o => ((IncomeInfo)o).amount, (o, v) => ((IncomeInfo)o).amount = v, 0.0) };
+        public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
+		public Expression<Func<IncomeInfo, bool>> InfoComplete { get; } = fi => true;
+        public InfoQuantifier[] quantifier_choices { get; } = new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) };
         #endregion
+        class ICalc : IReflectedHelpyCalc
+        {
+            public InstanceValue<double> direct { get { return new InstanceValue<double>("Amount", o => ((SimpleBudgetEatEntry)o).amount, (o, v) => ((SimpleBudgetEatEntry)o).amount = v, 0.0); } }
+            public string TargetID { get { return "budget"; } }
+            public double Calculate(double[] values) { return values[0]; }
+        }
+    }
+    class SimpleBudget_HelpyOut : IReflectedHelpyQuants<ExpenditureInfo>
+    {
+        #region IReflectedHelpyQuants implementation
+        public InstanceValue<double>[] calculation { get; } = new[] { new InstanceValue<double>("Amount", o => ((ExpenditureInfo)o).amount, (o, v) => ((ExpenditureInfo)o).amount = v, 0.0) };
+        public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
+        public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get; }  = fi => true; 
+        public InfoQuantifier[] quantifier_choices { get; } = new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) };
+        #endregion
+        class ICalc : IReflectedHelpyCalc
+        {
+            public InstanceValue<double> direct { get { return new InstanceValue<double>("Amount", o => ((SimpleBudgetBurnEntry)o).amount, (o, v) => ((SimpleBudgetBurnEntry)o).amount = v, 0.0); } }
+            public string TargetID { get { return "budget"; } }
+            public double Calculate(double[] values) { return values[0]; }
+        }
     }				
 
 }

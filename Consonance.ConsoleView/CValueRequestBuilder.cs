@@ -50,7 +50,9 @@ namespace Consonance.ConsoleView
 					pageBuilder.AppendLine ("  Enabled ReadOnly Valid");
 					int i = 0;
 					foreach (var vr in PageRequests) {
-						pageBuilder.AppendFormat (i++ + ":    {0}       {1}       {2}   {3}: {4}\n", bs (!vr.enabled), bs (vr.read_only), bs (vr.valid), vr.name, vr.ToString ());
+                        var ss1 = String.Format(i++ + ":    {0}       {1}       {2}   {3}: ", bs(!vr.enabled), bs(vr.read_only), bs(vr.valid), vr.name);
+                        var vv = vr.ToString().Replace(Environment.NewLine, Environment.NewLine + new string(' ', ss1.Length));
+                        pageBuilder.AppendFormat("{0}{1}\n", ss1, vv);
 					}
 					return pageBuilder.ToString ();
 				}
@@ -128,11 +130,7 @@ namespace Consonance.ConsoleView
 			return vt;
 		}
 
-        public IValueRequest<TabularDataRequestValue> GenerateTableRequest()
-        {
-            throw new NotImplementedException();
-        }
-
+        
         public IValueRequestFactory requestFactory { get; private set; }
 		#endregion
 	}
@@ -218,22 +216,72 @@ namespace Consonance.ConsoleView
 
         public IValueRequest<DateTime> DateTimeRequestor(string name)
         {
-            throw new NotImplementedException();
+            return new RequestFromString<DateTime>(name,
+                DateTime.Parse,
+                val => val.ToString()
+            );
         }
 
         public IValueRequest<DateTime?> nDateRequestor(string name)
         {
-            throw new NotImplementedException();
+            return new RequestFromString<DateTime?>(name,
+                str => str == null ? null : new DateTime?(DateTime.Parse(str)),
+                val => val?.ToString()
+            );
         }
 
         public IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(string name)
         {
-            throw new NotImplementedException();
+            MultiRequestOptionValue lpv = null;
+            return new RequestFromString<MultiRequestOptionValue>(name,
+                str => {
+                    var args = str.Split(' ');
+                    lpv.SelectedRequest = int.Parse(args[0]);
+                    IValueRequestFromString rrs = null; int x = -1;
+                    foreach (var o in lpv.IValueRequestOptions)
+                        if (++x == lpv.SelectedRequest)
+                            rrs = o as IValueRequestFromString;
+                    rrs.FromString(args[1]);
+                    return lpv;
+                },
+                patval => {
+                    lpv = patval;
+                    int x = 0;
+                    var opts = new List<String>();
+                    foreach(var pv in patval.IValueRequestOptions)
+                    {
+                        var ss = patval.SelectedRequest == x;
+                        var gt = pv.GetType().GetGenericArguments()[0];
+                        opts.Add(String.Format("{0}{1}: {2} ({4}){3}", ss ? "[" : "", x, (pv as IValueRequestFromString).ToString(), ss ? "]" : "", gt.Name));
+                        x++;
+                    }
+                    return String.Join(" | ", opts);
+                }
+            );
         }
+
+        public IValueRequest<TabularDataRequestValue> GenerateTableRequest()
+        {
+            return new RequestFromString<TabularDataRequestValue>("table", null,
+                ts =>
+                {
+                    var allz = ts.Items.Concat(new object[][] { ts.Headers.Cast<Object>().ToArray() });
+                    var mx = (from f in allz select f.Max(d => (d.ToString()??"").Length)).Max();
+
+                    Func<Object[],int,String[]> padall = (arr,pad) => (from s in arr select s.ToString().PadRight(pad)).ToArray();
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("|"+String.Join("|", padall(ts.Headers,mx))+"|");
+                    var alll = String.Join(Environment.NewLine, (from sl in ts.Items select "|" + String.Join("|", padall(sl, mx)) + "|"));
+                    sb.Append(alll);
+                    return sb.ToString();
+                });
+        }
+
         #endregion
     }
 
-	interface IValueRequestFromString 
+    interface IValueRequestFromString 
 	{
 		event Action Invalidated;
 		bool FromString (String s);
@@ -255,7 +303,7 @@ namespace Consonance.ConsoleView
 		public RequestFromString(String name, Converter<String, T> convert, Converter<T, String> convertBack) : this(name,convert) 
 		{ this.sdel = convertBack; }
 
-		public String name { get; private set;}
+        public String name { get; private set;}
 		Converter<String,T> cdel = t => (T)Convert.ChangeType(t,typeof(T));
 		Converter<T,String> sdel = t => t == null ? "" : t.ToString();
 		Action<String,T> actOnExisting =null;

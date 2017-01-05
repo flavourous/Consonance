@@ -249,13 +249,15 @@ namespace Consonance
             if (!router.GetTableRoute<T>(out tn, out c, out ct))
                 return false;
 
-            var holder = t.GetTypeInfo().DeclaredProperties.Where(p => p.GetCustomAttributes().Any(a => a is ColumnAccessorAttribute)).First();
+            var props = t.GetRuntimeProperties();
+            var holder = props.Where(p => p.GetCustomAttributes().Any(a => a is ColumnAccessorAttribute)).First();
 
             // make the map
-            map = conn.GetMapping<T>().WithMutatedSchema(
-                tn,
-                Enumerable.Range(0, c.Length).Select(i => new TableMapping.AdHocColumn(c[i], ct[i], holder))
-                );
+            var omap = map = conn.GetMapping<T>();
+            map = omap.WithMutatedSchema(
+            tn,
+            Enumerable.Range(0, c.Length).Select(i => new TableMapping.AdHocColumn(c[i], ct[i], holder))
+            );
 
             return true;
         }

@@ -21,11 +21,6 @@ namespace Consonance.XamarinFormsView.PCL
             this.requestFactory = new ValueRequestFactory(srv);
         }
 
-        public IValueRequest<TabularDataRequestValue> GenerateTableRequest()
-        {
-            return new ValueRequestVM<TabularDataRequestValue, ContentView>(null, false, delegate { });
-        }
-
         public ViewTask<bool> GetValues(IEnumerable<GetValuesPage> requestPages)
         {
             return GetValuesImpl(requestPages, new ValueRequestView());
@@ -145,6 +140,8 @@ namespace Consonance.XamarinFormsView.PCL
 		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name); }
 		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name); }
         public IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name) { return RequestCreator<MultiRequestOptionValue, MultiRequestCombo>(name); }
+        public IValueRequest<TabularDataRequestValue> GenerateTableRequest() { return RequestCreator<TabularDataRequestValue, ContentView>(null, false, delegate { }); }
+
         #endregion
 
         IValueRequest<T> RequestCreator<T, V>(String name, bool showName = true, Action<V> init = null) where V : View, new()

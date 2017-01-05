@@ -83,7 +83,6 @@ namespace Consonance
             public static void s_trackWeekly(Object i, Object v) { ((CalorieDietInstance_Simple)i).trackWeekly = (bool)v; }
         }
 
-        public InstanceValue<double> tracked_on_entries { get { return new InstanceValue<double>("Calories", ICaloriesHelper.Get, ICaloriesHelper.Set, 0.0); } }
         readonly IReflectedHelpyQuants<FoodInfo> _input = new CalDiet_HelpyIn();
 		public IReflectedHelpyQuants<FoodInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<FireInfo> _output = new CalDiet_HelpyOut();
@@ -100,8 +99,8 @@ namespace Consonance
         public SimpleTrackyTarget[] Calcluate(object[] fieldValues)
         {
             List<SimpleTrackyTarget> targs = new List<SimpleTrackyTarget>();
-            targs.Add(new SimpleTrackyTarget("Calories", (bool)fieldValues[1], true, 0, AggregateRangeType.DaysEitherSide, new[] { 1 }, new[] { (double)fieldValues[0] }));
-            targs.Add(new SimpleTrackyTarget("Calories", (bool)fieldValues[2], false, 7, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues[0] * 7 }));
+            targs.Add(new SimpleTrackyTarget("Calories", "calories", (bool)fieldValues[1], true, 0, AggregateRangeType.DaysEitherSide, new[] { 1 }, new[] { (double)fieldValues[0] }));
+            targs.Add(new SimpleTrackyTarget("Calories", "calories", (bool)fieldValues[2], false, 7, AggregateRangeType.DaysFromStart, new[] { 1 }, new[] { (double)fieldValues[0] * 7 }));
             return targs.ToArray();
         }
 	}
@@ -124,7 +123,6 @@ namespace Consonance
         }
 
 
-        public InstanceValue<double> tracked_on_entries { get { return new InstanceValue<double>("Calories",ICaloriesHelper.Get, ICaloriesHelper.Set, 0.0); } }
         readonly IReflectedHelpyQuants<FoodInfo> _input = new CalDiet_HelpyIn();
         public IReflectedHelpyQuants<FoodInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<FireInfo> _output = new CalDiet_HelpyOut();
@@ -142,7 +140,7 @@ namespace Consonance
 		public SimpleTrackyTarget[] Calcluate(object[] fieldValues) 
 		{
 			return new[] { 
-				new SimpleTrackyTarget ("Calories", true, true,
+				new SimpleTrackyTarget ("Calories","calories", true, true,
 					// Range Tracking
 					0, AggregateRangeType.DaysEitherSide, 
 
@@ -159,17 +157,29 @@ namespace Consonance
 		#region IReflectedHelpyQuants implementation
         public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FoodInfo)o).calories ?? 0.0, (o, v) => ((FoodInfo)o).calories = v, 0.0) }; } }
         public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Grams", 0, 100.0), HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Servings", 1, 1.0) }; } }
-        public double Calcluate (double[] values) { return values [0]; }
-		public Expression<Func<FoodInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
-		#endregion
-	}
+        public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
+        public Expression<Func<FoodInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
+        #endregion
+        class ICalc : IReflectedHelpyCalc
+        {
+            public InstanceValue<double> direct { get { return new InstanceValue<double>("Calories", o => ((CalorieDietEatEntry)o).calories, (o, v) => ((CalorieDietEatEntry)o).calories = v, 0.0); } }
+            public string TargetID { get { return "calories"; } }
+            public double Calculate(double[] values) { return values[0]; }
+        }
+    }
 	class CalDiet_HelpyOut : IReflectedHelpyQuants<FireInfo>
 	{
 		#region IReflectedHelpyQuants implementation
 		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FireInfo)o).calories ?? 0.0, (o, v) => ((FireInfo)o).calories = v, 0.0) }; } }
         public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Duration, "Duration", 0, 0.0) }; } }
-        public double Calcluate (double[] values) { return values [0]; }
-		public Expression<Func<FireInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
-		#endregion
-	}				
+        public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
+        public Expression<Func<FireInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
+        #endregion
+        class ICalc : IReflectedHelpyCalc
+        {
+            public InstanceValue<double> direct { get { return new InstanceValue<double>("Calories", o => ((CalorieDietBurnEntry)o).calories, (o, v) => ((CalorieDietBurnEntry)o).calories = v, 0.0); } }
+            public string TargetID { get { return "calories"; } }
+            public double Calculate(double[] values) { return values[0]; }
+        }
+    }				
 }

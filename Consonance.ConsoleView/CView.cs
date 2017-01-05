@@ -7,9 +7,10 @@ using System.Linq.Expressions;
 using Consonance.Invention;
 
 namespace Consonance.ConsoleView
+        
 {
 	class CView : IView, ICollectionEditorSelectableLooseCommands<TrackerInstanceVM>, IConsolePage
-	{
+    {
         enum LoadThings {  BurnItems, EatItems, Instances };
 		Dictionary<LoadThings,bool> aloads = new Dictionary<LoadThings, bool> {
 			{ LoadThings.BurnItems, false },
@@ -28,8 +29,10 @@ namespace Consonance.ConsoleView
 		{
 			this.pc = pc;
 		}
-		#region IConsolePage implementation
-		StringBuilder pdb = new StringBuilder ();
+
+
+        #region IConsolePage implementation
+        StringBuilder pdb = new StringBuilder ();
 		public bool pageChanged { get; set; }
 		public string pageData 
 		{ 
@@ -44,15 +47,17 @@ namespace Consonance.ConsoleView
 				if (currentTrackerInstance != null)
 					pdb.Append (RowString (colWid, "Index", currentTrackerInstance.dialect.InputEntryVerb, currentTrackerInstance.dialect.OutputEntryVerb, "Plan"));
 				else
-					pdb.Append (RowString (colWid, "Index", "In", "Out", "Plan"));
+					pdb.Append (RowString (colWid, "Index", "In", "Out", "Plan", "Inventions"));
 				pdb.AppendLine ();
-				pdb.AppendLine (RowString (colWid, new String ('=', colWid + 4), new String ('=', colWid + 4), new String ('=', colWid + 4), new String ('=', colWid + 4)));
+				pdb.AppendLine (RowString (colWid, new String ('=', colWid + 4), new String ('=', colWid + 4), new String ('=', colWid + 4), new String ('=', colWid + 4), new String('=', colWid + 4)));
 				int i = 0;
 				for (; i < maxRows; i++) {
-					pdb.Append (RowString (colWid, i.ToString (),
-						i < inlines.Count ? inlines [i].name : "", 
-						i < outlines.Count ? outlines [i].name : "", 
-						i < instances.Count ? (OriginatorVM.OriginatorEquals (instances [i], currentTrackerInstance) ? "X " : "") + instances [i].name : ""));
+                    pdb.Append(RowString(colWid, i.ToString(),
+                        i < inlines.Count ? inlines[i].name : "",
+                        i < outlines.Count ? outlines[i].name : "",
+                        i < instances.Count ? (OriginatorVM.OriginatorEquals(instances[i], currentTrackerInstance) ? "X " : "") + instances[i].name : "",
+                        i < inventions.Count ? inventions[i].name : ""
+                        ));
 					pdb.AppendLine ();
 				}
 				if (i == 0)
@@ -146,7 +151,8 @@ namespace Consonance.ConsoleView
 					},
 					IOA(inName, inlines, (CPlanCommands.CCollectionEditorBoundCommands<EntryLineVM>)pc.eat),
 					IOA(outName, outlines, (CPlanCommands.CCollectionEditorBoundCommands<EntryLineVM>)pc.burn),
-					ChangeDay("Prev Day",-1),
+                    IOA("inventors", inventions, inv.doadd, inv.doremove, inv.doedit),
+                    ChangeDay("Prev Day",-1),
 					ChangeDay("Next Day",1),
 				};
 			}
@@ -159,7 +165,12 @@ namespace Consonance.ConsoleView
 				action = _ => changeday (day.AddDays (dc))
 			};
 		}
-		ConsolePageAction IOA(String name, IReadOnlyList<EntryLineVM> entries, CPlanCommands.CCollectionEditorBoundCommands<EntryLineVM> commands)
+        ConsolePageAction IOA<T>(String name, IReadOnlyList<T> entries, CPlanCommands.CCollectionEditorBoundCommands<T> commands)
+        {
+            return IOA(name, entries, commands.Add, commands.Remove, commands.Edit);
+        }
+
+        ConsolePageAction IOA<T>(String name, IReadOnlyList<T> entries, Action add, Action<T> remove, Action<T> edit)
 		{
 			return new ConsolePageAction () {
 				name =  name + " actions",
@@ -173,9 +184,9 @@ namespace Consonance.ConsoleView
 					}
 					switch(d[0])
 					{
-					case "a": commands.Add (); break;
-					case "d": commands.Remove (entries[idx]); break;
-					case "e": commands.Edit (entries[idx]); break;
+					case "a": add (); break;
+					case "d": remove (entries[idx]); break;
+					case "e": edit (entries[idx]); break;
 					default:
 						Console.WriteLine ("unknown mode...");
 						Console.ReadKey ();
@@ -197,10 +208,11 @@ namespace Consonance.ConsoleView
 		public event Action<TrackerInstanceVM> remove = delegate { };
 		public event Action<TrackerInstanceVM> edit = delegate { };
 		public event Action<TrackerInstanceVM> select = delegate { };
-		#endregion
+        #endregion
 
-		// Data incoming
-		IReadOnlyList<EntryLineVM> inlines = new List<EntryLineVM>(), outlines= new List<EntryLineVM>();
+
+        // Data incoming
+        IReadOnlyList<EntryLineVM> inlines = new List<EntryLineVM>(), outlines= new List<EntryLineVM>();
 		public void SetEatLines (IVMList<EntryLineVM> lineitems) { inlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
 		public void SetBurnLines (IVMList<EntryLineVM> lineitems) { outlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
 
@@ -223,9 +235,11 @@ namespace Consonance.ConsoleView
 			pageChanged = true;
 		}
 
+        IReadOnlyList<InventedTrackerVM> inventions = new List<InventedTrackerVM>();
         public void SetInventions(IVMList<InventedTrackerVM> inventionitems)
         {
-            throw new NotImplementedException();
+            inventions = new List<InventedTrackerVM>(inventionitems);
+            pageChanged = true;
         }
 
         // Some data members
@@ -234,13 +248,17 @@ namespace Consonance.ConsoleView
 		TrackerInstanceVM mcti;
 		public TrackerInstanceVM currentTrackerInstance { get{ return mcti; } set { mcti = value; pageChanged = true; } }
 
-        public ICollectionEditorLooseCommands<InventedTrackerVM> invention
+        class IV : ICollectionEditorLooseCommands<InventedTrackerVM>
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
+            public void doadd() { add(); }
+            public void doedit(InventedTrackerVM i) { edit(i); }
+            public void doremove(InventedTrackerVM i) { remove(i); }
+            public event Action add = delegate { };
+            public event Action<InventedTrackerVM> edit = delegate { };
+            public event Action<InventedTrackerVM> remove = delegate { };
         }
+        IV inv = new IV();
+        public ICollectionEditorLooseCommands<InventedTrackerVM> invention{get{return inv;}}
         #endregion
     }
 }

@@ -110,19 +110,9 @@ namespace Consonance
             public bool GetTableRoute<T>(out string tabl, out string[] columns, out Type[] colTypes)
             {
                 tabl = "loltable";
-                columns = null;
-                colTypes = null;
+                columns = new[] { "c1", "lolc" };
+                colTypes = new[] { typeof(String), typeof(bool) };
                 return true;
-            }
-
-            public T MapFromTable<T>(object[] values)
-            {
-                throw new NotImplementedException();
-            }
-
-            public object[] MapToTable<T>(T o)
-            {
-                throw new NotImplementedException();
             }
         }
 
@@ -144,7 +134,6 @@ namespace Consonance
                 conn = new SQLiteConnection(platform.sqlite, maindbpath, false);
 
                 // TESTE!
-                Debugger.Break();
                 SQliteCheckedConnection cc = new SQliteCheckedConnection(conn, new TC());
                 cc.CreateTable<TestTable>();
 
@@ -642,7 +631,6 @@ namespace Consonance
 	{
 		// get generic set of values on a page thing
 		ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages);
-        IValueRequest<TabularDataRequestValue> GenerateTableRequest();
 
         // VRO Factory Method
         IValueRequestFactory requestFactory { get; }
@@ -670,6 +658,7 @@ namespace Consonance
 		IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
 		IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
         IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name);
+        IValueRequest<TabularDataRequestValue> GenerateTableRequest();
     }
     #endregion
     

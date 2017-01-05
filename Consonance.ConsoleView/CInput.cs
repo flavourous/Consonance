@@ -215,15 +215,6 @@ namespace Consonance.ConsoleView
 			}
 			#endregion
 		}
-		public Task<InfoLineVM> InfoView (InfoCallType calltype, InfoManageType imt, IObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
-		{
-			bool doesSelection = (calltype & InfoCallType.AllowSelect) == InfoCallType.AllowSelect;
-			TaskCompletionSource<InfoLineVM> chosen = new TaskCompletionSource<InfoLineVM> ();
-			CInfoView view = new CInfoView (doesSelection, chosen, toManage, initiallySelected, 
-				                 (CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM>)(imt == InfoManageType.In ? pc.eatinfo : pc.burninfo));
-			MainClass.consolePager.Push(view);
-			return chosen.Task;
-		}
 		class CFindyChooseView : IConsolePage
 		{
 			public bool allowDefaultActions { get { return true; } }

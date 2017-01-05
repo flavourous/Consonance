@@ -28,6 +28,26 @@ namespace Consonance.Invention
         String[] arguments { get; }
         double calculate(params double[] args);
     }
+    class MockSEQ : IStringEquationFactory
+    {
+        class ms : IStringEquation
+        {
+            public string[] arguments{ get; set; }
+            public string equation{ get; set; }
+            public double calculate(params double[] args)
+            {
+                return 0.0;
+            }
+        }
+        public IStringEquation Create(string equation, params string[] args)
+        {
+            return new ms
+            {
+                arguments = args,
+                equation = equation
+            };
+        }
+    }
     #endregion
 
     // Global viewmovel for all diet inventors..move
@@ -248,7 +268,7 @@ namespace Consonance.Invention
             foreach (var vr in p2vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value); ;
             return new SimpleTrackyInventionRequestPages(page, set);
         }
-        public static SimpleTrackyInventionRequestPages InfoQuantifiersPage(IValueRequestFactory fac, IValueRequest<TabularDataRequestValue> megalist)
+        public static SimpleTrackyInventionRequestPages InfoQuantifiersPage(IValueRequestFactory fac)
         {
             var page = new GetValuesPage("How can infos be quantified?");
             var ioreq = fac.OptionGroupRequestor("For");
@@ -267,6 +287,7 @@ namespace Consonance.Invention
             var addr = fac.ActionRequestor("Add");
 
             String[] headers = new[] { "For", "Name", "Units", "Default" };
+            var megalist = fac.GenerateTableRequest();
             megalist.value = new TabularDataRequestValue(headers);
 
             addr.ValueChanged += () =>
@@ -311,7 +332,7 @@ namespace Consonance.Invention
             page.SetListyRequest(megalist);
             return new SimpleTrackyInventionRequestPages(page, set);
         }
-        public static SimpleTrackyInventionRequestPages TargetDesciptorsPage(IValueRequestFactory fac, IValueRequest<TabularDataRequestValue> megalist)
+        public static SimpleTrackyInventionRequestPages TargetDesciptorsPage(IValueRequestFactory fac)
         {
             var page = new GetValuesPage("What targets should be calculated?");
 
@@ -326,6 +347,7 @@ namespace Consonance.Invention
             var addr = fac.ActionRequestor("Add");
 
             String[] headers = new[] { "Name", "Range", "Type", "Patterns", "Targets" };
+            var megalist = fac.GenerateTableRequest();
             megalist.value = new TabularDataRequestValue(headers);
 
             addr.ValueChanged += () =>
@@ -443,6 +465,7 @@ namespace Consonance.Invention
 
         // this can get spammed - it's a good oppertunity to provide diet registraions cause you'll get "busy"
         // status, but, need to protect against those spams case only need reg once
+        IStringEquationFactory seq = new MockSEQ();
         public IEnumerable<InventedTrackerVM> Instances()
         {
             // Get Models - calls to this dude are by unwritten contract on worker threads.
@@ -451,7 +474,7 @@ namespace Consonance.Invention
                 var vm = Present(it);
                 if (!registered.ContainsKey(vm))
                 {
-                    var pp = registered[vm] = SimpleTrackyHelperCreator.Create(it);
+                    var pp = registered[vm] = SimpleTrackyHelperCreator.Create(it, seq);
                     pp.state = pres.AddDietPair(pp.model, pp.pres, build);
                 }
                 vm.sender = it;
@@ -506,9 +529,11 @@ namespace Consonance.Invention
         {
             var page1 = SimpleTrackyInventionRequestPages.TrackerDescriptionPage(build.requestFactory);
             var page2 = SimpleTrackyInventionRequestPages.EntryDescriptionPage(build.requestFactory);
-            var page3 = SimpleTrackyInventionRequestPages.InfoQuantifiersPage(build.requestFactory, build.GenerateTableRequest());
+            var page3 = SimpleTrackyInventionRequestPages.InfoQuantifiersPage(build.requestFactory);
+            var page4 = SimpleTrackyInventionRequestPages.TargetDesciptorsPage(build.requestFactory);
+            var page5 = SimpleTrackyInventionRequestPages.EntryInfoEquations(build.requestFactory);
 
-            var vt = build.GetValues(new[] { page1.page, page2.page, page3.page });
+            var vt = build.GetValues(new[] { page1.page, page2.page, page3.page, page4.page, page5.page });
             vt.Completed.ContinueAfter(async () =>
             {
                 await vt.Pop();
@@ -525,6 +550,8 @@ namespace Consonance.Invention
                                 page1.set(mod);
                                 page2.set(mod);
                                 page3.set(mod);
+                                page4.set(mod);
+                                page5.set(mod);
                                 conn.Insert(mod);
                                 return null; // nothing after datachanages
                             }
@@ -641,7 +668,6 @@ namespace Consonance.Invention
             public TrackerDetailsVM TrackerDetails { get; private set; }
             public TrackerDialect TrackerDialect { get; private set; }
             public VRVConnectedValue[] instanceValueFields { get; private set; }
-            public InstanceValue<double> tracked_on_entries { get; private set; }
             public IReflectedHelpyQuants<IInInfo> input { get; private set; }
             public IReflectedHelpyQuants<IOutInfo> output { get; private set; }
 

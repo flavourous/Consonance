@@ -49,10 +49,11 @@ namespace Consonance
     public class SimpleTrackyTarget : RecurringAggregatePattern
     {
         public readonly bool Tracked, Shown;
-        public readonly String TargetName;
-        public SimpleTrackyTarget(String targetName, bool tracked, bool shown, int targetRange, AggregateRangeType rangetype, int[] targetPattern, double[] patternTarget)
+        public readonly String TargetName, TargetID;
+        public SimpleTrackyTarget(String targetName,String targetID, bool tracked, bool shown, int targetRange, AggregateRangeType rangetype, int[] targetPattern, double[] patternTarget)
             : base(targetRange, rangetype, targetPattern, patternTarget)
         {
+            this.TargetID = targetID;
             this.TargetName = targetName;
             this.Tracked = tracked;
             this.Shown = shown;
@@ -81,14 +82,25 @@ namespace Consonance
 		VRVConnectedValue[] instanceValueFields { get; } // for create/edit/andmemebernames
 
 		// This has to represent any number of targets, in any number of patterns, for any period range.
-		SimpleTrackyTarget[] Calcluate(Object[] fieldValues); 
+		SimpleTrackyTarget[] Calcluate(Object[] fieldValues);
 
-		// Entries and infos
-        InstanceValue<double> tracked_on_entries { get; } // global now its not a property name
-		IReflectedHelpyQuants<InInfo> input { get; }
+        // Entries and infos
+        IReflectedHelpyQuants<InInfo> input { get; }
 		IReflectedHelpyQuants<OutInfo> output { get; }
 	}
-
+    public interface IReflectedHelpyQuants<I>
+    {
+        InstanceValue<double>[] calculation { get; } // these are the fields we want to take from/store to the info
+        IReflectedHelpyCalc[] calculators { get; }
+        InfoQuantifier[] quantifier_choices { get; }
+        Expression<Func<I, bool>> InfoComplete { get; }
+    }
+    public interface IReflectedHelpyCalc
+    {
+        String TargetID { get; }
+        InstanceValue<double> direct { get; } // this is the no-info storage on the entry (and used as a calculation cache it seems)
+        double Calculate(double[] values);
+    }
     public class InstanceValue<T>  // lets try a object-cast based one here - I think it will be better then generics even after the casts
     {
         public readonly T defaultValue;
@@ -191,14 +203,7 @@ namespace Consonance
             }
         }
     }
-    public interface IReflectedHelpyQuants<I>
-    {
-        // these expect type double
-        InstanceValue<double>[] calculation { get; } // these are the fields we want to take from/store to the info
-        InfoQuantifier[] quantifier_choices { get; }
-        double Calcluate(double[] values); // obvs
-        Expression<Func<I, bool>> InfoComplete { get; }
-    }
+    
 	class IRSPair<I>
 	{
 		public readonly IRequestStorageHelper requestStore; 
@@ -227,8 +232,8 @@ namespace Consonance
 		{
 			this.helpy = helpy; 
 			defaultTrackerStuff = new DefaultTrackerInstanceRequests (helpy.TrackerDetails.category);
-			inc = new HelpedCreation<In, InInfo> (helpy.input, helpy.tracked_on_entries);
-			ouc = new HelpedCreation<Out, OutInfo> (helpy.output, helpy.tracked_on_entries);
+			inc = new HelpedCreation<In, InInfo> (helpy.input);
+			ouc = new HelpedCreation<Out, OutInfo> (helpy.output);
 			this.flectyRequests = helpy.instanceValueFields.MakeList (s => new IRSPair<Inst>(s.CreateHelper (Validate), s));
 		}
 		void Validate()
@@ -278,9 +283,6 @@ namespace Consonance
 		where E : HBaseEntry, new()
 		where I : HBaseInfo, new()
 	{
-		// for no-info requests
-		readonly RequestStorageHelper<double> trackedQuantity;
-
 		// for info requests
         class MeasureOptionsContainer
         {
@@ -291,22 +293,20 @@ namespace Consonance
         MeasureOptionsContainer currentMeasureOption = null;
         readonly RequestStorageHelper<MultiRequestOptionValue> measureAndOptionsRequest;
         readonly Dictionary<int, int> IndexToQID = new Dictionary<int, int>();
-
-        class InfoDataContainer
+        class TargetedRequestStorage
         {
             public InstanceValue<double> quant;
             public RequestStorageHelper<double> requestStore;
         }
-        readonly IReadOnlyList<InfoDataContainer> forMissingInfoQuantities; // pull these as needed
+        readonly IReadOnlyList<TargetedRequestStorage> forMissingInfoQuantities; // pull these as needed
+        readonly IReadOnlyDictionary<String, TargetedRequestStorage> directRequests;
 		readonly IReflectedHelpyQuants<I> quant;
-        readonly InstanceValue<double> tracked;
 		readonly DefaultEntryRequests defaulter = new DefaultEntryRequests ();
 		readonly RequestStorageHelper<String> infoNameRequest;
-		public HelpedCreation(IReflectedHelpyQuants<I> quant, InstanceValue<double> tracked)
+		public HelpedCreation(IReflectedHelpyQuants<I> quant)
 		{
 			this.IsInfoComplete = quant.InfoComplete;
 			this.quant = quant;
-            this.tracked = tracked;
 
             // ready this
             Action ValidateCurrentAmount = () =>
@@ -341,19 +341,22 @@ namespace Consonance
             };
             measureAndOptionsRequest = new RequestStorageHelper<MultiRequestOptionValue>("Amount", deffer, ValidateCurrentAmount);
 
-            // we need a direct request for no info creation - and posssssibly one of each for the ones on info that might not exist.
-            // also need one for info quantity.
-            trackedQuantity = new RequestStorageHelper<double>(tracked.name, () => tracked.defaultValue, () => trackedQuantity.request.valid = true); // it's same on tinfo and entries
+            // we need direct requests for no info creation 
+            var dr = new Dictionary<String, TargetedRequestStorage>();
+            foreach (var d in quant.calculators) dr.Add(d.TargetID, Gen(d.direct));
 
-            var l = new List<InfoDataContainer> ();
-			foreach (var q in quant.calculation) {
-				RequestStorageHelper<double> ns = null;
-                ns = new RequestStorageHelper<double>(q.name, () => q.defaultValue, () => ns.request.valid = true);
-                l.Add(new InfoDataContainer { requestStore = ns, quant = q });
-			}
-			forMissingInfoQuantities = l;
-			infoNameRequest = new RequestStorageHelper<string> ("Name", () => "", () => infoNameRequest.request.valid = true);
+            // posssssibly one request of each for the ones on info that might not exist.
+            forMissingInfoQuantities = new List<TargetedRequestStorage>(from q in quant.calculation select Gen(q));
+
+            // also need one for info quantity.
+            infoNameRequest = new RequestStorageHelper<string> ("Name", () => "", () => infoNameRequest.request.valid = true);
 		}
+        TargetedRequestStorage Gen(InstanceValue<double> q)
+        {
+            RequestStorageHelper<double> ns = null;
+            ns = new RequestStorageHelper<double>(q.name, () => q.defaultValue, () => ns.request.valid = true);
+            return new TargetedRequestStorage { requestStore = ns, quant = q };
+        }
         // deal with displaying realtime calc data for calc creates and edit.
         I currInfo;
 		void SetupInfoObservers(I info)
@@ -364,7 +367,6 @@ namespace Consonance
             // Check the ClearListeners - it happens on reset and Cget.
             if (info != null)  // so that mesquant is cgetted
             {
-
                 //but this might cause dangling stuff
                 if (currentMeasureOption != null)
                     currentMeasureOption.requestStorage.requestChanged -= MeasureQuantity_request_changed;
@@ -376,7 +378,7 @@ namespace Consonance
                 currentMeasureOption = usedquant.First();
             }
             else currentMeasureOption = null;
-			trackedQuantity.request.read_only = info != null;
+            directRequests.Act(d => d.Value.requestStore.request.read_only = info != null);
 		}
         void BeginObserving()
         {
@@ -388,13 +390,14 @@ namespace Consonance
 		{
             // update the calories field with a calc
             var amt = currentMeasureOption.quant.ConnectedValue.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
-		    trackedQuantity.request.value = CalcVal((double)amt, currInfo);
+            var cv=CalcVals((double)amt, currInfo);
+            directRequests.Act(d => d.Value.requestStore.request.value = cv[d.Key]);
 		}
 		#region IEntryCreation implementation
 
 		public void ResetRequests ()
 		{
-			trackedQuantity.Reset ();
+            directRequests.Act(d => d.Value.requestStore.Reset());
 			if(currentMeasureOption != null)
                 currentMeasureOption.requestStorage.Reset ();
 			foreach (var mi in forMissingInfoQuantities)
@@ -404,8 +407,8 @@ namespace Consonance
 
 		public BindingList<object> CreationFields (IValueRequestFactory factory)
 		{
-			// we just need the amount...we can get the name and when etc from a defaulter...
-			var rp = new BindingList<object> () { trackedQuantity.CGet(factory.DoubleRequestor) };
+            // we just need the amount...we can get the name and when etc from a defaulter...
+            var rp = directRequests.MakeBindingList(d => d.Value.requestStore.CGet(factory.DoubleRequestor));
 			defaulter.PushInDefaults (null, rp, factory);
 			SetupInfoObservers (null);
 			return rp;
@@ -414,7 +417,7 @@ namespace Consonance
 		public E Create ()
 		{
 			var rv = new E ();
-            tracked.valueSetter (rv, trackedQuantity.request.value);
+            directRequests.Act(d => d.Value.quant.valueSetter(rv, d.Value.requestStore.request.value));
 			defaulter.Set (rv);
 			return rv;
 		}
@@ -423,7 +426,9 @@ namespace Consonance
 		{
             // do requests
 			SetupInfoObservers (info);
-            var blo = new BindingList<Object>() { trackedQuantity.CGet(factory.DoubleRequestor), currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate) };
+            var blo = new BindingList<Object>();
+            blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate));
+            blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));
 			ProcessRequestsForInfo (blo, factory, info);
 			defaulter.PushInDefaults(null, blo, factory);
             BeginObserving();
@@ -437,10 +442,8 @@ namespace Consonance
             { 
 				var getit = q.requestStore.CGet (factory.DoubleRequestor); // make sure cgot it.
 				var ival = (double?)q.quant.valueGetter (info);
-				if (ival.HasValue)
-					q.requestStore.request.value = ival.Value; // ok got it, set requestor for easy sames
-				else
-					requestoutput.Add (getit); // ash need this so adddyyy. FIXME this like never occurrsss...but you know...
+				if (ival.HasValue) q.requestStore.request.value = ival.Value; // ok got it, set requestor for easy sames
+				else requestoutput.Add (getit); // ash need this so adddyyy. FIXME this like never occurrsss...but you know...
 			}
 		}
 
@@ -448,17 +451,17 @@ namespace Consonance
 		{
 			var rv = new E ();
 			var amount = currentMeasureOption.quant.ConnectedValue.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
-			var res = CalcVal ((double)amount, info);
+			var res = CalcVals ((double)amount, info);
 
             // techniacllly only need to set amount field, cause, info will be set too. and the val is calculated!
             // but i think that calc only happens here during creation and editing
 			currentMeasureOption.quant.ConnectedValue.valueSetter (rv, amount);
-            tracked.valueSetter(rv, res);
+            directRequests.Act(d => d.Value.requestStore.request.value = res[d.Key]);
 			defaulter.Set (rv);
 			return rv;
 		}
 
-		double CalcVal(double entryAmount, I info)
+		IReadOnlyDictionary<String,double> CalcVals(double entryAmount, I info)
 		{
             // we need the amount on the entry, vs, the amount on the info to factor what goes into the calculation linearly.
             double fac = entryAmount / info.quantity;
@@ -468,17 +471,17 @@ namespace Consonance
 			List<double> vals = new List<double> ();
 			foreach (var tv in forMissingInfoQuantities)
 				vals.Add (tv.requestStore.request.value*fac);
-			return quant.Calcluate (vals.ToArray ());
+            return quant.calculators.ToDictionary(c => c.TargetID, c => c.Calculate(vals.ToArray()));
 		}
 
 		public BindingList<object> EditFields (E toEdit, IValueRequestFactory factory)
 		{
-			// request objects
-			var rp = new BindingList<object> () { trackedQuantity.CGet(factory.DoubleRequestor) };
+            // request objects
+            var rp = directRequests.MakeBindingList(d => d.Value.requestStore.CGet(factory.DoubleRequestor));
 			defaulter.PushInDefaults (toEdit, rp, factory);
-           
-			// init request objects - defaulter did both
-			trackedQuantity.request.value = tracked.valueGetter(toEdit);
+
+            // init request objects - defaulter did both
+            directRequests.Act(d => d.Value.requestStore.request.value = d.Value.quant.valueGetter(toEdit));
 
 			// give it back
 			SetupInfoObservers (null); // doesnt involve quantities
@@ -489,7 +492,7 @@ namespace Consonance
 		{
 			// commit edit...simple one
 			defaulter.Set(toEdit);
-			tracked.valueSetter(toEdit, trackedQuantity.request.value);
+            directRequests.Act(d => d.Value.quant.valueSetter(toEdit, d.Value.requestStore.request.value));
 			return toEdit;
 		}
 
@@ -497,8 +500,10 @@ namespace Consonance
 		{
 			// requests for editing a calced one....hmmouch?
 			SetupInfoObservers (info);
-			var blo = new BindingList<Object> () { trackedQuantity.CGet(factory.DoubleRequestor),  currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate) };
-			currentMeasureOption.requestStorage.requestValue = currentMeasureOption.quant.ConnectedValue.valueGetter(toEdit);
+            var blo = new BindingList<Object>();
+            blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate));
+            blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));
+            currentMeasureOption.requestStorage.requestValue = currentMeasureOption.quant.ConnectedValue.valueGetter(toEdit);
 			ProcessRequestsForInfo (blo, factory, info); // initially, no, we'll add none...but maybe subsequently.
 			defaulter.PushInDefaults (toEdit, blo, factory);
             BeginObserving();
@@ -509,11 +514,11 @@ namespace Consonance
 		{
 			defaulter.Set (toEdit);
             var amount = currentMeasureOption.quant.ConnectedValue.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
-            double res = CalcVal ((double)amount, info);
+            var res = CalcVals ((double)amount, info);
 
             currentMeasureOption.quant.ConnectedValue.valueSetter(toEdit, amount);
-            tracked.valueSetter(toEdit, res);
-			return toEdit;
+            directRequests.Act(d => d.Value.requestStore.request.value = res[d.Key]);
+            return toEdit;
 		}
 
         #endregion
@@ -613,7 +618,7 @@ namespace Consonance
                 TimeSpan.Zero,
                 entry.entryName,
                 info == null ? noninfo : QuantyGet(helpy.input, entry, info),
-                new KVPList<string, double> { { helpy.tracked_on_entries.name, helpy.tracked_on_entries.valueGetter(entry) } }
+                new KVPList<string, double> { helpy.input.calculators.ToKeyValue(d => d.TargetID, d => d.direct.valueGetter(entry)) }
             );
 		}
 		public EntryLineVM GetRepresentation (Out entry, OutInfo info)
@@ -623,7 +628,7 @@ namespace Consonance
                 TimeSpan.Zero,
                 entry.entryName,
                 info == null ? noninfo : QuantyGet(helpy.output,entry, info),
-                new KVPList<string, double> { { helpy.tracked_on_entries.name, helpy.tracked_on_entries.valueGetter(entry) } }
+                new KVPList<string, double> { helpy.output.calculators.ToKeyValue(d => d.TargetID, d => d.direct.valueGetter(entry)) }
             );
 		}
 
@@ -646,10 +651,10 @@ namespace Consonance
 			foreach (var target in GetTargets(entry)) {
                 if (!target.Shown) continue;
 				if (target.DayPattern.Length == 1)
-					kl.Add (helpy.tracked_on_entries.name + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
+					kl.Add (target.TargetID + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
 				else
 					for (int i = 0; i < target.DayPattern.Length; i++)
-						kl.Add (helpy.tracked_on_entries.name + " for " + TimeSpan.FromDays (target.DayPattern [i]).WithSuffix (true), target.DayTargets [i]);	
+						kl.Add (target.TargetID + " for " + TimeSpan.FromDays (target.DayPattern [i]).WithSuffix (true), target.DayTargets [i]);	
 			}
 			return new TrackerInstanceVM(
 				dialect,
@@ -663,11 +668,11 @@ namespace Consonance
         KVPList<String, double> GetIK<A>(IReflectedHelpyQuants<A> q, A info) where A : HBaseInfo
         {
             var uq = GetQuant(info.quantifierID, helpy.input.quantifier_choices);
-            return new KVPList<string, double>
-                    {
-                        { helpy.tracked_on_entries.name, helpy.tracked_on_entries.valueGetter(info) },
-                        { uq.ConnectedValue.name, (double)uq.ConnectedValue.valueGetter(info) }
-                    };
+            var args = q.calculation.Select(c => c.valueGetter(info)).ToArray();
+            var res = q.calculators.ToKeyValue(c => c.TargetID, c => c.Calculate(args));
+            var kl = new KVPList<string, double> { res };
+            kl.Add(uq.ConnectedValue.name, (double)uq.ConnectedValue.valueGetter(info));
+            return kl;
         }
 		public InfoLineVM GetRepresentation (InInfo info)
 		{
@@ -691,11 +696,13 @@ namespace Consonance
 			var targets = GetTargets (di);
 			for (var ti=0; ti < targets.Length; ti++) {
                 if (!targets[ti].Tracked) continue;
-				var trg = targets [ti].FindTargetForDay(di.startpoint, dayStart);
-				var dtr = targets [ti].DayTargetRange;
+				var trg = targets[ti].FindTargetForDay(di.startpoint, dayStart);
+				var dtr = targets[ti].DayTargetRange;
                 var dtt = targets[ti].DayTargetRangeType;
                 var yret = new TrackingInfoVM { targetValue = trg.target };
-				GetValsForRange (eats, burns, trg.begin, trg.end, out yret.inValues, out yret.outValues);
+                var tgin = helpy.input.calculators.Where(c => c.TargetID == targets[ti].TargetID).First().direct.valueGetter;
+                var tgout = helpy.output.calculators.Where(c => c.TargetID == targets[ti].TargetID).First().direct.valueGetter;
+                GetValsForRange (eats, burns, tgin,tgout,  trg.begin, trg.end, out yret.inValues, out yret.outValues);
                 // FIXME I'm not sure about AggregateRangeType.DaysFromStart, if dtr == 0 means range = 0 or 1, ready nope
                 if (dtr ==0)
                     yret.targetValueName = targets[ti].TargetName;
@@ -709,15 +716,15 @@ namespace Consonance
 				yield return yret;
 			}
 		}
-		void GetValsForRange(EntryRetriever<In> eats, EntryRetriever<Out> burns, DateTime s, DateTime e, out TrackingElementVM[] invals,out TrackingElementVM[] outvals )
+		void GetValsForRange(EntryRetriever<In> eats, EntryRetriever<Out> burns, Func<In,double> tgin, Func<Out,double> tgout,  DateTime s, DateTime e, out TrackingElementVM[] invals,out TrackingElementVM[] outvals )
 		{
 			List<TrackingElementVM> vin = new List<TrackingElementVM> (), vout = new List<TrackingElementVM> ();
 			foreach (var ient in eats(s, e)) {
-				var v = helpy.tracked_on_entries.valueGetter(ient);
+				var v = tgin(ient);
 				vin.Add (new TrackingElementVM () { value = v , name = ient.entryName });
 			}
 			foreach (var oent in burns(s,e)) {
-				var v = helpy.tracked_on_entries.valueGetter(oent);
+				var v = tgout(oent);
 				vout.Add (new TrackingElementVM () { value = v, name = oent.entryName });
 			}
 			invals = vin.ToArray ();
