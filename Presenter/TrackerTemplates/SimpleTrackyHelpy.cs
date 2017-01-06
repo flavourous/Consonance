@@ -344,6 +344,7 @@ namespace Consonance
             // we need direct requests for no info creation 
             var dr = new Dictionary<String, TargetedRequestStorage>();
             foreach (var d in quant.calculators) dr.Add(d.TargetID, Gen(d.direct));
+            directRequests = dr;
 
             // posssssibly one request of each for the ones on info that might not exist.
             forMissingInfoQuantities = new List<TargetedRequestStorage>(from q in quant.calculation select Gen(q));
@@ -428,7 +429,7 @@ namespace Consonance
 			SetupInfoObservers (info);
             var blo = new BindingList<Object>();
             blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate));
-            blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));
+            blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));//readonly
 			ProcessRequestsForInfo (blo, factory, info);
 			defaulter.PushInDefaults(null, blo, factory);
             BeginObserving();
@@ -456,7 +457,7 @@ namespace Consonance
             // techniacllly only need to set amount field, cause, info will be set too. and the val is calculated!
             // but i think that calc only happens here during creation and editing
 			currentMeasureOption.quant.ConnectedValue.valueSetter (rv, amount);
-            directRequests.Act(d => d.Value.requestStore.request.value = res[d.Key]);
+            directRequests.Act(d => d.Value.quant.valueSetter(rv, res[d.Key]));
 			defaulter.Set (rv);
 			return rv;
 		}
@@ -502,7 +503,7 @@ namespace Consonance
 			SetupInfoObservers (info);
             var blo = new BindingList<Object>();
             blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate));
-            blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));
+            blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));//readonly
             currentMeasureOption.requestStorage.requestValue = currentMeasureOption.quant.ConnectedValue.valueGetter(toEdit);
 			ProcessRequestsForInfo (blo, factory, info); // initially, no, we'll add none...but maybe subsequently.
 			defaulter.PushInDefaults (toEdit, blo, factory);
@@ -517,7 +518,7 @@ namespace Consonance
             var res = CalcVals ((double)amount, info);
 
             currentMeasureOption.quant.ConnectedValue.valueSetter(toEdit, amount);
-            directRequests.Act(d => d.Value.requestStore.request.value = res[d.Key]);
+            directRequests.Act(d => d.Value.quant.valueSetter(toEdit, res[d.Key]));
             return toEdit;
 		}
 

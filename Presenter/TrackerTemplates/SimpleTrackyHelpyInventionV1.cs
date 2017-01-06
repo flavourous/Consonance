@@ -126,6 +126,8 @@ namespace Consonance.Invention
             qod_in.Clear();
             qod_out.Clear();
             targets.Clear();
+            outequations.Clear();
+            inequations.Clear();
         }
 
         const int keyto_id = 1;
@@ -142,10 +144,7 @@ namespace Consonance.Invention
             get { return _qod_out ?? (_qod_out = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(id, qod_out_pid, keyto_id)); }
         }
 
-
-        // Note: SimpleTrackyHelpy Deals with Targets of one quantity (e.g. calories)
-        // so you can have many of these, but all describe the same 
-        // Tracker targets foriegn relationship
+        // targets!
         int targets_pid = 3;
         KeyTo<SimpleTrackyTrackingTargetDescriptor> _targets;
         public KeyTo<SimpleTrackyTrackingTargetDescriptor> targets
@@ -155,11 +154,19 @@ namespace Consonance.Invention
         public String target_args { get; set; } // comma seperated, used by targets equations.
 
         // Entries
-        public String tracked { get; set; }
-        public String inargs { get; set; }
-        public String inequation { get; set; }
-        public String outargs { get; set; }
-        public String outequation { get; set; }
+        int inequations_pid = 4, outequations_pid = 5;
+        KeyTo<SimpleTrackyTrackingEquationDescriptor> _inequations;
+        public KeyTo<SimpleTrackyTrackingEquationDescriptor> inequations
+        {
+            get { return _inequations ?? (_inequations = new KeyTo<SimpleTrackyTrackingEquationDescriptor>(id, inequations_pid, keyto_id)); }
+        }
+        KeyTo<SimpleTrackyTrackingEquationDescriptor> _outequations;
+        public KeyTo<SimpleTrackyTrackingEquationDescriptor> outequations
+        {
+            get { return _outequations ?? (_outequations = new KeyTo<SimpleTrackyTrackingEquationDescriptor>(id, outequations_pid, keyto_id)); }
+        }
+        public String in_equations_args { get; set; }
+        public String out_equations_args { get; set; }
 
         // managment
         public Guid uid { get; set; }
@@ -183,10 +190,16 @@ namespace Consonance.Invention
         public double defaultvalue { get; set; }
         public String Name { get; set; }
     }
+    class SimpleTrackyTrackingEquationDescriptor : KeyableBaseDB
+    {
+        public String targetID { get; set; }
+        public String equation { get; set; }
+    }
     class SimpleTrackyTrackingTargetDescriptor : KeyableBaseDB
     {
+        public String targetID { get; set; }
         // note on equations, "1" is an equation
-        
+
         // display config
         public String name { get; set; }
         public bool Track { get; set; } // can tracking be toggled in instance
@@ -199,8 +212,6 @@ namespace Consonance.Invention
         // Target calc
         public String targertPattern { get; set; } // spec for below eg "1,2,1" (fixed) or "arg1*arg2+arg3, arg2" (from calc / args).  so the same.
         public String patternTarget { get; set; } // same for values - should match in count of above.
-        //public int[] targetPattern { get; set; } 
-        //public double[] patternTarget { get; set; } //always spec in trackerinstance / calculatd from
     }
     #endregion
 
@@ -338,6 +349,7 @@ namespace Consonance.Invention
 
 
             var nreq = fac.StringRequestor("Name");
+            var tidreq = fac.StringRequestor("TargetID");
             var argreq = fac.StringRequestor("Equation arguments");
             var rreq = fac.StringRequestor("Target range equation");
             var rtreq = fac.OptionGroupRequestor("Target range Type");
@@ -346,7 +358,7 @@ namespace Consonance.Invention
             var teqreq = fac.StringRequestor("Target equations");
             var addr = fac.ActionRequestor("Add");
 
-            String[] headers = new[] { "Name", "Range", "Type", "Patterns", "Targets" };
+            String[] headers = new[] { "Name", "Id", "Range", "Type", "Patterns", "Targets" };
             var megalist = fac.GenerateTableRequest();
             megalist.value = new TabularDataRequestValue(headers);
 
@@ -356,6 +368,7 @@ namespace Consonance.Invention
                 var ots = rtreq.value.OptionNames[rtreq.value.SelectedOption];
                 megalist.value.Items.Add(new Stringy[] {
                         new Stringy(nreq.value,nreq.value),
+                        new Stringy(tidreq.value,tidreq.value),
                         new Stringy(rreq.value,rreq.value),
                         new Stringy(ots,ot),
                         new Stringy(peqreq.value,peqreq.value),
@@ -367,7 +380,7 @@ namespace Consonance.Invention
             megalist.ValueChanged += () => megalist.valid = megalist.value.Items.Count > 0;
             megalist.value.Items.CollectionChanged += (a, b) => megalist.valid = megalist.value.Items.Count > 0;
 
-            page.SetList(new BindingList<object> { nreq, rreq, rtreq, argreq, peqreq, teqreq });
+            page.SetList(new BindingList<object> { nreq, tidreq, rreq, rtreq, argreq, peqreq, teqreq });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 // get targets
@@ -406,19 +419,75 @@ namespace Consonance.Invention
         public static SimpleTrackyInventionRequestPages EntryInfoEquations(IValueRequestFactory fac)
         {
             var page = new GetValuesPage("What are the equations for entries?");
-            var p2vr = (from s in new[] {
-                        "Input Arguments","Input Equation",
-                        "Output Arguments","Output Equation" }
-                        select fac.StringRequestor(s)).ToArray();
-            page.SetList(new BindingList<object>((from p in p2vr select p.request).ToList()));
+
+            // Overall
+            var iargreq = fac.StringRequestor("In Equation arguments");
+            var oargreq = fac.StringRequestor("Out Equation arguments");
+
+            //each eq        
+            var tidreq = fac.StringRequestor("TargetID");
+            var ereq = fac.StringRequestor("Equation");
+            var ioreq = fac.OptionGroupRequestor("For");
+            var nams = new[] { "Input", "Output" };
+            ioreq.value = new OptionGroupValue(nams);
+            var addr = fac.ActionRequestor("Add");
+
+            String[] headers = new[] { "Name", "For", "Equation" };
+            var megalist = fac.GenerateTableRequest();
+            megalist.value = new TabularDataRequestValue(headers);
+
+            addr.ValueChanged += () =>
+            {
+                var inout = ioreq.value.SelectedOption;
+                megalist.value.Items.Add(new Stringy[] {
+                        new Stringy(tidreq.value,tidreq.value),
+                        new Stringy(nams[inout],inout),
+                        new Stringy(ereq.value,ereq.value),
+                    });
+            };
+
+            
+
+            page.SetList(new BindingList<object> { tidreq, ioreq, ereq });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
-                mod.inargs = p2vr[0].value;
-                mod.inequation = p2vr[1].value;
-                mod.outargs = p2vr[2].value;
-                mod.outequation = p2vr[3].value;
+                // get equations
+                var iequations = new List<SimpleTrackyTrackingEquationDescriptor>();
+                var oequations = new List<SimpleTrackyTrackingEquationDescriptor>();
+                foreach (var q in megalist.value.Items)
+                {
+                    var qq = q as Stringy[];
+                    var eq = new SimpleTrackyTrackingEquationDescriptor
+                    {
+                        targetID = qq[0].o as String,
+                        equation = qq[2].o as string
+                    };
+                    if ((int)qq[1].o == 0) iequations.Add(eq);
+                    else oequations.Add(eq);
+                }
+                mod.in_equations_args = iargreq.value;
+                mod.out_equations_args = oargreq.value;
+                mod.inequations.Replace(iequations);
+                mod.outequations.Replace(oequations);
             };
-            foreach (var vr in p2vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value); ;
+
+            Action ValidateEquations = () =>
+            {
+                foreach(var argreq in new[] { iargreq, oargreq })
+                    argreq.valid = !String.IsNullOrWhiteSpace(argreq.value);
+
+                var mvi = megalist.value.Items;
+                bool sameNumberOfEquations = mvi.Where(d => (int)d[1] == 0).Count() == mvi.Where(d => (int)d[1] == 1).Count();
+                bool equationsMatchArgs = true;
+                megalist.valid = sameNumberOfEquations && equationsMatchArgs && megalist.value.Items.Count > 0;
+            };
+
+            addr.valid = tidreq.valid = ioreq.valid = ereq.valid = true; // not used - the list is...
+            // FIXME which one?
+            megalist.ValueChanged += ValidateEquations;
+            megalist.value.Items.CollectionChanged += (a, b) => ValidateEquations();
+
+            page.SetListyRequest(megalist);
             return new SimpleTrackyInventionRequestPages(page, set);
         }
     }
@@ -452,6 +521,7 @@ namespace Consonance.Invention
             // ensure tables
             conn.CreateTable<SimpleTrackyInfoQuantifierDescriptor>();
             conn.CreateTable<SimpleTrackyTrackingTargetDescriptor>();
+            conn.CreateTable<SimpleTrackyTrackingEquationDescriptor>();
             conn.CreateTable<SimpleTrackyHelpyInventionV1Model>();
         }
 
@@ -607,11 +677,17 @@ namespace Consonance.Invention
             readonly SimpleTrackyHelpyInventionV1Model model;
             public RoutedHelpyModel(InventedTracker tmh, SimpleTrackyHelpyInventionV1Model model) : base(tmh)
             {
+                var mu = model.uid.ToString();
+                var tracked = model.targets.Get().Select(d => d.targetID).Distinct();
+                var oi = 
                 info = new Dictionary<Type, desc>
                 {
-                    { typeof(TrackerInstance), new desc(model.uid.ToString(),model.target_args.Split(',')) },
+                    { typeof(TrackerInstance), new desc(String.Format("{0}_entry_in", mu),model.target_args.Split(',')) },
+                    { typeof(IInEntry), new desc(String.Format("{0}_entry_in", mu), tracked.ToArray() ) },
+                    { typeof(IOutEntry), new desc(String.Format("{0}_entry_out", mu), tracked.ToArray() ) },
+                    { typeof(IInInfo), new desc(String.Format("{0}_info_in", mu), model.in_equations_args.Split(',') ) },
+                    { typeof(IOutInfo), new desc(String.Format("{0}_info_out", mu), model.out_equations_args.Split(',') ) },
                 };
-                throw new NotImplementedException("need more table routes");
             }
 
             readonly Dictionary<Type, desc> info;
@@ -664,6 +740,10 @@ namespace Consonance.Invention
             {
                 return (o, v) => ((BaseDB)o).AdHoc[name] = v;
             }
+            static InstanceValue<double> NSet(String n)
+            {
+                return new InstanceValue<double>(NiceArgName(n), ArgGet<double>(n), ArgSet<double>(n), 0.0);
+            }
 
             public TrackerDetailsVM TrackerDetails { get; private set; }
             public TrackerDialect TrackerDialect { get; private set; }
@@ -711,41 +791,49 @@ namespace Consonance.Invention
                     model.InputInfoPlural, model.OutputInfoPlural,
                     model.InputInfoVerbPast, model.OutputInfoVerbPast);
 
-                // Args used in all equations for a tracker
-                var Args = model.target_args.Split(',');
+                // Args used in target equations for a tracker
+                var TargetArgs = model.target_args.Split(',');
 
                 // cached the equaion espression thing
-                targets = (from des in model.targets.Get() select TargetEquations(des, seq, Args)).ToArray();
+                targets = (from des in model.targets.Get() select TargetEquations(des, seq, TargetArgs)).ToArray();
 
                 instanceValueFields = 
                     (
-                        from m in Args select VRVConnectedValue.FromType(
+                        from m in TargetArgs select VRVConnectedValue.FromType(
                         0.0, NiceArgName(m), ArgGet<Object>(m), ArgSet<Object>(m), d => d.DoubleRequestor)
                     ).ToArray();
 
-                tracked_on_entries = new InstanceValue<double>
-                    (
-                    NiceArgName(model.tracked), 
-                    ArgGet<double>(model.tracked), ArgSet<double>(model.tracked), 
-                    0.0
-                    );
+                var ia = model.in_equations_args.Split(',');
+                var oa = model.out_equations_args.Split(',');
                 input = new ITT<IInInfo>
                 {
                     quantifier_choices = GetIQ(model.qod_in),
-                    InfoComplete = GenIC<IInInfo>(model.inargs.Split(',')),
-                    calculation = (from a in model.inargs.Split(',')
+                    InfoComplete = GenIC<IInInfo>(ia),
+                    calculation = (from a in ia
                                    select new InstanceValue<double>(NiceArgName(a),
                                    InfoGet(a), InfoSet(a), 0.0)).ToArray(),
-                    equation = seq.Create(model.inequation, model.inargs)
+                    calculators = (from e in model.inequations.Get() select
+                                       new ITTe
+                                       {
+                                           TargetID = e.targetID,
+                                           equation = seq.Create(e.equation, ia),
+                                           direct = NSet(e.targetID)
+                                       }).ToArray()
                 };
                 output = new ITT<IOutInfo>
                 {
                     quantifier_choices = GetIQ(model.qod_out),
-                    InfoComplete = GenIC<IOutInfo>(model.inargs.Split(',')),
-                    calculation = (from a in model.outargs.Split(',')
+                    InfoComplete = GenIC<IOutInfo>(oa),
+                    calculation = (from a in oa
                                    select new InstanceValue<double>(NiceArgName(a),
                                    InfoGet(a), InfoSet(a), 0.0)).ToArray(),
-                    equation = seq.Create(model.outequation, model.outargs)
+                    calculators = (from e in model.outequations.Get() select
+                                        new ITTe
+                                        {
+                                            TargetID = e.targetID,
+                                            equation = seq.Create(e.equation, oa),
+                                            direct = NSet(e.targetID)
+                                        }).ToArray()
                 };
             }
 
@@ -754,7 +842,7 @@ namespace Consonance.Invention
                 var dv = (from f in fieldValues select f is double ? (double)f : 0.0).ToArray();
                 return (from t in targets
                  select new SimpleTrackyTarget(
-                     t.des.name, t.des.Track, t.des.Shown,
+                     t.des.name, t.des.targetID, t.des.Track, t.des.Shown,
                      (int)t.range_equation.calculate(dv), t.des.rangetype,
                      (from s in t.target_patterns select s.calculate(dv)).Cast<int>().ToArray(),
                      (from s in t.pattern_targets select s.calculate(dv)).ToArray())
@@ -763,11 +851,17 @@ namespace Consonance.Invention
         }
         class ITT<T> : IReflectedHelpyQuants<T> where T : HBaseInfo
         {
-            public IStringEquation equation { get; set; }
             public InstanceValue<double>[] calculation { get; set; }
             public Expression<Func<T, bool>> InfoComplete { get; set; }
             public InfoQuantifier[] quantifier_choices { get; set; }
-            public double Calcluate(double[] values) { return equation.calculate(values); }
+            public IReflectedHelpyCalc[] calculators { get; set; }
+        }
+        class ITTe : IReflectedHelpyCalc
+        {
+            public InstanceValue<double> direct { get; set; }
+            public string TargetID { get; set; } 
+            public IStringEquation equation { get; set; }
+            public double Calculate(double[] values) { return equation.calculate(values); }
         }
 
         public class Holdy
