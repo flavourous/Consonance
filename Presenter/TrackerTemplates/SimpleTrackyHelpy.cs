@@ -10,12 +10,16 @@ using System.Linq;
 namespace Consonance
 {
     // basemodels
-    public abstract class HBaseInfo : BaseInfo
+    interface HQ
+    {
+        double quantity { get; set; }
+    }
+    public abstract class HBaseInfo : BaseInfo,HQ
     {
         public int quantifierID { get; set; }
         public double quantity { get; set; }
     }
-    public abstract class HBaseEntry : BaseEntry
+    public abstract class HBaseEntry : BaseEntry,HQ
     {
         public double quantity { get; set; }
     }
@@ -170,7 +174,7 @@ namespace Consonance
     {
         public static InfoQuantifier FromType(InfoQuantifier.InfoQuantifierTypes t, String name, int uid, double dv)
         {
-            return InfoQuantifier.FromType(t, name, uid, dv, o => ((HBaseInfo)o).quantity, (o, v) => ((HBaseInfo)o).quantity = (double)v);
+            return InfoQuantifier.FromType(t, name, uid, dv, o => ((HQ)o).quantity, (o, v) => ((HQ)o).quantity = (double)v);
         }
     }
     public sealed class InfoQuantifier
@@ -271,7 +275,7 @@ namespace Consonance
 			Edit (ti);
 			return ti;
 		}
-		public void Edit (Inst toEdit)
+		public void Edit (Inst toEdit)  
 		{
 			defaultTrackerStuff.Set (toEdit);
             foreach (var fr in flectyRequests) fr.descriptor.valueSetter(toEdit, fr.descriptor.ConvertRequestValueToData(fr.requestStore.requestValue));
@@ -619,7 +623,7 @@ namespace Consonance
                 TimeSpan.Zero,
                 entry.entryName,
                 info == null ? noninfo : QuantyGet(helpy.input, entry, info),
-                new KVPList<string, double> { helpy.input.calculators.ToKeyValue(d => d.TargetID, d => d.direct.valueGetter(entry)) }
+                new KVPList<string, double>(helpy.input.calculators.ToKeyValue(d => d.TargetID, d => d.direct.valueGetter(entry)))
             );
 		}
 		public EntryLineVM GetRepresentation (Out entry, OutInfo info)
@@ -629,7 +633,7 @@ namespace Consonance
                 TimeSpan.Zero,
                 entry.entryName,
                 info == null ? noninfo : QuantyGet(helpy.output,entry, info),
-                new KVPList<string, double> { helpy.output.calculators.ToKeyValue(d => d.TargetID, d => d.direct.valueGetter(entry)) }
+                new KVPList<string, double>(helpy.output.calculators.ToKeyValue(d => d.TargetID, d => d.direct.valueGetter(entry)))
             );
 		}
 
@@ -668,10 +672,10 @@ namespace Consonance
 		}
         KVPList<String, double> GetIK<A>(IReflectedHelpyQuants<A> q, A info) where A : HBaseInfo
         {
-            var uq = GetQuant(info.quantifierID, helpy.input.quantifier_choices);
+            var uq = GetQuant(info.quantifierID, q.quantifier_choices);
             var args = q.calculation.Select(c => c.valueGetter(info)).ToArray();
             var res = q.calculators.ToKeyValue(c => c.TargetID, c => c.Calculate(args));
-            var kl = new KVPList<string, double> { res };
+            var kl = new KVPList<string, double>(res);
             kl.Add(uq.ConnectedValue.name, (double)uq.ConnectedValue.valueGetter(info));
             return kl;
         }

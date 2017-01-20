@@ -70,8 +70,8 @@ namespace Consonance.XamarinFormsView.PCL
                         leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
 
                         // already UI thread for pagecomplete handler
-                        var plr = pages[npage].listyRequest;
-                        if (plr != null) vrv.ListyMode(plr);
+                        var plr = pages[npage].valuerequests.FirstOrDefault(r=>r is IValueRequest<TabularDataRequestValue>);
+                        if (plr != null) vrv.ListyMode(plr as IValueRequest<TabularDataRequestValue>);
                         else vrv.NormalMode();
                     }
                 };

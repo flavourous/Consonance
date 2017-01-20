@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 
 namespace Consonance.Invention
 {
-
     // interface for an as yet unknown lib to generate and evaluate expressions from stringys
     #region String equation evaluator
     interface IStringEquationFactory
@@ -28,24 +27,32 @@ namespace Consonance.Invention
         String[] arguments { get; }
         double calculate(params double[] args);
     }
-    class MockSEQ : IStringEquationFactory
+    class DataTableSEQ : IStringEquationFactory
     {
         class ms : IStringEquation
         {
+            NCalc.Expression exp;
+            public ms(String eq, String[] args)
+            {
+                equation = eq;
+                exp = new NCalc.Expression(eq);
+                arguments = args;
+            }
+            
             public string[] arguments{ get; set; }
             public string equation{ get; set; }
             public double calculate(params double[] args)
             {
-                return 0.0;
+                for (int i = 0; i < args.Length; i++)
+                    exp.Parameters[arguments[i]] = args[i];
+                var res = exp.Evaluate();
+                var dres = Convert.ToDouble(res);
+                return dres;
             }
         }
         public IStringEquation Create(string equation, params string[] args)
         {
-            return new ms
-            {
-                arguments = args,
-                equation = equation
-            };
+            return new ms(equation, args);
         }
     }
     #endregion
@@ -59,53 +66,84 @@ namespace Consonance.Invention
 
     #region Helpers (move?)
     // Helpers for more complex models here
-    public static class GlobalForKeyTo
+    static class GlobalForKeyTo
     {
         public static SQLiteConnection conn;
     }
     public class KeyableBaseDB : BaseDB
     {
-        public int fk { get; set; }
+        public int fk_id { get; set; }
         public int fk_mid { get; set; }
         public int fk_pid { get; set; }
     }
-    public class KeyTo<T> where T : KeyableBaseDB
+    public interface IKeyTo
     {
-        int pid, mid, id;
-        public KeyTo(int id, int pid, int mid)
+        void Clear();
+        void Commit();
+    }
+    public class KeyTo<T> : IKeyTo where T : KeyableBaseDB
+    {
+        public delegate int gint();
+        readonly int pid, mid;
+        gint idd;
+        int id { get { return idd(); } }
+        public KeyTo(gint id, int pid, int mid)
         {
             this.mid = mid; // id of model (class)  
             this.pid = pid; // id of prop on model
-            this.id = id; // id of instance of model connecting to.
+            this.idd = id; // id of instance of model connecting to.
+        }
+        TableQuery<T> IGet()
+        {
+            return GlobalForKeyTo.conn.Table<T>().Where(t => t.fk_id == id && t.fk_mid == mid && t.fk_pid == pid);
         }
         public IEnumerable<T> Get()
         {
-            return GlobalForKeyTo.conn.Table<T>().Where(t => t.fk == id && t.fk_mid == mid && t.fk_pid == pid);
+            var ret = IGet();
+            if (ToRemove.Count > 0) ret = ret.Where(k => !ToRemove.ContainsKey(k.id));
+            if (ToAdd.Count > 0) return ret.Concat(ToAdd);
+            return ret;
         }
+        Dictionary<int, T> ToRemove = new Dictionary<int, T>();
         public void Remove(IEnumerable<T> values)
         {
-            HashSet<int> pks = new HashSet<int>(from v in values select v.id);
-            GlobalForKeyTo.conn.Table<T>().Delete(k => pks.Contains(k.id));
+            foreach (var v in values)
+                if (!ToAdd.Remove(v))
+                    ToRemove[v.id] = v;
         }
+        HashSet<T> ToAdd = new HashSet<T>();
         public void Add(IEnumerable<T> values)
         {
-            // reset.
             foreach (var v in values)
+                if (!ToRemove.Remove(v.id))
+                    ToAdd.Add(v);
+        }
+        public void Replace(IEnumerable<T> values)
+        {
+            ToRemove.Clear();
+            ToAdd.Clear();
+            IGet().Act(k => ToRemove[k.id] = k);
+            Add(values);
+        }
+
+        public void Clear()
+        {
+            GlobalForKeyTo.conn.Table<T>().Delete(t => t.fk_mid == mid && t.fk_pid == pid);
+        }
+        public void Commit()
+        {
+            foreach (var v in ToRemove)
+                GlobalForKeyTo.conn.Delete<T>(v.Key);
+            ToRemove.Clear();
+
+            foreach (var v in ToAdd)
             {
-                v.fk = id;
+                v.fk_id = id;
                 v.fk_mid = mid;
                 v.fk_pid = pid;
                 GlobalForKeyTo.conn.Insert(v);
             }
-        }
-        public void Replace(IEnumerable<T> values)
-        {
-            Clear();
-            Add(values);
-        }
-        public void Clear()
-        {
-            GlobalForKeyTo.conn.Table<T>().Delete(t => t.fk_mid == mid && t.fk_pid == pid);
+            ToAdd.Clear();
         }
     }
     #endregion
@@ -121,13 +159,16 @@ namespace Consonance.Invention
     class SimpleTrackyHelpyInventionV1Model : BaseDB
     {
         // helper
-        public void DeleteAllForiegnKeyedThings()
+        public IEnumerable<IKeyTo> Keyed
         {
-            qod_in.Clear();
-            qod_out.Clear();
-            targets.Clear();
-            outequations.Clear();
-            inequations.Clear();
+            get
+            {
+                yield return qod_in;
+                yield return qod_out;
+                yield return targets;
+                yield return outequations;
+                yield return inequations;
+            }
         }
 
         const int keyto_id = 1;
@@ -137,11 +178,11 @@ namespace Consonance.Invention
         KeyTo<SimpleTrackyInfoQuantifierDescriptor> _qod_out, _qod_in;
         public KeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_in
         {
-            get { return _qod_in ?? (_qod_in = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(id, qod_in_pid, keyto_id)); }
+            get { return _qod_in ?? (_qod_in = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(()=>id, qod_in_pid, keyto_id)); }
         }
         public KeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_out
         {
-            get { return _qod_out ?? (_qod_out = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(id, qod_out_pid, keyto_id)); }
+            get { return _qod_out ?? (_qod_out = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(() => id, qod_out_pid, keyto_id)); }
         }
 
         // targets!
@@ -149,7 +190,7 @@ namespace Consonance.Invention
         KeyTo<SimpleTrackyTrackingTargetDescriptor> _targets;
         public KeyTo<SimpleTrackyTrackingTargetDescriptor> targets
         {
-            get { return _targets ?? (_targets = new KeyTo<SimpleTrackyTrackingTargetDescriptor>(id, targets_pid, keyto_id)); }
+            get { return _targets ?? (_targets = new KeyTo<SimpleTrackyTrackingTargetDescriptor>(() => id, targets_pid, keyto_id)); }
         }
         public String target_args { get; set; } // comma seperated, used by targets equations.
 
@@ -158,12 +199,12 @@ namespace Consonance.Invention
         KeyTo<SimpleTrackyTrackingEquationDescriptor> _inequations;
         public KeyTo<SimpleTrackyTrackingEquationDescriptor> inequations
         {
-            get { return _inequations ?? (_inequations = new KeyTo<SimpleTrackyTrackingEquationDescriptor>(id, inequations_pid, keyto_id)); }
+            get { return _inequations ?? (_inequations = new KeyTo<SimpleTrackyTrackingEquationDescriptor>(() => id, inequations_pid, keyto_id)); }
         }
         KeyTo<SimpleTrackyTrackingEquationDescriptor> _outequations;
         public KeyTo<SimpleTrackyTrackingEquationDescriptor> outequations
         {
-            get { return _outequations ?? (_outequations = new KeyTo<SimpleTrackyTrackingEquationDescriptor>(id, outequations_pid, keyto_id)); }
+            get { return _outequations ?? (_outequations = new KeyTo<SimpleTrackyTrackingEquationDescriptor>(() => id, outequations_pid, keyto_id)); }
         }
         public String in_equations_args { get; set; }
         public String out_equations_args { get; set; }
@@ -340,7 +381,6 @@ namespace Consonance.Invention
             };
             megalist.value.Items.CollectionChanged += (a, b) => megalist.valid = megalist.value.Items.Count > 0;
             addr.valid = nreq.valid = dvalmor.valid = ioreq.valid = true; // not used - the list is...
-            page.SetListyRequest(megalist);
             return new SimpleTrackyInventionRequestPages(page, set);
         }
         public static SimpleTrackyInventionRequestPages TargetDesciptorsPage(IValueRequestFactory fac)
@@ -380,7 +420,7 @@ namespace Consonance.Invention
             megalist.ValueChanged += () => megalist.valid = megalist.value.Items.Count > 0;
             megalist.value.Items.CollectionChanged += (a, b) => megalist.valid = megalist.value.Items.Count > 0;
 
-            page.SetList(new BindingList<object> { nreq, tidreq, rreq, rtreq, argreq, peqreq, teqreq });
+            page.SetList(new BindingList<object> { nreq.request, tidreq.request, rreq.request, rtreq.request, argreq.request, peqreq.request, teqreq.request, addr.request, megalist.request });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 // get targets
@@ -390,10 +430,13 @@ namespace Consonance.Invention
                     var qq = q as Stringy[];
                     targets.Add(new SimpleTrackyTrackingTargetDescriptor {
                         name = qq[0].o as String,
-                        targetRange = qq[1].o as String,
-                        rangetype = (AggregateRangeType)qq[2].o,
-                        targertPattern = qq[3].o as String,
-                        patternTarget = qq[4].o as String,
+                        targetID = qq[1].o as String,
+                        targetRange = qq[2].o as String,
+                        rangetype = (AggregateRangeType)qq[3].o,
+                        targertPattern = qq[4].o as String,
+                        patternTarget = qq[5].o as String,
+                        Shown=true,
+                        Track=true
                     });
                 }
                 mod.targets.Replace(targets);
@@ -403,17 +446,23 @@ namespace Consonance.Invention
             Action ValidateEquations = () =>
             {
                 argreq.valid = !String.IsNullOrWhiteSpace(argreq.value);
-                bool sameNumberOfEquations = peqreq.value.Split(',').Count() == teqreq.value.Split(',').Count();
+                bool sameNumberOfEquations = peqreq.value?.Split(',')?.Count() == teqreq.value?.Split(',')?.Count();
                 bool equationsAreValid = true;
                 peqreq.valid = teqreq.valid = rreq.valid = sameNumberOfEquations && equationsAreValid;
+                tidreq.valid = !string.IsNullOrWhiteSpace(tidreq.value);
+                nreq.valid = !string.IsNullOrWhiteSpace(nreq.value);
+                addr.valid = nreq.valid && tidreq.valid && peqreq.valid && teqreq.valid && rreq.valid;
             };
 
-            addr.valid = nreq.valid = rtreq.valid = true; // not used - the list is...
+            rtreq.valid = true; // always good
+            addr.valid = false; // not to start
+
+            tidreq.ValueChanged += ValidateEquations;
+            nreq.ValueChanged += ValidateEquations;
             argreq.ValueChanged += ValidateEquations;
             rreq.ValueChanged += ValidateEquations;
             peqreq.ValueChanged += ValidateEquations;
             teqreq.ValueChanged += ValidateEquations;
-            page.SetListyRequest(megalist);
             return new SimpleTrackyInventionRequestPages(page, set);
         }
         public static SimpleTrackyInventionRequestPages EntryInfoEquations(IValueRequestFactory fac)
@@ -439,16 +488,13 @@ namespace Consonance.Invention
             addr.ValueChanged += () =>
             {
                 var inout = ioreq.value.SelectedOption;
-                megalist.value.Items.Add(new Stringy[] {
-                        new Stringy(tidreq.value,tidreq.value),
-                        new Stringy(nams[inout],inout),
-                        new Stringy(ereq.value,ereq.value),
-                    });
+                var s1 = new Stringy(tidreq.value, tidreq.value);
+                var s2 = new Stringy(nams[inout], inout);
+                var s3 = new Stringy(ereq.value, ereq.value);
+                megalist.value.Items.Add(new Stringy[] {s1,s2,s3});
             };
-
             
-
-            page.SetList(new BindingList<object> { tidreq, ioreq, ereq });
+            page.SetList(new BindingList<object> { iargreq.request, oargreq.request, tidreq.request, ioreq.request, ereq.request, addr.request, megalist.request });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 // get equations
@@ -477,7 +523,8 @@ namespace Consonance.Invention
                     argreq.valid = !String.IsNullOrWhiteSpace(argreq.value);
 
                 var mvi = megalist.value.Items;
-                bool sameNumberOfEquations = mvi.Where(d => (int)d[1] == 0).Count() == mvi.Where(d => (int)d[1] == 1).Count();
+                Func<Object,int> sing = si => (int)(si as Stringy[])[1].o;
+                bool sameNumberOfEquations = mvi.Where(d => sing(d) == 0).Count() == mvi.Where(d => sing(d) == 1).Count();
                 bool equationsMatchArgs = true;
                 megalist.valid = sameNumberOfEquations && equationsMatchArgs && megalist.value.Items.Count > 0;
             };
@@ -487,7 +534,6 @@ namespace Consonance.Invention
             megalist.ValueChanged += ValidateEquations;
             megalist.value.Items.CollectionChanged += (a, b) => ValidateEquations();
 
-            page.SetListyRequest(megalist);
             return new SimpleTrackyInventionRequestPages(page, set);
         }
     }
@@ -535,7 +581,7 @@ namespace Consonance.Invention
 
         // this can get spammed - it's a good oppertunity to provide diet registraions cause you'll get "busy"
         // status, but, need to protect against those spams case only need reg once
-        IStringEquationFactory seq = new MockSEQ();
+        IStringEquationFactory seq = new DataTableSEQ();
         public IEnumerable<InventedTrackerVM> Instances()
         {
             // Get Models - calls to this dude are by unwritten contract on worker threads.
@@ -547,7 +593,7 @@ namespace Consonance.Invention
                     var pp = registered[vm] = SimpleTrackyHelperCreator.Create(it, seq);
                     pp.state = pres.AddDietPair(pp.model, pp.pres, build);
                 }
-                vm.sender = it;
+                vm.sender = this;
                 // set sender? :/
                 yield return vm;
             }
@@ -563,26 +609,28 @@ namespace Consonance.Invention
             // Define the removal action...
             Action Removal = () =>
             {
-                // Pass to the TaskMapper (if you look) for the inventor to run in the pool...
-                ViewModelsToChange(this, new DietVMToChangeEventArgs<EventArgs>
+                // the handler for the invented tracker is asked to delete everything (it will also call toChange of its own - 2x progress, one for trackers, one for inventor.
+                handler.state.dal.DeleteAll(() =>
                 {
-                    //...which will run this when progress is showing etc
-                    toChange = () =>
-                    {
-                        // the handler for the invented tracker is asked to delete everything (it will also call toChange of its own - 2x progress, one for trackers, one for inventor.
-                        handler.state.dal.DeleteAll(() =>
+                    // drop the tables now
+                    handler.state.dal.DeleteAll(null, true);
+
+                    // After thats done, we've got another tochange to fire here, for the inventor which is ready to kill now.
+                    ViewModelsToChange(this, new DietVMToChangeEventArgs<EventArgs> { 
+                        changeType = new EventArgs(),
+                        toChange = () =>
                         {
                             // clear foreign keys on invented tracker
-                            (dvm.sender as SimpleTrackyHelpyInventionV1Model).DeleteAllForiegnKeyedThings();
+                            (dvm.originator as SimpleTrackyHelpyInventionV1Model).Keyed.Act(k=>k.Clear());
                             // AFTER that is done, we delete the inventor modelrow
-                            conn.Delete(dvm.sender);
+                            conn.Delete(dvm.originator);
                             // and we deregister the whole thing from the apppresenter
                             handler.state.remove();
-                        });
-                        return null; // prior, but no post action (do nothing after this is all done)
-                     },
-                    changeType=  new EventArgs() // we dont have a changetype on this handler. just "it changed".
-                });
+
+                            return null;
+                        }
+                    });
+                }, false);
             };
 
             // If we have some data, show a warning!
@@ -616,13 +664,17 @@ namespace Consonance.Invention
                             changeType = new EventArgs(),
                             toChange = () =>
                             {
-                                var mod = new SimpleTrackyHelpyInventionV1Model();
+                                var mod = new SimpleTrackyHelpyInventionV1Model
+                                {
+                                    uid = Guid.NewGuid()
+                                };
                                 page1.set(mod);
                                 page2.set(mod);
                                 page3.set(mod);
                                 page4.set(mod);
                                 page5.set(mod);
                                 conn.Insert(mod);
+                                mod.Keyed.Act(k => k.Commit()); // commit all foreign keyed stuff (now has rowid)
                                 return null; // nothing after datachanages
                             }
                         }
@@ -651,7 +703,7 @@ namespace Consonance.Invention
                             {
                                 page1.set(mod);
                                 page2.set(mod);
-                                conn.Update(mod);
+                                conn.Update(mod); // no fk stuff to commit.
                                 return null;
                             }
                         }
@@ -674,7 +726,6 @@ namespace Consonance.Invention
     {
         class RoutedHelpyModel : SimpleTrackyHelpy<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>, IModelRouter
         {
-            readonly SimpleTrackyHelpyInventionV1Model model;
             public RoutedHelpyModel(InventedTracker tmh, SimpleTrackyHelpyInventionV1Model model) : base(tmh)
             {
                 var mu = model.uid.ToString();
@@ -682,7 +733,7 @@ namespace Consonance.Invention
                 var oi = 
                 info = new Dictionary<Type, desc>
                 {
-                    { typeof(TrackerInstance), new desc(String.Format("{0}_entry_in", mu),model.target_args.Split(',')) },
+                    { typeof(TrackerInstance), new desc(String.Format("{0}_instance", mu),model.target_args.Split(',')) },
                     { typeof(IInEntry), new desc(String.Format("{0}_entry_in", mu), tracked.ToArray() ) },
                     { typeof(IOutEntry), new desc(String.Format("{0}_entry_out", mu), tracked.ToArray() ) },
                     { typeof(IInInfo), new desc(String.Format("{0}_info_in", mu), model.in_equations_args.Split(',') ) },
@@ -800,7 +851,7 @@ namespace Consonance.Invention
                 instanceValueFields = 
                     (
                         from m in TargetArgs select VRVConnectedValue.FromType(
-                        0.0, NiceArgName(m), ArgGet<Object>(m), ArgSet<Object>(m), d => d.DoubleRequestor)
+                        0.0,Validate, NiceArgName(m), ArgGet<Object>(m), ArgSet<Object>(m), d => d.DoubleRequestor)
                     ).ToArray();
 
                 var ia = model.in_equations_args.Split(',');
@@ -837,6 +888,15 @@ namespace Consonance.Invention
                 };
             }
 
+            public bool Validate(object[] fv)
+            {
+                var dv = (from f in fv select f is double ? (double)f : 0.0).ToArray();
+                foreach (var t in targets)
+                    if ((from s in t.target_patterns select (int)s.calculate(dv)).Sum() <= 0)
+                        return false;
+                return true;
+            }
+
             public SimpleTrackyTarget[] Calcluate(object[] fieldValues)
             {
                 var dv = (from f in fieldValues select f is double ? (double)f : 0.0).ToArray();
@@ -844,7 +904,7 @@ namespace Consonance.Invention
                  select new SimpleTrackyTarget(
                      t.des.name, t.des.targetID, t.des.Track, t.des.Shown,
                      (int)t.range_equation.calculate(dv), t.des.rangetype,
-                     (from s in t.target_patterns select s.calculate(dv)).Cast<int>().ToArray(),
+                     (from s in t.target_patterns select (int)s.calculate(dv)).ToArray(),
                      (from s in t.pattern_targets select s.calculate(dv)).ToArray())
                      ).ToArray();
             }

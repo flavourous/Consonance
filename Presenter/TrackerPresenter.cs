@@ -6,6 +6,7 @@ using scm = System.ComponentModel;
 using SQLite.Net;
 using LibSharpHelp;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Consonance
 {
@@ -33,12 +34,25 @@ namespace Consonance
 			else 
 				return Object.Equals (fo, so);
 		}
-		// Dear views, do not modify this object, or I will kill you.
-		public Object sender;
+        public override bool Equals(object obj)
+        {
+            return OriginatorEquals(obj as OriginatorVM, this);
+        }
+        public override int GetHashCode()
+        {
+            return originator is BaseDB ? (originator as BaseDB).id.GetHashCode() : originator.GetHashCode();
+        }
+        // Dear views, do not modify this object, or I will kill you.
+        public Object sender;
 		public Object originator;
 	}
 	public class KVPList<T1,T2> : List<KeyValuePair<T1,T2>>
 	{
+        public KVPList() { }
+        public KVPList(IEnumerable<KeyValuePair<T1, T2>> itms)
+        {
+            AddRange(itms);
+        }
 		public void Add(T1 a, T2 b) 
 		{
 			Add (new KeyValuePair<T1, T2> (a, b));
@@ -98,7 +112,7 @@ namespace Consonance
 		public TrackerInstanceVM instance;
 		public String modelName { get { return (instance.sender as IAbstractedTracker).details.name; } }
 		public String instanceName { get { return instance.name; } }
-		public IEnumerable<TrackingInfoVM> tracks = new TrackingInfoVM[0];
+		public TrackingInfoVM[] tracks = new TrackingInfoVM[0];
 	}
 
 	// The default behaviour is something like this:
@@ -230,7 +244,6 @@ namespace Consonance
 		readonly IUserInput getInput;
 		readonly ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter;
 		public readonly TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> modelHandler;
-		readonly SQLiteConnection conn;
 		public TrackerPresentationAbstractionHandler(
 			IValueRequestBuilder instanceBuilder,
 			IUserInput getInput,
@@ -246,7 +259,6 @@ namespace Consonance
 			this.getInput = getInput;
 			this.presenter = presenter;
 			this.modelHandler = new TrackerModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
-			this.conn = conn;
             modelHandler.ToChange += (t, ct, a) => ViewModelsToChange(this, new DietVMToChangeEventArgs<TrackerChangeType> { changeType = t, toChange = a });
 		}
 
@@ -305,7 +317,7 @@ namespace Consonance
             T info = null;
             if (ent.infoinstanceid.HasValue)
             {
-                var res = conn.Table<T>().Where(e => e.id == ent.infoinstanceid.Value);
+                var res = modelHandler.conn.Where<T>(e => e.id == ent.infoinstanceid.Value);
                 if (res.Count() == 0) ent.infoinstanceid = null;
                 else info = res.First();
             }
@@ -314,8 +326,8 @@ namespace Consonance
 		public IEnumerable<InfoLineVM> InInfos(bool complete)
 		{
 			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
-			var fis = conn.Table<EatInfoType> ();
-			if(complete) fis=fis.Where (modelHandler.model.increator.IsInfoComplete);
+			var fis = modelHandler.conn.All<EatInfoType> ();
+			if(complete) fis = modelHandler.conn.Where (modelHandler.model.increator.IsInfoComplete);
 			foreach (var m in fis)
 			{
 				var vm = presenter.GetRepresentation (m);
@@ -326,8 +338,8 @@ namespace Consonance
 		public IEnumerable<InfoLineVM> OutInfos(bool complete)
 		{
 			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
-			var fis = conn.Table<BurnInfoType> ();
-			if (complete) fis = fis.Where (modelHandler.model.outcreator.IsInfoComplete);
+			var fis = modelHandler.conn.All< BurnInfoType> ();
+			if (complete) fis = modelHandler.conn.Where (modelHandler.model.outcreator.IsInfoComplete);
 			foreach (var m in fis)
 			{
 				var vm = presenter.GetRepresentation (m);
@@ -336,8 +348,8 @@ namespace Consonance
 			}
 		}
 
-		public IFindList<InfoLineVM> InFinder { get { return InfoFindersManager.GetFinder<EatInfoType> (presenter.GetRepresentation, conn); } }
-		public IFindList<InfoLineVM> OutFinder { get { return InfoFindersManager.GetFinder<BurnInfoType> (presenter.GetRepresentation, conn); } }
+		public IFindList<InfoLineVM> InFinder { get { return InfoFindersManager.GetFinder<EatInfoType> (presenter.GetRepresentation, modelHandler.conn); } }
+		public IFindList<InfoLineVM> OutFinder { get { return InfoFindersManager.GetFinder<BurnInfoType> (presenter.GetRepresentation, modelHandler.conn); } }
 
 		IEnumerable<O> ConvertMtoVM<O,I1,I2>(IEnumerable<I1> input, Func<I1,I2,O> convert, Func<I1,I2> findSecondInput)
 			where O : OriginatorVM
@@ -478,7 +490,7 @@ namespace Consonance
 			
 		DietInstType getit(BaseEntry be)
 		{
-			var dis = conn.Table<DietInstType> ().Where ( inf => inf.id == be.trackerinstanceid);
+			var dis = modelHandler.conn.Where<DietInstType>( inf => inf.id == be.trackerinstanceid);
 			return dis.Count() == 0 ? null : dis.First();
 		}
 

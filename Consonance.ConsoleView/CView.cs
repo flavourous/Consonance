@@ -5,24 +5,28 @@ using System.Text;
 using System.Linq;
 using System.Linq.Expressions;
 using Consonance.Invention;
+using System.Collections.Specialized;
 
 namespace Consonance.ConsoleView
         
 {
-	class CView : IView, ICollectionEditorSelectableLooseCommands<TrackerInstanceVM>, IConsolePage
+    static class ChangeyBlap
     {
-        enum LoadThings {  BurnItems, EatItems, Instances };
-		Dictionary<LoadThings,bool> aloads = new Dictionary<LoadThings, bool> {
-			{ LoadThings.BurnItems, false },
-			{ LoadThings.EatItems, false },
-			{ LoadThings.Instances, false }
-		};
-		void SetLoadingState (LoadThings thing, bool active)
-		{
-			aloads [thing] = active;
-			pageChanged = true;
-		}
+        public static Action Blap<T>(this IVMList<T> yo, Action assign, IConsolePage cv)
+        {
+            NotifyCollectionChangedEventHandler cc = (a, r) =>
+            {
+                assign();
+                cv.pageChanged = true;
+            };
+            cc(null, null);
+            yo.CollectionChanged += cc;
+            return () => yo.CollectionChanged -= cc;
+        }
+    }
 
+    class CView : IView, ICollectionEditorSelectableLooseCommands<TrackerInstanceVM>, IConsolePage
+    {
 		public bool allowDefaultActions { get { return true; } }
 		readonly CPlanCommands pc;
 		public CView(CPlanCommands pc)
@@ -39,10 +43,9 @@ namespace Consonance.ConsoleView
 			get {
 				pdb.Clear ();
 				pdb.AppendFormat ("Main Page\n=================================\n");
-				pdb.AppendFormat ("Loading: In({0}), Out({1}), Plan({2})\n=================================\n", aloads [LoadThings.EatItems], aloads [LoadThings.BurnItems], aloads [LoadThings.Instances]);
 				pdb.AppendFormat ("Date: {0}\n\n", day.ToShortDateString ());
 
-				int maxRows = Math.Min (10, ManyMax (inlines.Count, outlines.Count, instances.Count));
+				int maxRows = Math.Min (10, ManyMax (inlines.Count, outlines.Count, instances.Count, inventions.Count));
 				int colWid = 20;
 				if (currentTrackerInstance != null)
 					pdb.Append (RowString (colWid, "Index", currentTrackerInstance.dialect.InputEntryVerb, currentTrackerInstance.dialect.OutputEntryVerb, "Plan"));
@@ -132,7 +135,7 @@ namespace Consonance.ConsoleView
 								int.TryParse (d [1], out idx);
 								if (idx < 0 || idx >= instances.Count) {
 									Console.WriteLine ("Out of range...");
-									Console.ReadKey ();
+									ConsoleWrap.ReadKey ();
 									return;
 								}
 							}
@@ -144,7 +147,7 @@ namespace Consonance.ConsoleView
 							case "e": edit (instances [idx]); break;
 							default:
 								Console.WriteLine ("unknown mode...");
-								Console.ReadKey ();
+								ConsoleWrap.ReadKey ();
 								break;
 							}
 						}
@@ -179,7 +182,7 @@ namespace Consonance.ConsoleView
 					int idx = -1;
 					if (d.Length > 1 &&int.TryParse (d [1], out idx)&& (idx < 0 || idx >= entries.Count)) {
 						Console.WriteLine ("Out of range...");
-						Console.ReadKey ();
+						ConsoleWrap.ReadKey ();
 						return;
 					}
 					switch(d[0])
@@ -189,7 +192,7 @@ namespace Consonance.ConsoleView
 					case "e": edit (entries[idx]); break;
 					default:
 						Console.WriteLine ("unknown mode...");
-						Console.ReadKey ();
+						ConsoleWrap.ReadKey ();
 						break;
 					}
 
@@ -212,35 +215,23 @@ namespace Consonance.ConsoleView
 
 
         // Data incoming
-        IReadOnlyList<EntryLineVM> inlines = new List<EntryLineVM>(), outlines= new List<EntryLineVM>();
-		public void SetEatLines (IVMList<EntryLineVM> lineitems) { inlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
-		public void SetBurnLines (IVMList<EntryLineVM> lineitems) { outlines = new List<EntryLineVM> (lineitems);  pageChanged = true;}
+        IReadOnlyList<EntryLineVM> inlines, outlines;
+        public void SetEatLines(IVMList<EntryLineVM> lineitems) { lineitems.Blap(() =>  inlines = new List<EntryLineVM>(lineitems), this); }
+		public void SetBurnLines (IVMList<EntryLineVM> lineitems) { lineitems.Blap(() =>  outlines = new List<EntryLineVM>(lineitems), this); }
 
-        IReadOnlyList<InfoLineVM> ininfos = new List<InfoLineVM>(), outinfos = new List<InfoLineVM>();
-        public void SetEatInfos(IVMList<InfoLineVM> lineitems) { ininfos = new List<InfoLineVM>(lineitems); pageChanged = true; }
-        public void SetBurnInfos(IVMList<InfoLineVM> lineitems) { outinfos = new List<InfoLineVM>(lineitems); pageChanged = true; }
+        // blap to info request
+        public void SetEatInfos(IVMList<InfoLineVM> lineitems) { lineitems.Blap(() =>  MainClass.dbuild.crf.OneInfo.ininfos = new List<InfoLineVM>(lineitems), MainClass.dbuild.crf.OneInfo); }
+        public void SetBurnInfos(IVMList<InfoLineVM> lineitems) { lineitems.Blap(() => MainClass.dbuild.crf.OneInfo.outinfos = new List<InfoLineVM>(lineitems), MainClass.dbuild.crf.OneInfo); }
 
-        IReadOnlyList<TrackerInstanceVM> instances= new List<TrackerInstanceVM>();
-		public void SetInstances (IVMList<TrackerInstanceVM> instanceitems) { instances = new List<TrackerInstanceVM> (instanceitems); pageChanged = true; }
+        IReadOnlyList<TrackerInstanceVM> instances;
+		public void SetInstances (IVMList<TrackerInstanceVM> instanceitems) { instanceitems.Blap(() =>  instances = new List<TrackerInstanceVM>(instanceitems), this); }
 
-		IReadOnlyList<TrackerTracksVM> inTracks = new List<TrackerTracksVM>(), outTracks= new List<TrackerTracksVM>();
-		public void SetEatTrack (IVMList<TrackerTracksVM> others) { 
-			var its = new List<TrackerTracksVM> (others);
-			inTracks = its;
-			pageChanged = true;
-		}
-		public void SetBurnTrack (IVMList<TrackerTracksVM> others) { 
-			var its = new List<TrackerTracksVM> (others);
-			outTracks = its;
-			pageChanged = true;
-		}
+        IReadOnlyList<TrackerTracksVM> inTracks, outTracks;
+		public void SetEatTrack (IVMList<TrackerTracksVM> others)  {others.Blap(() =>  inTracks = new List<TrackerTracksVM>(others), this);}
+        public void SetBurnTrack(IVMList<TrackerTracksVM> others) { others.Blap(() =>  outTracks = new List<TrackerTracksVM>(others), this); }
 
-        IReadOnlyList<InventedTrackerVM> inventions = new List<InventedTrackerVM>();
-        public void SetInventions(IVMList<InventedTrackerVM> inventionitems)
-        {
-            inventions = new List<InventedTrackerVM>(inventionitems);
-            pageChanged = true;
-        }
+        IReadOnlyList<InventedTrackerVM> inventions;
+        public void SetInventions(IVMList<InventedTrackerVM> inventionitems) { inventionitems.Blap(() => inventions = new  List<InventedTrackerVM>(inventionitems), this); }
 
         // Some data members
         DateTime mday;

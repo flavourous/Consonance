@@ -206,7 +206,7 @@ namespace Consonance.ConsoleView
 				if(idx.Length != 1 || !int.TryParse(idx[0], out i))
 				{
 					Console.WriteLine ("Failed to parse...");
-					Console.ReadKey ();
+					ConsoleWrap.ReadKey ();
 				}
 				else 
 				{
@@ -265,7 +265,7 @@ namespace Consonance.ConsoleView
 								int idx = -1;
 								if (al.Length == 0 || !int.TryParse (al [0], out idx) || idx < 0 || idx >= ifnd.FindModes.Length) {
 									Console.WriteLine ("input error");
-									Console.ReadKey ();
+									ConsoleWrap.ReadKey ();
 								} else {
 									modeSelected = idx;
 									creqs = ifnd.UseFindMode (ifnd.FindModes [modeSelected], fact).MakeList(f=>f as IValueRequestFromString).ToArray();
@@ -279,7 +279,7 @@ namespace Consonance.ConsoleView
 									if (al.Length != 2 || !int.TryParse (al [0], out idx) || idx < 0 || idx >= creqs.Length
 									    || !creqs [idx].FromString (al [1])) {
 										Console.WriteLine ("input error");
-										Console.ReadKey ();
+										ConsoleWrap.ReadKey ();
 									} 
 								}
 							});
@@ -294,7 +294,7 @@ namespace Consonance.ConsoleView
 								int idx = -1;
 								if (al.Length == 0 || !int.TryParse (al [0], out idx) || idx < 0 || idx >= clines.Count) {
 									Console.WriteLine ("input error");
-									Console.ReadKey ();
+									ConsoleWrap.ReadKey ();
 								} else {
 									complete.SetResult(clines[idx]);
 									MainClass.consolePager.Pop (this);

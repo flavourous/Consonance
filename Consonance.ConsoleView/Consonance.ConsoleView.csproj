@@ -36,6 +36,9 @@
     <DefineConstants>DEBUG;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NCalc">
+      <HintPath>..\NCalc.dll</HintPath>
+    </Reference>
     <Reference Include="SQLite.Net">
       <HintPath>..\..\SQLite.Net-PCL\src\SQLite.Net\bin\Release\SQLite.Net.dll</HintPath>
     </Reference>

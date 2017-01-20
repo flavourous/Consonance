@@ -76,7 +76,7 @@ namespace Consonance
         class ICalc : IReflectedHelpyCalc
         {
             public InstanceValue<double> direct { get { return new InstanceValue<double>("Amount", o => ((SimpleBudgetEatEntry)o).amount, (o, v) => ((SimpleBudgetEatEntry)o).amount = v, 0.0); } }
-            public string TargetID { get { return "budget"; } }
+            public string TargetID { get { return "balance"; } }
             public double Calculate(double[] values) { return values[0]; }
         }
     }
@@ -91,7 +91,7 @@ namespace Consonance
         class ICalc : IReflectedHelpyCalc
         {
             public InstanceValue<double> direct { get { return new InstanceValue<double>("Amount", o => ((SimpleBudgetBurnEntry)o).amount, (o, v) => ((SimpleBudgetBurnEntry)o).amount = v, 0.0); } }
-            public string TargetID { get { return "budget"; } }
+            public string TargetID { get { return "balance"; } }
             public double Calculate(double[] values) { return values[0]; }
         }
     }				

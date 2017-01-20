@@ -122,7 +122,6 @@ namespace Consonance
 		public readonly String title;
 		BindingList<Object> boundrequests = new BindingList<object>();
 		public IList<Object> valuerequests { get { return boundrequests; } }
-        public IValueRequest<TabularDataRequestValue> listyRequest { get; private set; }
 		public ListChangedEventHandler valuerequestsChanegd = delegate { };
 		void Newlist_ListChanged (object sender, ListChangedEventArgs e)
 		{
@@ -140,10 +139,6 @@ namespace Consonance
 			boundrequests = newlist;
 			Newlist_ListChanged (boundrequests, new ListChangedEventArgs (ListChangedType.Reset, -1));
 		}
-        public void SetListyRequest(IValueRequest<TabularDataRequestValue> listyRequest)
-        {
-            this.listyRequest = listyRequest;
-        }
 	}
 	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
 	{
@@ -182,7 +177,7 @@ namespace Consonance
 	#region DIET_MODELS_PRESENTER_HANDLER
     public interface IAbstractedDAL
     {
-        void DeleteAll(Action after);
+        void DeleteAll(Action after, bool drop = false);
         void CountAll(out int instances, out int entries, out int infos);
     }
 
@@ -200,6 +195,7 @@ namespace Consonance
         int Count<T>() where T : BaseDB;
         int CountWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB;
         void CreateTable<T>() where T : BaseDB;
+        void DropTable<T>() where T : BaseDB;
         void Delete<T>(int id) where T : BaseDB;
         void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB;
         void DeleteAll<T>() where T : BaseDB;
@@ -235,7 +231,7 @@ namespace Consonance
         }
 
         Dictionary<Type, TableMapping> cache = new Dictionary<Type, TableMapping>();
-        bool GetTableMap<T>(out TableMapping map)
+        bool GetTableMap<T>(out TableMapping map) 
         {
             var t = typeof(T);
             if (cache.ContainsKey(t))
@@ -290,6 +286,13 @@ namespace Consonance
             else conn.CreateTable<T>();
         }
 
+        public void DropTable<T>() where T : BaseDB
+        {
+            TableMapping map;
+            if (GetTableMap<T>(out map)) conn.DropTable(map);
+            else conn.DropTable<T>();
+        }
+
         public void Delete<T>(int id) where T : BaseDB
         {
             GetTQ<T>().Delete(d => d.id == id);
@@ -338,7 +341,7 @@ namespace Consonance
 	{
         public event Action<TrackerChangeType, DBChangeType, Func<Action>> ToChange = delegate { };
 
-        readonly ICheckedConn conn;
+        public readonly ICheckedConn conn;
 		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
 		public readonly EntryHandler<DietInstType, EatType, EatInfoType> inhandler;
 		public readonly EntryHandler<DietInstType, BurnType, BurnInfoType> outhandler;
@@ -397,17 +400,23 @@ namespace Consonance
             entries = conn.Count<BurnType>() + conn.Count<EatType>();
             infos = conn.Count<EatInfoType>() + conn.Count<BurnInfoType>();
         }
-        public void DeleteAll(Action after)
+        void Rem<T>(bool drop) where T : BaseDB
         {
-            ToChange(TrackerChangeType.EatEntries | TrackerChangeType.EatInfos | TrackerChangeType.BurnEntries| TrackerChangeType.BurnInfos | TrackerChangeType.Instances, DBChangeType.Delete, () =>
-            {
-                conn.DeleteAll<EatType>();
-                conn.DeleteAll<EatInfoType>();
-                conn.DeleteAll<BurnType>();
-                conn.DeleteAll<BurnInfoType>();
-                conn.DeleteAll<DietInstType>();
-                return after;
-            });
+            if (drop) conn.DropTable<T>();
+            else conn.DeleteAll<T>();
+        }
+        public void DeleteAll(Action after, bool drop = false)
+        {
+            var all = TrackerChangeType.EatEntries | TrackerChangeType.EatInfos | TrackerChangeType.BurnEntries | TrackerChangeType.BurnInfos | TrackerChangeType.Instances;
+            ToChange(drop ? TrackerChangeType.None : all, DBChangeType.Delete, () =>
+             {
+                 Rem<EatType>(drop);
+                 Rem<EatInfoType>(drop);
+                 Rem<BurnType>(drop);
+                 Rem<BurnInfoType>(drop);
+                 Rem<DietInstType>(drop);
+                 return after;
+             });
         }
 		public IEnumerable<DietInstType> GetTrackers()
 		{

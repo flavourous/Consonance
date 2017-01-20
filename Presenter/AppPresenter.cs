@@ -85,7 +85,7 @@ namespace Consonance
 
     public class Presenter
     {
-        
+
         #region initialisation of app presentation
         // Singleton logic - lazily created
         static Presenter singleton;
@@ -94,27 +94,14 @@ namespace Consonance
         {
             PlatformGlobal.platform = platform;
 
-            
+
 
             singleton = new Presenter();
             await singleton.PresentToImpl(view, platform, input, commands, defBuilder);
         }
         SQLiteConnection conn;
 
-        class TestTable : BaseDB
-        {
-            public String dat { get; set; }
-        }
-        class TC : IModelRouter
-        {
-            public bool GetTableRoute<T>(out string tabl, out string[] columns, out Type[] colTypes)
-            {
-                tabl = "loltable";
-                columns = new[] { "c1", "lolc" };
-                colTypes = new[] { typeof(String), typeof(bool) };
-                return true;
-            }
-        }
+        
 
         // present app logic domain to this view.
         IView view;
@@ -132,10 +119,6 @@ namespace Consonance
                 //platform.filesystem.Delete(maindbpath);
                 //byte[] file = platform.filesystem.ReadFile(maindbpath);
                 conn = new SQLiteConnection(platform.sqlite, maindbpath, false);
-
-                // TESTE!
-                SQliteCheckedConnection cc = new SQliteCheckedConnection(conn, new TC());
-                cc.CreateTable<TestTable>();
 
                 Debug.WriteLine("PresntToImpl: presenting");
                 this.view = view;
@@ -202,11 +185,11 @@ namespace Consonance
 
         private void Invention_remove(InventedTrackerVM obj)
         {
-            (obj.originator as IViewModelHandler<InventedTrackerVM>).RemoveTracker(obj);
+            (obj.sender as IViewModelHandler<InventedTrackerVM>).RemoveTracker(obj);
         }
         private void Invention_edit(InventedTrackerVM obj)
         {
-            (obj.originator as IViewModelHandler<InventedTrackerVM>).EditTracker(obj);
+            (obj.sender as IViewModelHandler<InventedTrackerVM>).EditTracker(obj);
         }
         private void Invention_add()
         {
@@ -241,10 +224,10 @@ namespace Consonance
         void View_trackerinstanceselected(TrackerInstanceVM obj)
         {
             TaskMapper(
-                TrackerChangeType.EatInfos | 
-                TrackerChangeType.BurnInfos | 
-                TrackerChangeType.EatEntries | 
-                TrackerChangeType.BurnEntries, 
+                TrackerChangeType.EatInfos |
+                TrackerChangeType.BurnInfos |
+                TrackerChangeType.EatEntries |
+                TrackerChangeType.BurnEntries,
                 null, true);
         }
         DateTime ds, de;
@@ -279,7 +262,7 @@ namespace Consonance
 
         #region tracker registry
         List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
-        public class AddDietPairState { public Action remove; public IAbstractedDAL dal;  }
+        public class AddDietPairState { public Action remove; public IAbstractedDAL dal; }
         public AddDietPairState AddDietPair<D, E, Ei, B, Bi>(ITrackModel<D, E, Ei, B, Bi> dietModel, ITrackerPresenter<D, E, Ei, B, Bi> dietPresenter, IValueRequestBuilder defBuilder)
             where D : TrackerInstance, new()
             where E : BaseEntry, new()
@@ -308,7 +291,10 @@ namespace Consonance
         {
             // Always map everything cause it needs to be actioned at least!
             var ti = view.currentTrackerInstance;
-            TaskMapper(args.changeType, args.toChange, args.changeType == TrackerChangeType.Instances || (ti != null && Object.ReferenceEquals(ti.sender, sender)));
+            TaskMapper(args.changeType, args.toChange, 
+                args.changeType.HasFlag(TrackerChangeType.Instances) ||
+                args.changeType.HasFlag(TrackerChangeType.Inventions) ||
+                (ti != null && Object.ReferenceEquals(ti.sender, sender)));
         }
         #endregion
 
@@ -356,18 +342,19 @@ namespace Consonance
                         foreach(var iv in inventors)
                             toreplace.AddRange(iv.inventor.Instances());
                         inventions.SetItems(toreplace);
-                    }   
+                    }
                 },
                 { TrackerChangeType.Instances,ti=>
                     {
                         List<TrackerInstanceVM> toreplace = new List<TrackerInstanceVM>();
                         foreach (var dh in dietHandlers)
                             toreplace.AddRange(dh.Instances());
-                        tracker_instances.SetItems(toreplace);
+                        lock(tracker_instances) tracker_instances.SetItems(toreplace);
 
                         // change current tracker if either old one is no more, or, we didnt have one selected.
-                        if (tracker_instances.items.FindAll(i => OriginatorVM.OriginatorEquals(i, ti)).Count == 0)
-                                view.currentTrackerInstance = tracker_instances.Count > 0 ? tracker_instances[0] : null; // is possible for TaskMapper to be recalled before this returns
+                        var ai = tracker_instances.items.FindAll(i => OriginatorVM.OriginatorEquals(i, ti));
+                        if (ai.Count == 0) View_trackerinstanceselected(view.currentTrackerInstance = tracker_instances.Count > 0 ? tracker_instances[0] : null);
+                        else view.currentTrackerInstance =ai[0]; // could be updated
                     }
                 },
                 {TrackerChangeType.EatEntries,ti=>
@@ -402,24 +389,26 @@ namespace Consonance
         void SetTracking(TrackerInstanceVM cti)
         {
             // creators
-            Func<TrackerInstanceVM, TrackerTracksVM> git = lti => new TrackerTracksVM { instance = lti, tracks = (lti.sender as IAbstractedTracker).GetInTracking(lti, ds) };
-            Func<TrackerInstanceVM, TrackerTracksVM> got = lti => new TrackerTracksVM { instance = lti, tracks = (lti.sender as IAbstractedTracker).GetOutTracking(lti, ds) };
+            Func<TrackerInstanceVM, TrackerTracksVM> git = lti => new TrackerTracksVM { instance = lti, tracks = (lti.sender as IAbstractedTracker).GetInTracking(lti, ds).ToArray() };
+            Func<TrackerInstanceVM, TrackerTracksVM> got = lti => new TrackerTracksVM { instance = lti, tracks = (lti.sender as IAbstractedTracker).GetOutTracking(lti, ds).ToArray() };
 
             // results (current first)
             List<TrackerTracksVM> in_t = new List<TrackerTracksVM>();
             List<TrackerTracksVM> out_t = new List<TrackerTracksVM>();
-            if(cti!=null)
+            if (cti != null)
             {
                 in_t.Add(git(cti));
                 out_t.Add(got(cti));
             }
-
-            foreach (var d in tracker_instances)
+            lock (tracker_instances)
             {
-                if (!OriginatorVM.OriginatorEquals(d, cti))
+                foreach (var d in tracker_instances)
                 {
-                    in_t.Add(git(d));
-                    out_t.Add(got(d));
+                    if (!OriginatorVM.OriginatorEquals(d, cti))
+                    {
+                        in_t.Add(git(d));
+                        out_t.Add(got(d));
+                    }
                 }
             }
             inTracks.SetItems(in_t);
@@ -438,8 +427,6 @@ namespace Consonance
                         madeBusy.Add(bl.BusyMaker());
             }
 
-            // remember currently selected dude
-            var cs = view.currentTrackerInstance;
 
             // begin task
             PlatformGlobal.Run(() =>
@@ -447,8 +434,9 @@ namespace Consonance
                 // run the prior to make this state true
                 var after = prior?.Invoke();
 
-                if (perform_mapping)
+                while (perform_mapping)
                 {
+
                     // Coaelsecse attachde tasks (1 run iit)
                     var flags = ((uint)action).SplitAsFlags();
                     foreach (var flag in flags)
@@ -459,15 +447,23 @@ namespace Consonance
                                 action |= connected;
                     }
 
-                    // run associated tasks
-                    foreach (var flag in ((uint)action).SplitAsFlags())
-                        taskMap[(TrackerChangeType)flag](cs);
-                    
+                    TrackerInstanceVM cs;
+                    do
+                    {
+                        // remember currently selected dude
+                        cs = view.currentTrackerInstance;
+
+                        // run associated tasks
+                        foreach (var flag in ((uint)action).SplitAsFlags())
+                            taskMap[(TrackerChangeType)flag](cs);
+                    } while (!OriginatorVM.OriginatorEquals(cs, view.currentTrackerInstance));
+
                     // run anything to be done after mapping completed.
                     after?.Invoke();
 
                     // complete busies off
                     foreach (var b in madeBusy) b();
+                    perform_mapping = false;
                 }
             });
         }
@@ -524,151 +520,152 @@ namespace Consonance
         bool busy { get; }
     }
 
-	/// <summary>
-	/// definition on the application view
-	/// </summary>
-	public interface IView
-	{
+
+    /// <summary>
+    /// definition on the application view
+    /// </summary>
+    public interface IView
+    {
         // This only needs to be set up once.
-		void SetEatTrack(IVMList<TrackerTracksVM> tracks_current_first);
-		void SetBurnTrack(IVMList<TrackerTracksVM> tracks_current_first);
-		void SetEatLines (IVMList<EntryLineVM> lineitems);
-		void SetBurnLines (IVMList<EntryLineVM> lineitems);
+        void SetEatTrack(IVMList<TrackerTracksVM> tracks_current_first);
+        void SetBurnTrack(IVMList<TrackerTracksVM> tracks_current_first);
+        void SetEatLines(IVMList<EntryLineVM> lineitems);
+        void SetBurnLines(IVMList<EntryLineVM> lineitems);
         void SetEatInfos(IVMList<InfoLineVM> lineitems);
         void SetBurnInfos(IVMList<InfoLineVM> lineitems);
-        void SetInstances (IVMList<TrackerInstanceVM> instanceitems);
+        void SetInstances(IVMList<TrackerInstanceVM> instanceitems);
         void SetInventions(IVMList<InventedTrackerVM> inventionitems);
 
         event Action<DateTime> changeday;
-		DateTime day { get; set; }
-		TrackerInstanceVM currentTrackerInstance { get; set; }
-		ICollectionEditorSelectableLooseCommands<TrackerInstanceVM> plan { get; }
+        DateTime day { get; set; }
+        TrackerInstanceVM currentTrackerInstance { get; set; }
+        ICollectionEditorSelectableLooseCommands<TrackerInstanceVM> plan { get; }
         ICollectionEditorLooseCommands<InventedTrackerVM> invention { get; }
     }
-	public interface IPlatform
-	{
+    public interface IPlatform
+    {
         Task UIThread(Action method);
         ISQLitePlatform sqlite { get; }
         ITasks TaskOps { get; }
-		void Attach (Action<String, Action> showError);
+        void Attach(Action<String, Action> showError);
         IFSOps filesystem { get; }
         bool CreateDirectory(String ifdoesntexist);
         PropertyInfo GetPropertyInfo(Type T, String property);
         MethodInfo GetMethodInfo(Type T, String method);
-	}
-    
+    }
+
     public interface IFSOps
     {
         string AppData { get; }
         void Delete(String file);
         byte[] ReadFile(String file);
     }
-	public interface ITasks
-	{
-		Task RunTask (Func<Task> asyncMethod);
-		Task RunTask (Action syncMethod);
-		Task<T> RunTask<T> (Func<Task<T>> asyncMethod);
-		Task<T> RunTask<T> (Func<T> syncMethod);
-	}
-	public interface IPlanCommands
-	{
-		ICollectionEditorBoundCommands<EntryLineVM> eat { get; }
-		ICollectionEditorBoundCommands<InfoLineVM> eatinfo { get; }
-		ICollectionEditorBoundCommands<EntryLineVM> burn { get; }
-		ICollectionEditorBoundCommands<InfoLineVM> burninfo { get; }
-	}
-	public interface ICollectionEditorBoundCommands<T> 
-	{
-		event Action<IValueRequestBuilder> add;
-		event Action<T> remove;
-		event Action<T, IValueRequestBuilder> edit;
-	}
+    public interface ITasks
+    {
+        Task RunTask(Func<Task> asyncMethod);
+        Task RunTask(Action syncMethod);
+        Task<T> RunTask<T>(Func<Task<T>> asyncMethod);
+        Task<T> RunTask<T>(Func<T> syncMethod);
+    }
+    public interface IPlanCommands
+    {
+        ICollectionEditorBoundCommands<EntryLineVM> eat { get; }
+        ICollectionEditorBoundCommands<InfoLineVM> eatinfo { get; }
+        ICollectionEditorBoundCommands<EntryLineVM> burn { get; }
+        ICollectionEditorBoundCommands<InfoLineVM> burninfo { get; }
+    }
+    public interface ICollectionEditorBoundCommands<T>
+    {
+        event Action<IValueRequestBuilder> add;
+        event Action<T> remove;
+        event Action<T, IValueRequestBuilder> edit;
+    }
     public interface ICollectionEditorLooseCommands<T>
     {
-		event Action add;
-		event Action<T> remove;
-		event Action<T> edit;
+        event Action add;
+        event Action<T> remove;
+        event Action<T> edit;
     }
     public interface ICollectionEditorSelectableLooseCommands<T> : ICollectionEditorLooseCommands<T>
-	{
-		event Action<T> select;
-	}
-	interface IViewTask 
-	{
-		Task Completed {get;}
-		Task Pushed {get;}
-		Task Pop();
-	}
-	public class ViewTask<TResult> : IViewTask
-	{
-		Task IViewTask.Completed { get { return Completed; } }
-		public Task<TResult> Completed {get;private set;}
-		public Task Pushed {get;private set;}
-		public async Task Pop()
+    {
+        event Action<T> select;
+    }
+    interface IViewTask
+    {
+        Task Completed { get; }
+        Task Pushed { get; }
+        Task Pop();
+    }
+    public class ViewTask<TResult> : IViewTask
+    {
+        Task IViewTask.Completed { get { return Completed; } }
+        public Task<TResult> Completed { get; private set; }
+        public Task Pushed { get; private set; }
+        public async Task Pop()
         {
             Task poptask = null;
             await PlatformGlobal.platform.UIThread(() => poptask = pop());
             await poptask;
         }
-		readonly Func<Task> pop;
-		public ViewTask(Func<Task> pop, Task pushed, Task<TResult> completed)
-		{
-			this.Pushed = pushed;
-			this.pop = pop;
-			this.Completed = completed;
-		}
-	}
-	public interface IUserInput
-	{
-		// User Input
-		Task SelectString (String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
-		ViewTask<int> ChoosePlan (String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
-		Task WarnConfirm (String action, Promise confirmed);
-		Task Message(String msg);
-		Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd);
-	}
-	public interface IValueRequestBuilder
-	{
-		// get generic set of values on a page thing
-		ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages);
+        readonly Func<Task> pop;
+        public ViewTask(Func<Task> pop, Task pushed, Task<TResult> completed)
+        {
+            this.Pushed = pushed;
+            this.pop = pop;
+            this.Completed = completed;
+        }
+    }
+    public interface IUserInput
+    {
+        // User Input
+        Task SelectString(String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
+        ViewTask<int> ChoosePlan(String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
+        Task WarnConfirm(String action, Promise confirmed);
+        Task Message(String msg);
+        Task<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd);
+    }
+    public interface IValueRequestBuilder
+    {
+        // get generic set of values on a page thing
+        ViewTask<bool> GetValues(IEnumerable<GetValuesPage> requestPages);
 
         // VRO Factory Method
         IValueRequestFactory requestFactory { get; }
-	}
-	public class Barcode
-	{
-		public long value; // I think this works?
-	}
+    }
+    public class Barcode
+    {
+        public long value; // I think this works?
+    }
     public enum InfoManageType { In, Out };
     // dont forget this is client facing
     public interface IValueRequestFactory
-	{
-		IValueRequest<String> StringRequestor(String name);
-		IValueRequest<InfoLineVM> InfoLineVMRequestor(String name, InfoManageType imt);
-		IValueRequest<DateTime> DateTimeRequestor(String name);
+    {
+        IValueRequest<String> StringRequestor(String name);
+        IValueRequest<InfoLineVM> InfoLineVMRequestor(String name, InfoManageType imt);
+        IValueRequest<DateTime> DateTimeRequestor(String name);
         IValueRequest<DateTime> DateRequestor(String name);
         IValueRequest<DateTime?> nDateRequestor(String name);
         IValueRequest<TimeSpan> TimeSpanRequestor(String name);
         IValueRequest<double> DoubleRequestor(String name);
-        IValueRequest<int> IntRequestor(String name); 
-		IValueRequest<bool> BoolRequestor(String name);
-		IValueRequest<EventArgs> ActionRequestor(String name);
-		IValueRequest<Barcode> BarcodeRequestor (String name);
-		IValueRequest<OptionGroupValue> OptionGroupRequestor(String name);
-		IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
-		IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
+        IValueRequest<int> IntRequestor(String name);
+        IValueRequest<bool> BoolRequestor(String name);
+        IValueRequest<EventArgs> ActionRequestor(String name);
+        IValueRequest<Barcode> BarcodeRequestor(String name);
+        IValueRequest<OptionGroupValue> OptionGroupRequestor(String name);
+        IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
+        IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
         IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name);
         IValueRequest<TabularDataRequestValue> GenerateTableRequest();
     }
     #endregion
-    
+
     #region value types for valuerequests
 
     public class MultiRequestOptionValue
     {
         public readonly IEnumerable IValueRequestOptions;
         public int SelectedRequest { get; set; }
-        public MultiRequestOptionValue(IEnumerable IValueRequestOptions, int InitiallySelectedRequest )
+        public MultiRequestOptionValue(IEnumerable IValueRequestOptions, int InitiallySelectedRequest)
         {
             this.IValueRequestOptions = IValueRequestOptions;
             SelectedRequest = InitiallySelectedRequest;
@@ -687,7 +684,7 @@ namespace Consonance
     }
 
     public class RecurrsEveryPatternValue : INotifyPropertyChanged
-	{
+    {
         private DateTime patternFixed;
         public DateTime PatternFixed
         {
@@ -695,28 +692,28 @@ namespace Consonance
             set { ChangeProperty(() => patternFixed = value); }
         }
         public RecurrSpan PatternType;
-		public int PatternFrequency;
+        public int PatternFrequency;
 
         public event PropertyChangedEventHandler PropertyChanged = delegate { };
 
         public RecurrsEveryPatternValue(DateTime date, RecurrSpan pt, int freq)
-		{
-			PatternFixed = date;
-			PatternType = pt;
-			PatternFrequency = freq;
-		}
-		public RecurrsEveryPatternValue() : this(DateTime.Now, RecurrSpan.Day, 1) {
-		}
-		public bool IsValid 
-		{ 
-			get 
-			{  
-				return PatternType == RecurrSpan.Day ||
-				       PatternType == RecurrSpan.Month ||
-				       PatternType == RecurrSpan.Year ||
-				       PatternType == RecurrSpan.Week;	
-			}
-		}
+        {
+            PatternFixed = date;
+            PatternType = pt;
+            PatternFrequency = freq;
+        }
+        public RecurrsEveryPatternValue() : this(DateTime.Now, RecurrSpan.Day, 1) {
+        }
+        public bool IsValid
+        {
+            get
+            {
+                return PatternType == RecurrSpan.Day ||
+                       PatternType == RecurrSpan.Month ||
+                       PatternType == RecurrSpan.Year ||
+                       PatternType == RecurrSpan.Week;
+            }
+        }
 
         void ChangeProperty(Action change, [CallerMemberName]String prop = null)
         {
@@ -725,77 +722,88 @@ namespace Consonance
         }
 
         public RecurrsEveryPattern Create(DateTime? s, DateTime? e)
-		{
-			return new RecurrsEveryPattern (PatternFixed, PatternFrequency, PatternType, s, e);
-		}
-	}
-	public class RecurrsOnPatternValue
-	{
-		public RecurrSpan PatternType;
-		public int[] PatternValues;
-		public RecurrsOnPatternValue(RecurrSpan pat, int[] vals)
-		{
-			PatternType = pat;
-			PatternValues = vals;
-		}
-		public RecurrsOnPatternValue():this(RecurrSpan.Day | RecurrSpan.Month, new[] { 1 }){
-		}
-		public bool IsValid 
-		{
-			get 
-			{ 
-				int pc = 0;
-				foreach (var pt in PatternType.SplitFlags())
-					pc++;
-				bool s1 = PatternValues.Length > 1 && pc == PatternValues.Length;
-				if (s1) 
-				{
-					try{ new RecurrsOnPattern(PatternValues, PatternType,null,null); }
-					catch{ s1 = false; }
-				}
-				return s1;
-			}
-		}
-		public RecurrsOnPattern Create(DateTime? s, DateTime? e)
-		{
-			return new RecurrsOnPattern (PatternValues, PatternType, s, e);
-		}
-	}
-	public class OptionGroupValue 
-	{
-		public readonly IReadOnlyList<String> OptionNames;
-		int selectedOption;
-		public int SelectedOption {
-			get {
-				return selectedOption;
-			}
-			set {
-				selectedOption = value;
-			}
-		}
-		public OptionGroupValue(IEnumerable<String> options)
-		{
-			SelectedOption = 0;
-			OptionNames = new List<String> (options);
-		}
-		public static implicit operator int(OptionGroupValue other)
-		{
-			return other.SelectedOption;
-		}
-		public override string ToString ()
-		{
-			StringBuilder sb = new StringBuilder();
-			for(int i=0;i<OptionNames.Count;i++)
-			{
-				if (i == SelectedOption) sb.Append ("[");
-				sb.Append (OptionNames [i]);
-				if (i == SelectedOption) sb.Append ("]");
-				if (i != OptionNames.Count-1) sb.Append (" | ");
-			}
-			return sb.ToString ();
-		}
-	}
-	
+        {
+            return new RecurrsEveryPattern(PatternFixed, PatternFrequency, PatternType, s, e);
+        }
+    }
+    public class RecurrsOnPatternValue
+    {
+        public RecurrSpan PatternType;
+        public int[] PatternValues;
+        public RecurrsOnPatternValue(RecurrSpan pat, int[] vals)
+        {
+            PatternType = pat;
+            PatternValues = vals;
+        }
+        public RecurrsOnPatternValue() : this(RecurrSpan.Day | RecurrSpan.Month, new[] { 1 }) {
+        }
+        public bool IsValid
+        {
+            get
+            {
+                int pc = 0;
+                foreach (var pt in PatternType.SplitFlags())
+                    pc++;
+                bool s1 = PatternValues.Length > 1 && pc == PatternValues.Length;
+                if (s1)
+                {
+                    try { new RecurrsOnPattern(PatternValues, PatternType, null, null); }
+                    catch { s1 = false; }
+                }
+                return s1;
+            }
+        }
+        public RecurrsOnPattern Create(DateTime? s, DateTime? e)
+        {
+            return new RecurrsOnPattern(PatternValues, PatternType, s, e);
+        }
+    }
+    public class OptionGroupValue
+    {
+        public readonly IReadOnlyList<String> OptionNames;
+        int selectedOption;
+        public int SelectedOption {
+            get {
+                return selectedOption;
+            }
+            set {
+                selectedOption = value;
+            }
+        }
+        public OptionGroupValue(IEnumerable<String> options)
+        {
+            SelectedOption = 0;
+            OptionNames = new List<String>(options);
+        }
+        public static implicit operator int(OptionGroupValue other)
+        {
+            return other.SelectedOption;
+        }
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < OptionNames.Count; i++)
+            {
+                if (i == SelectedOption) sb.Append("[");
+                sb.Append(OptionNames[i]);
+                if (i == SelectedOption) sb.Append("]");
+                if (i != OptionNames.Count - 1) sb.Append(" | ");
+            }
+            return sb.ToString();
+        }
+    }
+
+    public delegate void Undo();
+    public static class IVRExtensions
+    {
+        public static Undo ValidWhen<T>(this IValueRequest<T> @this, Predicate<T> pred)
+        {
+            Action vcp = () => @this.valid = pred(@this.value);
+            @this.ValueChanged += vcp;
+            vcp();
+            return () => @this.ValueChanged -= vcp;
+        }
+    }
 	public interface IValueRequest<V>
 	{
 		Object request { get; }  // used by view to encapsulate viewbuilding lookups

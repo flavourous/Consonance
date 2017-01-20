@@ -13,7 +13,7 @@ namespace Consonance.ConsoleView
 	{
 		public CValueRequestBuilder()
 		{
-			requestFactory = new CValueRequestFactory();
+			crf = new CValueRequestFactory();
 		}
 		class GetValuesConsolePage : IConsolePage
 		{
@@ -51,7 +51,9 @@ namespace Consonance.ConsoleView
 					int i = 0;
 					foreach (var vr in PageRequests) {
                         var ss1 = String.Format(i++ + ":    {0}       {1}       {2}   {3}: ", bs(!vr.enabled), bs(vr.read_only), bs(vr.valid), vr.name);
-                        var vv = vr.ToString().Replace(Environment.NewLine, Environment.NewLine + new string(' ', ss1.Length));
+                        var vv = vr.ToString();
+                        var pad = new string(' ', ss1.Length);
+                        vv =vv.Replace(Environment.NewLine, Environment.NewLine + pad);
                         pageBuilder.AppendFormat("{0}{1}\n", ss1, vv);
 					}
 					return pageBuilder.ToString ();
@@ -61,7 +63,7 @@ namespace Consonance.ConsoleView
 			{
 				return e ? "x" : " ";
 			}
-			public Action ok = delegate { };
+			public Action ok = delegate { }, last = delegate { };
 			public ConsolePageAction[] pageActions {
 				get {
 					return Actions.ToArray<ConsolePageAction> ();
@@ -72,20 +74,28 @@ namespace Consonance.ConsoleView
 					yield return new ConsolePageAction () {
 						name = "Edit a field",
 						argumentNames = new[] { "Index", "Value" },
-						action = args => {
-							int idx = -1;
-							int.TryParse (args [0], out idx);
-							if (idx < 0 || idx >= PageRequests.Count || PageRequests [idx].read_only) {
-								Console.WriteLine ("Cant edit that...");
-								Console.ReadKey ();
-								return;
-							}
-							var p = PageRequests [idx];
-							if (!p.FromString (args.Length == 2 ? args[1] : null)) {
-								Console.WriteLine ("Error with input!  Press any key to continue...");
-								Console.ReadKey ();
-							}
-							
+						action = argso => {
+                            List<String> errs = new List<string>();
+                            for (int i = 0; i < argso.Length; i+=2)
+                            {
+                                var k = argso[i];
+                                var v = i + 1 < argso.Length ? argso[i + 1] : null;
+
+                                int idx = -1;
+                                int.TryParse(k, out idx);
+                                if (idx < 0 || idx >= PageRequests.Count || PageRequests[idx].read_only)
+                                {
+                                    errs.Add(i + ":Can't edit that");
+                                    continue;
+                                }
+                                var p = PageRequests[idx];
+                                if (!p.FromString(v)) errs.Add(i + ":Error with input");
+                            }
+                            if(errs.Count > 0)
+                            {
+                                Console.WriteLine("Errors: {0}\n Press any key to continue...", String.Join("\n", errs));
+                                ConsoleWrap.ReadKey();
+                            }
 						}
 					};
 					yield return new ConsolePageAction() 
@@ -94,7 +104,13 @@ namespace Consonance.ConsoleView
 						argumentNames = new String[0],
 						action = _=> ok()
 					};
-				}
+                    yield return new ConsolePageAction()
+                    {
+                        name = "last",
+                        argumentNames = new String[0],
+                        action = _ => last()
+                    };
+                }
 			}
 				IList<IValueRequestFromString> PageRequests {
 				get {
@@ -111,18 +127,26 @@ namespace Consonance.ConsoleView
 			TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs> ();
 			TaskCompletionSource<bool> chosen = new TaskCompletionSource<bool> ();
 			var pcp = new GetValuesConsolePage ();
-			int pidx = 0;
+			int pidx = -1;
 			Action doNext = delegate {
+			    pidx++;
 				if(pidx < rps.Count)
 				{
 					pcp.page = rps[pidx];
 					pcp.pageChanged = true;
-					// aaand wait for next??
-					pidx++;
 				}
 				else chosen.SetResult(true);
 			};
-			pcp.ok = doNext;
+            Action doPrev = delegate {
+                if (pidx > 0)
+                {
+                    pidx--;
+                    pcp.page = rps[pidx];
+                    pcp.pageChanged = true;
+                }
+            };
+            pcp.ok = doNext;
+            pcp.last = doPrev;
 			MainClass.consolePager.Push (pcp);
 			doNext ();
 			var vt = new ViewTask<bool> (() => Task.FromResult(MainClass.consolePager.Pop(pcp)), pushed.Task, chosen.Task);
@@ -130,14 +154,15 @@ namespace Consonance.ConsoleView
 			return vt;
 		}
 
-        
-        public IValueRequestFactory requestFactory { get; private set; }
+        public IValueRequestFactory requestFactory { get { return crf; } }
+        public readonly CValueRequestFactory crf;
 		#endregion
 	}
-	class CValueRequestFactory : IValueRequestFactory
+	public class CValueRequestFactory : IValueRequestFactory
 	{
-		#region IValueRequestFactory implementation
-		public IValueRequest<string> StringRequestor (string name) { return new RequestFromString<String> (name); }
+        public InfoRequest OneInfo = new InfoRequest();
+        #region IValueRequestFactory implementation
+        public IValueRequest<string> StringRequestor (string name) { return new RequestFromString<String> (name); }
 		public IValueRequest<DateTime> DateRequestor (string name) { return new RequestFromString<DateTime> (name, DateTime.Parse); }
 		public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return new RequestFromString<TimeSpan> (name, TimeSpan.Parse); }
 		public IValueRequest<double> DoubleRequestor (string name) { return new RequestFromString<double> (name, double.Parse); }
@@ -145,7 +170,7 @@ namespace Consonance.ConsoleView
 		public IValueRequest<bool> BoolRequestor (string name) { return new RequestFromString<bool> (name, bool.Parse); }
 		public IValueRequest<EventArgs> ActionRequestor (string name) { return new RequestFromString<EventArgs> (name, s => { return new EventArgs (); }); }
 		public IValueRequest<Barcode> BarcodeRequestor (string name) { return new RequestFromString<Barcode> (name, s => new Barcode () { value = long.Parse (s) });}
-		public IValueRequest<InfoLineVM> InfoLineVMRequestor (string name, InfoManageType imt) { return new RequestFromString<InfoLineVM> (name, isv => null); }
+        public IValueRequest<InfoLineVM> InfoLineVMRequestor(string name, InfoManageType imt) { OneInfo.SetName(name); OneInfo.imt = imt; return OneInfo; }
 		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name)  {
 			return new RequestFromString<OptionGroupValue> (name, (s, ogv) => {
 				var idx = int.Parse (s);
@@ -201,7 +226,6 @@ namespace Consonance.ConsoleView
 					int i=0;
 					for(;i<masks.Count-1;i++)
 						exlp += (i==0 ? "on " : "of ")+ (RecurrSpan)masks[i] + " " + patval.PatternValues[i];
-					var lpv = patval.PatternValues[i];
 					exlp += " of the " + (RecurrSpan)masks[i];
 
 					String[] fmt = new string[masks.Count];
@@ -226,7 +250,7 @@ namespace Consonance.ConsoleView
         {
             return new RequestFromString<DateTime?>(name,
                 str => str == null ? null : new DateTime?(DateTime.Parse(str)),
-                val => val?.ToString()
+                val => val?.ToString() ?? "NULL"
             );
         }
 
@@ -290,7 +314,87 @@ namespace Consonance.ConsoleView
 		bool valid { get; } 
 		bool read_only { get; } 
 	}
-	class RequestFromString<T> : IValueRequest<T>, IValueRequestFromString
+    public class InfoRequest : RequestFromString<InfoLineVM>, IConsolePage
+    {
+        public IReadOnlyList<InfoLineVM> ininfos, outinfos;
+        public void SetName(String n) { this.name = n; }
+        public InfoManageType imt { get; set; }
+        public InfoRequest() : base("")
+        {
+            onlyAct = _ => MainClass.consolePager.Push(this);
+            sdel = vm => vm == null ? "none" : vm.name;
+        }
+        public bool allowDefaultActions { get; } = true;
+        public bool pageChanged { get; set; }
+        public string pageData
+        {
+            get
+            {
+                StringBuilder sb = new StringBuilder();
+                var use = imt == InfoManageType.In ? ininfos : outinfos;
+                for(int i=0;i<use.Count;i++)
+                    sb.AppendFormat("{0}{1}: {2}{0}", use[i] == value ? "***" : "", i, use[i].name);
+                return sb.ToString();
+            }
+        }
+        public ConsolePageAction[] pageActions
+        {
+            get
+            {
+                return new[]
+                {
+                    new ConsolePageAction
+                    {
+                        name = "choose",
+                        argumentNames = new[] { "index(none)" },
+                        action = args =>
+                        {
+                            var use = imt == InfoManageType.In ? ininfos : outinfos;
+                            if(args[0] == "none") value=null;
+                            else value = use[int.Parse(args[0])];
+                            MainClass.consolePager.Pop();
+                        }
+                    },
+                    new ConsolePageAction
+                    {
+                        name = "edit",
+                        argumentNames = new[] { "index" },
+                        action = args =>
+                        {
+                            var use = imt == InfoManageType.In ? ininfos : outinfos;
+                            var cuse =(CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM>) (imt == InfoManageType.In ? MainClass.plancommands.eatinfo : MainClass.plancommands.burninfo);
+                            var ed = use[int.Parse(args[0])];
+                            cuse.Edit(ed);
+                        }
+                    },
+                    new ConsolePageAction
+                    {
+                        name = "delete",
+                        argumentNames = new[] { "index" },
+                        action = args =>
+                        {
+                            var use = imt == InfoManageType.In ? ininfos : outinfos;
+                            var cuse =(CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM>) (imt == InfoManageType.In ? MainClass.plancommands.eatinfo : MainClass.plancommands.burninfo);
+                            var ed = use[int.Parse(args[0])];
+                            cuse.Remove(ed);
+                        }
+                    },
+                    new ConsolePageAction
+                    {
+                        name = "add",
+                        argumentNames = new String[0],
+                        action = args =>
+                        {
+                            var use = imt == InfoManageType.In ? ininfos : outinfos;
+                            var cuse =(CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM>) (imt == InfoManageType.In ? MainClass.plancommands.eatinfo : MainClass.plancommands.burninfo);
+                            cuse.Add();
+                        }
+                    }
+                };
+            }
+        }
+    }
+    public class RequestFromString<T> : IValueRequest<T>, IValueRequestFromString
 	{
 		public RequestFromString(String name) 
 		{ this.name = name; }
@@ -303,11 +407,11 @@ namespace Consonance.ConsoleView
 		public RequestFromString(String name, Converter<String, T> convert, Converter<T, String> convertBack) : this(name,convert) 
 		{ this.sdel = convertBack; }
 
-        public String name { get; private set;}
-		Converter<String,T> cdel = t => (T)Convert.ChangeType(t,typeof(T));
-		Converter<T,String> sdel = t => t == null ? "" : t.ToString();
-		Action<String,T> actOnExisting =null;
-		Action<T> onlyAct = null;
+        public String name { get; protected set;}
+        protected Converter<String,T> cdel = t => (T)Convert.ChangeType(t,typeof(T));
+        protected Converter<T,String> sdel = t => t == null ? "" : t.ToString();
+        protected Action<String,T> actOnExisting =null;
+		protected Action<T> onlyAct = null;
 		public override string ToString () { return sdel (value); }
 		public bool FromString (String s) { 
 			Action final = delegate { };
@@ -358,5 +462,6 @@ namespace Consonance.ConsoleView
 		}
 		#endregion
 	}
+    
 }
 

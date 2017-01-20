@@ -16,7 +16,7 @@ namespace Consonance
 		{
 			repo [typeof(IType)] = finder;
 		}
-		public static IFindList<InfoLineVM> GetFinder<IType>(Func<IType, InfoLineVM> creator, SQLiteConnection connection) where IType : BaseInfo
+		public static IFindList<InfoLineVM> GetFinder<IType>(Func<IType, InfoLineVM> creator, ICheckedConn connection) where IType : BaseInfo
 		{
 			if(repo.ContainsKey(typeof(IType)))
 			{ 
@@ -43,12 +43,12 @@ namespace Consonance
 		IReadOnlyList<T> Find (); // pulls data from requestbuilder.
 	}
 		
-	class FinderAdapter<IType> : IFindList<InfoLineVM>
+	class FinderAdapter<IType> : IFindList<InfoLineVM> where IType : BaseDB
 	{
 		readonly Func<IType, InfoLineVM> creator;
 		readonly IFindData<IType> searcher;
-		readonly SQLiteConnection conn;
-		public FinderAdapter(Func<IType, InfoLineVM> creator, IFindData<IType> searcher, SQLiteConnection conn)
+		readonly ICheckedConn conn;
+		public FinderAdapter(Func<IType, InfoLineVM> creator, IFindData<IType> searcher, ICheckedConn conn)
 		{
 			this.conn = conn;
 			this.creator=creator;
@@ -68,7 +68,7 @@ namespace Consonance
 		public void Import (InfoLineVM item)
 		{
 			IType model = (IType)item.originator;
-			conn.Insert (model, typeof(IType));
+            conn.Insert(model);
 		}
 		public String[] FindModes { get { return searcher.FindModes; } }
 		public Object[] UseFindMode (String mode, IValueRequestFactory factory) { return searcher.UseFindMode (mode, factory); }
