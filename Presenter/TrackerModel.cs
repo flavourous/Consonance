@@ -31,6 +31,12 @@ namespace Consonance
         [ColumnAccessor, Ignore] // allow on all for simples.
         public IDictionary<String, Object> AdHoc { get; } = new Dictionary<String, Object>();
     }
+    public abstract class KeyableBaseDB : BaseDB, IKeyableBaseDB
+    {
+        public int fk_id { get; set; }
+        public int fk_mid { get; set; }
+        public int fk_pid { get; set; }
+    }
     public abstract class BaseEntry : BaseDB
 	{
 		// keys
@@ -166,7 +172,7 @@ namespace Consonance
 		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
 		BindingList<Object> InfoFields(IValueRequestFactory factory);
 		// ok so those objects, put this data in them. im editing, for exmaple.
-		void FillRequestData (InfoType item); 
+		void FillRequestData (InfoType item, IValueRequestFactory factory); 
 		// ok make me an info please here's that data.
 		InfoType MakeInfo (InfoType toEdit=null);
 		// ok is this info like complete for your diety? yes. ffs.
@@ -187,7 +193,7 @@ namespace Consonance
     
 
 
-    interface ICheckedConn
+    public interface ICheckedConn
     {
         void Update<T>(T item) where T : BaseDB;
         IEnumerable<T> All<T>() where T : BaseDB;

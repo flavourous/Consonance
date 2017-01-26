@@ -44,7 +44,7 @@ namespace Consonance
 	}
 
 	// helper derrivative
-	public class CalHold<T,E,B> : SimpleTrackerHolder<T, E, FoodInfo, B, FireInfo>
+	class CalHold<T,E,B> : SimpleTrackerHolder<T, E, FoodInfo, B, FireInfo>
 		where T : TrackerInstance, new()
         where E : CalorieDietEatEntry, new()
         where B : CalorieDietBurnEntry, new()
@@ -52,7 +52,7 @@ namespace Consonance
 
 	// Diet factory methods
     
-	public static class CalorieDiets
+	static class CalorieDiets
 	{
 		public static readonly CalHold<CalorieDietInstance_Simple, CalorieDiet_Simple_EatEntry, CalorieDiet_Simple_BurnEntry> simple 
             = new CalHold<CalorieDietInstance_Simple, CalorieDiet_Simple_EatEntry, CalorieDiet_Simple_BurnEntry>
@@ -156,7 +156,7 @@ namespace Consonance
 	{
 		#region IReflectedHelpyQuants implementation
         public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FoodInfo)o).calories ?? 0.0, (o, v) => ((FoodInfo)o).calories = v, 0.0) }; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Grams", 0, 100.0), HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Double, "Servings", 1, 1.0) }; } }
+        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get { return new[] { new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Number, Name = "Grams", defaultvalue = 100.0 }, new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Number, Name = "Servings", defaultvalue = 1.0 } }; } }
         public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
         public Expression<Func<FoodInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
         #endregion
@@ -171,7 +171,7 @@ namespace Consonance
 	{
 		#region IReflectedHelpyQuants implementation
 		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FireInfo)o).calories ?? 0.0, (o, v) => ((FireInfo)o).calories = v, 0.0) }; } }
-        public InfoQuantifier[] quantifier_choices { get { return new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Duration, "Duration", 0, 0.0) }; } }
+        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get { return new[] { new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Duration, Name = "Duration", defaultvalue = 0.0 } }; } }
         public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
         public Expression<Func<FireInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
         #endregion

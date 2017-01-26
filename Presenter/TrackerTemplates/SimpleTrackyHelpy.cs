@@ -14,6 +14,13 @@ namespace Consonance
     {
         double quantity { get; set; }
     }
+    public enum InfoQuantifierTypes { Number, Duration };
+    public class SimpleTrackyInfoQuantifierDescriptor : KeyableBaseDB
+    {
+        public InfoQuantifierTypes type { get; set; }
+        public double defaultvalue { get; set; }
+        public String Name { get; set; }
+    }
     public abstract class HBaseInfo : BaseInfo,HQ
     {
         public int quantifierID { get; set; }
@@ -34,18 +41,18 @@ namespace Consonance
 		TrackerDetailsVM TrackerDetails { get;}
 		TrackerDialect TrackerDialect {get;}
 	}
-	public class SimpleTrackerHolder<T,I,Ii, O, Oi> where T : TrackerInstance, new()
+	class SimpleTrackerHolder<T,I,Ii, O, Oi> where T : TrackerInstance, new()
 		where I : HBaseEntry, new()
 		where O : HBaseEntry, new()
 		where Ii : HBaseInfo, new()
 		where Oi : HBaseInfo, new()
 	{
-		public readonly ITrackModel<T,I,Ii,O,Oi> model;
-		public readonly ITrackerPresenter<T,I,Ii,O,Oi> presenter;		
+		public readonly Func<ICheckedConn,ITrackModel<T,I,Ii,O,Oi>> model;
+		public readonly Func<ICheckedConn, ITrackerPresenter<T,I,Ii,O,Oi>> presenter;		
 		public SimpleTrackerHolder(IExtraRelfectedHelpy<T,Ii,Oi> helpy)
 		{
-			model = new SimpleTrackyHelpy<T, I,Ii, O, Oi> (helpy);
-			presenter = new SimpleTrackyHelpyPresenter<T, I,Ii, O, Oi> (helpy);
+			model = c=>new SimpleTrackyHelpy<T, I,Ii, O, Oi> (helpy,c);
+			presenter =c=> new SimpleTrackyHelpyPresenter<T, I,Ii, O, Oi> (helpy,c);
 		}
 	}
 
@@ -96,7 +103,7 @@ namespace Consonance
     {
         InstanceValue<double>[] calculation { get; } // these are the fields we want to take from/store to the info
         IReflectedHelpyCalc[] calculators { get; }
-        InfoQuantifier[] quantifier_choices { get; }
+        SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get; }
         Expression<Func<I, bool>> InfoComplete { get; }
     }
     public interface IReflectedHelpyCalc
@@ -170,43 +177,7 @@ namespace Consonance
 			return FromType (defaultValue, null, name, valueGetter, valueSetter, directRequest);
 		}
 	}
-    public static class HelpyInfoQuantifier
-    {
-        public static InfoQuantifier FromType(InfoQuantifier.InfoQuantifierTypes t, String name, int uid, double dv)
-        {
-            return InfoQuantifier.FromType(t, name, uid, dv, o => ((HQ)o).quantity, (o, v) => ((HQ)o).quantity = (double)v);
-        }
-    }
-    public sealed class InfoQuantifier
-    {
-        public enum InfoQuantifierTypes {  Double, Integer, Duration };
-        public readonly int QuantifierID;
-        public readonly VRVConnectedValue ConnectedValue;
-        public readonly Func<double, String> DisplayConversion;
-        private InfoQuantifier(int id, VRVConnectedValue vcv, Func<double, String> dc)
-        {
-            QuantifierID = id;
-            ConnectedValue = vcv;
-            DisplayConversion = dc;
-        }
-        // a double column injected into the info, and an id for which infoquantifier
-        // a double column injected into the entry for amount - already foreign keys info
-        // this gives textual description, and gets a valuerequest, and converts vrv into doubles for storage.
-
-        public static InfoQuantifier FromType(InfoQuantifierTypes t, String name, int uid, double dv, Func<Object, Object> getQuantity, Action<Object, Object> setQuantity)
-        {
-            switch (t)
-            {
-                default:
-                case InfoQuantifierTypes.Double:
-                    return new InfoQuantifier(uid, VRVConnectedValue.FromTypec(dv, d => d > 0.0, name, getQuantity, setQuantity, f => f.DoubleRequestor, d => d, d => d), d => d.ToString("F2"));
-                case InfoQuantifierTypes.Integer:
-                    return new InfoQuantifier(uid, VRVConnectedValue.FromTypec(dv, d => d > 0, name, getQuantity, setQuantity, f => f.IntRequestor, d => (double)d, d => (int)d), d => d.ToString());
-                case InfoQuantifierTypes.Duration:
-                    return new InfoQuantifier(uid, VRVConnectedValue.FromTypec(dv, d => d.TotalHours > 0.0, name, getQuantity, setQuantity, f => f.TimeSpanRequestor, d => d.TotalHours, d => TimeSpan.FromHours(d)), d => TimeSpan.FromHours(d).WithSuffix());
-            }
-        }
-    }
+    
     
 	class IRSPair<I>
 	{
@@ -218,7 +189,8 @@ namespace Consonance
 			this.descriptor = iv;
 		}
 	}
-	public class SimpleTrackyHelpy<Inst, In, InInfo, Out, OutInfo> : ITrackModel<Inst, In, InInfo, Out, OutInfo>
+
+	class SimpleTrackyHelpy<Inst, In, InInfo, Out, OutInfo> : ITrackModel<Inst, In, InInfo, Out, OutInfo>
 		where    Inst : TrackerInstance, new()
 		where      In : HBaseEntry, new()
 		where  InInfo : HBaseInfo, new()
@@ -232,12 +204,12 @@ namespace Consonance
 		readonly IReadOnlyList<IRSPair<Inst>> flectyRequests;
 
 		readonly DefaultTrackerInstanceRequests defaultTrackerStuff;
-		public SimpleTrackyHelpy(IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy) 
+		public SimpleTrackyHelpy(IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy, ICheckedConn conn) 
 		{
 			this.helpy = helpy; 
 			defaultTrackerStuff = new DefaultTrackerInstanceRequests (helpy.TrackerDetails.category);
-			inc = new HelpedCreation<In, InInfo> (helpy.input);
-			ouc = new HelpedCreation<Out, OutInfo> (helpy.output);
+			inc = new HelpedCreation<In, InInfo> (helpy.input,conn);
+			ouc = new HelpedCreation<Out, OutInfo> (helpy.output,conn);
 			this.flectyRequests = helpy.instanceValueFields.MakeList (s => new IRSPair<Inst>(s.CreateHelper (Validate), s));
 		}
 		void Validate()
@@ -282,17 +254,93 @@ namespace Consonance
 		}
 		#endregion
 	}
-	
+
+    class MeasureOptionsContainer
+    {
+        public SimpleTrackyInfoQuantifierDescriptor desc;
+        public VRVConnectedValue quant;
+        public IRequestStorageHelper requestStorage;
+        public Func<double, String> displayConversion;
+    }
+    class InfoFinderHelper
+    {
+        readonly ICheckedConn conn;
+        readonly Action Validator;
+        public InfoFinderHelper(ICheckedConn conn, Action Validator)
+        {
+            this.conn = conn;
+            this.Validator = Validator;
+        }
+
+        // if you have an actual FK
+        public MeasureOptionsContainer FindMO(int qid)
+        {
+            // From somewhere random? dont create if it's not been created yet (errore)
+            var w = conn.Where<SimpleTrackyInfoQuantifierDescriptor>(d => d.id == qid);
+            return Geto(w.First()); // otherwise, how did you ask?? :/
+        }
+
+        public SimpleTrackyInfoQuantifierDescriptor Find(SimpleTrackyInfoQuantifierDescriptor q)
+        {
+
+            conn.CreateTable<SimpleTrackyInfoQuantifierDescriptor>(); // ensure
+
+            // Ensure has in DB - we wont have an id to start with from defs
+            var hit = conn.Where<SimpleTrackyInfoQuantifierDescriptor>(d => d.Name == q.Name && d.type == q.type && d.defaultvalue == q.defaultvalue);
+            if (hit.Count() != 1) return null;
+            else return hit.First();
+        }
+
+        // For no id (maybe create)
+        public MeasureOptionsContainer CreateMO(SimpleTrackyInfoQuantifierDescriptor q)
+        {
+
+            var exist = Find(q);
+            if (exist == null)
+            {
+                q.fk_id = q.fk_mid = q.fk_pid = -1; // Off-Table.
+                conn.Insert(q); // updates pk on this instance too
+            }
+            else q = exist;
+
+            // Give it back (with proper k)
+            return  Geto(q);
+        }
+
+        MeasureOptionsContainer Geto(SimpleTrackyInfoQuantifierDescriptor q )
+        {
+            var moc = new MeasureOptionsContainer { desc = q };
+            moc.quant = FromEntry(q, out moc.displayConversion);
+            moc.requestStorage = moc.quant.CreateHelper(
+                () => moc.requestStorage.requestValid =
+                moc.quant.ValidateHelper(new[] { moc.requestStorage }));
+            moc.requestStorage.requestChanged += Validator;
+            return moc;
+        }
+
+        VRVConnectedValue FromEntry(SimpleTrackyInfoQuantifierDescriptor dsc, out Func<double,string> cv)
+        {
+            Func<object, object> getQuantity = o => ((HQ)o).quantity;
+            Action<object, object> setQuantity = (o, v) => ((HQ)o).quantity = (double)v;
+            switch (dsc.type)
+            {
+                default:
+                case InfoQuantifierTypes.Number:
+                    cv = d => d.ToString("F2");
+                    return VRVConnectedValue.FromTypec(dsc.defaultvalue, d => d > 0.0, dsc.Name, getQuantity, setQuantity, f => f.DoubleRequestor, d => d, d => d);
+                case InfoQuantifierTypes.Duration:
+                    cv = d => TimeSpan.FromSeconds(d).WithSuffix();
+                    return VRVConnectedValue.FromTypec(dsc.defaultvalue, d => d.TotalHours > 0.0, dsc.Name, getQuantity, setQuantity, f => f.TimeSpanRequestor, d => d.TotalHours, d => TimeSpan.FromHours(d));
+            }
+        }
+    }
+
 	class HelpedCreation<E,I> : IEntryCreation<E,I>
 		where E : HBaseEntry, new()
 		where I : HBaseInfo, new()
 	{
 		// for info requests
-        class MeasureOptionsContainer
-        {
-            public InfoQuantifier quant;
-            public IRequestStorageHelper requestStorage;
-        }
+        readonly InfoFinderHelper ihelper;
         readonly List<MeasureOptionsContainer> measureOptionContainers;
         MeasureOptionsContainer currentMeasureOption = null;
         readonly RequestStorageHelper<MultiRequestOptionValue> measureAndOptionsRequest;
@@ -307,32 +355,14 @@ namespace Consonance
 		readonly IReflectedHelpyQuants<I> quant;
 		readonly DefaultEntryRequests defaulter = new DefaultEntryRequests ();
 		readonly RequestStorageHelper<String> infoNameRequest;
-		public HelpedCreation(IReflectedHelpyQuants<I> quant)
+		public HelpedCreation(IReflectedHelpyQuants<I> quant, ICheckedConn conn)
 		{
+            this.ihelper = new InfoFinderHelper(conn, ValidateCurrentAmount);
 			this.IsInfoComplete = quant.InfoComplete;
 			this.quant = quant;
 
-            // ready this
-            Action ValidateCurrentAmount = () =>
-            {
-                var rv = measureAndOptionsRequest.request.value;
-                var irv = measureOptionContainers[rv.SelectedRequest];
-                measureAndOptionsRequest.requestValid = irv.requestStorage.requestValid;
-            };
-
             // Get these ready!
-            measureOptionContainers = new List<MeasureOptionsContainer>();
-            foreach (var q in quant.quantifier_choices)
-            {
-                IRequestStorageHelper rs = null;
-                rs = q.ConnectedValue.CreateHelper(() => rs.requestValid = q.ConnectedValue.ValidateHelper(new[] { rs }));
-                measureOptionContainers.Add(new MeasureOptionsContainer
-                {
-                    quant = q, // 'cause ordering?
-                    requestStorage = rs,
-                });
-                rs.requestChanged += ValidateCurrentAmount;
-            }
+            measureOptionContainers = quant.quantifier_choices.Select(q => ihelper.CreateMO(q)).ToList();
 
             // and this dudes
             Func<MultiRequestOptionValue, MultiRequestOptionValue> deffer = d =>
@@ -362,6 +392,17 @@ namespace Consonance
             ns = new RequestStorageHelper<double>(q.name, () => q.defaultValue, () => ns.request.valid = true);
             return new TargetedRequestStorage { requestStore = ns, quant = q };
         }
+        // ready this
+        void ValidateCurrentAmount()
+        {
+            var rv = measureAndOptionsRequest.request.value;
+            if (rv != null)
+            {
+                var irv = rv.SelectedRequest == -1 ? hiddenQuant : measureOptionContainers[rv.SelectedRequest];
+                measureAndOptionsRequest.requestValid = irv.requestStorage.requestValid;
+            }
+        }
+        
         // deal with displaying realtime calc data for calc creates and edit.
         I currInfo;
 		void SetupInfoObservers(I info)
@@ -377,10 +418,7 @@ namespace Consonance
                     currentMeasureOption.requestStorage.requestChanged -= MeasureQuantity_request_changed;
 
                 // Determine quantifier used.
-                var usedquant = (from q in measureOptionContainers where q.quant.QuantifierID == info.quantifierID select q);
-                if (usedquant.Count() != 1)
-                    throw new ArgumentException("Got " + usedquant.Count() + " possibilities for quantifiers!");
-                currentMeasureOption = usedquant.First();
+                currentMeasureOption = ihelper.FindMO(info.quantifierID);
             }
             else currentMeasureOption = null;
             directRequests.Act(d => d.Value.requestStore.request.read_only = info != null);
@@ -394,10 +432,11 @@ namespace Consonance
 		void MeasureQuantity_request_changed ()
 		{
             // update the calories field with a calc
-            var amt = currentMeasureOption.quant.ConnectedValue.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
+            var amt = currentMeasureOption.quant.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
             var cv=CalcVals((double)amt, currInfo);
             directRequests.Act(d => d.Value.requestStore.request.value = cv[d.Key]);
 		}
+
 		#region IEntryCreation implementation
 
 		public void ResetRequests ()
@@ -432,7 +471,7 @@ namespace Consonance
             // do requests
 			SetupInfoObservers (info);
             var blo = new BindingList<Object>();
-            blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate));
+            blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.FindRequestorDelegate));
             blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));//readonly
 			ProcessRequestsForInfo (blo, factory, info);
 			defaulter.PushInDefaults(null, blo, factory);
@@ -455,12 +494,12 @@ namespace Consonance
 		public E Calculate (I info, bool shouldComplete)
 		{
 			var rv = new E ();
-			var amount = currentMeasureOption.quant.ConnectedValue.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
+			var amount = currentMeasureOption.quant.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
 			var res = CalcVals ((double)amount, info);
 
             // techniacllly only need to set amount field, cause, info will be set too. and the val is calculated!
             // but i think that calc only happens here during creation and editing
-			currentMeasureOption.quant.ConnectedValue.valueSetter (rv, amount);
+			currentMeasureOption.quant.valueSetter (rv, amount);
             directRequests.Act(d => d.Value.quant.valueSetter(rv, res[d.Key]));
 			defaulter.Set (rv);
 			return rv;
@@ -506,9 +545,9 @@ namespace Consonance
 			// requests for editing a calced one....hmmouch?
 			SetupInfoObservers (info);
             var blo = new BindingList<Object>();
-            blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.ConnectedValue.FindRequestorDelegate));
+            blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.FindRequestorDelegate));
             blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));//readonly
-            currentMeasureOption.requestStorage.requestValue = currentMeasureOption.quant.ConnectedValue.valueGetter(toEdit);
+            currentMeasureOption.requestStorage.requestValue = currentMeasureOption.quant.valueGetter(toEdit);
 			ProcessRequestsForInfo (blo, factory, info); // initially, no, we'll add none...but maybe subsequently.
 			defaulter.PushInDefaults (toEdit, blo, factory);
             BeginObserving();
@@ -518,10 +557,10 @@ namespace Consonance
 		public E Edit (E toEdit, I info, bool shouldComplete)
 		{
 			defaulter.Set (toEdit);
-            var amount = currentMeasureOption.quant.ConnectedValue.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
+            var amount = currentMeasureOption.quant.ConvertRequestValueToData(currentMeasureOption.requestStorage.requestValue);
             var res = CalcVals ((double)amount, info);
 
-            currentMeasureOption.quant.ConnectedValue.valueSetter(toEdit, amount);
+            currentMeasureOption.quant.valueSetter(toEdit, amount);
             directRequests.Act(d => d.Value.quant.valueSetter(toEdit, res[d.Key]));
             return toEdit;
 		}
@@ -531,24 +570,40 @@ namespace Consonance
         #region IInfoCreation implementation	
 		public BindingList<object> InfoFields (IValueRequestFactory factory)
 		{
-            // get request options
-            measureAndOptionsRequest.request.value = new MultiRequestOptionValue((from q in measureOptionContainers select q.requestStorage.CGet(factory, q.quant.ConnectedValue.FindRequestorDelegate)).ToArray(), 0);
             var rv = new BindingList<Object>() { infoNameRequest.CGet(factory.StringRequestor), measureAndOptionsRequest.CGet(factory.IValueRequestOptionGroupRequestor) };
-			foreach (var iv in forMissingInfoQuantities)
+
+            // get request options
+            measureAndOptionsRequest.request.value = new MultiRequestOptionValue(
+                (from q in measureOptionContainers
+                 select q.requestStorage.CGet(factory, q.quant.FindRequestorDelegate))
+                 .ToArray(), 0, null);
+
+            foreach (var iv in forMissingInfoQuantities)
 				rv.Add (iv.requestStore.CGet (factory.DoubleRequestor));
 			return rv;
 		}
 
-		public void FillRequestData (I item)
+        MeasureOptionsContainer hiddenQuant;
+		public void FillRequestData (I item, IValueRequestFactory factory)
 		{
             // going to do edit
-            var usedquant = measureOptionContainers.FindAll(p => p.quant.QuantifierID == item.quantifierID); 
-            if(usedquant.Count != 1) throw new ArgumentException("Got " + usedquant.Count() + " possibilities for quantifiers!");
+            var usedquant = ihelper.FindMO(item.quantifierID);
 
-            var qi = measureOptionContainers.IndexOf(usedquant[0]);
+            // this is -1 if not option on this traker
+            var qi = measureOptionContainers.FindIndex(u => u.desc.id == item.quantifierID);
+
+            // need hdden request? -1?
+            Object hr = null;
+            if (qi == -1)
+            {
+                hiddenQuant = usedquant;
+                hr = usedquant.requestStorage.CGet(factory, usedquant.quant.FindRequestorDelegate);
+            }
+            measureAndOptionsRequest.request.value.HiddenRequest = hr;
             measureAndOptionsRequest.request.value.SelectedRequest = qi;
-            var amt = usedquant[0].quant.ConnectedValue.valueGetter(item);
-            usedquant[0].requestStorage.requestValue = usedquant[0].quant.ConnectedValue.ConvertDataToRequestValue(amt);
+
+            var amt = usedquant.quant.valueGetter(item);
+            usedquant.requestStorage.requestValue = usedquant.quant.ConvertDataToRequestValue(amt);
 
 			// put the data in item into the requests please.
             foreach(var q in forMissingInfoQuantities)
@@ -564,13 +619,13 @@ namespace Consonance
 
             // get the info need to store
             int sr = measureAndOptionsRequest.request.value.SelectedRequest;
-            var mv = measureOptionContainers[sr];
+            var mv = sr == -1 ? hiddenQuant : measureOptionContainers[sr];
             var sv = mv.requestStorage.requestValue;
-            var dv = mv.quant.ConnectedValue.ConvertRequestValueToData(sv);
-            var qid = mv.quant.QuantifierID;
+            var dv = mv.quant.ConvertRequestValueToData(sv);
+            var qid = mv.desc.id;
 
             // set them
-            mv.quant.ConnectedValue.valueSetter(ret, dv);
+            mv.quant.valueSetter(ret, dv);
             ret.quantifierID = qid;
             foreach(var q in forMissingInfoQuantities)
 				q.quant.valueSetter(ret, q.requestStore.request.value);
@@ -582,7 +637,7 @@ namespace Consonance
 		#endregion
 	}
 
-	public class SimpleTrackyHelpyPresenter<Inst, In, InInfo, Out, OutInfo> : ITrackerPresenter<Inst, In, InInfo, Out, OutInfo>
+	class SimpleTrackyHelpyPresenter<Inst, In, InInfo, Out, OutInfo> : ITrackerPresenter<Inst, In, InInfo, Out, OutInfo>
 		where    Inst : TrackerInstance, new()
 		where      In : HBaseEntry, new()
 		where  InInfo : HBaseInfo, new()
@@ -592,28 +647,21 @@ namespace Consonance
 		public TrackerDetailsVM details { get { return helpy.TrackerDetails; } }
 		public TrackerDialect dialect { get { return helpy.TrackerDialect; } }
 		readonly IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy;
+        readonly InfoFinderHelper ihelper;
 
-        Dictionary<int, VRVConnectedValue> qcv_in = new Dictionary<int, VRVConnectedValue>();
-        Dictionary<int, VRVConnectedValue> qcv_out = new Dictionary<int, VRVConnectedValue>();
-		public SimpleTrackyHelpyPresenter(IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy)
+		public SimpleTrackyHelpyPresenter(IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy, ICheckedConn conn)
 		{
 			this.helpy = helpy;
-            qcv_in = helpy.input.quantifier_choices.ToDictionary(p => p.QuantifierID, p => p.ConnectedValue);
-            qcv_out = helpy.output.quantifier_choices.ToDictionary(p => p.QuantifierID, p => p.ConnectedValue);
+            this.ihelper = new InfoFinderHelper(conn, delegate { });
+            helpy.input.quantifier_choices.Concat(helpy.output.quantifier_choices)
+                .Select(c => ihelper.CreateMO(c)); // not used but starts things up
 		}
 
 		#region IDietPresenter implementation
-        InfoQuantifier GetQuant(int id, IEnumerable<InfoQuantifier> q)
-        {
-            var usedquant = q.Where(p => p.QuantifierID == id);
-            if (usedquant.Count() != 1) throw new ArgumentException("Got " + usedquant.Count() + " possibilities for quantifiers!");
-            return usedquant.First();
-        }
-
 		String QuantyGet<A>(IReflectedHelpyQuants<A> q, HBaseEntry e, HBaseInfo i)
 		{
-            var uq = GetQuant(i.quantifierID, q.quantifier_choices);
-			return uq.DisplayConversion(e.quantity) + " of " + i.name;
+            var uq = ihelper.FindMO(i.quantifierID);
+			return uq.displayConversion(e.quantity) + " of " + i.name;
 		}
         const String noninfo = "Quick Entry";
 		public EntryLineVM GetRepresentation (In entry, InInfo info)
@@ -670,13 +718,14 @@ namespace Consonance
 				kl
 			);
 		}
+
         KVPList<String, double> GetIK<A>(IReflectedHelpyQuants<A> q, A info) where A : HBaseInfo
         {
-            var uq = GetQuant(info.quantifierID, q.quantifier_choices);
+            var uq = ihelper.FindMO(info.quantifierID);
             var args = q.calculation.Select(c => c.valueGetter(info)).ToArray();
             var res = q.calculators.ToKeyValue(c => c.TargetID, c => c.Calculate(args));
             var kl = new KVPList<string, double>(res);
-            kl.Add(uq.ConnectedValue.name, (double)uq.ConnectedValue.valueGetter(info));
+            kl.Add(uq.quant.name, (double)uq.quant.valueGetter(info));
             return kl;
         }
 		public InfoLineVM GetRepresentation (InInfo info)

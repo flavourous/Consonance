@@ -38,7 +38,7 @@ namespace Consonance
 		async void LaunchFinder() // again, it's event handler.
 		{
 			finderView.Choose (infoFinder).ContinueWith (t =>
-				infoCreator.FillRequestData ((T)t.Result.originator)
+				infoCreator.FillRequestData ((T)t.Result.originator, factory)
 			);
 		}
 	}

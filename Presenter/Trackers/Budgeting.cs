@@ -27,14 +27,14 @@ namespace Consonance
 		public double amount { get; set; } // burned...
 	}
 
-	public class SBH : SimpleTrackerHolder<SimpleBudgetInstance_Simple, SimpleBudgetEatEntry, IncomeInfo, SimpleBudgetBurnEntry, ExpenditureInfo>
+	class SBH : SimpleTrackerHolder<SimpleBudgetInstance_Simple, SimpleBudgetEatEntry, IncomeInfo, SimpleBudgetBurnEntry, ExpenditureInfo>
 	{
 		public SBH(IExtraRelfectedHelpy<SimpleBudgetInstance_Simple, IncomeInfo, ExpenditureInfo> h) : base(h) {
 		}
 	}
 
 	// Diet factory methods
-	public static class Budgets
+	static class Budgets
 	{
 		public static SBH simpleBudget = new SBH (new SimpleBudget_SimpleTemplate ());
 	}
@@ -71,7 +71,7 @@ namespace Consonance
         public InstanceValue<double>[] calculation { get; } = new[] { new InstanceValue<double>("Amount", o => ((IncomeInfo)o).amount, (o, v) => ((IncomeInfo)o).amount = v, 0.0) };
         public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
 		public Expression<Func<IncomeInfo, bool>> InfoComplete { get; } = fi => true;
-        public InfoQuantifier[] quantifier_choices { get; } = new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) };
+        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get; } = new[] { new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Number, Name = "Quantity", defaultvalue = 1.0 } };
         #endregion
         class ICalc : IReflectedHelpyCalc
         {
@@ -86,7 +86,7 @@ namespace Consonance
         public InstanceValue<double>[] calculation { get; } = new[] { new InstanceValue<double>("Amount", o => ((ExpenditureInfo)o).amount, (o, v) => ((ExpenditureInfo)o).amount = v, 0.0) };
         public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
         public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get; }  = fi => true; 
-        public InfoQuantifier[] quantifier_choices { get; } = new[] { HelpyInfoQuantifier.FromType(InfoQuantifier.InfoQuantifierTypes.Integer, "Quantity", 0, 1.0) };
+        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get; } = new[] { new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Number, Name = "Quantity", defaultvalue = 1.0 } };
         #endregion
         class ICalc : IReflectedHelpyCalc
         {

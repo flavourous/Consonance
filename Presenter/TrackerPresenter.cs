@@ -522,7 +522,7 @@ namespace Consonance
 			var vros = editing ? creator.InfoFields (builder.requestFactory) : new ValueRequestFactory_FinderAdapter<I> (finder, creator, builder.requestFactory, getInput).GetRequestObjects ();
 			var gvp = new GetValuesPage (title);
 			gvp.SetList (vros);
-			if (editing) creator.FillRequestData (toEdit);
+			if (editing) creator.FillRequestData (toEdit, builder.requestFactory);
 			var vr = builder.GetValues (new[]{ gvp });
 			vr.Completed.ContinueWith(async result => {
 				await vr.Pop ();

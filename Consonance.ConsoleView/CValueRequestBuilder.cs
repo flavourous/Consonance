@@ -262,23 +262,29 @@ namespace Consonance.ConsoleView
                     var args = str.Split(' ');
                     lpv.SelectedRequest = int.Parse(args[0]);
                     IValueRequestFromString rrs = null; int x = -1;
-                    foreach (var o in lpv.IValueRequestOptions)
+                    if (x == lpv.SelectedRequest)
+                        rrs = lpv.HiddenRequest as IValueRequestFromString;
+                    else foreach (var o in lpv.IValueRequestOptions)
                         if (++x == lpv.SelectedRequest)
                             rrs = o as IValueRequestFromString;
                     rrs.FromString(args[1]);
                     return lpv;
                 },
                 patval => {
+                    if (patval == null) return "null";
                     lpv = patval;
                     int x = 0;
                     var opts = new List<String>();
-                    foreach(var pv in patval.IValueRequestOptions)
+                    Action<object, int> gg = (pv,xx) =>
                     {
-                        var ss = patval.SelectedRequest == x;
+                        var ss = patval.SelectedRequest == xx;
                         var gt = pv.GetType().GetGenericArguments()[0];
-                        opts.Add(String.Format("{0}{1}: {2} ({4}){3}", ss ? "[" : "", x, (pv as IValueRequestFromString).ToString(), ss ? "]" : "", gt.Name));
-                        x++;
-                    }
+                        opts.Add(String.Format("{0}{1}: {2} {5}({4}){3}", ss ? "[" : "", xx, (pv as IValueRequestFromString).ToString(), ss ? "]" : "", gt.Name, (pv as IValueRequestFromString).name));
+                    };
+                    foreach(var pv in patval.IValueRequestOptions)
+                        gg(pv, x++);
+                    if(patval.SelectedRequest == -1)
+                        gg(patval.HiddenRequest, -1);
                     return String.Join(" | ", opts);
                 }
             );

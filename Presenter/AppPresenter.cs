@@ -125,9 +125,10 @@ namespace Consonance
                 this.input = input;
 
                 // Builtins
-                AddDietPair(CalorieDiets.simple.model, CalorieDiets.simple.presenter, defBuilder);
-                AddDietPair(CalorieDiets.scav.model, CalorieDiets.scav.presenter, defBuilder);
-                AddDietPair(Budgets.simpleBudget.model, Budgets.simpleBudget.presenter, defBuilder);
+                var cc = new SQliteCheckedConnection(conn, new NoModelRouter());
+                AddDietPair(CalorieDiets.simple.model(cc), CalorieDiets.simple.presenter(cc), defBuilder);
+                AddDietPair(CalorieDiets.scav.model(cc), CalorieDiets.scav.presenter(cc), defBuilder);
+                AddDietPair(Budgets.simpleBudget.model(cc), Budgets.simpleBudget.presenter(cc), defBuilder);
 
                 // Inventors
                 var basic = new SimpleTrackyHelpyInventionV1(conn, this, defBuilder, input);
@@ -663,12 +664,14 @@ namespace Consonance
 
     public class MultiRequestOptionValue
     {
+        public Object HiddenRequest;
         public readonly IEnumerable IValueRequestOptions;
         public int SelectedRequest { get; set; }
-        public MultiRequestOptionValue(IEnumerable IValueRequestOptions, int InitiallySelectedRequest)
+        public MultiRequestOptionValue(IEnumerable IValueRequestOptions, int InitiallySelectedRequest, Object HiddenRequest = null)
         {
             this.IValueRequestOptions = IValueRequestOptions;
             SelectedRequest = InitiallySelectedRequest;
+            this.HiddenRequest = HiddenRequest;
         }
     }
 
