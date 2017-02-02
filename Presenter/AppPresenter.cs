@@ -17,6 +17,8 @@ using System.Collections.Specialized;
 using System.Collections;
 using Consonance.Invention;
 using System.Linq;
+using System.Linq.Expressions;
+using LibSharpHelp;
 
 namespace Consonance
 {
@@ -99,9 +101,17 @@ namespace Consonance
             singleton = new Presenter();
             await singleton.PresentToImpl(view, platform, input, commands, defBuilder);
         }
-        SQLiteConnection conn;
 
-        
+
+        class Serv : IServices
+        {
+            public Serv(IPlatform plat)
+            {
+                dal = new DAL(plat);
+            }
+            public IDAL dal { get; set; }
+        }
+        Serv services;
 
         // present app logic domain to this view.
         IView view;
@@ -113,25 +123,19 @@ namespace Consonance
             return PlatformGlobal.Run(() => {
 
                 // load DB
-                var datapath = platform.filesystem.AppData;
-                platform.CreateDirectory(datapath);
-                var maindbpath = Path.Combine(datapath, "Consonance.db");
-                //platform.filesystem.Delete(maindbpath);
-                //byte[] file = platform.filesystem.ReadFile(maindbpath);
-                conn = new SQLiteConnection(platform.sqlite, maindbpath, false);
+                services = new Serv(platform);
 
                 Debug.WriteLine("PresntToImpl: presenting");
                 this.view = view;
                 this.input = input;
 
                 // Builtins
-                var cc = new SQliteCheckedConnection(conn, new NoModelRouter());
-                AddDietPair(CalorieDiets.simple.model(cc), CalorieDiets.simple.presenter(cc), defBuilder);
-                AddDietPair(CalorieDiets.scav.model(cc), CalorieDiets.scav.presenter(cc), defBuilder);
-                AddDietPair(Budgets.simpleBudget.model(cc), Budgets.simpleBudget.presenter(cc), defBuilder);
+                AddDietPair(CalorieDiets.simple, defBuilder);
+                AddDietPair(CalorieDiets.scav, defBuilder);
+                AddDietPair(Budgets.simpleBudget, defBuilder);
 
                 // Inventors
-                var basic = new SimpleTrackyHelpyInventionV1(conn, this, defBuilder, input);
+                var basic = new SimpleTrackyHelpyInventionV1(services.dal, this, defBuilder, input);
                 inventors.Add(new InventorType
                 {
                     name = "Basic",
@@ -261,17 +265,31 @@ namespace Consonance
         }
         #endregion
 
-        #region tracker registry
-        List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
-        public class AddDietPairState { public Action remove; public IAbstractedDAL dal; }
-        public AddDietPairState AddDietPair<D, E, Ei, B, Bi>(ITrackModel<D, E, Ei, B, Bi> dietModel, ITrackerPresenter<D, E, Ei, B, Bi> dietPresenter, IValueRequestBuilder defBuilder)
+        public interface ITracker<D, E, Ei, B, Bi>
             where D : TrackerInstance, new()
             where E : BaseEntry, new()
             where Ei : BaseInfo, new()
             where B : BaseEntry, new()
             where Bi : BaseInfo, new()
         {
-            var presentationHandler = new TrackerPresentationAbstractionHandler<D, E, Ei, B, Bi>(defBuilder, input, conn, dietModel, dietPresenter);
+            // Servies
+            IServices services { set; }
+            ITrackModel<D, E, Ei, B, Bi> model {get;}
+            ITrackerPresenter<D, E, Ei, B, Bi> presenter { get; }
+        }
+        #region tracker registry
+        List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
+        public class AddDietPairState { public Action remove; public IAbstractedDAL dal; }
+        public AddDietPairState AddDietPair<D, E, Ei, B, Bi>(ITracker<D, E, Ei, B, Bi> dietModel, IValueRequestBuilder defBuilder)
+            where D : TrackerInstance, new()
+            where E : BaseEntry, new()
+            where Ei : BaseInfo, new()
+            where B : BaseEntry, new()
+            where Bi : BaseInfo, new()
+        {
+            dietModel.services = services;
+
+            var presentationHandler = new TrackerPresentationAbstractionHandler<D, E, Ei, B, Bi>(defBuilder, input, services.dal, dietModel.model, dietModel.presenter);
             dietHandlers.Add(presentationHandler);
             presentationHandler.ViewModelsToChange += HandleViewModelChange;
 

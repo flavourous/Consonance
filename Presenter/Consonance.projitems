@@ -9,6 +9,7 @@
     <Import_RootNamespace>Consonance</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)DAL.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppPresenter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerPresenter.cs" />

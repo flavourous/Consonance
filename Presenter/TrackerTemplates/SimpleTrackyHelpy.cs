@@ -6,6 +6,7 @@ using LibSharpHelp;
 using LibRTP;
 using System.Diagnostics;
 using System.Linq;
+using static Consonance.Presenter;
 
 namespace Consonance
 {
@@ -15,7 +16,7 @@ namespace Consonance
         double quantity { get; set; }
     }
     public enum InfoQuantifierTypes { Number, Duration };
-    public class SimpleTrackyInfoQuantifierDescriptor : KeyableBaseDB
+    public class SimpleTrackyInfoQuantifierDescriptor : BaseDB, IPrimaryKey
     {
         public InfoQuantifierTypes type { get; set; }
         public double defaultvalue { get; set; }
@@ -41,18 +42,31 @@ namespace Consonance
 		TrackerDetailsVM TrackerDetails { get;}
 		TrackerDialect TrackerDialect {get;}
 	}
-	class SimpleTrackerHolder<T,I,Ii, O, Oi> where T : TrackerInstance, new()
-		where I : HBaseEntry, new()
-		where O : HBaseEntry, new()
-		where Ii : HBaseInfo, new()
-		where Oi : HBaseInfo, new()
-	{
-		public readonly Func<ICheckedConn,ITrackModel<T,I,Ii,O,Oi>> model;
-		public readonly Func<ICheckedConn, ITrackerPresenter<T,I,Ii,O,Oi>> presenter;		
-		public SimpleTrackerHolder(IExtraRelfectedHelpy<T,Ii,Oi> helpy)
+
+
+    class SimpleTrackerHolder<T, I, Ii, O, Oi> : ITracker<T, I, Ii, O, Oi>
+        where T : TrackerInstance, new()
+        where I : HBaseEntry, new()
+        where O : HBaseEntry, new()
+        where Ii : HBaseInfo, new()
+        where Oi : HBaseInfo, new()
+    {
+        public IServices services
+        {
+            set
+            {
+                _model.Init(value.dal);
+                _presenter.Init(value.dal);
+            }
+        }
+        readonly SimpleTrackyHelpy<T, I, Ii, O, Oi> _model;
+        public ITrackModel<T,I,Ii,O,Oi> model { get { return _model; } }
+        readonly SimpleTrackyHelpyPresenter<T, I, Ii, O, Oi> _presenter;
+        public ITrackerPresenter<T,I,Ii,O,Oi> presenter { get { return _presenter; } }
+        public SimpleTrackerHolder(IExtraRelfectedHelpy<T,Ii,Oi> helpy)
 		{
-			model = c=>new SimpleTrackyHelpy<T, I,Ii, O, Oi> (helpy,c);
-			presenter =c=> new SimpleTrackyHelpyPresenter<T, I,Ii, O, Oi> (helpy,c);
+			_model = new SimpleTrackyHelpy<T, I,Ii, O, Oi> (helpy);
+			_presenter =new SimpleTrackyHelpyPresenter<T, I,Ii, O, Oi> (helpy);
 		}
 	}
 
@@ -197,19 +211,23 @@ namespace Consonance
 		where     Out : HBaseEntry, new()
 		where OutInfo : HBaseInfo, new()
 	{
+        public void Init(IDAL dal)
+        {
+            inc.Init(dal);
+            ouc.Init(dal);
+        }
 		readonly HelpedCreation<In,InInfo> inc;
 		readonly HelpedCreation<Out,OutInfo> ouc;
 		readonly IExtraRelfectedHelpy<Inst,InInfo,OutInfo> helpy; 
 
 		readonly IReadOnlyList<IRSPair<Inst>> flectyRequests;
-
 		readonly DefaultTrackerInstanceRequests defaultTrackerStuff;
-		public SimpleTrackyHelpy(IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy, ICheckedConn conn) 
+		public SimpleTrackyHelpy(IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy) 
 		{
 			this.helpy = helpy; 
 			defaultTrackerStuff = new DefaultTrackerInstanceRequests (helpy.TrackerDetails.category);
-			inc = new HelpedCreation<In, InInfo> (helpy.input,conn);
-			ouc = new HelpedCreation<Out, OutInfo> (helpy.output,conn);
+			inc = new HelpedCreation<In, InInfo> (helpy.input);
+			ouc = new HelpedCreation<Out, OutInfo> (helpy.output);
 			this.flectyRequests = helpy.instanceValueFields.MakeList (s => new IRSPair<Inst>(s.CreateHelper (Validate), s));
 		}
 		void Validate()
@@ -264,11 +282,11 @@ namespace Consonance
     }
     class InfoFinderHelper
     {
-        readonly ICheckedConn conn;
+        IDAL dal;
         readonly Action Validator;
-        public InfoFinderHelper(ICheckedConn conn, Action Validator)
+        public InfoFinderHelper(IDAL conn, Action Validator)
         {
-            this.conn = conn;
+            this.dal = conn;
             this.Validator = Validator;
         }
 
@@ -276,17 +294,16 @@ namespace Consonance
         public MeasureOptionsContainer FindMO(int qid)
         {
             // From somewhere random? dont create if it's not been created yet (errore)
-            var w = conn.Where<SimpleTrackyInfoQuantifierDescriptor>(d => d.id == qid);
+            var w = dal.Get<SimpleTrackyInfoQuantifierDescriptor>(d => d.id == qid);
             return Geto(w.First()); // otherwise, how did you ask?? :/
         }
 
         public SimpleTrackyInfoQuantifierDescriptor Find(SimpleTrackyInfoQuantifierDescriptor q)
         {
-
-            conn.CreateTable<SimpleTrackyInfoQuantifierDescriptor>(); // ensure
+            dal.CreateTable<SimpleTrackyInfoQuantifierDescriptor>(); // ensure
 
             // Ensure has in DB - we wont have an id to start with from defs
-            var hit = conn.Where<SimpleTrackyInfoQuantifierDescriptor>(d => d.Name == q.Name && d.type == q.type && d.defaultvalue == q.defaultvalue);
+            var hit =dal.Get<SimpleTrackyInfoQuantifierDescriptor>(d => d.Name == q.Name && d.type == q.type && d.defaultvalue == q.defaultvalue);
             if (hit.Count() != 1) return null;
             else return hit.First();
         }
@@ -294,13 +311,8 @@ namespace Consonance
         // For no id (maybe create)
         public MeasureOptionsContainer CreateMO(SimpleTrackyInfoQuantifierDescriptor q)
         {
-
             var exist = Find(q);
-            if (exist == null)
-            {
-                q.fk_id = q.fk_mid = q.fk_pid = -1; // Off-Table.
-                conn.Insert(q); // updates pk on this instance too
-            }
+            if (exist == null) dal.Commit(q); // updates pk on this instance too
             else q = exist;
 
             // Give it back (with proper k)
@@ -340,8 +352,8 @@ namespace Consonance
 		where I : HBaseInfo, new()
 	{
 		// for info requests
-        readonly InfoFinderHelper ihelper;
-        readonly List<MeasureOptionsContainer> measureOptionContainers;
+        InfoFinderHelper ihelper;
+        List<MeasureOptionsContainer> measureOptionContainers;
         MeasureOptionsContainer currentMeasureOption = null;
         readonly RequestStorageHelper<MultiRequestOptionValue> measureAndOptionsRequest;
         readonly Dictionary<int, int> IndexToQID = new Dictionary<int, int>();
@@ -355,14 +367,20 @@ namespace Consonance
 		readonly IReflectedHelpyQuants<I> quant;
 		readonly DefaultEntryRequests defaulter = new DefaultEntryRequests ();
 		readonly RequestStorageHelper<String> infoNameRequest;
-		public HelpedCreation(IReflectedHelpyQuants<I> quant, ICheckedConn conn)
-		{
-            this.ihelper = new InfoFinderHelper(conn, ValidateCurrentAmount);
-			this.IsInfoComplete = quant.InfoComplete;
-			this.quant = quant;
+
+        public void Init(IDAL dal)
+        {
+            this.ihelper = new InfoFinderHelper(dal, ValidateCurrentAmount);
 
             // Get these ready!
             measureOptionContainers = quant.quantifier_choices.Select(q => ihelper.CreateMO(q)).ToList();
+        }
+
+		public HelpedCreation(IReflectedHelpyQuants<I> quant)
+		{
+			this.IsInfoComplete = quant.InfoComplete;
+			this.quant = quant;
+
 
             // and this dudes
             Func<MultiRequestOptionValue, MultiRequestOptionValue> deffer = d =>
@@ -570,7 +588,9 @@ namespace Consonance
         #region IInfoCreation implementation	
 		public BindingList<object> InfoFields (IValueRequestFactory factory)
 		{
-            var rv = new BindingList<Object>() { infoNameRequest.CGet(factory.StringRequestor), measureAndOptionsRequest.CGet(factory.IValueRequestOptionGroupRequestor) };
+            var rv = new BindingList<Object>();
+            rv.Add(infoNameRequest.CGet(factory.StringRequestor));
+            rv.Add(measureAndOptionsRequest.CGet(factory.IValueRequestOptionGroupRequestor));
 
             // get request options
             measureAndOptionsRequest.request.value = new MultiRequestOptionValue(
@@ -647,14 +667,16 @@ namespace Consonance
 		public TrackerDetailsVM details { get { return helpy.TrackerDetails; } }
 		public TrackerDialect dialect { get { return helpy.TrackerDialect; } }
 		readonly IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy;
-        readonly InfoFinderHelper ihelper;
-
-		public SimpleTrackyHelpyPresenter(IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy, ICheckedConn conn)
-		{
-			this.helpy = helpy;
-            this.ihelper = new InfoFinderHelper(conn, delegate { });
+        InfoFinderHelper ihelper;
+        public void Init(IDAL dal)
+        {
+            this.ihelper = new InfoFinderHelper(dal, delegate { });
             helpy.input.quantifier_choices.Concat(helpy.output.quantifier_choices)
                 .Select(c => ihelper.CreateMO(c)); // not used but starts things up
+        }
+        public SimpleTrackyHelpyPresenter(IExtraRelfectedHelpy<Inst,InInfo, OutInfo> helpy)
+		{
+			this.helpy = helpy;
 		}
 
 		#region IDietPresenter implementation

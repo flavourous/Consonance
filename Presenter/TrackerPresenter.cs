@@ -7,6 +7,7 @@ using SQLite.Net;
 using LibSharpHelp;
 using System.Diagnostics;
 using System.Linq;
+using static Consonance.Presenter;
 
 namespace Consonance
 {
@@ -247,7 +248,7 @@ namespace Consonance
 		public TrackerPresentationAbstractionHandler(
 			IValueRequestBuilder instanceBuilder,
 			IUserInput getInput,
-			SQLiteConnection conn,
+			IDAL conn,
 			ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model,
 			ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter
 		)
@@ -317,7 +318,7 @@ namespace Consonance
             T info = null;
             if (ent.infoinstanceid.HasValue)
             {
-                var res = modelHandler.conn.Where<T>(e => e.id == ent.infoinstanceid.Value);
+                var res = modelHandler.conn.Get<T>(e => e.id == ent.infoinstanceid.Value);
                 if (res.Count() == 0) ent.infoinstanceid = null;
                 else info = res.First();
             }
@@ -326,8 +327,8 @@ namespace Consonance
 		public IEnumerable<InfoLineVM> InInfos(bool complete)
 		{
 			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
-			var fis = modelHandler.conn.All<EatInfoType> ();
-			if(complete) fis = modelHandler.conn.Where (modelHandler.model.increator.IsInfoComplete);
+			var fis = modelHandler.conn.Get<EatInfoType> ();
+			if(complete) fis = modelHandler.conn.Get(modelHandler.model.increator.IsInfoComplete);
 			foreach (var m in fis)
 			{
 				var vm = presenter.GetRepresentation (m);
@@ -338,8 +339,8 @@ namespace Consonance
 		public IEnumerable<InfoLineVM> OutInfos(bool complete)
 		{
 			// Pull models, generate viewmodels - this can be async wrapped in a new Ilist class
-			var fis = modelHandler.conn.All< BurnInfoType> ();
-			if (complete) fis = modelHandler.conn.Where (modelHandler.model.outcreator.IsInfoComplete);
+			var fis = modelHandler.conn.Get< BurnInfoType> ();
+			if (complete) fis = modelHandler.conn.Get(modelHandler.model.outcreator.IsInfoComplete);
 			foreach (var m in fis)
 			{
 				var vm = presenter.GetRepresentation (m);
@@ -490,7 +491,7 @@ namespace Consonance
 			
 		DietInstType getit(BaseEntry be)
 		{
-			var dis = modelHandler.conn.Where<DietInstType>( inf => inf.id == be.trackerinstanceid);
+			var dis = modelHandler.conn.Get<DietInstType>( inf => inf.id == be.trackerinstanceid);
 			return dis.Count() == 0 ? null : dis.First();
 		}
 

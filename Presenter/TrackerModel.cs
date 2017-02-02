@@ -9,6 +9,7 @@ using LibSharpHelp;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Reflection;
+using static Consonance.Presenter;
 
 namespace Consonance
 {
@@ -24,59 +25,53 @@ namespace Consonance
 
     #region BASE_MODELS
     public abstract class BaseDB
-	{
-		[PrimaryKey, AutoIncrement]
-		public int id{ get; set; }
+    {
+        [PrimaryKey, AutoIncrement]
+        public int id { get; set; }
 
         [ColumnAccessor, Ignore] // allow on all for simples.
         public IDictionary<String, Object> AdHoc { get; } = new Dictionary<String, Object>();
     }
-    public abstract class KeyableBaseDB : BaseDB, IKeyableBaseDB
-    {
-        public int fk_id { get; set; }
-        public int fk_mid { get; set; }
-        public int fk_pid { get; set; }
-    }
     public abstract class BaseEntry : BaseDB
-	{
-		// keys
-		public int trackerinstanceid{ get; set; }
-		public int? infoinstanceid{ get; set; }
+    {
+        // keys
+        public int trackerinstanceid { get; set; }
+        public int? infoinstanceid { get; set; }
 
-		// entry data
-		public String entryName{ get; set; }
-		public DateTime entryWhen { get; set; }
+        // entry data
+        public String entryName { get; set; }
+        public DateTime entryWhen { get; set; }
 
-		// repetition info (starts at when)
-		public RecurranceType repeatType { get; set; }
-		public byte[] repeatData { get;set; }
-		public DateTime? repeatStart { get; set; } // repeated in data
-		public DateTime? repeatEnd {get;set;}// repeated in data
+        // repetition info (starts at when)
+        public RecurranceType repeatType { get; set; }
+        public byte[] repeatData { get; set; }
+        public DateTime? repeatStart { get; set; } // repeated in data
+        public DateTime? repeatEnd { get; set; }// repeated in data
 
-		// Helper for cloning - it's a flyweight also due to memberwuse clone reference copying the byte[].
-		public BaseEntry FlyweightCloneWithDate(DateTime dt)
-		{
-			var ret = MemberwiseClone () as BaseEntry;
-			ret.entryWhen = dt;
-			return ret;
-		}
-	}
+        // Helper for cloning - it's a flyweight also due to memberwuse clone reference copying the byte[].
+        public BaseEntry FlyweightCloneWithDate(DateTime dt)
+        {
+            var ret = MemberwiseClone() as BaseEntry;
+            ret.entryWhen = dt;
+            return ret;
+        }
+    }
 
-	[Flags] // this deontes a class used from libRTP.
-	public enum RecurranceType { None = 0, RecurrsOnPattern = 1, RecurrsEveryPattern = 2 }
+    [Flags] // this deontes a class used from libRTP.
+    public enum RecurranceType { None = 0, RecurrsOnPattern = 1, RecurrsEveryPattern = 2 }
 
-	// when we're doing a diet here, created by diet class
-	public class TrackerInstance : BaseDB
-	{
-		public bool tracked {get;set;}
-		public string name{get;set;}
-		public DateTime startpoint{get;set;}
-	}
+    // when we're doing a diet here, created by diet class
+    public class TrackerInstance : BaseDB
+    {
+        public bool tracked { get; set; }
+        public string name { get; set; }
+        public DateTime startpoint { get; set; }
+    }
 
-	public class BaseInfo : BaseDB
-	{
-		public String name{ get; set; }
-	}
+    public class BaseInfo : BaseDB
+    {
+        public String name { get; set; }
+    }
 
 
     #endregion
@@ -91,18 +86,25 @@ namespace Consonance
         void Edit(T toEdit);
     }
 
+    
+
     #region DIET_PLAN_INTERFACES
-    public interface ITrackModel<D,Te,Tei,Tb,Tbi> : ICreateable<D>
-		where D : TrackerInstance
-		where Te  : BaseEntry
-		where Tei : BaseInfo
-		where Tb  : BaseEntry
-		where Tbi : BaseInfo
-	{
-		// creates items
-		IEntryCreation<Te,Tei> increator { get; }
-		IEntryCreation<Tb,Tbi> outcreator { get; }
-	}
+    public interface ITrackModel<D, Te, Tei, Tb, Tbi> : ICreateable<D>
+        where D : TrackerInstance
+        where Te : BaseEntry
+        where Tei : BaseInfo
+        where Tb : BaseEntry
+        where Tbi : BaseInfo
+    {
+        // creates items
+        IEntryCreation<Te, Tei> increator { get; }
+        IEntryCreation<Tb, Tbi> outcreator { get; }
+    }
+    public interface IServices
+    {
+        IDAL dal { get; }
+    }
+    
 	public class TrackerDialect
 	{
 		public readonly String 
@@ -193,149 +195,9 @@ namespace Consonance
     
 
 
-    public interface ICheckedConn
-    {
-        void Update<T>(T item) where T : BaseDB;
-        IEnumerable<T> All<T>() where T : BaseDB;
-        IEnumerable<T> Where<T>(Expression<Func<T,bool>> pred) where T : BaseDB;
-        int Count<T>() where T : BaseDB;
-        int CountWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB;
-        void CreateTable<T>() where T : BaseDB;
-        void DropTable<T>() where T : BaseDB;
-        void Delete<T>(int id) where T : BaseDB;
-        void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB;
-        void DeleteAll<T>() where T : BaseDB;
-        void Insert<T>(T item) where T : BaseDB;
-    }
+   
 
-    // The trouble is with converting the predicates to sql, which is difficult to do without
-    // direction from the router.  Perhaps the mapping should be just to a dictionary always...
-    // If the predicates are on dicts, should be able to generate the queries?
-    interface IModelRouter
-    {
-        bool GetTableRoute<T>(out String tabl, out String[] columns, out Type[] colTypes);
-    }
-    class NoModelRouter : IModelRouter
-    {
-        public bool GetTableRoute<T>(out string tabl, out string[] columns, out Type[] colTypes)
-        {
-            columns = null; colTypes = null; tabl = null; return false;
-        }
-        public T MapFromTable<T>(object[] values) { throw new NotImplementedException(); }
-        public object[] MapToTable<T>(T o) { throw new NotImplementedException(); }
-    }
-
-    class SQliteCheckedConnection : ICheckedConn
-    {
-        // Check against the custom table mapped type.
-        readonly SQLiteConnection conn;
-        readonly IModelRouter router;
-        public SQliteCheckedConnection(SQLiteConnection conn, IModelRouter router)
-        {
-            this.conn = conn;
-            this.router = router;
-        }
-
-        Dictionary<Type, TableMapping> cache = new Dictionary<Type, TableMapping>();
-        bool GetTableMap<T>(out TableMapping map) 
-        {
-            var t = typeof(T);
-            if (cache.ContainsKey(t))
-            {
-                map = cache[t];
-                return map != null;
-            }
-
-            map = null;
-            String tn; String[] c; Type[] ct;
-            if (!router.GetTableRoute<T>(out tn, out c, out ct))
-                return false;
-
-            var props = t.GetRuntimeProperties();
-            var holder = props.Where(p => p.GetCustomAttributes().Any(a => a is ColumnAccessorAttribute)).First();
-
-            // make the map
-            var omap = map = conn.GetMapping<T>();
-            map = omap.WithMutatedSchema(
-            tn,
-            Enumerable.Range(0, c.Length).Select(i => new TableMapping.AdHocColumn(c[i], ct[i], holder))
-            );
-
-            return true;
-        }
-
-        TableQuery<T> GetTQ<T>() where T : class
-        {
-            TableMapping map;
-            return GetTableMap<T>(out map) ? conn.Table<T>(map) : conn.Table<T>();
-        }
-
-        public IEnumerable<T> All<T>() where T : BaseDB
-        {
-            return GetTQ<T>();
-        }
-
-        public int Count<T>() where T : BaseDB
-        {
-            return GetTQ<T>().Count();
-        }
-
-        public int CountWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB
-        {
-            return GetTQ<T>().Count(pred);
-        }
-
-        public void CreateTable<T>() where T : BaseDB
-        {
-            TableMapping map;
-            if (GetTableMap<T>(out map)) conn.CreateTable(map);
-            else conn.CreateTable<T>();
-        }
-
-        public void DropTable<T>() where T : BaseDB
-        {
-            TableMapping map;
-            if (GetTableMap<T>(out map)) conn.DropTable(map);
-            else conn.DropTable<T>();
-        }
-
-        public void Delete<T>(int id) where T : BaseDB
-        {
-            GetTQ<T>().Delete(d => d.id == id);
-        }
-
-        public void DeleteAll<T>() where T : BaseDB
-        {
-            TableMapping map;
-            if (GetTableMap<T>(out map)) conn.DeleteAll(map);
-            else conn.DeleteAll<T>();
-        }
-
-        public void DeleteWhere<T>(Expression<Func<T, bool>> pred) where T : BaseDB
-        {
-            GetTQ<T>().Delete(pred);
-        }
-
-        public void Insert<T>(T item) where T : BaseDB
-        {
-            TableMapping map;
-            if (GetTableMap<T>(out map)) conn.Insert(item,map);
-            else conn.Insert(item);
-        }
-
-        public void Update<T>(T item) where T : BaseDB
-        {
-            TableMapping map;
-            if (GetTableMap<T>(out map)) conn.Update(item, map);
-            else conn.Update(item);
-        }
-
-        public IEnumerable<T> Where<T>(Expression<Func<T, bool>> pred) where T : BaseDB
-        {
-            return GetTQ<T>().Where(pred);
-        }
-    }
-
+    
     enum ItemType { Instance, Entry, Info };
     public enum DBChangeType { Insert, Delete, Edit };
 	class TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDAL
@@ -347,13 +209,13 @@ namespace Consonance
 	{
         public event Action<TrackerChangeType, DBChangeType, Func<Action>> ToChange = delegate { };
 
-        public readonly ICheckedConn conn;
+        public readonly IDAL conn;
 		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
 		public readonly EntryHandler<DietInstType, EatType, EatInfoType> inhandler;
 		public readonly EntryHandler<DietInstType, BurnType, BurnInfoType> outhandler;
-		public TrackerModelAccessLayer(SQLiteConnection conn, ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
+		public TrackerModelAccessLayer(IDAL conn, ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
 		{
-            this.conn = new SQliteCheckedConnection(conn, model as IModelRouter ?? new NoModelRouter());
+            this.conn = model is IModelRouter ? conn.Routed(model as IModelRouter) : conn;
 			this.model = model;
 			this.conn.CreateTable<DietInstType> ();
 			inhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (this.conn, model.increator);
@@ -377,7 +239,7 @@ namespace Consonance
             ToChange(TrackerChangeType.Instances, DBChangeType.Insert, () =>
             {
                 var di = model.New();
-                conn.Insert(di as DietInstType);
+                conn.Commit(di as DietInstType);
                 return null;
             });
 		}
@@ -386,7 +248,7 @@ namespace Consonance
             ToChange(TrackerChangeType.Instances, DBChangeType.Edit, () =>
             {
                 model.Edit(diet);
-                conn.Update(diet);
+                conn.Commit(diet);
                 return null;
             });
 		}
@@ -394,9 +256,9 @@ namespace Consonance
 		{
             ToChange(TrackerChangeType.EatEntries | TrackerChangeType.BurnEntries | TrackerChangeType.Instances, DBChangeType.Delete, () =>
             {
-                conn.DeleteWhere<EatType>(et => et.trackerinstanceid == rem.id);
-                conn.DeleteWhere<BurnType>(et => et.trackerinstanceid == rem.id);
-                conn.Delete<DietInstType>(rem.id);
+                conn.Delete<EatType>(et => et.trackerinstanceid == rem.id);
+                conn.Delete<BurnType>(et => et.trackerinstanceid == rem.id);
+                conn.Delete<DietInstType>(et => et.id == rem.id);
                 return null;
             });
         }
@@ -409,7 +271,7 @@ namespace Consonance
         void Rem<T>(bool drop) where T : BaseDB
         {
             if (drop) conn.DropTable<T>();
-            else conn.DeleteAll<T>();
+            else conn.Delete<T>();
         }
         public void DeleteAll(Action after, bool drop = false)
         {
@@ -426,8 +288,7 @@ namespace Consonance
         }
 		public IEnumerable<DietInstType> GetTrackers()
 		{
-			var tab = conn.All<DietInstType> ();
-			return tab;
+			return conn.Get<DietInstType> ();
 		}
 //		public IEnumerable<DietInstType> GetTrackers(DateTime st, DateTime en)
 //		{
@@ -461,9 +322,9 @@ namespace Consonance
 		where EntryInfoType : BaseInfo, new()
 	{
         public event Action<ItemType, DBChangeType, Func<Action>> ToChange = delegate { };
-		readonly ICheckedConn conn;
+		readonly IDAL conn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
-		public EntryHandler(ICheckedConn conn, IEntryCreation<EntryType, EntryInfoType> creator)
+		public EntryHandler(IDAL conn, IEntryCreation<EntryType, EntryInfoType> creator)
 		{
 			this.conn = conn;
 			this.creator = creator;
@@ -486,7 +347,7 @@ namespace Consonance
                 EntryType ent = creator.Calculate(info, ShouldComplete());
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = info.id;
-                conn.Insert(ent as EntryType);
+                conn.Commit(ent as EntryType);
                 return null;
             });
 		}
@@ -497,7 +358,7 @@ namespace Consonance
                 EntryType ent = creator.Create();
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = null;
-                conn.Insert(ent as EntryType);
+                conn.Commit(ent as EntryType);
                 return null;
             });
 		}
@@ -508,7 +369,7 @@ namespace Consonance
                 creator.Edit(ent, info, ShouldComplete());
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = info.id;
-                conn.Update(ent as EntryType);
+                conn.Commit(ent as EntryType);
                 return null;
             });
 		}
@@ -519,7 +380,7 @@ namespace Consonance
                 creator.Edit(ent);
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = null;
-                conn.Update(ent as EntryType);
+                conn.Commit(ent as EntryType);
                 return null;
             });
 		}
@@ -529,7 +390,7 @@ namespace Consonance
             {
                 // FIXME drop where?
                 foreach (var tet in tets)
-                    conn.Delete<EntryType>(tet.id);
+                    conn.Delete<EntryType>(d=>d.id==tet.id);
                 return null;
             });
 		}
@@ -541,9 +402,9 @@ namespace Consonance
 		public IEnumerable<EntryType> Get (D diet, DateTime start, DateTime end)
 		{
 			// Get the noraml and repeating ones, then repeat the repeating ones
-			var normalQuery = conn.Where<EntryType>
+			var normalQuery = conn.Get<EntryType>
 				(d => d.trackerinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end && d.repeatType == RecurranceType.None);
-			var repeatersQuery = conn.Where<EntryType>
+			var repeatersQuery = conn.Get<EntryType>
 				(d => d.trackerinstanceid == diet.id && d.repeatType != RecurranceType.None);
 			foreach (var ent in normalQuery) yield return ent;
 
@@ -566,7 +427,7 @@ namespace Consonance
 		}
 		public int Count (D diet)
 		{
-            return conn.CountWhere<EntryType>(e => e.trackerinstanceid == diet.id);
+            return conn.Count<EntryType>(e => e.trackerinstanceid == diet.id);
 		}
 
 		#endregion
@@ -578,7 +439,7 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Insert, () =>
             {
                 var mod = creator.MakeInfo();
-                conn.Insert<EntryInfoType>(mod);
+                conn.Commit<EntryInfoType>(mod);
                 return null;
             });
 		}
@@ -588,7 +449,7 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Edit, () =>
             {
                 creator.MakeInfo(editing);
-                conn.Update<EntryInfoType>(editing);
+                conn.Commit<EntryInfoType>(editing);
                 return null;
             });
 		}
@@ -597,7 +458,7 @@ namespace Consonance
 		{
             ToChange(ItemType.Info, DBChangeType.Delete, () =>
             {
-                conn.Delete<EntryInfoType>(removing.id);
+                conn.Delete<EntryInfoType>(d => d.id == removing.id);
                 return null;
             });
 		}

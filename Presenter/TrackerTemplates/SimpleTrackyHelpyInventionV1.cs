@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using static Consonance.Presenter;
 
 namespace Consonance.Invention
 {
@@ -29,6 +30,7 @@ namespace Consonance.Invention
             public ms(String eq, String[] args)
             {
                 equation = eq;
+                
                 exp = new NCalc.Expression(eq);
                 arguments = args;
             }
@@ -72,15 +74,8 @@ namespace Consonance.Invention
     #region Tracker descriptor created by the simple inventor
     class SimpleTrackyHelpyInventionV1Model : BaseDB
     {
-        static InfoFinderHelper _ihelper;
-        static InfoFinderHelper ihelper(SQLiteConnection conn)
-        {
-            return _ihelper ?? (_ihelper = new InfoFinderHelper(new SQliteCheckedConnection(conn, new NoModelRouter()), delegate { }));
-        }
-        static SimpleTrackyInfoQuantifierDescriptor FindCandidate(SQLiteConnection conn, SimpleTrackyInfoQuantifierDescriptor item)
-        {
-            return ihelper(conn).Find(item);
-        }
+        public static Proxy<SimpleTrackyInfoQuantifierDescriptor> FindCandidate { get; set; }
+
         // helper
         public IEnumerable<IKeyTo> Keyed
         {
@@ -89,8 +84,8 @@ namespace Consonance.Invention
                 yield return qod_in;
                 yield return qod_out;
                 yield return targets;
-                yield return outequations;
                 yield return inequations;
+                yield return outequations;
             }
         }
 
@@ -148,12 +143,12 @@ namespace Consonance.Invention
         public String InputInfoVerbPast { get; set; }
         public String OutputInfoVerbPast { get; set; }
     }
-    class SimpleTrackyTrackingEquationDescriptor : KeyableBaseDB
+    class SimpleTrackyTrackingEquationDescriptor : BaseDB, IPrimaryKey
     {
         public String targetID { get; set; }
         public String equation { get; set; }
     }
-    class SimpleTrackyTrackingTargetDescriptor : KeyableBaseDB
+    class SimpleTrackyTrackingTargetDescriptor : BaseDB, IPrimaryKey
     {
         public String targetID { get; set; }
         // note on equations, "1" is an equation
@@ -456,37 +451,36 @@ namespace Consonance.Invention
     #endregion
 
     #region Simple inventor, instanced once, creates descriptors and trackers based on them, managing thier lifetime
-    class SimpleTrackyHelpyInventionV1 : IViewModelObserver<InventedTrackerVM, SimpleTrackyHelpyInventionV1, EventArgs> // FIXME combines presentation and modelling since it's simple
+    class SimpleTrackyHelpyInventionV1 : IViewModelObserver<InventedTrackerVM, SimpleTrackyHelpyInventionV1, EventArgs>
+        // FIXME combines presentation and modelling since it's simple
     {
-        readonly ICheckedConn cc;
-        readonly SQLiteConnection conn;
         readonly Presenter pres;
         readonly IValueRequestBuilder build;
         readonly IUserInput input;
+        readonly IDAL conn;
 
         /// <summary>
         /// ... and here's how you can create more?
         /// </summary>
         /// <param name="conn"></param>
         /// <param name="registerto"></param>
-        public SimpleTrackyHelpyInventionV1(SQLiteConnection conn, Presenter registerto, IValueRequestBuilder builder, IUserInput input)
+        public SimpleTrackyHelpyInventionV1(IDAL conn, Presenter registerto, IValueRequestBuilder builder, IUserInput input)
         {
             // appriase the presneter(it constructs us) of invented things.  Let it add/edit remove them.
             // behind the scenese, manage registration of tracker types through all that
-            this.conn = conn;
-            this.cc = new SQliteCheckedConnection(conn, new NoModelRouter());
             this.pres = registerto;
             this.build = builder;
             this.input = input;
-
-            // helper
-            GlobalForKeyTo.conn = conn;
+            this.conn = conn;
 
             // ensure tables
             conn.CreateTable<SimpleTrackyInfoQuantifierDescriptor>();
             conn.CreateTable<SimpleTrackyTrackingTargetDescriptor>();
             conn.CreateTable<SimpleTrackyTrackingEquationDescriptor>();
             conn.CreateTable<SimpleTrackyHelpyInventionV1Model>();
+
+            InfoFinderHelper iHelper = new InfoFinderHelper(conn, delegate { });
+            SimpleTrackyHelpyInventionV1Model.FindCandidate = iHelper.Find;
         }
 
         // Here we pass viewmodels about invented trackers - the view can display and command them in a managing view
@@ -503,13 +497,13 @@ namespace Consonance.Invention
         public IEnumerable<InventedTrackerVM> Instances()
         {
             // Get Models - calls to this dude are by unwritten contract on worker threads.
-            foreach (var it in conn.Table<SimpleTrackyHelpyInventionV1Model>())
+            foreach (var it in conn.Get<SimpleTrackyHelpyInventionV1Model>())
             {
                 var vm = Present(it);
                 if (!registered.ContainsKey(vm))
                 {
-                    var pp = registered[vm] = SimpleTrackyHelperCreator.Create(it, seq, cc);
-                    pp.state = pres.AddDietPair(pp.model, pp.pres, build);
+                    var pp = registered[vm] = SimpleTrackyHelperCreator.Create(it, seq);
+                    pp.state = pres.AddDietPair(pp, build);
                 }
                 vm.sender = this;
                 // set sender? :/
@@ -538,10 +532,11 @@ namespace Consonance.Invention
                         changeType = new EventArgs(),
                         toChange = () =>
                         {
+                            var o = (dvm.originator as SimpleTrackyHelpyInventionV1Model);
                             // clear foreign keys on invented tracker
-                            (dvm.originator as SimpleTrackyHelpyInventionV1Model).Keyed.Act(k=>k.Clear());
+                            o.Keyed.Act(k=>k.Clear());
                             // AFTER that is done, we delete the inventor modelrow
-                            conn.Delete(dvm.originator);
+                            conn.Delete<SimpleTrackyHelpyInventionV1Model>(d => d.id == o.id);
                             // and we deregister the whole thing from the apppresenter
                             handler.state.remove();
 
@@ -591,7 +586,7 @@ namespace Consonance.Invention
                                 page3.set(mod);
                                 page4.set(mod);
                                 page5.set(mod);
-                                conn.Insert(mod);
+                                conn.Commit(mod);
                                 mod.Keyed.Act(k => k.Commit()); // commit all foreign keyed stuff (now has rowid)
                                 return null; // nothing after datachanages
                             }
@@ -621,7 +616,7 @@ namespace Consonance.Invention
                             {
                                 page1.set(mod);
                                 page2.set(mod);
-                                conn.Update(mod); // no fk stuff to commit.
+                                conn.Commit(mod); // no fk stuff to commit.
                                 return null;
                             }
                         }
@@ -644,7 +639,7 @@ namespace Consonance.Invention
     {
         class RoutedHelpyModel : SimpleTrackyHelpy<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>, IModelRouter
         {
-            public RoutedHelpyModel(InventedTracker tmh, SimpleTrackyHelpyInventionV1Model model, ICheckedConn conn) : base(tmh, conn)
+            public RoutedHelpyModel(InventedTracker tmh, SimpleTrackyHelpyInventionV1Model model) : base(tmh)
             {
                 var mu = model.uid.ToString();
                 var tracked = model.targets.Get().Select(d => d.targetID).Distinct();
@@ -840,11 +835,14 @@ namespace Consonance.Invention
             public double Calculate(double[] values) { return equation.calculate(values); }
         }
 
-        public class Holdy
+        public class Holdy : ITracker<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>
         {
             public Presenter.AddDietPairState state;
-            public ITrackModel<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> model;
-            public ITrackerPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> pres;
+            public SimpleTrackyHelpy<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> _model { get; set; }
+            public ITrackModel<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> model{get { return _model; }}
+            public SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> _pres { get; set; }
+            public ITrackerPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> presenter { get { return _pres; } }
+            public IServices services { set { _model.Init(value.dal); _pres.Init(value.dal); } }
         }
 
         static Expression<Func<T,bool>> GenIC<T>(String[] args) where T : BaseDB
@@ -852,10 +850,10 @@ namespace Consonance.Invention
             return d => args.All(s => d.AdHoc[s] != null);
         }
 
-        public static Holdy Create(SimpleTrackyHelpyInventionV1Model model, IStringEquationFactory exp, ICheckedConn conn)
+        public static Holdy Create(SimpleTrackyHelpyInventionV1Model model, IStringEquationFactory exp)
         {
             var irh = new InventedTracker(model, exp);
-            return new Holdy { model = new RoutedHelpyModel(irh, model, conn), pres = new SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>(irh, conn) };
+            return new Holdy { _model = new RoutedHelpyModel(irh, model), _pres = new SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>(irh) };
         }
     }
 }
