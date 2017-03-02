@@ -2,6 +2,9 @@
 using LibRTP;
 using LibSharpHelp;
 using System.Diagnostics;
+using Consonance.Protocol;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 
 namespace Consonance
 {
@@ -56,7 +59,7 @@ namespace Consonance
 
 			// ones
 			recurrEvery=new RequestStorageHelper<RecurrsEveryPatternValue> ("", () => new RecurrsEveryPatternValue(), ValidateRecurr);
-			recurrOn=new RequestStorageHelper<RecurrsOnPatternValue> ("", () => new RecurrsOnPatternValue(), ValidateRecurr);
+			recurrOn=new RequestStorageHelper<RecurrsOnPatternValue> ("", () => new IRPV(), ValidateRecurr);
 		}
 		void Validate()
 		{
@@ -91,8 +94,8 @@ namespace Consonance
 			if (entry.repeatType == RecurranceType.RecurrsOnPattern) entry.repeatData = recurrOn.request.value.Create(s,e).ToBinary();
 		}
 		// entry point for consumers asking "hey i need the default request objects for stuff please"
-		public void PushInDefaults(BaseEntry editing, IBindingList requestPackage, IValueRequestFactory fac)
-		{
+		public void PushInDefaults<T>(BaseEntry editing, T requestPackage, IValueRequestFactory fac) where T : IList<Object>, INotifyCollectionChanged
+        {
 			// no reset here...for entries...event registration clearing is automatic though.
 			var nr = name.CGet (fac.StringRequestor);
 			var wr = when.CGet (fac.DateTimeRequestor);
@@ -102,7 +105,7 @@ namespace Consonance
 
 			// NOTE dont forget, this package will be added to after/before.  Gotta remember starting index and insert there each time etc.
 			int firstItem = -1;
-			requestPackage.ListChanged += (sender, e) => firstItem = requestPackage.IndexOf (nr);
+			requestPackage.CollectionChanged += (sender, e) => firstItem = requestPackage.IndexOf (nr);
 
 			// and we need to preload the others for maybe adding later.
 			var rRepEnd = recurrEnd.CGet (fac.nDateRequestor);
@@ -160,20 +163,41 @@ namespace Consonance
 				if (editing.repeatType == RecurranceType.RecurrsEveryPattern &&
 					RecurrsEveryPattern.TryFromBinary (editing.repeatData, out pat)) {
 					var rd = (RecurrsEveryPattern)pat;
-					recurrEvery.request.value = new RecurrsEveryPatternValue (rd.FixedPoint, rd.units, rd.frequency);
+					recurrEvery.request.value = new RecurrsEveryPatternValue (rd.FixedPoint, (Protocol.RecurrSpan)rd.units, rd.frequency);
 				}
 				if (editing.repeatType == RecurranceType.RecurrsOnPattern &&
 					RecurrsOnPattern.TryFromBinary (editing.repeatData, out pat)) {
 					var rd = (RecurrsOnPattern)pat;
-					RecurrSpan use = rd.units [0];
+                    LibRTP.RecurrSpan use = rd.units [0];
 					foreach (var d in rd.units)
 						use |= d;
-					recurrOn.request.value = new RecurrsOnPatternValue (use, rd.onIndexes);
+					recurrOn.request.value = new IRPV(use, rd.onIndexes);
 				}
 			}
-
 			rModeChanged (); //  needed because we could be on a non-initialiation call from CreationFields for example.
 		}
+        public class IRPV : RecurrsOnPatternValue
+        {
+            public IRPV() : base() { }
+            public IRPV(LibRTP.RecurrSpan pat, int[] vals) : base((Protocol.RecurrSpan)pat,vals) { }
+            public LibRTP.RecurrSpan PTR { get { return (LibRTP.RecurrSpan)PatternType; } }
+            public override bool IsValid
+            {
+                get
+                {
+                    int pc = 0;
+                    foreach (var pt in (PTR.SplitFlags()))
+                        pc++;
+                    bool s1 = PatternValues.Length > 1 && pc == PatternValues.Length;
+                    if (s1)
+                    {
+                        try { new RecurrsOnPattern(PatternValues, PTR, null, null); }
+                        catch { s1 = false; }
+                    }
+                    return s1;
+                }
+            }
+        }
 		// consumers are like "hey stuff needs resetting whatever that stuff u got is"
 		public void ResetRequests()
 		{
@@ -225,7 +249,7 @@ namespace Consonance
 			dietName.Reset ();
 			dietStart.Reset ();
 		}
-		public void PushInDefaults(TrackerInstance editing, IBindingList requestPackage, IValueRequestFactory fac)
+		public void PushInDefaults(TrackerInstance editing, IList<Object> requestPackage, IValueRequestFactory fac)
 		{
 			// switchy state 
 			this.editing = editing != null;

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
 using LibSharpHelp;
+using Consonance.Protocol;
+using System.Collections.Specialized;
 
 namespace Consonance.ConsoleView
 {
@@ -154,17 +156,18 @@ namespace Consonance.ConsoleView
 			public bool allowDefaultActions { get { return true; } }
 			readonly bool sel;
 			readonly TaskCompletionSource<InfoLineVM> select;
-			readonly IObservableCollection<InfoLineVM> items;
+			readonly IList<InfoLineVM> items;
 			readonly InfoLineVM selected;
 			readonly CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM> commands;
-			public CInfoView(bool sel, TaskCompletionSource<InfoLineVM> select, IObservableCollection<InfoLineVM> itemsThatUpdate, InfoLineVM initSel, CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM> commands)
+			public CInfoView(bool sel, TaskCompletionSource<InfoLineVM> select, IList<InfoLineVM> itemsThatUpdate, InfoLineVM initSel, CPlanCommands.CCollectionEditorBoundCommands<InfoLineVM> commands)
 			{
 				this.commands=commands;
 				this.sel=sel;
 				this.select = select;
 				this.selected = initSel;
 				this.items = itemsThatUpdate;
-				itemsThatUpdate.CollectionChanged += (sender, e) => pageChanged = true;
+				if(itemsThatUpdate is INotifyCollectionChanged)
+                    (itemsThatUpdate as INotifyCollectionChanged).CollectionChanged += (sender, e) => pageChanged = true;
 			}
 			#region IConsolePage implementation
 			public bool pageChanged { get; set; }

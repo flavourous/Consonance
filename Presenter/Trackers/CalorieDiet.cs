@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Collections.Generic;
 using LibRTP;
+using Consonance.Protocol;
 
 namespace Consonance
 {
@@ -156,7 +157,7 @@ namespace Consonance
 	{
 		#region IReflectedHelpyQuants implementation
         public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FoodInfo)o).calories ?? 0.0, (o, v) => ((FoodInfo)o).calories = v, 0.0) }; } }
-        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get { return new[] { new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Number, Name = "Grams", defaultvalue = 100.0 }, new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Number, Name = "Servings", defaultvalue = 1.0 } }; } }
+        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get { return new[] { new SimpleTrackyInfoQuantifierDescriptor { quantifier_type = InfoQuantifierTypes.Number, Name = "Grams", defaultvalue = 100.0 }, new SimpleTrackyInfoQuantifierDescriptor { quantifier_type = InfoQuantifierTypes.Number, Name = "Servings", defaultvalue = 1.0 } }; } }
         public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
         public Expression<Func<FoodInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
         #endregion
@@ -171,7 +172,7 @@ namespace Consonance
 	{
 		#region IReflectedHelpyQuants implementation
 		public InstanceValue<double>[] calculation { get { return new[] { new InstanceValue<double>("Calories", o => ((FireInfo)o).calories ?? 0.0, (o, v) => ((FireInfo)o).calories = v, 0.0) }; } }
-        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get { return new[] { new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Duration, Name = "Duration", defaultvalue = 0.0 } }; } }
+        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get { return new[] { new SimpleTrackyInfoQuantifierDescriptor { quantifier_type = InfoQuantifierTypes.Duration, Name = "Duration", defaultvalue = 0.0 } }; } }
         public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
         public Expression<Func<FireInfo, bool>> InfoComplete { get { return fi => fi.calories != null; } }
         #endregion

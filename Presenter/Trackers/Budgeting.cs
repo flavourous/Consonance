@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using LibRTP;
+using Consonance.Protocol;
 
 namespace Consonance
 {
@@ -71,7 +72,7 @@ namespace Consonance
         public InstanceValue<double>[] calculation { get; } = new[] { new InstanceValue<double>("Amount", o => ((IncomeInfo)o).amount, (o, v) => ((IncomeInfo)o).amount = v, 0.0) };
         public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
 		public Expression<Func<IncomeInfo, bool>> InfoComplete { get; } = fi => true;
-        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get; } = new[] { new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Number, Name = "Quantity", defaultvalue = 1.0 } };
+        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get; } = new[] { new SimpleTrackyInfoQuantifierDescriptor { quantifier_type = InfoQuantifierTypes.Number, Name = "Quantity", defaultvalue = 1.0 } };
         #endregion
         class ICalc : IReflectedHelpyCalc
         {
@@ -86,7 +87,7 @@ namespace Consonance
         public InstanceValue<double>[] calculation { get; } = new[] { new InstanceValue<double>("Amount", o => ((ExpenditureInfo)o).amount, (o, v) => ((ExpenditureInfo)o).amount = v, 0.0) };
         public IReflectedHelpyCalc[] calculators { get; } = new[] { new ICalc() };
         public Expression<Func<ExpenditureInfo, bool>> InfoComplete { get; }  = fi => true; 
-        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get; } = new[] { new SimpleTrackyInfoQuantifierDescriptor { type = InfoQuantifierTypes.Number, Name = "Quantity", defaultvalue = 1.0 } };
+        public SimpleTrackyInfoQuantifierDescriptor[] quantifier_choices { get; } = new[] { new SimpleTrackyInfoQuantifierDescriptor { quantifier_type = InfoQuantifierTypes.Number, Name = "Quantity", defaultvalue = 1.0 } };
         #endregion
         class ICalc : IReflectedHelpyCalc
         {

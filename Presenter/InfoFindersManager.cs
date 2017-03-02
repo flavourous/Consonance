@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using LibSharpHelp;
 using SQLite.Net;
+using Consonance.Protocol;
 
 namespace Consonance
 {

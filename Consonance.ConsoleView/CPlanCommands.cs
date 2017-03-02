@@ -1,6 +1,7 @@
 ﻿using System;
 using Consonance;
 using System.Threading.Tasks;
+using Consonance.Protocol;
 
 namespace Consonance.ConsoleView
 {

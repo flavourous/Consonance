@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Consonance.Invention;
 using System.Collections.Specialized;
+using Consonance.Protocol;
 
 namespace Consonance.ConsoleView
         

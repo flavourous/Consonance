@@ -1,8 +1,10 @@
-﻿using LibRTP;
+﻿using Consonance.Protocol;
+using LibRTP;
 using LibSharpHelp;
 using SQLite.Net;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -69,14 +71,23 @@ namespace Consonance.Invention
      *  - Hooks each invented descriptor to AppPresenter as Trackers
      */
 
-    
-
+   
     #region Tracker descriptor created by the simple inventor
-    class SimpleTrackyHelpyInventionV1Model : BaseDB
+    [TableIdentifier(4)]
+    class SimpleTrackyHelpyInventionV1Model : BaseDB, IPrimaryKey
     {
-        public static Proxy<SimpleTrackyInfoQuantifierDescriptor> FindCandidate { get; set; }
+        public static IDAL GDal;
+        public SimpleTrackyHelpyInventionV1Model()
+        {
+            qod_in = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this, 1);
+            qod_out = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this, 2);
+            targets = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingTargetDescriptor>(this, 3);
+            inequations = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingEquationDescriptor>(this,4);
+            outequations = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingEquationDescriptor>(this, 5);
+        }
 
         // helper
+        [Ignore]
         public IEnumerable<IKeyTo> Keyed
         {
             get
@@ -89,41 +100,15 @@ namespace Consonance.Invention
             }
         }
 
-        const int keyto_id = 1;
-
         // Quantifier types foriegn relationship
-        int qod_in_pid = 1, qod_out_pid = 2;
-        KeyTo<SimpleTrackyInfoQuantifierDescriptor> _qod_out, _qod_in;
-        public KeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_in
-        {
-            get { return _qod_in ?? (_qod_in = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(()=>id, qod_in_pid, keyto_id, FindCandidate )); }
-        }
-        public KeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_out
-        {
-            get { return _qod_out ?? (_qod_out = new KeyTo<SimpleTrackyInfoQuantifierDescriptor>(() => id, qod_out_pid, keyto_id, FindCandidate )); }
-        }
-
+        public IKeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_in, qod_out;
+        
         // targets!
-        int targets_pid = 3;
-        KeyTo<SimpleTrackyTrackingTargetDescriptor> _targets;
-        public KeyTo<SimpleTrackyTrackingTargetDescriptor> targets
-        {
-            get { return _targets ?? (_targets = new KeyTo<SimpleTrackyTrackingTargetDescriptor>(() => id, targets_pid, keyto_id)); }
-        }
+        public IKeyTo<SimpleTrackyTrackingTargetDescriptor> targets;
         public String target_args { get; set; } // comma seperated, used by targets equations.
 
         // Entries
-        int inequations_pid = 4, outequations_pid = 5;
-        KeyTo<SimpleTrackyTrackingEquationDescriptor> _inequations;
-        public KeyTo<SimpleTrackyTrackingEquationDescriptor> inequations
-        {
-            get { return _inequations ?? (_inequations = new KeyTo<SimpleTrackyTrackingEquationDescriptor>(() => id, inequations_pid, keyto_id)); }
-        }
-        KeyTo<SimpleTrackyTrackingEquationDescriptor> _outequations;
-        public KeyTo<SimpleTrackyTrackingEquationDescriptor> outequations
-        {
-            get { return _outequations ?? (_outequations = new KeyTo<SimpleTrackyTrackingEquationDescriptor>(() => id, outequations_pid, keyto_id)); }
-        }
+        public IKeyTo<SimpleTrackyTrackingEquationDescriptor> inequations, outequations;
         public String in_equations_args { get; set; }
         public String out_equations_args { get; set; }
 
@@ -143,11 +128,13 @@ namespace Consonance.Invention
         public String InputInfoVerbPast { get; set; }
         public String OutputInfoVerbPast { get; set; }
     }
+    [TableIdentifier(2)]
     class SimpleTrackyTrackingEquationDescriptor : BaseDB, IPrimaryKey
     {
         public String targetID { get; set; }
         public String equation { get; set; }
     }
+    [TableIdentifier(3)]
     class SimpleTrackyTrackingTargetDescriptor : BaseDB, IPrimaryKey
     {
         public String targetID { get; set; }
@@ -201,7 +188,7 @@ namespace Consonance.Invention
             var page = new GetValuesPage("What's it called?");
             var p1vr = (from s in new[] { "Name", "Description", "Category" }
                         select fac.StringRequestor(s)).ToArray();
-            page.SetList(new BindingList<object>((from p in p1vr select p.request).ToList()));
+            page.SetList(new ObservableCollection<object>((from p in p1vr select p.request).ToList()));
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 //stuff
@@ -219,7 +206,7 @@ namespace Consonance.Invention
                         "InputEntryVerb","OutputEntryVerb","InputInfoPlural",
                         "OutputInfoPlural","InputInfoVerbPast","OutputInfoVerbPast" }
                         select fac.StringRequestor(s)).ToArray();
-            page.SetList(new BindingList<object>((from p in p2vr select p.request).ToList()));
+            page.SetList(new ObservableCollection<object>((from p in p2vr select p.request).ToList()));
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 mod.InputEntryVerb = p2vr[0].value;
@@ -232,7 +219,7 @@ namespace Consonance.Invention
             foreach (var vr in p2vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value); ;
             return new SimpleTrackyInventionRequestPages(page, set);
         }
-        public static SimpleTrackyInventionRequestPages InfoQuantifiersPage(IValueRequestFactory fac)
+        public static SimpleTrackyInventionRequestPages InfoQuantifiersPage(IValueRequestFactory fac, InfoFinderHelper iHelper)
         {
             var page = new GetValuesPage("How can infos be quantified?");
             var ioreq = fac.OptionGroupRequestor("For");
@@ -268,7 +255,7 @@ namespace Consonance.Invention
 
             megalist.ValueChanged += () => megalist.valid = megalist.value.Items.Count > 0;
 
-            page.SetList(new BindingList<object> { ioreq.request, nreq.request, dvalmor.request, addr.request, megalist.request });
+            page.SetList(new ObservableCollection<object> { ioreq.request, nreq.request, dvalmor.request, addr.request, megalist.request });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 // get quantifiers
@@ -283,7 +270,8 @@ namespace Consonance.Invention
                     var name = (qq[1].o as String);
                     var qtype = (int)qq[2].o;
                     var qdef = qq[3].o;
-                    var qd = new SimpleTrackyInfoQuantifierDescriptor { defaultvalue = sdef[qtype](qdef), Name = name, type = (InfoQuantifierTypes)qtype };
+                    var qd = new SimpleTrackyInfoQuantifierDescriptor { defaultvalue = sdef[qtype](qdef), Name = name, quantifier_type = (InfoQuantifierTypes)qtype };
+                    qd = iHelper.Find(qd) ?? qd; // is this degenerate with another quantifier?
                     if (inout == 0) inq.Add(qd);
                     else outq.Add(qd);
                 }
@@ -297,8 +285,6 @@ namespace Consonance.Invention
         public static SimpleTrackyInventionRequestPages TargetDesciptorsPage(IValueRequestFactory fac)
         {
             var page = new GetValuesPage("What targets should be calculated?");
-
-
             var nreq = fac.StringRequestor("Name");
             var tidreq = fac.StringRequestor("TargetID");
             var argreq = fac.StringRequestor("Equation arguments");
@@ -331,7 +317,7 @@ namespace Consonance.Invention
             megalist.ValueChanged += () => megalist.valid = megalist.value.Items.Count > 0;
             megalist.value.Items.CollectionChanged += (a, b) => megalist.valid = megalist.value.Items.Count > 0;
 
-            page.SetList(new BindingList<object> { nreq.request, tidreq.request, rreq.request, rtreq.request, argreq.request, peqreq.request, teqreq.request, addr.request, megalist.request });
+            page.SetList(new ObservableCollection<object> { nreq.request, tidreq.request, rreq.request, rtreq.request, argreq.request, peqreq.request, teqreq.request, addr.request, megalist.request });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 // get targets
@@ -405,7 +391,7 @@ namespace Consonance.Invention
                 megalist.value.Items.Add(new Stringy[] {s1,s2,s3});
             };
             
-            page.SetList(new BindingList<object> { iargreq.request, oargreq.request, tidreq.request, ioreq.request, ereq.request, addr.request, megalist.request });
+            page.SetList(new ObservableCollection<object> { iargreq.request, oargreq.request, tidreq.request, ioreq.request, ereq.request, addr.request, megalist.request });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 // get equations
@@ -458,6 +444,7 @@ namespace Consonance.Invention
         readonly IValueRequestBuilder build;
         readonly IUserInput input;
         readonly IDAL conn;
+        readonly InfoFinderHelper iHelper;
 
         /// <summary>
         /// ... and here's how you can create more?
@@ -479,8 +466,8 @@ namespace Consonance.Invention
             conn.CreateTable<SimpleTrackyTrackingEquationDescriptor>();
             conn.CreateTable<SimpleTrackyHelpyInventionV1Model>();
 
-            InfoFinderHelper iHelper = new InfoFinderHelper(conn, delegate { });
-            SimpleTrackyHelpyInventionV1Model.FindCandidate = iHelper.Find;
+            iHelper = new InfoFinderHelper(conn, delegate { });
+            SimpleTrackyHelpyInventionV1Model.GDal = conn;
         }
 
         // Here we pass viewmodels about invented trackers - the view can display and command them in a managing view
@@ -503,7 +490,7 @@ namespace Consonance.Invention
                 if (!registered.ContainsKey(vm))
                 {
                     var pp = registered[vm] = SimpleTrackyHelperCreator.Create(it, seq);
-                    pp.state = pres.AddDietPair(pp, build);
+                    pp.state = pres.AddDietPair(pp, build, conn);
                 }
                 vm.sender = this;
                 // set sender? :/
@@ -560,15 +547,14 @@ namespace Consonance.Invention
         {
             var page1 = SimpleTrackyInventionRequestPages.TrackerDescriptionPage(build.requestFactory);
             var page2 = SimpleTrackyInventionRequestPages.EntryDescriptionPage(build.requestFactory);
-            var page3 = SimpleTrackyInventionRequestPages.InfoQuantifiersPage(build.requestFactory);
+            var page3 = SimpleTrackyInventionRequestPages.InfoQuantifiersPage(build.requestFactory, iHelper);
             var page4 = SimpleTrackyInventionRequestPages.TargetDesciptorsPage(build.requestFactory);
             var page5 = SimpleTrackyInventionRequestPages.EntryInfoEquations(build.requestFactory);
 
             var vt = build.GetValues(new[] { page1.page, page2.page, page3.page, page4.page, page5.page });
-            vt.Completed.ContinueAfter(async () =>
+            return vt.ContinueWith(t =>
             {
-                await vt.Pop();
-                if (vt.Completed.Result)
+                if (vt.Result)
                 {
                     ViewModelsToChange(
                         this,
@@ -594,7 +580,6 @@ namespace Consonance.Invention
                     );
                 }
             });
-            return vt.Pushed;
         }
         public Task EditTracker(InventedTrackerVM dvm)
         {
@@ -603,8 +588,7 @@ namespace Consonance.Invention
             var page1 = SimpleTrackyInventionRequestPages.TrackerDescriptionPage(build.requestFactory);
             var page2 = SimpleTrackyInventionRequestPages.EntryDescriptionPage(build.requestFactory);
             var vt = build.GetValues(new[] { page1.page, page2.page });
-            vt.Completed.ContinueWith(async rt => {
-                await vt.Pop();
+            return vt.ContinueWith(rt => {
                 if (rt.Result)
                 {
                     ViewModelsToChange(
@@ -623,7 +607,6 @@ namespace Consonance.Invention
                     );
                 }
             });
-            return vt.Pushed;
         }
         #endregion
 
@@ -645,20 +628,29 @@ namespace Consonance.Invention
                 var tracked = model.targets.Get().Select(d => d.targetID).Distinct();
                 info = new Dictionary<Type, desc>
                 {
-                    { typeof(TrackerInstance), new desc(String.Format("{0}_instance", mu),model.target_args.Split(',')) },
-                    { typeof(IInEntry), new desc(String.Format("{0}_entry_in", mu), tracked.ToArray() ) },
-                    { typeof(IOutEntry), new desc(String.Format("{0}_entry_out", mu), tracked.ToArray() ) },
-                    { typeof(IInInfo), new desc(String.Format("{0}_info_in", mu), model.in_equations_args.Split(',') ) },
-                    { typeof(IOutInfo), new desc(String.Format("{0}_info_out", mu), model.out_equations_args.Split(',') ) },
+                    { typeof(TrackerInstance), new desc(String.Format("{0}_instance", mu),model.target_args.Split(','), model.id*5) },
+                    { typeof(IInEntry), new desc(String.Format("{0}_entry_in", mu), tracked.ToArray() ,model.id*5+1) },
+                    { typeof(IOutEntry), new desc(String.Format("{0}_entry_out", mu), tracked.ToArray(),model.id*5+2 ) },
+                    { typeof(IInInfo), new desc(String.Format("{0}_info_in", mu), model.in_equations_args.Split(','),model.id*5+3 ) },
+                    { typeof(IOutInfo), new desc(String.Format("{0}_info_out", mu), model.out_equations_args.Split(',') ,model.id*5+4) },
                 };
+            }
+
+            public bool GetTableIdentifier<T>(out int id)
+            {
+                desc dsc = info?[typeof(T)];
+                id = dsc?.fmid ?? 0;
+                return dsc != null;
             }
 
             readonly Dictionary<Type, desc> info;
             class desc
             {
+                public int fmid;
                 public String table; public String[] cols; public Type[] types;
-                public desc(String tn, String[] args)
+                public desc(String tn, String[] args, int fmid)
                 {
+                    this.fmid = fmid;
                     table = tn;
                     types = Enumerable.Repeat<Type>(typeof(double), args.Length).ToArray();
                     cols = args;
@@ -673,6 +665,8 @@ namespace Consonance.Invention
                 colTypes = dsc?.types;
                 return dsc != null;
             }
+
+            
         }
 
         public class IInInfo : HBaseInfo { }
@@ -688,19 +682,19 @@ namespace Consonance.Invention
             }
             static Func<Object,T> ArgGet<T>(String name)
             {
-                return o => (T)((BaseDB)o).AdHoc[name];
+                return o => (T)((BaseDB)o)[name];
             }
             static Action<Object, T> ArgSet<T>(String name)
             {
-                return (o,v) => ((BaseDB)o).AdHoc[name] = v;
+                return (o,v) => ((BaseDB)o)[name] = v;
             }
             static Func<Object, double> InfoGet(String name)
             {
-                return o => (double?)((BaseDB)o).AdHoc[name] ?? 0.0;
+                return o => (double?)((BaseDB)o)[name] ?? 0.0;
             }
             static Action<Object, double> InfoSet(String name)
             {
-                return (o, v) => ((BaseDB)o).AdHoc[name] = v;
+                return (o, v) => ((BaseDB)o)[name] = v;
             }
             static InstanceValue<double> NSet(String n)
             {
@@ -843,11 +837,12 @@ namespace Consonance.Invention
             public SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> _pres { get; set; }
             public ITrackerPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> presenter { get { return _pres; } }
             public IServices services { set { _model.Init(value.dal); _pres.Init(value.dal); } }
+            public bool ShareInfo { get { return true; } }
         }
 
         static Expression<Func<T,bool>> GenIC<T>(String[] args) where T : BaseDB
         {
-            return d => args.All(s => d.AdHoc[s] != null);
+            return d => args.All(s => d[s] != null);
         }
 
         public static Holdy Create(SimpleTrackyHelpyInventionV1Model model, IStringEquationFactory exp)

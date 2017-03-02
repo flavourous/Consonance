@@ -7,6 +7,8 @@ using LibRTP;
 using System.Diagnostics;
 using System.Linq;
 using static Consonance.Presenter;
+using Consonance.Protocol;
+using System.Collections.ObjectModel;
 
 namespace Consonance
 {
@@ -16,11 +18,25 @@ namespace Consonance
         double quantity { get; set; }
     }
     public enum InfoQuantifierTypes { Number, Duration };
+    [TableIdentifier(1)]
     public class SimpleTrackyInfoQuantifierDescriptor : BaseDB, IPrimaryKey
     {
-        public InfoQuantifierTypes type { get; set; }
+        public InfoQuantifierTypes quantifier_type { get; set; }
         public double defaultvalue { get; set; }
         public String Name { get; set; }
+        public override bool Equals(object obj)
+        {
+            if(obj is SimpleTrackyInfoQuantifierDescriptor)
+            {
+                var sti = obj as SimpleTrackyInfoQuantifierDescriptor;
+                return sti.quantifier_type == quantifier_type && sti.defaultvalue == defaultvalue && sti.Name == Name;
+            }
+            return false;
+        }
+        public override int GetHashCode()
+        {
+            return HashUtil.CombineHashCodes(quantifier_type, defaultvalue, Name);
+        }
     }
     public abstract class HBaseInfo : BaseInfo,HQ
     {
@@ -51,6 +67,7 @@ namespace Consonance
         where Ii : HBaseInfo, new()
         where Oi : HBaseInfo, new()
     {
+        public bool ShareInfo { get { return true; } }
         public IServices services
         {
             set
@@ -243,8 +260,10 @@ namespace Consonance
 		public IEnumerable<GetValuesPage> CreationPages (IValueRequestFactory factory)
 		{
 			defaultTrackerStuff.Reset (); // maybe on ITrackModel interface? :/
-			var rqs = flectyRequests.MakeBindingList (f => f.requestStore.CGet (factory, f.descriptor.FindRequestorDelegate));
-			defaultTrackerStuff.PushInDefaults (null, rqs, factory);
+            var rqs = new ObservableCollection<Object>(
+                flectyRequests.Select(f => f.requestStore.CGet(factory, f.descriptor.FindRequestorDelegate))
+                );
+            defaultTrackerStuff.PushInDefaults (null, rqs, factory);
 			var gvp = new GetValuesPage (helpy.TrackerDetails.name);
 			gvp.SetList (rqs);
 			yield return gvp;
@@ -252,7 +271,9 @@ namespace Consonance
 		public IEnumerable<GetValuesPage> EditPages (Inst editing, IValueRequestFactory factory)
 		{
 			defaultTrackerStuff.Reset (); // maybe on ITrackModel interface? :/
-			var rqs = flectyRequests.MakeBindingList (f => f.requestStore.CGet (factory, f.descriptor.FindRequestorDelegate));
+            var rqs = new ObservableCollection<Object>(
+                flectyRequests.Select(f => f.requestStore.CGet(factory, f.descriptor.FindRequestorDelegate))
+                );
             foreach (var fr in flectyRequests) fr.requestStore.requestValue = fr.descriptor.ConvertDataToRequestValue(fr.descriptor.valueGetter(editing));
 			defaultTrackerStuff.PushInDefaults (editing, rqs, factory);
 			var gvp = new GetValuesPage (helpy.TrackerDetails.name);
@@ -303,7 +324,7 @@ namespace Consonance
             dal.CreateTable<SimpleTrackyInfoQuantifierDescriptor>(); // ensure
 
             // Ensure has in DB - we wont have an id to start with from defs
-            var hit =dal.Get<SimpleTrackyInfoQuantifierDescriptor>(d => d.Name == q.Name && d.type == q.type && d.defaultvalue == q.defaultvalue);
+            var hit =dal.Get<SimpleTrackyInfoQuantifierDescriptor>(d => d.Name == q.Name && d.quantifier_type == q.quantifier_type && d.defaultvalue == q.defaultvalue);
             if (hit.Count() != 1) return null;
             else return hit.First();
         }
@@ -334,7 +355,7 @@ namespace Consonance
         {
             Func<object, object> getQuantity = o => ((HQ)o).quantity;
             Action<object, object> setQuantity = (o, v) => ((HQ)o).quantity = (double)v;
-            switch (dsc.type)
+            switch (dsc.quantifier_type)
             {
                 default:
                 case InfoQuantifierTypes.Number:
@@ -467,10 +488,12 @@ namespace Consonance
 			defaulter.ResetRequests ();
 		}
 
-		public BindingList<object> CreationFields (IValueRequestFactory factory)
+		public IList<object> CreationFields (IValueRequestFactory factory)
 		{
             // we just need the amount...we can get the name and when etc from a defaulter...
-            var rp = directRequests.MakeBindingList(d => d.Value.requestStore.CGet(factory.DoubleRequestor));
+            var rp = new ObservableCollection<Object>(
+                directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor))
+            );
 			defaulter.PushInDefaults (null, rp, factory);
 			SetupInfoObservers (null);
 			return rp;
@@ -484,11 +507,11 @@ namespace Consonance
 			return rv;
 		}
 
-		public BindingList<object> CalculationFields (IValueRequestFactory factory, I info)
+		public IList<object> CalculationFields (IValueRequestFactory factory, I info)
 		{
             // do requests
 			SetupInfoObservers (info);
-            var blo = new BindingList<Object>();
+            var blo = new ObservableCollection<Object>();
             blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.FindRequestorDelegate));
             blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));//readonly
 			ProcessRequestsForInfo (blo, factory, info);
@@ -498,7 +521,7 @@ namespace Consonance
 		}
 
 		// I know these will change when info changes...but...the buisness modelling will re-call us in those cases.
-		void ProcessRequestsForInfo(BindingList<Object> requestoutput, IValueRequestFactory factory, I info)
+		void ProcessRequestsForInfo(ObservableCollection<Object> requestoutput, IValueRequestFactory factory, I info)
 		{
             foreach(var q in forMissingInfoQuantities)
             { 
@@ -536,10 +559,12 @@ namespace Consonance
             return quant.calculators.ToDictionary(c => c.TargetID, c => c.Calculate(vals.ToArray()));
 		}
 
-		public BindingList<object> EditFields (E toEdit, IValueRequestFactory factory)
+		public IList<object> EditFields (E toEdit, IValueRequestFactory factory)
 		{
             // request objects
-            var rp = directRequests.MakeBindingList(d => d.Value.requestStore.CGet(factory.DoubleRequestor));
+            var rp = new ObservableCollection<Object>(
+                directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor))
+            );
 			defaulter.PushInDefaults (toEdit, rp, factory);
 
             // init request objects - defaulter did both
@@ -558,11 +583,11 @@ namespace Consonance
 			return toEdit;
 		}
 
-		public BindingList<object> EditFields (E toEdit, IValueRequestFactory factory, I info)
+		public IList<object> EditFields (E toEdit, IValueRequestFactory factory, I info)
 		{
 			// requests for editing a calced one....hmmouch?
 			SetupInfoObservers (info);
-            var blo = new BindingList<Object>();
+            var blo = new ObservableCollection<Object>();
             blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.FindRequestorDelegate));
             blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));//readonly
             currentMeasureOption.requestStorage.requestValue = currentMeasureOption.quant.valueGetter(toEdit);
@@ -586,9 +611,9 @@ namespace Consonance
         #endregion
 
         #region IInfoCreation implementation	
-		public BindingList<object> InfoFields (IValueRequestFactory factory)
+		public IList<object> InfoFields (IValueRequestFactory factory)
 		{
-            var rv = new BindingList<Object>();
+            var rv = new ObservableCollection<Object>();
             rv.Add(infoNameRequest.CGet(factory.StringRequestor));
             rv.Add(measureAndOptionsRequest.CGet(factory.IValueRequestOptionGroupRequestor));
 

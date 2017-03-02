@@ -68,4 +68,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Consonance.Protocol\Consonance.Protocol.csproj">
+      <Project>{2dce92fb-dc6d-4684-9961-611d7c709c9b}</Project>
+      <Name>Consonance.Protocol</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

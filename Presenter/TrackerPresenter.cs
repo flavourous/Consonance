@@ -8,164 +8,10 @@ using LibSharpHelp;
 using System.Diagnostics;
 using System.Linq;
 using static Consonance.Presenter;
+using Consonance.Protocol;
 
 namespace Consonance
 {
-	public class ViewModelBase : scm.INotifyPropertyChanged
-	{
-		#region INotifyPropertyChanged implementation
-		public event scm.PropertyChangedEventHandler PropertyChanged = delegate { };
-		protected void OnPropertyChanged([CallerMemberName]String pn = null)
-		{
-			PropertyChanged (this, new scm.PropertyChangedEventArgs (pn));
-		}
-		#endregion
-	}
-	public class OriginatorVM : ViewModelBase {
-		public static bool OriginatorEquals(OriginatorVM first, OriginatorVM second)
-		{
-			if (first == null && second == null) 
-				return true;
-			if (first == null || second == null) 
-				return false;
-			Object fo = first.originator;
-			Object so = second.originator;
-			if (fo is BaseDB && so is BaseDB && (fo.GetType() == so.GetType()))  // also from same table though...
-				return (fo as BaseDB).id == (so as BaseDB).id;
-			else 
-				return Object.Equals (fo, so);
-		}
-        public override bool Equals(object obj)
-        {
-            return OriginatorEquals(obj as OriginatorVM, this);
-        }
-        public override int GetHashCode()
-        {
-            return originator is BaseDB ? (originator as BaseDB).id.GetHashCode() : originator.GetHashCode();
-        }
-        // Dear views, do not modify this object, or I will kill you.
-        public Object sender;
-		public Object originator;
-	}
-	public class KVPList<T1,T2> : List<KeyValuePair<T1,T2>>
-	{
-        public KVPList() { }
-        public KVPList(IEnumerable<KeyValuePair<T1, T2>> itms)
-        {
-            AddRange(itms);
-        }
-		public void Add(T1 a, T2 b) 
-		{
-			Add (new KeyValuePair<T1, T2> (a, b));
-		}
-	}
-	public class TrackerDetailsVM : ViewModelBase
-	{
-		// viewhakcs
-		bool _selected = false;
-		public bool selected { get { return _selected; } set { _selected=value; OnPropertyChanged (); } }
-
-        public String name { get; private set; }
-        public String description { get; private set; }
-        public String category { get; private set; }
-		public TrackerDetailsVM(String name, String description, String category)
-		{
-			this.name = name;
-			this.description = description;
-			this.category = category;
-		}
-	}
-	public class TrackerInstanceVM : OriginatorVM
-	{
-		public bool tracked { get; private set; }
-        public DateTime started { get; private set; }
-        public String name { get; private set; }
-        public String desc { get; private set; }
-        public KVPList<string, double> displayAmounts { get; private set; }
-        public TrackerDialect dialect { get; private set; }
-		public TrackerInstanceVM(TrackerDialect td, bool tracked, DateTime s, String n, String d, KVPList<string,double>  t)
-		{
-			this.tracked = tracked;
-			this.dialect = td;
-			started=s;
-			name=n; desc=d;
-			displayAmounts = t;
-		}
-	}
-	public class EntryLineVM : OriginatorVM
-	{
-        public DateTime start { get; private set; }
-        public TimeSpan duration { get; private set; }
-        public String name { get; private set; }
-        public String desc { get; private set; }
-        public KVPList<string, double> displayAmounts { get; private set; }
-
-		public EntryLineVM(DateTime w, TimeSpan l, String n, String d, KVPList<string,double>  t)
-		{
-			duration = l;
-			start=w; name=n; desc=d;
-			displayAmounts = t;
-		}
-	}
-
-	public class TrackerTracksVM
-	{
-		public TrackerInstanceVM instance;
-		public String modelName { get { return (instance.sender as IAbstractedTracker).details.name; } }
-		public String instanceName { get { return instance.name; } }
-		public TrackingInfoVM[] tracks = new TrackingInfoVM[0];
-	}
-
-	// The default behaviour is something like this:
-	// balance value if both not null.  if one is null, treat as a simple target. 
-	public class TrackingElementVM
-	{
-		public String name;
-		public double value;
-	}
-	public class TrackingInfoVM
-	{
-        public String inValuesName;
-		public TrackingElementVM[] inValues;
-        public String outValuesName;
-        public TrackingElementVM[] outValues;
-		public String targetValueName;
-		public double targetValue;
-	}
-	public class InfoLineVM : OriginatorVM
-	{
-		public String name { get; set; }
-		public KVPList<string, double> displayAmounts { get; set; }
-
-		// viewhakcs
-		bool _selected = false;
-		public bool selected { get { return _selected; } set { _selected=value; OnPropertyChanged (); } }
-	}
-
-	public delegate IEnumerable<T> EntryRetriever<T>(DateTime start, DateTime end);
-	public interface ITrackerPresenter<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType> 
-		where DietInstType : TrackerInstance, new()
-		where EatType : BaseEntry, new()
-		where EatInfoType : BaseInfo, new()
-		where BurnType : BaseEntry, new()
-		where BurnInfoType : BaseInfo, new()
-	{
-		TrackerDialect dialect { get; }
-		TrackerDetailsVM details { get; }
-
-		InfoLineVM GetRepresentation (EatInfoType info);
-		InfoLineVM GetRepresentation (BurnInfoType info);
-
-		EntryLineVM GetRepresentation (EatType entry, EatInfoType entryInfo);
-		EntryLineVM GetRepresentation (BurnType entry, BurnInfoType entryInfo);
-
-		TrackerInstanceVM GetRepresentation (DietInstType entry);
-
-		// Deals with goal tracking
-		IEnumerable<TrackingInfoVM> DetermineInTrackingForDay(DietInstType di, EntryRetriever<EatType> eats, EntryRetriever<BurnType> burns, DateTime dayStart);
-		IEnumerable<TrackingInfoVM> DetermineOutTrackingForDay(DietInstType di, EntryRetriever<EatType> eats, EntryRetriever<BurnType> burns, DateTime dayStart);
-	}
-
     interface IViewModelHandler<T>
     {
         IEnumerable<T> Instances();
@@ -250,7 +96,8 @@ namespace Consonance
 			IUserInput getInput,
 			IDAL conn,
 			ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model,
-			ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter
+			ITrackerPresenter<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> presenter,
+            IDAL shared_conn
 		)
 		{
 			// store objects
@@ -259,7 +106,7 @@ namespace Consonance
 			this.instanceBuilder = instanceBuilder;
 			this.getInput = getInput;
 			this.presenter = presenter;
-			this.modelHandler = new TrackerModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, model);
+			this.modelHandler = new TrackerModelAccessLayer<DietInstType, EatType, EatInfoType, BurnType, BurnInfoType>(conn, shared_conn, model);
             modelHandler.ToChange += (t, ct, a) => ViewModelsToChange(this, new DietVMToChangeEventArgs<TrackerChangeType> { changeType = t, toChange = a });
 		}
 
@@ -372,23 +219,25 @@ namespace Consonance
 		}
 		public Task StartNewTracker()
 		{
-			var pages = new List<GetValuesPage> (modelHandler.model.CreationPages (instanceBuilder.requestFactory));
-			var vt = instanceBuilder.GetValues (pages);
-			vt.Completed.ContinueWith(async rt => {
-				await vt.Pop();
-				if (rt.Result) modelHandler.StartNewTracker ();
-			});
-			return vt.Pushed;
-		}
+            TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
+            var pages = new List<GetValuesPage>(modelHandler.model.CreationPages(instanceBuilder.requestFactory));
+            instanceBuilder.GetValues(pages).ContinueWith(t =>
+            {
+                if (t.Result) modelHandler.StartNewTracker();
+                tev.SetResult(new EventArgs());
+            });
+            return tev.Task;
+        }
 		public Task EditTracker (TrackerInstanceVM dvm)
 		{
+            TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
 			var pages = new List<GetValuesPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory));
-			var vt = instanceBuilder.GetValues (pages);
-			vt.Completed.ContinueWith(async rt => {
-				await vt.Pop();
-				if (rt.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
-			});
-			return vt.Pushed;
+            instanceBuilder.GetValues(pages).ContinueWith(t=>
+            {
+				if (t.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
+                tev.SetResult(new EventArgs());
+            });
+            return tev.Task;
 		}
 		public void RemoveTracker (TrackerInstanceVM dvm, bool warn = true)
 		{
@@ -433,10 +282,12 @@ namespace Consonance
 				sinfo.originator = imod; // dont forget to set this this time...
 			}
 
+
+
             infoRequest.value = sinfo;
 		
 			// Set up for editing
-			Func<BindingList<Object>> flds = () => {
+			Func<IList<Object>> flds = () => {
 				var si = infoRequest.value;
 				if (si == null)
 					return editing == null ?
@@ -471,13 +322,17 @@ namespace Consonance
 			checkFields ();
 			infoRequest.ValueChanged += checkFields;
 
-			var gv = getValues.GetValues (new[]{ requests });
-			gv.Completed.ContinueWith(async result => {
-				await gv.Pop (); 
-				if (result.Result) editit ();
+
+            TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
+            var pages = new List<GetValuesPage>(modelHandler.model.CreationPages(instanceBuilder.requestFactory));
+            getValues.GetValues(new[] { requests }).ContinueWith(t =>
+            {
+				if (t.Result) editit ();
 				infoRequest.ValueChanged -= checkFields;
-			});
-			return gv.Pushed;
+                tev.SetResult(new EventArgs());
+            });
+            
+            return tev.Task;
 		}
 
 		public void RemoveIn (EntryLineVM toRemove)
@@ -524,15 +379,16 @@ namespace Consonance
 			var gvp = new GetValuesPage (title);
 			gvp.SetList (vros);
 			if (editing) creator.FillRequestData (toEdit, builder.requestFactory);
-			var vr = builder.GetValues (new[]{ gvp });
-			vr.Completed.ContinueWith(async result => {
-				await vr.Pop ();
+
+            TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
+            builder.GetValues (new[]{ gvp }).ContinueWith(result => {
 				if (result.Result) {
 					if (editing) handler.Edit (toEdit);
 					else handler.Add ();
 				}
+                tev.SetResult(new EventArgs());
 			});
-			return vr.Pushed;
+            return tev.Task;
 		}
 
 		public Task AddOutInfo(IValueRequestBuilder bld)

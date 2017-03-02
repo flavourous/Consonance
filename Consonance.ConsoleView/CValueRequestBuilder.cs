@@ -6,6 +6,9 @@ using System.Text;
 using LibRTP;
 using LibSharpHelp;
 using scm = System.ComponentModel;
+using Consonance.Protocol;
+using static Consonance.DefaultEntryRequests;
+using System.Collections.Specialized;
 
 namespace Consonance.ConsoleView
 {
@@ -22,13 +25,13 @@ namespace Consonance.ConsoleView
 			GetValuesPage mpage;
 			public GetValuesPage page {
 				set {
-					if (mpage != null) mpage.valuerequestsChanegd -= ReqsChanged;
+					if (mpage != null) mpage.valuerequests_CollectionChanged -= ReqsChanged;
 					mpage = value;
-					mpage.valuerequestsChanegd += ReqsChanged;
+					mpage.valuerequests_CollectionChanged += ReqsChanged;
 					ReqsChanged (null, null);
 				}
 			}
-			void ReqsChanged (object sender, ListChangedEventArgs e)
+			void ReqsChanged (object sender, NotifyCollectionChangedEventArgs e)
 			{
 				foreach(var c in creqs) c.Invalidated -= C_Invalidated;
 				creqs = new List<IValueRequestFromString> (from s in mpage.valuerequests select s as IValueRequestFromString);
@@ -121,21 +124,24 @@ namespace Consonance.ConsoleView
 			#endregion
 		}
 		#region IValueRequestBuilder implementation
-		public ViewTask<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
+		public Task<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
 		{
 			var rps = new List<GetValuesPage> (requestPages);
-			TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs> ();
 			TaskCompletionSource<bool> chosen = new TaskCompletionSource<bool> ();
 			var pcp = new GetValuesConsolePage ();
 			int pidx = -1;
 			Action doNext = delegate {
 			    pidx++;
-				if(pidx < rps.Count)
-				{
-					pcp.page = rps[pidx];
-					pcp.pageChanged = true;
-				}
-				else chosen.SetResult(true);
+                if (pidx < rps.Count)
+                {
+                    pcp.page = rps[pidx];
+                    pcp.pageChanged = true;
+                }
+                else
+                {
+                    chosen.SetResult(true);
+                    MainClass.consolePager.Pop();
+                }
 			};
             Action doPrev = delegate {
                 if (pidx > 0)
@@ -149,9 +155,7 @@ namespace Consonance.ConsoleView
             pcp.last = doPrev;
 			MainClass.consolePager.Push (pcp);
 			doNext ();
-			var vt = new ViewTask<bool> (() => Task.FromResult(MainClass.consolePager.Pop(pcp)), pushed.Task, chosen.Task);
-			pushed.SetResult(null);
-			return vt;
+            return chosen.Task;
 		}
 
         public IValueRequestFactory requestFactory { get { return crf; } }
@@ -187,7 +191,7 @@ namespace Consonance.ConsoleView
 					var args = str.Split(' ');
 					return new RecurrsEveryPatternValue(
 						(DateTime)dtc.ConvertFromString(args[0]), 
-						(LibRTP.RecurrSpan)int.Parse(args[1]),
+						(Protocol.RecurrSpan)int.Parse(args[1]),
 						int.Parse(args[2])
 					);
 				},
@@ -215,18 +219,18 @@ namespace Consonance.ConsoleView
 						ons.Add(int.Parse(pv[0]));
 					}
 					mask |= uint.Parse(input[i]);
-					return new RecurrsOnPatternValue((RecurrSpan)mask, ons.ToArray());
+					return new IRPV((LibRTP.RecurrSpan)mask, ons.ToArray());
 				},
 				patval => {
 					var masks = new List<uint>();
-					foreach(var v in patval.PatternType.SplitFlags())
+					foreach(var v in ((LibRTP.RecurrSpan)patval.PatternType).SplitFlags())
 						masks.Add((uint)v);
 					
 					String exlp = "";
 					int i=0;
 					for(;i<masks.Count-1;i++)
-						exlp += (i==0 ? "on " : "of ")+ (RecurrSpan)masks[i] + " " + patval.PatternValues[i];
-					exlp += " of the " + (RecurrSpan)masks[i];
+						exlp += (i==0 ? "on " : "of ")+ (Protocol.RecurrSpan)masks[i] + " " + patval.PatternValues[i];
+					exlp += " of the " + (Protocol.RecurrSpan)masks[i];
 
 					String[] fmt = new string[masks.Count];
 					for(i=0;i<masks.Count-1;i++)

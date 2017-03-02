@@ -1,5 +1,7 @@
-﻿using LibSharpHelp;
+﻿using Consonance.Protocol;
+using LibSharpHelp;
 using System;
+using System.Collections.Generic;
 
 namespace Consonance
 {
@@ -23,7 +25,7 @@ namespace Consonance
 			this.infoCreator = infoCreator;
 			this.finderView = fv;
 		} 
-		public BindingList<Object> GetRequestObjects()
+		public IList<Object> GetRequestObjects()
 		{
 			var flds = infoCreator.InfoFields(factory);
             if (infoFinder.CanFind)

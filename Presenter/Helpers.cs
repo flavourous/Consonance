@@ -5,140 +5,21 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
+using Consonance.Protocol;
+using LibRTP;
 
 namespace Consonance
 {
 
-
-    // proxy just needs this collection of interfaces, not the one we combine here...
-    public interface IObservableCollection<T> : INotifyCollectionChanged, INotifyPropertyChanged, IList<T> { }
-	public class ObservableCollectionProxy<T, ProxyConstraint> : IObservableCollection<T>
-		where ProxyConstraint : INotifyCollectionChanged, INotifyPropertyChanged,  IList<T>
+    public static class RTPHelp
     {
-		protected readonly ProxyConstraint toProxy;
-		public ObservableCollectionProxy(ProxyConstraint toProxy) { this.toProxy = toProxy; }
-
-		// Explicit implimentations with weird overrides
-//		int IList.Add (object value) { return IListAdd(value); }
-//		public virtual int IListAdd(object value) { return ((IList)toProxy).Add (value); } 
-//		bool IList.Contains (object value) { return this.Contains((T)value); }
-//		int IList.IndexOf (object value) { return this.IndexOf((T)value); }
-//		void IList.Insert (int index, object value) { this.Insert(index, (T)value); }
-//		void IList.Remove (object value) { this.Remove((T)value); }
-//		void ICollection.CopyTo (Array array, int index) { this.CopyTo((T[])array, index); }
-//		Object IList.this [int index] { get { return this[index]; } set { this[index]=(T)value; } }
-		IEnumerator IEnumerable.GetEnumerator () { return this.GetEnumerator(); }
-
-		// Impl, virtual for overriding...
-		public virtual int IndexOf (T item) { return toProxy.IndexOf(item); }
-		public virtual void Insert (int index, T item) { toProxy.Insert(index, item); }
-		public virtual void RemoveAt (int index) { ((IList<T>)toProxy).RemoveAt(index); }
-		public virtual void Add (T item) { toProxy.Add(item); }
-		public virtual void Clear () { ((IList<T>)toProxy).Clear(); }
-		public virtual bool Contains (T item) { return toProxy.Contains(item); }
-		public virtual void CopyTo (T[] array, int arrayIndex) { toProxy.CopyTo(array, arrayIndex); }
-		public virtual bool Remove (T item) { return toProxy.Remove(item); }
-		public virtual IEnumerator<T> GetEnumerator () { return toProxy.GetEnumerator(); }
-
-		public virtual bool IsFixedSize { get { return ((IList)toProxy).IsFixedSize; } }
-		public virtual object SyncRoot { get { return ((IList)toProxy).SyncRoot; } }
-		public virtual bool IsSynchronized { get { return ((IList)toProxy).IsSynchronized; } } 
-		public virtual int Count { get { return ((IList<T>)toProxy).Count; } }
-		public virtual bool IsReadOnly { get { return ((IList)toProxy).IsReadOnly; } }
-		
-		public virtual T this [int index] { get { return ((IList<T>)toProxy)[index]; } set { ((IList<T>)toProxy)[index]=value; } }
-		public virtual event PropertyChangedEventHandler PropertyChanged { add { ((INotifyPropertyChanged)toProxy).PropertyChanged += value; } remove { ((INotifyPropertyChanged)toProxy).PropertyChanged -= value; } }
-		public virtual event NotifyCollectionChangedEventHandler CollectionChanged {  add { toProxy.CollectionChanged += value; } remove { toProxy.CollectionChanged -= value; } } 
-	}
-
-    public interface ICanDispatch
-    {
-        Action<Action> Dispatcher { get; set; }
-    }
-    public class ObservableCollectionList<T> : IObservableCollection<T>, ICanDispatch
-    {
-        public ObservableCollectionList()
+        public static RecurrsEveryPattern Create(this RecurrsEveryPatternValue @this, DateTime? s, DateTime? e)
         {
-            this.Dispatcher = a => a();
+            return new RecurrsEveryPattern(@this.PatternFixed, @this.PatternFrequency, (LibRTP.RecurrSpan) @this.PatternType, s, e);
         }
-        public Action<Action> Dispatcher { get; set; }
-
-        protected readonly List<T> backing = new List<T>();
-
-        public bool Contains(T item) { return backing.Contains(item); }
-        public void CopyTo(T[] array, int arrayIndex) { backing.CopyTo(array, arrayIndex); }
-        public int IndexOf(T item) { return backing.IndexOf(item); }
-        public int Count { get { return backing.Count; } }
-        public bool IsReadOnly { get { return false; } }
-        public virtual IEnumerator<T> GetEnumerator() { return backing.GetEnumerator(); }
-        IEnumerator IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
-
-        public event NotifyCollectionChangedEventHandler CollectionChanged = delegate { };
-        protected void OnCollectionChanged(NotifyCollectionChangedEventArgs cea)
+        public static RecurrsOnPattern Create(this RecurrsOnPatternValue @this, DateTime? s, DateTime? e)
         {
-            Dispatcher(() => CollectionChanged(this, cea));
-        }
-        public event PropertyChangedEventHandler PropertyChanged = delegate { };
-        protected void OnPropertyChanged([CallerMemberName] String m = null)
-        {
-            Dispatcher(() => PropertyChanged(this, new PropertyChangedEventArgs(m)));
-        }
-
-        public T this[int index]
-        {
-            get { return backing[index]; }
-            set
-            {
-                var old = backing[index];
-                backing[index] = value;
-                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, value, old, index));
-            }
-        }
-
-        public void Add(T item)
-        {
-            backing.Add(item);
-            OnPropertyChanged("Count");
-            OnPropertyChanged("Item[]");
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, backing.Count - 1));
-        }
-
-        public void Clear()
-        {
-            backing.Clear();
-            OnPropertyChanged("Count");
-            OnPropertyChanged("Item[]");
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-        }
-
-
-        public void Insert(int index, T item)
-        {
-            backing.Insert(index, item);
-            OnPropertyChanged("Count");
-            OnPropertyChanged("Item[]");
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
-        }
-
-        public bool Remove(T item)
-        {
-            if (backing.Remove(item))
-            {
-                OnPropertyChanged("Count");
-                OnPropertyChanged("Item[]");
-                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
-                return true;
-            }
-            return false;
-        }
-
-        public void RemoveAt(int index)
-        {
-            var item = backing[index];
-            backing.RemoveAt(index);
-            OnPropertyChanged("Count");
-            OnPropertyChanged("Item[]");
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
+            return new RecurrsOnPattern(@this.PatternValues, (LibRTP.RecurrSpan)@this.PatternType, s, e);
         }
     }
 

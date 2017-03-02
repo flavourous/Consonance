@@ -10,194 +10,18 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Reflection;
 using static Consonance.Presenter;
+using Consonance.Protocol;
+using System.Collections.ObjectModel;
 
 namespace Consonance
 {
-    // \Overview\
-    // ``````````
-    // We want to support different ways of dieting. This might be a calorie control diet with a daily limit, or a weekly limit,
-    // or with different limits on each day of the week etc.  It might also not track calories, and instead track some other index
-    // like the fiberousness of the food, and aim for a target on that.
-    //
-    // Strategy is to have a central repository of food items with full nutrient info.  Other data, specific to other diets would
-    // exist on foreign tables.  The prime table would have nullable columns, indicating a lack of data.  Diet models could calculate
-    // thier index from the prime table or insist manual assignment.
-
-    #region BASE_MODELS
-    public abstract class BaseDB
-    {
-        [PrimaryKey, AutoIncrement]
-        public int id { get; set; }
-
-        [ColumnAccessor, Ignore] // allow on all for simples.
-        public IDictionary<String, Object> AdHoc { get; } = new Dictionary<String, Object>();
-    }
-    public abstract class BaseEntry : BaseDB
-    {
-        // keys
-        public int trackerinstanceid { get; set; }
-        public int? infoinstanceid { get; set; }
-
-        // entry data
-        public String entryName { get; set; }
-        public DateTime entryWhen { get; set; }
-
-        // repetition info (starts at when)
-        public RecurranceType repeatType { get; set; }
-        public byte[] repeatData { get; set; }
-        public DateTime? repeatStart { get; set; } // repeated in data
-        public DateTime? repeatEnd { get; set; }// repeated in data
-
-        // Helper for cloning - it's a flyweight also due to memberwuse clone reference copying the byte[].
-        public BaseEntry FlyweightCloneWithDate(DateTime dt)
-        {
-            var ret = MemberwiseClone() as BaseEntry;
-            ret.entryWhen = dt;
-            return ret;
-        }
-    }
-
-    [Flags] // this deontes a class used from libRTP.
-    public enum RecurranceType { None = 0, RecurrsOnPattern = 1, RecurrsEveryPattern = 2 }
-
-    // when we're doing a diet here, created by diet class
-    public class TrackerInstance : BaseDB
-    {
-        public bool tracked { get; set; }
-        public string name { get; set; }
-        public DateTime startpoint { get; set; }
-    }
-
-    public class BaseInfo : BaseDB
-    {
-        public String name { get; set; }
-    }
-
-
-    #endregion
-
-    // creates stuff from pages - shared.
-    public interface ICreateable<T> where T : BaseDB
-    {
-        // creator for dietinstance
-        IEnumerable<GetValuesPage> CreationPages(IValueRequestFactory factory);
-        IEnumerable<GetValuesPage> EditPages(T editing, IValueRequestFactory factory);
-        T New();
-        void Edit(T toEdit);
-    }
-
-    
-
-    #region DIET_PLAN_INTERFACES
-    public interface ITrackModel<D, Te, Tei, Tb, Tbi> : ICreateable<D>
-        where D : TrackerInstance
-        where Te : BaseEntry
-        where Tei : BaseInfo
-        where Tb : BaseEntry
-        where Tbi : BaseInfo
-    {
-        // creates items
-        IEntryCreation<Te, Tei> increator { get; }
-        IEntryCreation<Tb, Tbi> outcreator { get; }
-    }
-    public interface IServices
-    {
-        IDAL dal { get; }
-    }
-    
-	public class TrackerDialect
-	{
-		public readonly String 
-            InputEntryVerb, OutputEntryVerb, 
-            InputInfoPlural, OutputInfoPlural,
-            InputInfoVerbPast, OutputInfoVerbPast;
-        public TrackerDialect(
-            String InputEntryVerb, String OutpuEntryVerb, 
-            String InputInfoPlural, String OutputInfoPlural,
-            String InputInfoVerbPast, String OutputInfoVerbPast
-            )
-		{
-			this.InputEntryVerb = InputEntryVerb;
-			this.OutputEntryVerb = OutpuEntryVerb;
-			this.InputInfoPlural = InputInfoPlural;
-			this.OutputInfoPlural = OutputInfoPlural;
-            this.InputInfoVerbPast = InputInfoVerbPast;
-            this.OutputInfoVerbPast = OutputInfoVerbPast;
-		}
-	}
-	public class GetValuesPage
-	{
-		public readonly String title;
-		BindingList<Object> boundrequests = new BindingList<object>();
-		public IList<Object> valuerequests { get { return boundrequests; } }
-		public ListChangedEventHandler valuerequestsChanegd = delegate { };
-		void Newlist_ListChanged (object sender, ListChangedEventArgs e)
-		{
-			valuerequestsChanegd (sender, e);
-		}
-		public GetValuesPage(String title)
-		{
-			this.title = title;
-			boundrequests.ListChanged += Newlist_ListChanged;
-		}
-		public void SetList(BindingList<Object> newlist)
-		{
-			boundrequests.ListChanged -= Newlist_ListChanged;
-			newlist.ListChanged += Newlist_ListChanged;
-			boundrequests = newlist;
-			Newlist_ListChanged (boundrequests, new ListChangedEventArgs (ListChangedType.Reset, -1));
-		}
-	}
-	public interface IEntryCreation<EntryType, InfoType> : IInfoCreation<InfoType> where InfoType : class
-	{
-		// ok you can clear stored data now
-		void ResetRequests();
-
-		// What named fields do I need to fully create an entry (eg eating a banana) - "kcal", "fat"
-		BindingList<Object> CreationFields (IValueRequestFactory factory); 
-		// Here's those values, give me the entry (ww points on eating a bananna) - broker wont attempt to remember a "item / info".
-		EntryType Create ();
-
-		// Ok, I've got info on this food (bananna, per 100g, only kcal info) - I still need "fat" and "grams"
-		BindingList<Object> CalculationFields (IValueRequestFactory factory, InfoType info);
-		// right, heres the fat too, give me entry (broker will update that bananna info also)
-		EntryType Calculate(InfoType info, bool shouldComplete);
-
-		// and again for editing
-		BindingList<Object> EditFields (EntryType toEdit, IValueRequestFactory factory); 
-		EntryType Edit (EntryType toEdit);
-		BindingList<Object> EditFields (EntryType toEdit, IValueRequestFactory factory, InfoType info);
-		EntryType Edit(EntryType toEdit, InfoType info, bool shouldComplete);
-	}
-	public interface IInfoCreation<InfoType> where InfoType : class
-	{
-		// So what info you need to correctly create an info on an eg food item from scratch? "fat" "kcal" "per grams" please
-		BindingList<Object> InfoFields(IValueRequestFactory factory);
-		// ok so those objects, put this data in them. im editing, for exmaple.
-		void FillRequestData (InfoType item, IValueRequestFactory factory); 
-		// ok make me an info please here's that data.
-		InfoType MakeInfo (InfoType toEdit=null);
-		// ok is this info like complete for your diety? yes. ffs.
-		Expression<Func<InfoType,bool>> IsInfoComplete { get; }
-	}
-	#endregion
-
-	#region DIET_MODELS_PRESENTER_HANDLER
+    #region DIET_MODELS_PRESENTER_HANDLER
     public interface IAbstractedDAL
     {
         void DeleteAll(Action after, bool drop = false);
         void CountAll(out int instances, out int entries, out int infos);
     }
 
-	// just for generic polymorphis, intermal, not used by clients creating diets. they make idietmodel
-	delegate void EntryCallback(BaseEntry entry);
-
-    
-
-
-   
-
-    
     enum ItemType { Instance, Entry, Info };
     public enum DBChangeType { Insert, Delete, Edit };
 	class TrackerModelAccessLayer<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> : IAbstractedDAL
@@ -209,18 +33,21 @@ namespace Consonance
 	{
         public event Action<TrackerChangeType, DBChangeType, Func<Action>> ToChange = delegate { };
 
-        public readonly IDAL conn;
+        public readonly IDAL conn, sconn;
 		public readonly ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model;
 		public readonly EntryHandler<DietInstType, EatType, EatInfoType> inhandler;
 		public readonly EntryHandler<DietInstType, BurnType, BurnInfoType> outhandler;
-		public TrackerModelAccessLayer(IDAL conn, ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model)
+		public TrackerModelAccessLayer(IDAL conn, IDAL sconn, ITrackModel<DietInstType, EatType,EatInfoType,BurnType,BurnInfoType> model )
 		{
+            // Various DB schema routing
             this.conn = model is IModelRouter ? conn.Routed(model as IModelRouter) : conn;
-			this.model = model;
+            this.sconn = model is IModelRouter ? sconn.Routed(model as IModelRouter) : sconn;
+
+            this.model = model;
 			this.conn.CreateTable<DietInstType> ();
-			inhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (this.conn, model.increator);
-            inhandler.ToChange+= (c, t, p) => ToChange(Convert(c, true), t, p);
-			outhandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (this.conn, model.outcreator);
+			inhandler = new EntryHandler<DietInstType, EatType, EatInfoType> (this.conn,this.sconn, model.increator);
+            inhandler.ToChange += (c, t, p) => ToChange(Convert(c, true), t, p);
+			outhandler = new EntryHandler<DietInstType, BurnType, BurnInfoType> (this.conn,this.sconn, model.outcreator);
             outhandler.ToChange += (c, t, p) => ToChange(Convert(c, false), t, p);
         }
         TrackerChangeType Convert(ItemType itp, bool input)
@@ -266,7 +93,7 @@ namespace Consonance
         {
             instances = conn.Count<DietInstType>();
             entries = conn.Count<BurnType>() + conn.Count<EatType>();
-            infos = conn.Count<EatInfoType>() + conn.Count<BurnInfoType>();
+            infos = sconn.Count<EatInfoType>() + sconn.Count<BurnInfoType>();
         }
         void Rem<T>(bool drop) where T : BaseDB
         {
@@ -322,16 +149,17 @@ namespace Consonance
 		where EntryInfoType : BaseInfo, new()
 	{
         public event Action<ItemType, DBChangeType, Func<Action>> ToChange = delegate { };
-		readonly IDAL conn;
+		readonly IDAL conn, sconn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
-		public EntryHandler(IDAL conn, IEntryCreation<EntryType, EntryInfoType> creator)
+		public EntryHandler(IDAL conn, IDAL shared_conn, IEntryCreation<EntryType, EntryInfoType> creator)
 		{
 			this.conn = conn;
+            this.sconn = conn;
 			this.creator = creator;
 
 			// ensure tables are there.
 			conn.CreateTable<EntryType> ();
-			conn.CreateTable<EntryInfoType> ();
+			sconn.CreateTable<EntryInfoType> ();
 		}
 
 		#region IHandleDietPlanModels implementation
@@ -439,7 +267,7 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Insert, () =>
             {
                 var mod = creator.MakeInfo();
-                conn.Commit<EntryInfoType>(mod);
+                sconn.Commit<EntryInfoType>(mod);
                 return null;
             });
 		}
@@ -449,7 +277,7 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Edit, () =>
             {
                 creator.MakeInfo(editing);
-                conn.Commit<EntryInfoType>(editing);
+                sconn.Commit<EntryInfoType>(editing);
                 return null;
             });
 		}
@@ -458,7 +286,7 @@ namespace Consonance
 		{
             ToChange(ItemType.Info, DBChangeType.Delete, () =>
             {
-                conn.Delete<EntryInfoType>(d => d.id == removing.id);
+                sconn.Delete<EntryInfoType>(d => d.id == removing.id);
                 return null;
             });
 		}

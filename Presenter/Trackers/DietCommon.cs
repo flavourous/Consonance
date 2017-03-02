@@ -4,9 +4,11 @@ namespace Consonance
 {
     public abstract class BaseEatEntry : HBaseEntry 
 	{
+
 	}
 	public abstract class BaseBurnEntry : HBaseEntry 
-	{ 
+	{
+         
 	}
 	public class FireInfo : HBaseInfo 
 	{

@@ -19,6 +19,7 @@ using Consonance.Invention;
 using System.Linq;
 using System.Linq.Expressions;
 using LibSharpHelp;
+using Consonance.Protocol;
 
 namespace Consonance
 {
@@ -107,7 +108,7 @@ namespace Consonance
         {
             public Serv(IPlatform plat)
             {
-                dal = new DAL(plat);
+                dal = new SqliteDal(plat);
             }
             public IDAL dal { get; set; }
         }
@@ -130,9 +131,9 @@ namespace Consonance
                 this.input = input;
 
                 // Builtins
-                AddDietPair(CalorieDiets.simple, defBuilder);
-                AddDietPair(CalorieDiets.scav, defBuilder);
-                AddDietPair(Budgets.simpleBudget, defBuilder);
+                AddDietPair(CalorieDiets.simple, defBuilder, services.dal);
+                AddDietPair(CalorieDiets.scav, defBuilder, services.dal);
+                AddDietPair(Budgets.simpleBudget, defBuilder, services.dal);
 
                 // Inventors
                 var basic = new SimpleTrackyHelpyInventionV1(services.dal, this, defBuilder, input);
@@ -265,22 +266,11 @@ namespace Consonance
         }
         #endregion
 
-        public interface ITracker<D, E, Ei, B, Bi>
-            where D : TrackerInstance, new()
-            where E : BaseEntry, new()
-            where Ei : BaseInfo, new()
-            where B : BaseEntry, new()
-            where Bi : BaseInfo, new()
-        {
-            // Servies
-            IServices services { set; }
-            ITrackModel<D, E, Ei, B, Bi> model {get;}
-            ITrackerPresenter<D, E, Ei, B, Bi> presenter { get; }
-        }
+        
         #region tracker registry
         List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
         public class AddDietPairState { public Action remove; public IAbstractedDAL dal; }
-        public AddDietPairState AddDietPair<D, E, Ei, B, Bi>(ITracker<D, E, Ei, B, Bi> dietModel, IValueRequestBuilder defBuilder)
+        public AddDietPairState AddDietPair<D, E, Ei, B, Bi>(ITracker<D, E, Ei, B, Bi> dietModel, IValueRequestBuilder defBuilder, IDAL private_dal)
             where D : TrackerInstance, new()
             where E : BaseEntry, new()
             where Ei : BaseInfo, new()
@@ -289,7 +279,14 @@ namespace Consonance
         {
             dietModel.services = services;
 
-            var presentationHandler = new TrackerPresentationAbstractionHandler<D, E, Ei, B, Bi>(defBuilder, input, services.dal, dietModel.model, dietModel.presenter);
+            var presentationHandler = new TrackerPresentationAbstractionHandler<D, E, Ei, B, Bi>(
+                defBuilder, 
+                input,
+                private_dal, 
+                dietModel.model, 
+                dietModel.presenter,
+                dietModel.ShareInfo ? services.dal : private_dal
+            );
             dietHandlers.Add(presentationHandler);
             presentationHandler.ViewModelsToChange += HandleViewModelChange;
 
@@ -371,9 +368,9 @@ namespace Consonance
                         lock(tracker_instances) tracker_instances.SetItems(toreplace);
 
                         // change current tracker if either old one is no more, or, we didnt have one selected.
-                        var ai = tracker_instances.items.FindAll(i => OriginatorVM.OriginatorEquals(i, ti));
-                        if (ai.Count == 0) View_trackerinstanceselected(view.currentTrackerInstance = tracker_instances.Count > 0 ? tracker_instances[0] : null);
-                        else view.currentTrackerInstance =ai[0]; // could be updated
+                        var ai = tracker_instances.Where(i => OriginatorVM.OriginatorEquals(i, ti));
+                        if (ai.Count() == 0) View_trackerinstanceselected(view.currentTrackerInstance = tracker_instances.Count > 0 ? tracker_instances[0] : null);
+                        else view.currentTrackerInstance =ai.First(); // could be updated
                     }
                 },
                 {TrackerChangeType.EatEntries,ti=>
@@ -498,7 +495,7 @@ namespace Consonance
         Action BusyMaker();
         String name { get; }
     }
-    class ReplacingVMList<T> : ObservableCollectionList<T>, IVMList<T>, IBusyMaker
+    class ReplacingVMList<T> : DispatchedObservableCollection<T>, IVMList<T>, IBusyMaker
     {
         public string name { get; set; }
         public ReplacingVMList(String name)
@@ -517,28 +514,34 @@ namespace Consonance
 
         public void BC()
         {
-            OnPropertyChanged("busy");
+            OnPropertyChanged(new PropertyChangedEventArgs("busy"));
         }
-
-        public List<T> items { get { return backing; } }
 
         public void SetItems(IEnumerable<T> items)
         {
-            backing.Clear();
-            backing.AddRange(items ?? new T[0]);
-            OnPropertyChanged("Count");
-            OnPropertyChanged("Item[]");
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            SuspendNotifications();
+            Clear();
+            foreach (var i in items ?? new T[0])
+                Add(i);
+            ResumeNotifications();
         }
     }
-    public interface IVMList<T> : IObservableCollection<T>, IVMList
+
+    public interface IVMList<T> : IList<T>, IVMList
     {
     }
-    public interface IVMList : INotifyPropertyChanged, ICanDispatch
+    public interface IVMList : INotifyPropertyChanged, INotifyCollectionChanged, ICanDispatch
     {
         bool busy { get; }
     }
 
+    public class TrackerTracksVM
+    {
+        public TrackerInstanceVM instance;
+        public String modelName { get { return (instance.sender as IAbstractedTracker).details.name; } }
+        public String instanceName { get { return instance.name; } }
+        public TrackingInfoVM[] tracks = new TrackingInfoVM[0];
+    }
 
     /// <summary>
     /// definition on the application view
@@ -609,6 +612,7 @@ namespace Consonance
     {
         event Action<T> select;
     }
+
     interface IViewTask
     {
         Task Completed { get; }
@@ -634,6 +638,7 @@ namespace Consonance
             this.Completed = completed;
         }
     }
+
     public interface IUserInput
     {
         // User Input
@@ -643,177 +648,10 @@ namespace Consonance
         Task Message(String msg);
         Task<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd);
     }
-    public interface IValueRequestBuilder
-    {
-        // get generic set of values on a page thing
-        ViewTask<bool> GetValues(IEnumerable<GetValuesPage> requestPages);
-
-        // VRO Factory Method
-        IValueRequestFactory requestFactory { get; }
-    }
-    public class Barcode
-    {
-        public long value; // I think this works?
-    }
-    public enum InfoManageType { In, Out };
-    // dont forget this is client facing
-    public interface IValueRequestFactory
-    {
-        IValueRequest<String> StringRequestor(String name);
-        IValueRequest<InfoLineVM> InfoLineVMRequestor(String name, InfoManageType imt);
-        IValueRequest<DateTime> DateTimeRequestor(String name);
-        IValueRequest<DateTime> DateRequestor(String name);
-        IValueRequest<DateTime?> nDateRequestor(String name);
-        IValueRequest<TimeSpan> TimeSpanRequestor(String name);
-        IValueRequest<double> DoubleRequestor(String name);
-        IValueRequest<int> IntRequestor(String name);
-        IValueRequest<bool> BoolRequestor(String name);
-        IValueRequest<EventArgs> ActionRequestor(String name);
-        IValueRequest<Barcode> BarcodeRequestor(String name);
-        IValueRequest<OptionGroupValue> OptionGroupRequestor(String name);
-        IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(String name);
-        IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(String name);
-        IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name);
-        IValueRequest<TabularDataRequestValue> GenerateTableRequest();
-    }
+    
     #endregion
 
-    #region value types for valuerequests
-
-    public class MultiRequestOptionValue
-    {
-        public Object HiddenRequest;
-        public readonly IEnumerable IValueRequestOptions;
-        public int SelectedRequest { get; set; }
-        public MultiRequestOptionValue(IEnumerable IValueRequestOptions, int InitiallySelectedRequest, Object HiddenRequest = null)
-        {
-            this.IValueRequestOptions = IValueRequestOptions;
-            SelectedRequest = InitiallySelectedRequest;
-            this.HiddenRequest = HiddenRequest;
-        }
-    }
-
-    public class TabularDataRequestValue
-    {
-        public String[] Headers { get; private set; }
-        public ObservableCollection<Object[]> Items { get; private set; }
-        public TabularDataRequestValue(String[] headers)
-        {
-            Headers = headers;
-            Items = new ObservableCollection<Object[]>();
-        }
-    }
-
-    public class RecurrsEveryPatternValue : INotifyPropertyChanged
-    {
-        private DateTime patternFixed;
-        public DateTime PatternFixed
-        {
-            get { return patternFixed; }
-            set { ChangeProperty(() => patternFixed = value); }
-        }
-        public RecurrSpan PatternType;
-        public int PatternFrequency;
-
-        public event PropertyChangedEventHandler PropertyChanged = delegate { };
-
-        public RecurrsEveryPatternValue(DateTime date, RecurrSpan pt, int freq)
-        {
-            PatternFixed = date;
-            PatternType = pt;
-            PatternFrequency = freq;
-        }
-        public RecurrsEveryPatternValue() : this(DateTime.Now, RecurrSpan.Day, 1) {
-        }
-        public bool IsValid
-        {
-            get
-            {
-                return PatternType == RecurrSpan.Day ||
-                       PatternType == RecurrSpan.Month ||
-                       PatternType == RecurrSpan.Year ||
-                       PatternType == RecurrSpan.Week;
-            }
-        }
-
-        void ChangeProperty(Action change, [CallerMemberName]String prop = null)
-        {
-            change();
-            PropertyChanged(this, new PropertyChangedEventArgs(prop));
-        }
-
-        public RecurrsEveryPattern Create(DateTime? s, DateTime? e)
-        {
-            return new RecurrsEveryPattern(PatternFixed, PatternFrequency, PatternType, s, e);
-        }
-    }
-    public class RecurrsOnPatternValue
-    {
-        public RecurrSpan PatternType;
-        public int[] PatternValues;
-        public RecurrsOnPatternValue(RecurrSpan pat, int[] vals)
-        {
-            PatternType = pat;
-            PatternValues = vals;
-        }
-        public RecurrsOnPatternValue() : this(RecurrSpan.Day | RecurrSpan.Month, new[] { 1 }) {
-        }
-        public bool IsValid
-        {
-            get
-            {
-                int pc = 0;
-                foreach (var pt in PatternType.SplitFlags())
-                    pc++;
-                bool s1 = PatternValues.Length > 1 && pc == PatternValues.Length;
-                if (s1)
-                {
-                    try { new RecurrsOnPattern(PatternValues, PatternType, null, null); }
-                    catch { s1 = false; }
-                }
-                return s1;
-            }
-        }
-        public RecurrsOnPattern Create(DateTime? s, DateTime? e)
-        {
-            return new RecurrsOnPattern(PatternValues, PatternType, s, e);
-        }
-    }
-    public class OptionGroupValue
-    {
-        public readonly IReadOnlyList<String> OptionNames;
-        int selectedOption;
-        public int SelectedOption {
-            get {
-                return selectedOption;
-            }
-            set {
-                selectedOption = value;
-            }
-        }
-        public OptionGroupValue(IEnumerable<String> options)
-        {
-            SelectedOption = 0;
-            OptionNames = new List<String>(options);
-        }
-        public static implicit operator int(OptionGroupValue other)
-        {
-            return other.SelectedOption;
-        }
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < OptionNames.Count; i++)
-            {
-                if (i == SelectedOption) sb.Append("[");
-                sb.Append(OptionNames[i]);
-                if (i == SelectedOption) sb.Append("]");
-                if (i != OptionNames.Count - 1) sb.Append(" | ");
-            }
-            return sb.ToString();
-        }
-    }
-
+    
     public delegate void Undo();
     public static class IVRExtensions
     {
@@ -825,16 +663,5 @@ namespace Consonance
             return () => @this.ValueChanged -= vcp;
         }
     }
-	public interface IValueRequest<V>
-	{
-		Object request { get; }  // used by view to encapsulate viewbuilding lookups
-		V value { get; set; } // set by view when done, and set by view to indicate an initial value.
-		event Action ValueChanged; // so model domain can change the flags
-		void ClearListeners();
-		bool enabled { get; set; } // so the model domain can communicate what fields should be in action (for combining quick and calculate entries)
-		bool valid { get; set; } // if we want to check the value set is ok
-		bool read_only { get; set; } // if we want to check the value set is ok
-	}
-    #endregion
 
 }
