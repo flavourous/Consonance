@@ -60,13 +60,14 @@ namespace Consonance
 	}
 
 
-    class SimpleTrackerHolder<T, I, Ii, O, Oi> : ITracker<T, I, Ii, O, Oi>
+    class SimpleTrackerHolder<T, I, Ii, O, Oi> : ITracker<T, I, Ii, O, Oi>, IConfiguration
         where T : TrackerInstance, new()
         where I : HBaseEntry, new()
         where O : HBaseEntry, new()
         where Ii : HBaseInfo, new()
         where Oi : HBaseInfo, new()
     {
+        public IConfiguration config { get { return this; } }
         public bool ShareInfo { get { return true; } }
         public IServices services
         {
@@ -76,10 +77,11 @@ namespace Consonance
                 _presenter.Init(value.dal);
             }
         }
-        readonly SimpleTrackyHelpy<T, I, Ii, O, Oi> _model;
+        protected SimpleTrackyHelpy<T, I, Ii, O, Oi> _model;
         public ITrackModel<T,I,Ii,O,Oi> model { get { return _model; } }
-        readonly SimpleTrackyHelpyPresenter<T, I, Ii, O, Oi> _presenter;
+        protected SimpleTrackyHelpyPresenter<T, I, Ii, O, Oi> _presenter;
         public ITrackerPresenter<T,I,Ii,O,Oi> presenter { get { return _presenter; } }
+        protected SimpleTrackerHolder() { }
         public SimpleTrackerHolder(IExtraRelfectedHelpy<T,Ii,Oi> helpy)
 		{
 			_model = new SimpleTrackyHelpy<T, I,Ii, O, Oi> (helpy);

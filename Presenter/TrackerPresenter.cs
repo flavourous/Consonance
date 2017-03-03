@@ -243,12 +243,13 @@ namespace Consonance
 		{
 			var diet = dvm.originator as DietInstType;
 			int ct = 0;
-			if ((ct = modelHandler.outhandler.Count (diet) + modelHandler.inhandler.Count (diet)) > 0 && warn) 
-				getInput.WarnConfirm (
-					"That instance still has " + ct + " entries, they will be removed if you continue.",
-					async () => await PlatformGlobal.Run(() => modelHandler.RemoveTracker (diet))
-				);
-			else modelHandler.RemoveTracker (diet);
+            if ((ct = modelHandler.outhandler.Count(diet) + modelHandler.inhandler.Count(diet)) > 0 && warn)
+                getInput.WarnConfirm("That instance still has " + ct + " entries, they will be removed if you continue.")
+                    .Result.ContinueWith(t =>
+                    {
+                        if (t.Result) PlatformGlobal.Run(() => modelHandler.RemoveTracker(diet));
+                    });
+            else modelHandler.RemoveTracker(diet);
 		}
 
 		public Task AddIn(TrackerInstanceVM to, IValueRequestBuilder bld)

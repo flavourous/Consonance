@@ -62,7 +62,10 @@ namespace Consonance.Invention
         public String description { get; set; }
     }
 
-
+    public class IInInfo : HBaseInfo { }
+    public class IInEntry : HBaseEntry { }
+    public class IOutInfo : HBaseInfo { }
+    public class IOutEntry : HBaseEntry { }
 
     /* 
      * In here:
@@ -71,7 +74,7 @@ namespace Consonance.Invention
      *  - Hooks each invented descriptor to AppPresenter as Trackers
      */
 
-   
+
     #region Tracker descriptor created by the simple inventor
     [TableIdentifier(4)]
     class SimpleTrackyHelpyInventionV1Model : BaseDB, IPrimaryKey
@@ -538,9 +541,8 @@ namespace Consonance.Invention
                 input.WarnConfirm(
                     String.Format("That inventor still has {0} instances with {1} entries and {2} infos, they will be removed if you continue.",
                     nTrackers, nTotalEntries, nTotalInfos
-                    ),
-                    async () => await PlatformGlobal.Run(Removal) // warnconfirm needs a promise, so lazily do this. could wrap a TaskCompleteionSource instead in a helper or sth.
-                );
+                    )
+                ).Result.ContinueWith(t => { if (t.Result) PlatformGlobal.Run(Removal); }); 
             else Removal(); // otherwise, just go for it.
         }
         public Task StartNewTracker() // instances() handles registration
@@ -666,27 +668,23 @@ namespace Consonance.Invention
                 return dsc != null;
             }
 
-            
+
         }
 
-        public class IInInfo : HBaseInfo { }
-        public class IInEntry : HBaseEntry { }
-        public class IOutInfo : HBaseInfo { }
-        public class IOutEntry : HBaseEntry { }
         class InventedTracker : IExtraRelfectedHelpy<TrackerInstance, IInInfo, IOutInfo>
         {
             static String NiceArgName(String arg)
             {
-                return arg[0].ToString().ToUpper() 
+                return arg[0].ToString().ToUpper()
                     + arg.Substring(1).Replace('_', ' ');
             }
-            static Func<Object,T> ArgGet<T>(String name)
+            static Func<Object, T> ArgGet<T>(String name)
             {
                 return o => (T)((BaseDB)o)[name];
             }
             static Action<Object, T> ArgSet<T>(String name)
             {
-                return (o,v) => ((BaseDB)o)[name] = v;
+                return (o, v) => ((BaseDB)o)[name] = v;
             }
             static Func<Object, double> InfoGet(String name)
             {
@@ -714,12 +712,12 @@ namespace Consonance.Invention
                 public IStringEquation[] target_patterns;
                 public IStringEquation[] pattern_targets;
             }
-            static TargetEquationsRet TargetEquations(SimpleTrackyTrackingTargetDescriptor des, IStringEquationFactory seq,String[]Args)
+            static TargetEquationsRet TargetEquations(SimpleTrackyTrackingTargetDescriptor des, IStringEquationFactory seq, String[] Args)
             {
                 var n = 0;
                 var peq = des.targertPattern.Split(',');
                 var teq = des.patternTarget.Split(',');
-                Debug.Assert((n=peq.Length) == teq.Length, "Error in pattern equation lengths");
+                Debug.Assert((n = peq.Length) == teq.Length, "Error in pattern equation lengths");
 
                 var ret = new TargetEquationsRet
                 {
@@ -740,7 +738,7 @@ namespace Consonance.Invention
             readonly TargetEquationsRet[] targets;
             public InventedTracker(SimpleTrackyHelpyInventionV1Model model, IStringEquationFactory seq)
             {
-                
+
                 TrackerDetails = new TrackerDetailsVM(model.Name, model.Description, model.Category);
                 TrackerDialect = new TrackerDialect(
                     model.InputEntryVerb, model.OutputEntryVerb,
@@ -753,10 +751,10 @@ namespace Consonance.Invention
                 // cached the equaion espression thing
                 targets = (from des in model.targets.Get() select TargetEquations(des, seq, TargetArgs)).ToArray();
 
-                instanceValueFields = 
+                instanceValueFields =
                     (
                         from m in TargetArgs select VRVConnectedValue.FromType(
-                        0.0,Validate, NiceArgName(m), ArgGet<Object>(m), ArgSet<Object>(m), d => d.DoubleRequestor)
+                        0.0, Validate, NiceArgName(m), ArgGet<Object>(m), ArgSet<Object>(m), d => d.DoubleRequestor)
                     ).ToArray();
 
                 var ia = model.in_equations_args.Split(',');
@@ -806,11 +804,11 @@ namespace Consonance.Invention
             {
                 var dv = (from f in fieldValues select f is double ? (double)f : 0.0).ToArray();
                 return (from t in targets
-                 select new SimpleTrackyTarget(
-                     t.des.name, t.des.targetID, t.des.Track, t.des.Shown,
-                     (int)t.range_equation.calculate(dv), t.des.rangetype,
-                     (from s in t.target_patterns select (int)s.calculate(dv)).ToArray(),
-                     (from s in t.pattern_targets select s.calculate(dv)).ToArray())
+                        select new SimpleTrackyTarget(
+                            t.des.name, t.des.targetID, t.des.Track, t.des.Shown,
+                            (int)t.range_equation.calculate(dv), t.des.rangetype,
+                            (from s in t.target_patterns select (int)s.calculate(dv)).ToArray(),
+                            (from s in t.pattern_targets select s.calculate(dv)).ToArray())
                      ).ToArray();
             }
         }
@@ -824,20 +822,16 @@ namespace Consonance.Invention
         class ITTe : IReflectedHelpyCalc
         {
             public InstanceValue<double> direct { get; set; }
-            public string TargetID { get; set; } 
+            public string TargetID { get; set; }
             public IStringEquation equation { get; set; }
             public double Calculate(double[] values) { return equation.calculate(values); }
         }
 
-        public class Holdy : ITracker<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>
+        public class Holdy : SimpleTrackerHolder<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>
         {
             public Presenter.AddDietPairState state;
-            public SimpleTrackyHelpy<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> _model { get; set; }
-            public ITrackModel<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> model{get { return _model; }}
-            public SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> _pres { get; set; }
-            public ITrackerPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> presenter { get { return _pres; } }
-            public IServices services { set { _model.Init(value.dal); _pres.Init(value.dal); } }
-            public bool ShareInfo { get { return true; } }
+            public SimpleTrackyHelpy<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> mod { set { _model = value; } }
+            public SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo> pre { set { _presenter = value; } }
         }
 
         static Expression<Func<T,bool>> GenIC<T>(String[] args) where T : BaseDB
@@ -848,7 +842,11 @@ namespace Consonance.Invention
         public static Holdy Create(SimpleTrackyHelpyInventionV1Model model, IStringEquationFactory exp)
         {
             var irh = new InventedTracker(model, exp);
-            return new Holdy { _model = new RoutedHelpyModel(irh, model), _pres = new SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>(irh) };
+            return new Holdy
+            {
+                mod = new RoutedHelpyModel(irh, model),
+                pre = new SimpleTrackyHelpyPresenter<TrackerInstance, IInEntry, IInInfo, IOutEntry, IOutInfo>(irh)
+            };
         }
     }
 }

@@ -29,12 +29,12 @@ namespace Consonance
     class PlanCommandManager
     {
         readonly Func<TrackerInstanceVM> getCurrent;
-        readonly Func<String, Task> message;
-        public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, Func<String, Task> message)
+        readonly IUserInput input;
+        public PlanCommandManager(IPlanCommands commands, Func<TrackerInstanceVM> getCurrent, IUserInput input)
         {
             // remember it
             this.getCurrent = getCurrent;
-            this.message = message;
+            this.input = input;
 
             // commanding for pland
             commands.eat.add += View_addeatitem;
@@ -68,7 +68,7 @@ namespace Consonance
         {
             var cd = getCurrent();
             if (cd == null) // ping the view about being stupid.
-                message("You need to create a tracker before you can do that");
+                input.Message("You need to create a tracker before you can do that");
             else acty(cd.sender as IAbstractedTracker, cd); // dont thread here, just route. DAL will thread.
         }
     }
@@ -161,7 +161,7 @@ namespace Consonance
                 view.changeday += ChangeDay;
 
                 // command router
-                pcm_refholder = new PlanCommandManager(commands, () => view.currentTrackerInstance, input.Message);
+                pcm_refholder = new PlanCommandManager(commands, () => view.currentTrackerInstance, input);
 
                 // set vm datasources
                 view.SetInventions(inventions);
@@ -205,11 +205,11 @@ namespace Consonance
                 // or choose.
                 var names = (from i in inventors select new TrackerDetailsVM(i.name, i.description, i.category)).ToList();
                 var chooseViewTask = input.ChoosePlan("Select invention type", names, -1);
-                chooseViewTask.Completed.ContinueWith(async index =>
+                chooseViewTask.Result.ContinueWith(async index =>
                 {
                     var addViewTask = inventors[index.Result].inventor.StartNewTracker();
                     await addViewTask;
-                    await chooseViewTask.Pop();
+                    await chooseViewTask.Close();
                 });
             }
         }
@@ -250,10 +250,10 @@ namespace Consonance
             List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM>();
             foreach (var ad in saveDiets) dietnames.Add(ad.details);
             var chooseViewTask = input.ChoosePlan("Select Diet Type", dietnames, -1);
-            chooseViewTask.Completed.ContinueWith(async index => {
+            chooseViewTask.Result.ContinueWith(async index => {
                 var addViewTask = saveDiets[index.Result].StartNewTracker();
                 await addViewTask;
-                await chooseViewTask.Pop();
+                await chooseViewTask.Close();
             });
         }
         void View_editdietinstance(TrackerInstanceVM obj)
@@ -285,7 +285,7 @@ namespace Consonance
                 private_dal, 
                 dietModel.model, 
                 dietModel.presenter,
-                dietModel.ShareInfo ? services.dal : private_dal
+                dietModel.config.ShareInfo ? services.dal : private_dal
             );
             dietHandlers.Add(presentationHandler);
             presentationHandler.ViewModelsToChange += HandleViewModelChange;
@@ -572,8 +572,6 @@ namespace Consonance
         void Attach(Action<String, Action> showError);
         IFSOps filesystem { get; }
         bool CreateDirectory(String ifdoesntexist);
-        PropertyInfo GetPropertyInfo(Type T, String property);
-        MethodInfo GetMethodInfo(Type T, String method);
     }
 
     public interface IFSOps
@@ -613,40 +611,25 @@ namespace Consonance
         event Action<T> select;
     }
 
-    interface IViewTask
+    public interface IInputResponse
     {
-        Task Completed { get; }
-        Task Pushed { get; }
-        Task Pop();
+        Task Result { get; }
+        Task Close();
     }
-    public class ViewTask<TResult> : IViewTask
+    public interface IInputResponse<T> 
     {
-        Task IViewTask.Completed { get { return Completed; } }
-        public Task<TResult> Completed { get; private set; }
-        public Task Pushed { get; private set; }
-        public async Task Pop()
-        {
-            Task poptask = null;
-            await PlatformGlobal.platform.UIThread(() => poptask = pop());
-            await poptask;
-        }
-        readonly Func<Task> pop;
-        public ViewTask(Func<Task> pop, Task pushed, Task<TResult> completed)
-        {
-            this.Pushed = pushed;
-            this.pop = pop;
-            this.Completed = completed;
-        }
+        Task<T> Result { get; }
+        Task Close();
     }
 
     public interface IUserInput
     {
         // User Input
-        Task SelectString(String title, IReadOnlyList<String> strings, int initial, Promise<int> completed);
-        ViewTask<int> ChoosePlan(String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
-        Task WarnConfirm(String action, Promise confirmed);
-        Task Message(String msg);
-        Task<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd);
+        IInputResponse<String> SelectString(String title, IReadOnlyList<String> strings, int initial);
+        IInputResponse<int> ChoosePlan(String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
+        IInputResponse<bool> WarnConfirm(String action);
+        IInputResponse Message(String msg);
+        IInputResponse<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd);
     }
     
     #endregion

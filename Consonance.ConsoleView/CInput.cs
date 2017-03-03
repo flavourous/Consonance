@@ -11,6 +11,30 @@ using System.Collections.Specialized;
 
 namespace Consonance.ConsoleView
 {
+    class InputResponse : IInputResponse
+    {
+        readonly IConsolePage page;
+        public InputResponse(IConsolePage page, Task complete)
+        {
+            this.page = page;
+            this.Result = complete;
+        }
+        public Task Result { get; set; }
+        public Task Close()
+        {
+            MainClass.consolePager.Pop(page);
+            return Task.FromResult<EventArgs>(null);
+        }
+    }
+    class InputResponse<T> : InputResponse, IInputResponse<T>
+    {
+        public InputResponse(IConsolePage page, Task<T> tsk) : base(page, tsk)
+        {
+            this.tt = tsk;
+        }
+        readonly Task<T> tt;
+        Task<T> IInputResponse<T>.Result { get { return tt; } }
+    }
 	public class CInput : IUserInput
 	{
 		readonly IValueRequestFactory df;
@@ -21,7 +45,7 @@ namespace Consonance.ConsoleView
 			this.df = df;
 		}
 		#region IUserInput implementation
-		public Task SelectString (string title, IReadOnlyList<string> strings, int initial, Promise<int> completed)
+		public IInputResponse<String> SelectString (string title, IReadOnlyList<string> strings, int initial)
 		{
 			Console.WriteLine ("Not Implimented");
 			throw new NotImplementedException ();
@@ -66,13 +90,13 @@ namespace Consonance.ConsoleView
 			}
 			#endregion
 		}
-		public ViewTask<int> ChoosePlan (string title, System.Collections.Generic.IReadOnlyList<TrackerDetailsVM> choose_from, int initial)
+		public IInputResponse<int> ChoosePlan (string title, System.Collections.Generic.IReadOnlyList<TrackerDetailsVM> choose_from, int initial)
 		{
 			TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs> ();
 			TaskCompletionSource<int> chosen = new TaskCompletionSource<int> ();
 			var pcp = new PlanChoosePage (title, from d in choose_from select d.name, chosen.SetResult);
 			MainClass.consolePager.Push(pcp);
-			var vt = new ViewTask<int> (async () => MainClass.consolePager.Pop(pcp), pushed.Task, chosen.Task);
+			var vt = new InputResponse<int> (pcp, chosen.Task);
 			pushed.SetResult(null);
 			return vt;
 		}
@@ -80,13 +104,10 @@ namespace Consonance.ConsoleView
 		{
 			public bool allowDefaultActions { get { return false; } }
 			readonly String msg;
-			readonly Promise compl;
-			readonly TaskCompletionSource<EventArgs> fin;
-			public WarnPage(String action, Promise compl, TaskCompletionSource<EventArgs> fin)
+			public readonly TaskCompletionSource<bool> fin = new TaskCompletionSource<bool>();
+			public WarnPage(String action)
 			{
 				this.msg=action;
-				this.compl=compl;
-				this.fin = fin;
 			}
 			#region IConsolePage implementation
 			public bool pageChanged { get; set; }
@@ -95,14 +116,13 @@ namespace Consonance.ConsoleView
 				get {
 					return new[] { 
 						new ConsolePageAction () { name = "Ok", argumentNames = new String[0], action = _ => {
-								compl(); // no wait.
 								MainClass.consolePager.Pop(this);
-								fin.SetResult(new EventArgs());
+								fin.SetResult(true);
 							}
 						},
 						new ConsolePageAction () { name = "Cancel", argumentNames = new String[0], action = _ => {
 								MainClass.consolePager.Pop(this);
-								fin.SetResult(new EventArgs());
+								fin.SetResult(false);
 							}
 						}
 					};
@@ -110,12 +130,11 @@ namespace Consonance.ConsoleView
 			}
 			#endregion
 		}
-		public Task WarnConfirm (string action, Promise confirmed)
+		public IInputResponse<bool> WarnConfirm (string action)
 		{
-			TaskCompletionSource<EventArgs> ts = new TaskCompletionSource<EventArgs> ();
-			var v = new WarnPage (action, confirmed, ts);
+			var v = new WarnPage (action);
 			MainClass.consolePager.Push (v);
-			return ts.Task;
+            return new InputResponse<bool>(v, v.fin.Task);
 		}
 		class MessagePage : IConsolePage
 		{
@@ -144,12 +163,12 @@ namespace Consonance.ConsoleView
 
 			#endregion
 		}
-		public Task Message (string msg)
+		public IInputResponse Message (string msg)
 		{
 			TaskCompletionSource<EventArgs> ts = new TaskCompletionSource<EventArgs> ();
 			var v = new MessagePage (msg, ts);
 			MainClass.consolePager.Push (v);
-			return ts.Task;
+            return new InputResponse(v, ts.Task);
 		}
 		class CInfoView : IConsolePage
 		{
@@ -311,12 +330,12 @@ namespace Consonance.ConsoleView
 			}
 			#endregion
 		}
-		public Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd)
+		public IInputResponse<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd)
 		{
 			TaskCompletionSource<InfoLineVM> chosen = new TaskCompletionSource<InfoLineVM> ();
 			var view = new CFindyChooseView(ifnd, chosen, df);
 			MainClass.consolePager.Push(view);
-			return chosen.Task;
+            return new InputResponse<InfoLineVM>(view, chosen.Task);
 		}
 		#endregion
 	}
