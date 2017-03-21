@@ -32,6 +32,10 @@ namespace Consonance.ConsoleView
         {
             AppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         }
+        public bool CreateDirectory(string ifdoesntexist)
+        {
+            return System.IO.Directory.CreateDirectory(ifdoesntexist).Exists;
+        }
 
         public void Delete(string file)
         {
@@ -95,10 +99,7 @@ namespace Consonance.ConsoleView
             return tea.Task;
         }
 
-        public bool CreateDirectory(string ifdoesntexist)
-        {
-            return System.IO.Directory.CreateDirectory(ifdoesntexist).Exists;
-        }
+        
 
         public MethodInfo GetMethodInfo(Type T, string method)
         {

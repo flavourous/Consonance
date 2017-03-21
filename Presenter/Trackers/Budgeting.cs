@@ -47,7 +47,9 @@ namespace Consonance
 		public IReflectedHelpyQuants<IncomeInfo> input { get { return _input; } }
 		readonly IReflectedHelpyQuants<ExpenditureInfo> _output = new SimpleBudget_HelpyOut();
 		public IReflectedHelpyQuants<ExpenditureInfo> output { get { return _output; } }
-		readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM ("Finance budget", "Track spending goals and other finances.", "Finance");
+        readonly TrackerDetailsVM _TrackerDetails = new TrackerDetailsVM(
+            Guid.Parse("87de0ec9-cc83-4072-a2b3-b3bad94de05c"),
+            "Finance budget", "Track spending goals and other finances.", "Finance");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
 		readonly TrackerDialect _TrackerDialect = new TrackerDialect ( "Earn", "Spend", "Incomes", "Expenses", "Earned", "Spent");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }

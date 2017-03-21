@@ -38,9 +38,9 @@ namespace Consonance
 		public void ClearListeners () { ValueChanged = delegate { }; }
 		public object request { get { return null; } }
 		public T value { get; set; }
-		public bool enabled { get; set; }
+        public bool enabled { get; set; } = true;
 		public bool valid { get; set; }
-		public bool read_only { get; set; }
+        public bool read_only { get; set; } = false;
 		#endregion
 
 	}
@@ -93,7 +93,7 @@ namespace Consonance
 				request.valid = dum.valid;
 				request.value = dum.value;
 				request.read_only = dum.read_only;
-				request.enabled = dum.read_only;
+				request.enabled = dum.enabled;
 			}
 			Reset ();
 			return request.request;

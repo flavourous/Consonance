@@ -115,10 +115,8 @@ namespace Consonance.Invention
         public String in_equations_args { get; set; }
         public String out_equations_args { get; set; }
 
-        // managment
-        public Guid uid { get; set; }
-
         // descriptional
+        public Guid uid { get; set; }
         public String Name { get; set; }
         public String Description { get; set; }
         public String Category { get; set; }
@@ -528,8 +526,7 @@ namespace Consonance.Invention
                             // AFTER that is done, we delete the inventor modelrow
                             conn.Delete<SimpleTrackyHelpyInventionV1Model>(d => d.id == o.id);
                             // and we deregister the whole thing from the apppresenter
-                            handler.state.remove();
-
+                            handler.state.Deregister();
                             return null;
                         }
                     });
@@ -739,7 +736,7 @@ namespace Consonance.Invention
             public InventedTracker(SimpleTrackyHelpyInventionV1Model model, IStringEquationFactory seq)
             {
 
-                TrackerDetails = new TrackerDetailsVM(model.Name, model.Description, model.Category);
+                TrackerDetails = new TrackerDetailsVM(model.uid, model.Name, model.Description, model.Category);
                 TrackerDialect = new TrackerDialect(
                     model.InputEntryVerb, model.OutputEntryVerb,
                     model.InputInfoPlural, model.OutputInfoPlural,

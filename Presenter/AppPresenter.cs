@@ -144,8 +144,8 @@ namespace Consonance
                     description = "Create basic tracker type which tracks a single quantitiy",
                     inventor = basic
                 });
+                // when deleteing an inventor, it will fire off it's things for trackers and items itself.
                 basic.ViewModelsToChange += (o, e) => TaskMapper(TrackerChangeType.Inventions, e.toChange, true);
-
 
                 Debug.WriteLine("PresntToImpl: commands");
                 // commanding...
@@ -203,7 +203,7 @@ namespace Consonance
             else
             {
                 // or choose.
-                var names = (from i in inventors select new TrackerDetailsVM(i.name, i.description, i.category)).ToList();
+                var names = (from i in inventors select new ItemDescriptionVM(i.name, i.description, i.category)).ToList();
                 var chooseViewTask = input.ChoosePlan("Select invention type", names, -1);
                 chooseViewTask.Result.ContinueWith(async index =>
                 {
@@ -249,7 +249,7 @@ namespace Consonance
             List<IAbstractedTracker> saveDiets = new List<IAbstractedTracker>(dietHandlers);
             List<TrackerDetailsVM> dietnames = new List<TrackerDetailsVM>();
             foreach (var ad in saveDiets) dietnames.Add(ad.details);
-            var chooseViewTask = input.ChoosePlan("Select Diet Type", dietnames, -1);
+            var chooseViewTask = input.ChoosePlan("Select Tracker Type", dietnames, -1);
             chooseViewTask.Result.ContinueWith(async index => {
                 var addViewTask = saveDiets[index.Result].StartNewTracker();
                 await addViewTask;
@@ -269,7 +269,29 @@ namespace Consonance
         
         #region tracker registry
         List<IAbstractedTracker> dietHandlers = new List<IAbstractedTracker>();
-        public class AddDietPairState { public Action remove; public IAbstractedDAL dal; }
+        public class AddDietPairState
+        {
+            readonly Action remove;
+            public readonly IAbstractedDAL dal;
+            public AddDietPairState(Action rem, IAbstractedDAL dal)
+            {
+                this.remove = rem;
+                this.dal = dal;
+            }
+            Object rlock = new object();
+            bool removed = false;
+            public void Deregister()
+            {
+                lock(rlock)
+                {
+                    if(!removed)
+                    {
+                        remove();
+                        removed = true;
+                    }
+                }
+            }
+        }
         public AddDietPairState AddDietPair<D, E, Ei, B, Bi>(ITracker<D, E, Ei, B, Bi> dietModel, IValueRequestBuilder defBuilder, IDAL private_dal)
             where D : TrackerInstance, new()
             where E : BaseEntry, new()
@@ -291,16 +313,13 @@ namespace Consonance
             presentationHandler.ViewModelsToChange += HandleViewModelChange;
 
             // helpers callers to undo what they did!
-            return new AddDietPairState
-            {
-                remove = () =>
-                    {
-                        // removal action
-                        presentationHandler.ViewModelsToChange -= HandleViewModelChange;
-                        dietHandlers.Remove(presentationHandler);
-                    },
-                dal = presentationHandler.modelHandler
-            };
+            return new AddDietPairState(() =>
+                {
+                    // removal action
+                    presentationHandler.ViewModelsToChange -= HandleViewModelChange;
+                    dietHandlers.Remove(presentationHandler);
+                }, presentationHandler.modelHandler
+            );
         }
 
         void HandleViewModelChange(IAbstractedTracker sender, DietVMToChangeEventArgs<TrackerChangeType> args)
@@ -566,12 +585,10 @@ namespace Consonance
     }
     public interface IPlatform
     {
-        Task UIThread(Action method);
+        void Attach(Action<String, Action> showError);
         ISQLitePlatform sqlite { get; }
         ITasks TaskOps { get; }
-        void Attach(Action<String, Action> showError);
         IFSOps filesystem { get; }
-        bool CreateDirectory(String ifdoesntexist);
     }
 
     public interface IFSOps
@@ -579,6 +596,7 @@ namespace Consonance
         string AppData { get; }
         void Delete(String file);
         byte[] ReadFile(String file);
+        bool CreateDirectory(String ifdoesntexist);
     }
     public interface ITasks
     {
@@ -626,7 +644,7 @@ namespace Consonance
     {
         // User Input
         IInputResponse<String> SelectString(String title, IReadOnlyList<String> strings, int initial);
-        IInputResponse<int> ChoosePlan(String title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial);
+        IInputResponse<int> ChoosePlan(String title, IReadOnlyList<ItemDescriptionVM> choose_from, int initial);
         IInputResponse<bool> WarnConfirm(String action);
         IInputResponse Message(String msg);
         IInputResponse<InfoLineVM> Choose(IFindList<InfoLineVM> ifnd);

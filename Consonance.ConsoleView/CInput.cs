@@ -90,7 +90,7 @@ namespace Consonance.ConsoleView
 			}
 			#endregion
 		}
-		public IInputResponse<int> ChoosePlan (string title, System.Collections.Generic.IReadOnlyList<TrackerDetailsVM> choose_from, int initial)
+		public IInputResponse<int> ChoosePlan (string title, System.Collections.Generic.IReadOnlyList<ItemDescriptionVM> choose_from, int initial)
 		{
 			TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs> ();
 			TaskCompletionSource<int> chosen = new TaskCompletionSource<int> ();
