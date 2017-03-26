@@ -51,7 +51,7 @@ namespace Consonance
             Guid.Parse("87de0ec9-cc83-4072-a2b3-b3bad94de05c"),
             "Finance budget", "Track spending goals and other finances.", "Finance");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ( "Earn", "Spend", "Incomes", "Expenses", "Earned", "Spent");
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ( "Earn", "Spend", "Incomes", "Income", "Expenses", "Expense", "Earned", "Spent");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
 					VRVConnectedValue.FromType(0.0, "Target", 

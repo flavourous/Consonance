@@ -27,22 +27,22 @@ namespace Consonance.Test
         public ICollectionEditorSelectableLooseCommands<TrackerInstanceVM> plan { get { return _plan; } }
         public SelectableLoose<TrackerInstanceVM> _plan = new SelectableLoose<TrackerInstanceVM>();
 
-        public void SetBurnInfos(IVMList<InfoLineVM> lineitems) { BurnInfos.val = lineitems; }
-        public void SetBurnLines(IVMList<EntryLineVM> lineitems) { BurnLines.val = lineitems; }
-        public void SetBurnTrack(IVMList<TrackerTracksVM> tracks_current_first) { BurnTrack.val = tracks_current_first; }
-        public void SetEatInfos(IVMList<InfoLineVM> lineitems) { EatInfos.val = lineitems; }
-        public void SetEatLines(IVMList<EntryLineVM> lineitems) { EatLines.val = lineitems; }
-        public void SetEatTrack(IVMList<TrackerTracksVM> tracks_current_first) { EatTrack.val = tracks_current_first; }
+        public void SetBurnInfos(IVMList<InfoLineVM> lineitems) { OutInfos.val = lineitems; }
+        public void SetBurnLines(IVMList<EntryLineVM> lineitems) { OutEntries.val = lineitems; }
+        public void SetBurnTrack(IVMList<TrackerTracksVM> tracks_current_first) { OutTrack.val = tracks_current_first; }
+        public void SetEatInfos(IVMList<InfoLineVM> lineitems) { InInfos.val = lineitems; }
+        public void SetEatLines(IVMList<EntryLineVM> lineitems) { InEntries.val = lineitems; }
+        public void SetEatTrack(IVMList<TrackerTracksVM> tracks_current_first) { InTrack.val = tracks_current_first; }
         public void SetInstances(IVMList<TrackerInstanceVM> instanceitems) { Instances.val = instanceitems; }
         public void SetInventions(IVMList<InventedTrackerVM> inventionitems) { Inventions.val = inventionitems; }
 
         // Should just get set once, can test that after present.
-        public IVMListStore<InfoLineVM> BurnInfos = new IVMListStore<InfoLineVM>();
-        public IVMListStore<EntryLineVM> BurnLines = new IVMListStore<EntryLineVM>();
-        public IVMListStore<TrackerTracksVM> BurnTrack = new IVMListStore<TrackerTracksVM>();
-        public IVMListStore<InfoLineVM> EatInfos = new IVMListStore<InfoLineVM>();
-        public IVMListStore<EntryLineVM> EatLines = new IVMListStore<EntryLineVM>();
-        public IVMListStore<TrackerTracksVM> EatTrack = new IVMListStore<TrackerTracksVM>();
+        public IVMListStore<InfoLineVM> OutInfos = new IVMListStore<InfoLineVM>();
+        public IVMListStore<EntryLineVM> OutEntries = new IVMListStore<EntryLineVM>();
+        public IVMListStore<TrackerTracksVM> OutTrack = new IVMListStore<TrackerTracksVM>();
+        public IVMListStore<InfoLineVM> InInfos = new IVMListStore<InfoLineVM>();
+        public IVMListStore<EntryLineVM> InEntries = new IVMListStore<EntryLineVM>();
+        public IVMListStore<TrackerTracksVM> InTrack = new IVMListStore<TrackerTracksVM>();
         public IVMListStore<TrackerInstanceVM> Instances = new IVMListStore<TrackerInstanceVM>();
         public IVMListStore<InventedTrackerVM> Inventions = new IVMListStore<InventedTrackerVM>();
         public void AssertNoFailsFromExtraLoads()
@@ -53,12 +53,12 @@ namespace Consonance.Test
                 sb.AppendLine(id + ": " + String.Join(",",
                     res.Select(s => { ok = ok && s.hit; return String.Format("{0}{1}{0}", s.hit ? "" : "|", s.val); }))
                 );
-            sr(BurnInfos.id, BurnInfos.Results());
-            sr(BurnLines.id, BurnLines.Results());
-            sr(BurnTrack.id, BurnTrack.Results());
-            sr(EatInfos.id, EatInfos.Results());
-            sr(EatLines.id, EatLines.Results());
-            sr(EatTrack.id, EatTrack.Results());
+            sr(OutInfos.id, OutInfos.Results());
+            sr(OutEntries.id, OutEntries.Results());
+            sr(OutTrack.id, OutTrack.Results());
+            sr(InInfos.id, InInfos.Results());
+            sr(InEntries.id, InEntries.Results());
+            sr(InTrack.id, InTrack.Results());
             sr(Instances.id, Instances.Results());
             sr(Inventions.id, Inventions.Results());
             Assert.IsTrue(ok, sb.ToString());

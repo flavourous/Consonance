@@ -23,6 +23,25 @@ namespace Consonance
         }
     }
 
+    public class DummyFactory : IValueRequestFactory
+    {
+        public IValueRequest<EventArgs> ActionRequestor(string name) => new DummyValueRequest<EventArgs>();
+        public IValueRequest<Barcode> BarcodeRequestor(string name) => new DummyValueRequest<Barcode>();
+        public IValueRequest<bool> BoolRequestor(string name) => new DummyValueRequest<bool>();
+        public IValueRequest<DateTime> DateRequestor(string name) => new DummyValueRequest<DateTime>();
+        public IValueRequest<DateTime> DateTimeRequestor(string name) => new DummyValueRequest<DateTime>();
+        public IValueRequest<double> DoubleRequestor(string name) => new DummyValueRequest<double>();
+        public IValueRequest<TabularDataRequestValue> GenerateTableRequest() => new DummyValueRequest<TabularDataRequestValue>();
+        public IValueRequest<InfoLineVM> InfoLineVMRequestor(string name, InfoManageType imt) => new DummyValueRequest<InfoLineVM>();
+        public IValueRequest<int> IntRequestor(string name) => new DummyValueRequest<int>();
+        public IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(string name) => new DummyValueRequest<MultiRequestOptionValue>();
+        public IValueRequest<DateTime?> nDateRequestor(string name) => new DummyValueRequest<DateTime?>();
+        public IValueRequest<OptionGroupValue> OptionGroupRequestor(string name) => new DummyValueRequest<OptionGroupValue>();
+        public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor(string name) => new DummyValueRequest<RecurrsEveryPatternValue>();
+        public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor(string name) => new DummyValueRequest<RecurrsOnPatternValue>();
+        public IValueRequest<string> StringRequestor(string name) => new DummyValueRequest<string>();
+        public IValueRequest<TimeSpan> TimeSpanRequestor(string name) => new DummyValueRequest<TimeSpan>();
+    }
     public interface IRequestStorageHelper
 	{
 		void Reset();

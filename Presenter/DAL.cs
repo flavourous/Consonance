@@ -236,6 +236,30 @@ namespace Consonance
             return new LockedEnumerable<T>(tq, Sync);
         }
 
+        public int Update<T,X>(Expression<Func<T,X>> selector, X value, Expression<Func<T, bool>> where = null) where T : class
+        {
+            using (Sync.ReadLock())
+            {
+                var tq = cconn.Table<T>(GetTableMap<T>());
+                List<Object> query_args_output = new List<object>();
+                Expression<Func<X>> exp_value = () => value;
+                TableQuery<T>.CompileResult 
+                    selector_command = tq.CompileExpr(selector.Body, query_args_output),
+                    value_command = tq.CompileExpr(exp_value.Body, query_args_output),
+                    where_command = new TableQuery<T>.CompileResult { Value = null, CommandText = "" }; 
+                if (where != null) where_command = tq.CompileExpr(where.Body, query_args_output); // add more args
+                var update_command = cconn.CreateCommand(
+                    String.Format("UPDATE {0} SET {1} = {2} WHERE {3}",
+                        tq.Table.TableName,
+                        selector_command.CommandText,
+                        value_command.CommandText,
+                        where_command.CommandText),
+                    query_args_output.ToArray()
+                );
+                return update_command.ExecuteNonQuery();
+            }
+        }
+
         public int Count<T>(Expression<Func<T, bool>> where = null) where T : class
         {
             using (Sync.ReadLock())

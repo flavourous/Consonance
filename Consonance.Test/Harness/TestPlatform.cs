@@ -12,14 +12,19 @@ namespace Consonance.Test
 {
     class TestPlatform : IPlatform
     {
+        public TestPlatform(string id)
+        {
+            filesystem = new FSOps(id);
+        }
         class FSOps : IFSOps
         {
-            public FSOps()
+            public FSOps(string id)
             {
+                AppData = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/TestAppData-" + id + "/";
                 foreach (var f in Directory.CreateDirectory(AppData).EnumerateFiles())
                     f.Delete();
             }
-            public string AppData { get; } = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )+ "/TestAppData/";
+            public string AppData { get; }
             public void Delete(string file) => File.Delete(file);
             public byte[] ReadFile(string file) => File.ReadAllBytes(file);
             public bool CreateDirectory(string ifdoesntexist)
@@ -29,7 +34,7 @@ namespace Consonance.Test
                 return ex;
             }
         }
-        public IFSOps filesystem { get; } = new FSOps();
+        public IFSOps filesystem { get; }
         public ISQLitePlatform sqlite { get; } = new SQLitePlatformGeneric();
         class TestTaskOps : ITasks
         {

@@ -106,6 +106,7 @@ namespace Consonance.Protocol
     {
         int Count<T>(Expression<Func<T, bool>> where = null) where T : class;
         IEnumerable<T> Get<T>(Expression<Func<T, bool>> where = null) where T : class;
+        int Update<T,X>(Expression<Func<T,X>> selector, X value, Expression<Func<T, bool>> where = null) where T : class;
         void Commit<T>(T item) where T : class;
         void Delete<T>(Expression<Func<T, bool>> where = null) where T : class;
         void CreateTable<T>() where T : class;
@@ -154,18 +155,22 @@ namespace Consonance.Protocol
     {
         public readonly String
             InputEntryVerb, OutputEntryVerb,
-            InputInfoPlural, OutputInfoPlural,
+            InputInfoPlural, InputInfoSingular,
+            OutputInfoPlural, OutputInfoSingular,
             InputInfoVerbPast, OutputInfoVerbPast;
         public TrackerDialect(
             String InputEntryVerb, String OutpuEntryVerb,
-            String InputInfoPlural, String OutputInfoPlural,
+            String InputInfoPlural, String InputInfoSingular,
+            String OutputInfoPlural, String OutputInfoSingular,
             String InputInfoVerbPast, String OutputInfoVerbPast
             )
         {
             this.InputEntryVerb = InputEntryVerb;
             this.OutputEntryVerb = OutpuEntryVerb;
             this.InputInfoPlural = InputInfoPlural;
+            this.InputInfoSingular = InputInfoSingular;
             this.OutputInfoPlural = OutputInfoPlural;
+            this.OutputInfoSingular = OutputInfoSingular;
             this.InputInfoVerbPast = InputInfoVerbPast;
             this.OutputInfoVerbPast = OutputInfoVerbPast;
         }
@@ -404,11 +409,12 @@ namespace Consonance.Protocol
     {
         // keys
         public int trackerinstanceid { get; set; }
-        public int? infoinstanceid { get; set; }
+        [Indexed] public int? infoinstanceid { get; set; }
+        public bool insyncwithinfo { get; set; }
 
         // entry data
         public String entryName { get; set; }
-        public DateTime entryWhen { get; set; }
+        [Indexed] public DateTime entryWhen { get; set; }
 
         // repetition info (starts at when)
         public RecurranceType repeatType { get; set; }

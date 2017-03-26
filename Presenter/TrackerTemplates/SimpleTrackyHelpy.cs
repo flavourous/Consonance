@@ -720,7 +720,7 @@ namespace Consonance
                 TimeSpan.Zero,
                 entry.entryName,
                 info == null ? noninfo : QuantyGet(helpy.input, entry, info),
-                new KVPList<string, double>(helpy.input.calculators.ToKeyValue(d => d.TargetID, d => d.direct.valueGetter(entry)))
+                new KVPList<string, double>(helpy.input.calculators.ToKeyValue(d => d.TargetID.ToCapital(), d => d.direct.valueGetter(entry)))
             );
 		}
 		public EntryLineVM GetRepresentation (Out entry, OutInfo info)
@@ -730,7 +730,7 @@ namespace Consonance
                 TimeSpan.Zero,
                 entry.entryName,
                 info == null ? noninfo : QuantyGet(helpy.output,entry, info),
-                new KVPList<string, double>(helpy.output.calculators.ToKeyValue(d => d.TargetID, d => d.direct.valueGetter(entry)))
+                new KVPList<string, double>(helpy.output.calculators.ToKeyValue(d => d.TargetID.ToCapital(), d => d.direct.valueGetter(entry)))
             );
 		}
 
@@ -772,7 +772,7 @@ namespace Consonance
         {
             var uq = ihelper.FindMO(info.quantifierID);
             var args = q.calculation.Select(c => c.valueGetter(info)).ToArray();
-            var res = q.calculators.ToKeyValue(c => c.TargetID, c => c.Calculate(args));
+            var res = q.calculators.ToKeyValue(c => c.TargetID.ToCapital(), c => c.Calculate(args));
             var kl = new KVPList<string, double>(res);
             kl.Add(uq.quant.name, (double)uq.quant.valueGetter(info));
             return kl;

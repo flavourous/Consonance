@@ -13,11 +13,12 @@ namespace Consonance.Test
     [TestFixture]
     abstract class AppStarterFix
     {
+        protected abstract String id { get; }
         protected TestApp app;
         [OneTimeSetUp]
         public void SetUp()
         {
-            app = new TestApp();
+            app = new TestApp(id);
         }
 
         [Order(0)]
@@ -27,12 +28,12 @@ namespace Consonance.Test
             var v = app.view;
             var busies = new[]
             {
-                v.BurnInfos.QueueWaitForBusy(true, false),
-                v.BurnLines.QueueWaitForBusy(true, false, true, false),
-                v.BurnTrack.QueueWaitForBusy(true, true, true, false,true,true,true,false),
-                v.EatInfos.QueueWaitForBusy(true, false),
-                v.EatLines.QueueWaitForBusy(true, false, true, false),
-                v.EatTrack.QueueWaitForBusy(true, true, true, false,true,true,true,false),
+                v.OutInfos.QueueWaitForBusy(true, false),
+                v.OutEntries.QueueWaitForBusy(true, false, true, false),
+                v.OutTrack.QueueWaitForBusy(true, true, true, false,true,true,true,false),
+                v.InInfos.QueueWaitForBusy(true, false),
+                v.InEntries.QueueWaitForBusy(true, false, true, false),
+                v.InTrack.QueueWaitForBusy(true, true, true, false,true,true,true,false),
                 v.Instances.QueueWaitForBusy(true, false),
                 v.Inventions.QueueWaitForBusy(true, false)
             };
@@ -41,12 +42,12 @@ namespace Consonance.Test
             CTH.BusyAssert(app, busies);
 
             // And now all this should be true
-            Assert.AreEqual(0, app.view.BurnInfos.val.Count);
-            Assert.AreEqual(0, app.view.BurnLines.val.Count);
-            Assert.AreEqual(0, app.view.BurnTrack.val.Count);
-            Assert.AreEqual(0, app.view.EatInfos.val.Count);
-            Assert.AreEqual(0, app.view.EatLines.val.Count);
-            Assert.AreEqual(0, app.view.EatTrack.val.Count);
+            Assert.AreEqual(0, app.view.OutInfos.val.Count);
+            Assert.AreEqual(0, app.view.OutEntries.val.Count);
+            Assert.AreEqual(0, app.view.OutTrack.val.Count);
+            Assert.AreEqual(0, app.view.InInfos.val.Count);
+            Assert.AreEqual(0, app.view.InEntries.val.Count);
+            Assert.AreEqual(0, app.view.InTrack.val.Count);
             Assert.AreEqual(0, app.view.Instances.val.Count);
             Assert.AreEqual(0, app.view.Inventions.val.Count);
 
@@ -158,8 +159,9 @@ namespace Consonance.Test
                 return wt;
             });
 
+            var ret = res.All(d=>d);
             message = mes.ToString();
-            return res.All(d => d);
+            return ret;
         }
     }
     public static class TaskWaiterExtensions
@@ -193,7 +195,8 @@ namespace Consonance.Test
             failures = id+": " + String.Join(",",res.Select(
                 (r, i) => "#" + i + " " + (r.HasValue ? r.Value ? "OK" : "Fail" : "Timeout")
             ));
-            return res.All(d => d.HasValue && d.Value);
+            var ret = res.All(d => d.HasValue && d.Value);
+            return ret;
         }
     }
 }

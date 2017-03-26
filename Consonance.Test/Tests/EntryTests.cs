@@ -14,6 +14,8 @@ namespace Consonance.Test
     [TestFixture]
     class EntryTests : AppStarterFix
     {
+        protected override string id { get; } = "EntryTests";
+
         [Order(1)]
         [Test]
         public void T1_StartNewTracker()
@@ -28,12 +30,12 @@ namespace Consonance.Test
             var new_tracker = GetVE(CalInstDefault, final, indexes, values, "Calorie diet", ()=>true);
             var busies = new[]
             {
-                v.BurnInfos.QueueWaitForBusy(true, false),
-                v.BurnLines.QueueWaitForBusy(true, false),
-                v.BurnTrack.QueueWaitForBusy(true, true, true, false),
-                v.EatInfos.QueueWaitForBusy(true, false),
-                v.EatLines.QueueWaitForBusy(true, false),
-                v.EatTrack.QueueWaitForBusy(true, true, true, false),
+                v.OutInfos.QueueWaitForBusy(true, false),
+                v.OutEntries.QueueWaitForBusy(true, false),
+                v.OutTrack.QueueWaitForBusy(true, true, true, false),
+                v.InInfos.QueueWaitForBusy(true, false),
+                v.InEntries.QueueWaitForBusy(true, false),
+                v.InTrack.QueueWaitForBusy(true, true, true, false),
                 v.Instances.QueueWaitForBusy(true, false),
             };
 
@@ -50,7 +52,7 @@ namespace Consonance.Test
             BusyAssert(app, busies);
 
             TrackerLineAssertion(app.view.Instances.val, new TLA("testyD", "", Today, true,
-                new TrackerDialect("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned"),
+                new TrackerDialect("Eat", "Burn", "Foods", "Food", "Exercises", "Exercise", "Eaten", "Burned"),
                 new KVPList<string, double> { { "calories per day", 123.0 } }));
         }
 
@@ -60,12 +62,12 @@ namespace Consonance.Test
         {
             var busies = new[]
              {
-                app.view.BurnInfos.QueueWaitForBusy(true, false, true, false),
-                app.view.BurnLines.QueueWaitForBusy(true, true, true, true,true, false),
-                app.view.BurnTrack.QueueWaitForBusy(true,true,true,true, true , true , true , true , true , true , true , false ),
-                app.view.EatInfos.QueueWaitForBusy(true, false, true, false),
-                app.view.EatLines.QueueWaitForBusy(true, true, true, true,true, false),
-                app.view.EatTrack.QueueWaitForBusy(true,true,true,true, true , true , true , true , true , true , true , false ),
+                app.view.OutInfos.QueueWaitForBusy(true, false, true, false),
+                app.view.OutEntries.QueueWaitForBusy(true, true, true, true,true, false),
+                app.view.OutTrack.QueueWaitForBusy(true,true,true,true, true , true , true , true , true , true , true , false ),
+                app.view.InInfos.QueueWaitForBusy(true, false, true, false),
+                app.view.InEntries.QueueWaitForBusy(true, true, true, true,true, false),
+                app.view.InTrack.QueueWaitForBusy(true,true,true,true, true , true , true , true , true , true , true , false ),
                 app.view.Instances.QueueWaitForBusy(true, false),
             };
             app.view._plan.Remove(app.view.Instances.val[0]);
@@ -81,7 +83,7 @@ namespace Consonance.Test
         {
             Func<String, double, ELA> adder = (n, v) =>
             {
-                Itemer(() => CalInDefault, "Eat", true, null, app, V.C(1, v), V.C(2, n))();
+                Itemer(() => CalInDefault, null, "Eat", true, null, app, V.C(1, v), V.C(2, n));
                 return new ELA { value = v, name = n, is_input = true };
             };
 
@@ -92,9 +94,9 @@ namespace Consonance.Test
                 adder("testinator", 0.1)
             });
 
-            EntryLineAssertion(app.view.EatLines.val, "calories", es.ToArray());
+            EntryLineAssertion(app.view.InEntries.val, "Calories", es.ToArray());
             var tm = app.view.Instances.val[0];
-            var ttm = app.view.EatTrack.val;
+            var ttm = app.view.InTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "Calorie diet", tm, "Eaten", "Burned",
                 new ELA { name = "Calories", value = 123.0 },
@@ -112,7 +114,7 @@ namespace Consonance.Test
         {
             Func<String, double, ELA> adder = (n, v) =>
             {
-                Itemer(() => CalOutDefault, "Burn", false, null, app, V.C(1, v), V.C(2, n))();
+                Itemer(() => CalOutDefault, null, "Burn", false, null, app, V.C(1, v), V.C(2, n));
                 return new ELA { value = v, name = n, is_input = false };
             };
             var es2 = new[]
@@ -125,9 +127,9 @@ namespace Consonance.Test
             Assert.AreEqual(3, es.Count);
             es.AddRange(es2);
 
-            EntryLineAssertion(app.view.BurnLines.val, "calories", es2);
+            EntryLineAssertion(app.view.OutEntries.val, "Calories", es2);
             var tm = app.view.Instances.val[0];
-            var ttm = app.view.BurnTrack.val;
+            var ttm = app.view.OutTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "Calorie diet", tm, "Eaten", "Burned",
                 new ELA { name = "Calories", value = 123.0 },
@@ -140,14 +142,14 @@ namespace Consonance.Test
         public void T5_Remove_SomeItems_Today_CheckItemsTracking()
         {
             var busies = new[] {
-                app.view.EatLines.QueueWaitForBusy(true, false),
-                app.view.BurnLines.QueueWaitForBusy(true, false),
-                app.view.EatTrack.QueueWaitForBusy(true, false,true,false),
-                app.view.BurnTrack.QueueWaitForBusy(true, false,true,false)
+                app.view.InEntries.QueueWaitForBusy(true, false),
+                app.view.OutEntries.QueueWaitForBusy(true, false),
+                app.view.InTrack.QueueWaitForBusy(true, false,true,false),
+                app.view.OutTrack.QueueWaitForBusy(true, false,true,false)
             };
 
-            app.plan_commands._eat.Remove(app.view.EatLines.val[1]);
-            app.plan_commands._burn.Remove(app.view.BurnLines.val[1]);
+            app.plan_commands._eat.Remove(app.view.InEntries.val[1]);
+            app.plan_commands._burn.Remove(app.view.OutEntries.val[1]);
             es.RemoveAt(4); es.RemoveAt(1);
 
             BusyAssert(app, busies);
@@ -156,10 +158,10 @@ namespace Consonance.Test
 
         void AssertTest5()
         {
-            EntryLineAssertion(app.view.EatLines.val, "calories", es.Take(2).ToArray());
-            EntryLineAssertion(app.view.BurnLines.val, "calories", es.Skip(2).ToArray());
+            EntryLineAssertion(app.view.InEntries.val, "Calories", es.Take(2).ToArray());
+            EntryLineAssertion(app.view.OutEntries.val, "Calories", es.Skip(2).ToArray());
             var tm = app.view.Instances.val[0];
-            var ttm = app.view.EatTrack.val;
+            var ttm = app.view.InTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "Calorie diet", tm, "Eaten", "Burned",
                 new ELA { name = "Calories", value = 123.0 },
@@ -172,24 +174,24 @@ namespace Consonance.Test
         public void T6_MoveNextDay_Add_MoveBack()
         {
             Func<Waiter[]> busies =()=> new[] {
-                app.view.EatLines.QueueWaitForBusy(true, false),
-                app.view.BurnLines.QueueWaitForBusy(true, false),
-                app.view.EatTrack.QueueWaitForBusy(true,true,true, false),
-                app.view.BurnTrack.QueueWaitForBusy(true,true,true, false)
+                app.view.InEntries.QueueWaitForBusy(true, false),
+                app.view.OutEntries.QueueWaitForBusy(true, false),
+                app.view.InTrack.QueueWaitForBusy(true,true,true, false),
+                app.view.OutTrack.QueueWaitForBusy(true,true,true, false)
             };
 
             var b1 = busies();
             app.view.ChangeDay(app.view.day.AddDays(1));
             BusyAssert(app, b1);
-            Assert.AreEqual(0, app.view.EatLines.val.Count);
-            Assert.AreEqual(0, app.view.BurnLines.val.Count);
+            Assert.AreEqual(0, app.view.InEntries.val.Count);
+            Assert.AreEqual(0, app.view.OutEntries.val.Count);
 
             var ut = app.view.day.AddHours(3);
-            Itemer(() => CalInDefault, "Eat", true, null, app, V.C(2, "new day test"), V.C(1, 99.12), V.C(3, ut))();
+            Itemer(() => CalInDefault, null, "Eat", true, null, app, V.C(2, "new day test"), V.C(1, 99.12), V.C(3, ut));
             var e = new ELA { name = "new day test", value = 99.12, when = ut };
-            EntryLineAssertion(app.view.EatLines.val, "calories", e);
+            EntryLineAssertion(app.view.InEntries.val, "Calories", e);
             var tm = app.view.Instances.val[0];
-            var ttm = app.view.EatTrack.val;
+            var ttm = app.view.InTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "Calorie diet", tm, "Eaten", "Burned",
                 new ELA { name = "Calories", value = 123.0 },
@@ -206,12 +208,12 @@ namespace Consonance.Test
         [Order(8), Test]
         public void T8_EditItems_Check()
         {
-            Itemer(() => CalInDefaultWith(es[0]), "Eat", true, app.view.EatLines.val[0], app,
-                V.C(2, "new wordy words"), V.C(1, 1024.12))();
+            Itemer(() => CalInDefaultWith(es[0]), null, "Eat", true, app.view.InEntries.val[0], app,
+                V.C(2, "new wordy words"), V.C(1, 1024.12));
             es[0].name = "new wordy words";
             es[0].value = 1024.12;
-            Itemer(() => CalOutDefaultWith(es[2]),"Burn", false, app.view.BurnLines.val[0], app,
-                V.C(2, "some new wordy words"), V.C(1, 104.12))();
+            Itemer(() => CalOutDefaultWith(es[2]), null,"Burn", false, app.view.OutEntries.val[0], app,
+                V.C(2, "some new wordy words"), V.C(1, 104.12));
             es[2].name = "some new wordy words";
             es[2].value = 104.12;
             AssertTest5();

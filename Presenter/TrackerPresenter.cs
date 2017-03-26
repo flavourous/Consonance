@@ -7,11 +7,11 @@ using SQLite.Net;
 using LibSharpHelp;
 using System.Diagnostics;
 using System.Linq;
-using static Consonance.Presenter;
 using Consonance.Protocol;
 
 namespace Consonance
 {
+
     interface IViewModelHandler<T>
     {
         IEnumerable<T> Instances();
@@ -56,10 +56,10 @@ namespace Consonance
         None =0,
         Inventions = 1<<0,
         Instances =1<<1,
-        EatEntries =1<<2,
-        BurnEntries =1<<3,
-        EatInfos =1<<4,
-        BurnInfos =1<<5,
+        InEntries =1<<2,
+        OutEntries =1<<3,
+        InInfos =1<<4,
+        OutInfos =1<<5,
         Tracking = 1<<6 /*meta*/ ,
     };
 	class DietVMToChangeEventArgs<T>
@@ -283,8 +283,6 @@ namespace Consonance
 				sinfo.originator = imod; // dont forget to set this this time...
 			}
 
-
-
             infoRequest.value = sinfo;
 		
 			// Set up for editing
@@ -362,11 +360,11 @@ namespace Consonance
 
 		public Task AddInInfo(IValueRequestBuilder bld)
 		{
-			return DoInfo<EatInfoType> ("Create a Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld);
+			return DoInfo<EatInfoType> ("Create a " + dialect.InputInfoSingular,InFinder, modelHandler.model.increator, modelHandler.inhandler, bld);
 		}
 		public Task EditInInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
-			return DoInfo<EatInfoType> ("Edit Food",InFinder, modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
+			return DoInfo<EatInfoType> ("Edit " + dialect.InputInfoSingular ,InFinder, modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
 		}
 		public void RemoveInInfo(InfoLineVM ivm)
 		{
@@ -394,11 +392,11 @@ namespace Consonance
 
 		public Task AddOutInfo(IValueRequestBuilder bld)
 		{
-			return DoInfo<BurnInfoType> ("Create a Fire",OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
+			return DoInfo<BurnInfoType> ("Create a" + dialect.OutputInfoSingular,OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
 		}
 		public Task EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
-			return DoInfo<BurnInfoType> ("Edit Food", OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
+			return DoInfo<BurnInfoType> ("Edit " + dialect.OutputInfoSingular, OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
 		}
 		public void RemoveOutInfo(InfoLineVM ivm)
 		{

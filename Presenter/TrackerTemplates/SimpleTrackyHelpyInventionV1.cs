@@ -125,9 +125,12 @@ namespace Consonance.Invention
         public String InputEntryVerb { get; set; }
         public String OutputEntryVerb { get; set; }
         public String InputInfoPlural { get; set; }
+        public String InputInfoSingular { get; set; }
         public String OutputInfoPlural { get; set; }
+        public String OutputInfoSingular { get; set; }
         public String InputInfoVerbPast { get; set; }
         public String OutputInfoVerbPast { get; set; }
+
     }
     [TableIdentifier(2)]
     class SimpleTrackyTrackingEquationDescriptor : BaseDB, IPrimaryKey
@@ -204,8 +207,10 @@ namespace Consonance.Invention
         {
             var page = new GetValuesPage("How are entries called?");
             var p2vr = (from s in new[] {
-                        "InputEntryVerb","OutputEntryVerb","InputInfoPlural",
-                        "OutputInfoPlural","InputInfoVerbPast","OutputInfoVerbPast" }
+                        "InputEntryVerb","OutputEntryVerb",
+                        "InputInfoPlural","InputInfoSingular",
+                        "OutputInfoPlural","OutputInfoSingular",
+                        "InputInfoVerbPast","OutputInfoVerbPast" }
                         select fac.StringRequestor(s)).ToArray();
             page.SetList(new ObservableCollection<object>((from p in p2vr select p.request).ToList()));
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
@@ -213,9 +218,11 @@ namespace Consonance.Invention
                 mod.InputEntryVerb = p2vr[0].value;
                 mod.OutputEntryVerb = p2vr[1].value;
                 mod.InputInfoPlural = p2vr[2].value;
-                mod.OutputInfoPlural = p2vr[3].value;
-                mod.InputInfoVerbPast = p2vr[4].value;
-                mod.OutputInfoVerbPast = p2vr[5].value;
+                mod.InputInfoPlural = p2vr[3].value;
+                mod.OutputInfoPlural = p2vr[4].value;
+                mod.OutputInfoPlural = p2vr[5].value;
+                mod.InputInfoVerbPast = p2vr[6].value;
+                mod.OutputInfoVerbPast = p2vr[7].value;
             };
             foreach (var vr in p2vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value); ;
             return new SimpleTrackyInventionRequestPages(page, set);
@@ -739,7 +746,8 @@ namespace Consonance.Invention
                 TrackerDetails = new TrackerDetailsVM(model.uid, model.Name, model.Description, model.Category);
                 TrackerDialect = new TrackerDialect(
                     model.InputEntryVerb, model.OutputEntryVerb,
-                    model.InputInfoPlural, model.OutputInfoPlural,
+                    model.InputInfoPlural, model.InputInfoSingular,
+                    model.OutputInfoPlural,model.OutputInfoSingular,
                     model.InputInfoVerbPast, model.OutputInfoVerbPast);
 
                 // Args used in target equations for a tracker

@@ -3,13 +3,11 @@ using System.Linq.Expressions;
 using System.Collections.Generic;
 using System.Diagnostics;
 using LibRTP;
-using SQLite.Net.Attributes;
 using SQLite.Net;
 using LibSharpHelp;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Reflection;
-using static Consonance.Presenter;
 using Consonance.Protocol;
 using System.Collections.ObjectModel;
 
@@ -56,8 +54,8 @@ namespace Consonance
             {
                 default:
                 case ItemType.Instance: return TrackerChangeType.Instances;
-                case ItemType.Entry: return input ? TrackerChangeType.EatEntries : TrackerChangeType.BurnEntries;
-                case ItemType.Info: return input ? TrackerChangeType.EatInfos: TrackerChangeType.BurnInfos;
+                case ItemType.Entry: return input ? TrackerChangeType.InEntries : TrackerChangeType.OutEntries;
+                case ItemType.Info: return input ? TrackerChangeType.InInfos: TrackerChangeType.OutInfos;
             }
         }
 	
@@ -81,7 +79,7 @@ namespace Consonance
 		}
 		public void RemoveTracker(DietInstType rem)
 		{
-            ToChange(TrackerChangeType.EatEntries | TrackerChangeType.BurnEntries | TrackerChangeType.Instances, DBChangeType.Delete, () =>
+            ToChange(TrackerChangeType.InEntries | TrackerChangeType.OutEntries | TrackerChangeType.Instances, DBChangeType.Delete, () =>
             {
                 conn.Delete<EatType>(et => et.trackerinstanceid == rem.id);
                 conn.Delete<BurnType>(et => et.trackerinstanceid == rem.id);
@@ -102,7 +100,7 @@ namespace Consonance
         }
         public void DeleteAll(Action after, bool drop = false)
         {
-            var all = TrackerChangeType.EatEntries | TrackerChangeType.EatInfos | TrackerChangeType.BurnEntries | TrackerChangeType.BurnInfos | TrackerChangeType.Instances;
+            var all = TrackerChangeType.InEntries | TrackerChangeType.InInfos | TrackerChangeType.OutEntries | TrackerChangeType.OutInfos | TrackerChangeType.Instances;
             ToChange(drop ? TrackerChangeType.None : all, DBChangeType.Delete, () =>
              {
                  Rem<EatType>(drop);
@@ -149,17 +147,17 @@ namespace Consonance
 		where EntryInfoType : BaseInfo, new()
 	{
         public event Action<ItemType, DBChangeType, Func<Action>> ToChange = delegate { };
-		readonly IDAL conn, sconn;
+		readonly IDAL conn, shared_conn;
 		readonly IEntryCreation<EntryType, EntryInfoType> creator;
 		public EntryHandler(IDAL conn, IDAL shared_conn, IEntryCreation<EntryType, EntryInfoType> creator)
 		{
 			this.conn = conn;
-            this.sconn = conn;
+            this.shared_conn = conn;
 			this.creator = creator;
 
 			// ensure tables are there.
 			conn.CreateTable<EntryType> ();
-			sconn.CreateTable<EntryInfoType> ();
+			this.shared_conn.CreateTable<EntryInfoType> ();
 		}
 
 		#region IHandleDietPlanModels implementation
@@ -197,6 +195,7 @@ namespace Consonance
                 creator.Edit(ent, info, ShouldComplete());
                 ent.trackerinstanceid = diet.id;
                 ent.infoinstanceid = info.id;
+                ent.insyncwithinfo = true;
                 conn.Commit(ent as EntryType);
                 return null;
             });
@@ -227,6 +226,22 @@ namespace Consonance
 			{ RecurranceType.RecurrsOnPattern, RecurrsOnPattern.TryFromBinary },
 			{ RecurranceType.RecurrsEveryPattern, RecurrsEveryPattern.TryFromBinary },
 		};
+        DummyFactory df = new DummyFactory();
+        void SyncInfo(EntryType e)
+        {
+            if(e.infoinstanceid.HasValue && !e.insyncwithinfo)
+            {
+                var iv = shared_conn.Get<EntryInfoType>(d => d.id == e.infoinstanceid.Value);
+                if (!iv.Any()) e.infoinstanceid = null;
+                else
+                {
+                    creator.EditFields(e, df, iv.First());
+                    creator.Edit(e);
+                    e.insyncwithinfo = true;
+                    conn.Commit(e); // update it back in - committing is only read-lockde.  it table create/drop thats write-locked
+                }
+            }
+        }
 		public IEnumerable<EntryType> Get (D diet, DateTime start, DateTime end)
 		{
 			// Get the noraml and repeating ones, then repeat the repeating ones
@@ -234,10 +249,15 @@ namespace Consonance
 				(d => d.trackerinstanceid == diet.id && d.entryWhen >= start && d.entryWhen < end && d.repeatType == RecurranceType.None);
 			var repeatersQuery = conn.Get<EntryType>
 				(d => d.trackerinstanceid == diet.id && d.repeatType != RecurranceType.None);
-			foreach (var ent in normalQuery) yield return ent;
+            foreach (var ent in normalQuery)
+            {
+                SyncInfo(ent);
+                yield return ent;
+            }
 
 			// Repeaters .. do second half of the "query" here.
 			foreach (EntryType ent in repeatersQuery) {
+                SyncInfo(ent);
 				DateTime patEnd = ent.repeatEnd ?? DateTime.MaxValue;
 				DateTime patStart = ent.repeatStart ?? DateTime.MinValue;
 				if ((patStart >= start ^ patEnd >= end) || (patStart >= end ^ patEnd >= start)) {
@@ -267,7 +287,7 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Insert, () =>
             {
                 var mod = creator.MakeInfo();
-                sconn.Commit<EntryInfoType>(mod);
+                shared_conn.Commit<EntryInfoType>(mod);
                 return null;
             });
 		}
@@ -277,7 +297,8 @@ namespace Consonance
             ToChange(ItemType.Info, DBChangeType.Edit, () =>
             {
                 creator.MakeInfo(editing);
-                sconn.Commit<EntryInfoType>(editing);
+                shared_conn.Commit<EntryInfoType>(editing);
+                conn.Update<EntryType, bool>(d => d.insyncwithinfo, false, d => d.infoinstanceid == editing.id);
                 return null;
             });
 		}
@@ -286,7 +307,8 @@ namespace Consonance
 		{
             ToChange(ItemType.Info, DBChangeType.Delete, () =>
             {
-                sconn.Delete<EntryInfoType>(d => d.id == removing.id);
+                shared_conn.Delete<EntryInfoType>(d => d.id == removing.id);
+                conn.Update<EntryType, bool>(d => d.insyncwithinfo, false, d => d.infoinstanceid == removing.id);
                 return null;
             });
 		}

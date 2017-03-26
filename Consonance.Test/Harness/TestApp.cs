@@ -8,9 +8,10 @@ namespace Consonance.Test
 {
     class TestApp
     {
+        public TestApp(string id) { platform = new TestPlatform(id); }
         public TestView view = new TestView();
         public PlanCommands plan_commands = new PlanCommands();
-        public TestPlatform platform = new TestPlatform();
+        public TestPlatform platform;
         public TestValueRequestBuilder builder = new TestValueRequestBuilder();
         public TestInput input = new TestInput();
         public Task StartPresenter()

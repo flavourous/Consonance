@@ -230,10 +230,10 @@ namespace Consonance
         void View_trackerinstanceselected(TrackerInstanceVM obj)
         {
             TaskMapper(
-                TrackerChangeType.EatInfos |
-                TrackerChangeType.BurnInfos |
-                TrackerChangeType.EatEntries |
-                TrackerChangeType.BurnEntries,
+                TrackerChangeType.InInfos |
+                TrackerChangeType.OutInfos |
+                TrackerChangeType.InEntries |
+                TrackerChangeType.OutEntries,
                 null, true);
         }
         DateTime ds, de;
@@ -242,7 +242,7 @@ namespace Consonance
             ds = to.StartOfDay();
             de = ds.AddDays(1);
             view.day = ds;
-            TaskMapper(TrackerChangeType.EatEntries | TrackerChangeType.BurnEntries, null, true);
+            TaskMapper(TrackerChangeType.InEntries | TrackerChangeType.OutEntries, null, true);
         }
         void Handleadddietinstance()
         {
@@ -354,20 +354,24 @@ namespace Consonance
         Dictionary<TrackerChangeType, TrackerChangeType[]> cMap;
         void InitMaps()
         {
+            // Not Reentrant
             cMap = new Dictionary<TrackerChangeType, TrackerChangeType[]>
             {
                 { TrackerChangeType.Instances, new[] {  TrackerChangeType.Tracking } },
-                { TrackerChangeType.EatEntries,new[] { TrackerChangeType.Tracking } },
-                { TrackerChangeType.BurnEntries,new[] { TrackerChangeType.Tracking} },
+                { TrackerChangeType.InEntries,new[] { TrackerChangeType.Tracking } },
+                { TrackerChangeType.OutEntries,new[] { TrackerChangeType.Tracking} },
+                { TrackerChangeType.InInfos,new[] { TrackerChangeType.InEntries, TrackerChangeType.Tracking } },
+                { TrackerChangeType.OutInfos,new[] { TrackerChangeType.OutEntries, TrackerChangeType.Tracking} },
             };
             busyMap = new Dictionary<TrackerChangeType, IBusyMaker[]>
             {
                 { TrackerChangeType.Inventions, new IBusyMaker[] { inventions } },
                 { TrackerChangeType.Instances, new IBusyMaker[] { tracker_instances } },
-                { TrackerChangeType.EatEntries, new IBusyMaker[] { inEntries, inTracks, outTracks } },
-                { TrackerChangeType.BurnEntries,new IBusyMaker[] { outEntries, inTracks, outTracks } },
-                { TrackerChangeType.EatInfos, new IBusyMaker[] { inInfos } },
-                { TrackerChangeType.BurnInfos,new IBusyMaker[] { outInfos } }
+                { TrackerChangeType.InEntries, new IBusyMaker[] { inEntries, inTracks, outTracks } },
+                { TrackerChangeType.OutEntries,new IBusyMaker[] { outEntries, inTracks, outTracks } },
+                { TrackerChangeType.InInfos, new IBusyMaker[] { inInfos } },
+                { TrackerChangeType.OutInfos,new IBusyMaker[] { outInfos } },
+                { TrackerChangeType.Tracking, new IBusyMaker[0] }
             };
             taskMap = new Dictionary<TrackerChangeType, Action<TrackerInstanceVM>>
             {
@@ -392,25 +396,25 @@ namespace Consonance
                         else view.currentTrackerInstance =ai.First(); // could be updated
                     }
                 },
-                {TrackerChangeType.EatEntries,ti=>
+                {TrackerChangeType.InEntries,ti=>
                     {
                         var ad = (ti?.sender) as IAbstractedTracker;
                         inEntries.SetItems(ad?.InEntries(ti, ds, de));
                     }
                  },
-                {TrackerChangeType.BurnEntries, ti=>
+                {TrackerChangeType.OutEntries, ti=>
                     {
                         var ad = (ti?.sender) as IAbstractedTracker;
                         outEntries.SetItems(ad?.OutEntries(ti, ds, de));
                     }
                 },
-                {TrackerChangeType.EatInfos, ti=>
+                {TrackerChangeType.InInfos, ti=>
                     {
                         var ad = (ti?.sender) as IAbstractedTracker;
                         inInfos.SetItems(ad?.InInfos(false));
                     }
                 },
-                {TrackerChangeType.BurnInfos, ti=>
+                {TrackerChangeType.OutInfos, ti=>
                     {
                         var ad = (ti?.sender) as IAbstractedTracker;
                         outInfos.SetItems(ad?.OutInfos(false));
@@ -452,16 +456,24 @@ namespace Consonance
 
         void TaskMapper(TrackerChangeType action, Func<Action> prior, bool perform_mapping)
         {
+            // Coaelsecse attachde tasks (1 run iit)
+            var flags = ((uint)action).SplitAsFlags();
+            foreach (var flag in flags)
+            {
+                var f = (TrackerChangeType)flag;
+                if (cMap.ContainsKey(f))
+                    foreach (var connected in cMap[f])
+                        action |= connected;
+            }
+
             // Set Busy
             List<Action> madeBusy = new List<Action>();
-
             if (perform_mapping)
             {
                 foreach (var flag in ((uint)action).SplitAsFlags())
                     foreach (var bl in busyMap[(TrackerChangeType)flag])
                         madeBusy.Add(bl.BusyMaker());
             }
-
 
             // begin task
             PlatformGlobal.Run(() =>
@@ -471,17 +483,6 @@ namespace Consonance
 
                 while (perform_mapping)
                 {
-
-                    // Coaelsecse attachde tasks (1 run iit)
-                    var flags = ((uint)action).SplitAsFlags();
-                    foreach (var flag in flags)
-                    {
-                        var f = (TrackerChangeType)flag;
-                        if (cMap.ContainsKey(f))
-                            foreach (var connected in cMap[f])
-                                action |= connected;
-                    }
-
                     TrackerInstanceVM cs;
                     do
                     {

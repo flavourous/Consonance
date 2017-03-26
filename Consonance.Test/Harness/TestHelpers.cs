@@ -153,6 +153,44 @@ namespace Consonance.Test
             }
         }
 
+        public static ST BudInDefault
+        {
+            get
+            {
+                return GenState(
+                    SG.Gen<InfoLineVM>("Incomes", null),
+                    SG.Gen<double>("Amount", 0.0),
+                    SG.Gen<String>("Name", "", false),
+                    SG.Gen<DateTime>("When", DateTime.Now),
+                    SG.Gen<OptionGroupValue>("Repeat", SG.IgnoreValue)
+                );
+            }
+        }
+        public static ST BudInInfoMode
+        {
+            get
+            {
+                return GenState(
+                    SG.Gen<InfoLineVM>("Incomes", SG.IgnoreValue),
+                    SG.Gen<double>("Quantity", 0.0),
+                    SG.Gen<double>("Amount", 0.0, true, true),
+                    SG.Gen<String>("Name", "", false),
+                    SG.Gen<DateTime>("When", DateTime.Now),
+                    SG.Gen<OptionGroupValue>("Repeat", SG.IgnoreValue)
+                );
+            }
+        }
+        public static ST BudInInfoDefault
+        {
+            get
+            {
+                return GenState(
+                    SG.Gen<String>("Name", ""),
+                    SG.Gen<MultiRequestOptionValue>("Amount", SG.IgnoreValue),
+                    SG.Gen<double>("Amount", 0.0)
+                );
+            }
+        }
 
         public static ST CalInstDefault
         {
@@ -275,6 +313,24 @@ namespace Consonance.Test
             public DateTime when = DateTime.Now;
             public String desc = "Quick Entry";
         }
+        public class ILA
+        {
+            public bool is_input = true;
+            public string name, vname, qname;
+            public double value, qvalue;
+        }
+        public static void InfoLineAssertion(IEnumerable<InfoLineVM> vals, params ILA[] lines)
+        {
+            var eva = vals.ToArray();
+            Assert.AreEqual(lines.Length, eva.Length);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var act = eva[i];
+                var exp = lines[i];
+                Assert.AreEqual(exp.name, act.name);
+                CollectionAssert.AreEqual(act.displayAmounts, new KVPList<string, double> { { exp.vname, exp.value }, { exp.qname, exp.qvalue } });
+            }
+        }
         public static void EntryLineAssertion(IEnumerable<EntryLineVM> vals, String trak, params ELA[] lines)
         {
             // Assert entry is in viewmodels
@@ -347,52 +403,61 @@ namespace Consonance.Test
         {
             String fm;
             var ok = busies.WaitAll(out fm);
-            app.view.AssertNoFailsFromExtraLoads();
+            if(ok) app.view.AssertNoFailsFromExtraLoads();
             Assert.IsTrue(ok, fm);
         }
         public class V
         {
             public int index { get; private set; }
             public object value { get; private set; }
+            public bool read_only { get; private set; }
             private V() { }
-            public static V C(int index, object val)
+            public static V C(int index, object val, bool read_only = false)
             {
-                return new V { index = index, value = val };
+                return new V { index = index, value = val, read_only = read_only };
             }
         }
-        public static Action Itemer(Func<ST> init, String GVTitle, bool input, EntryLineVM edit, TestApp app, params V[] selecta)
+        static ST ItemerCommon<T>(Func<ST> init, ST final, String GVTitle, Bound<T> bcol, Waiter[] busies, T edit, TestApp app, params V[] selecta)
+            where T : class
         {
-            // Test data
-            var indexes = selecta.Select(s => s.index).ToArray();
-            var values = selecta.Select(s => s.value).ToArray();
-            var final = AlterState(init(), indexes, values);
-            Waiter[] busies = null;// like this, because we might be recursive. only want to queue when about to complete.
-            Func<bool> GetBusyReady = () =>
-            {
-                busies = new[] {
-                    (input ? app.view.EatLines:app.view.BurnLines).QueueWaitForBusy(true, false),
-                    app.view.EatTrack.QueueWaitForBusy(true, false),
-                    app.view.BurnTrack.QueueWaitForBusy(true, false)
-                };
-                return true;
-            };
-            var new_item = GetVE(init(), final, indexes, values, GVTitle, GetBusyReady);
+            var use = selecta.Where(x => !x.read_only);
+            Func<IEnumerable<V>, int[]> indexes = v => v.Select(x => x.index).ToArray();
+            Func<IEnumerable<V>, object[]> values = v => v.Select(x => x.value).ToArray();
+            final = AlterState(final ?? init(), indexes(selecta), values(selecta));
+           
+            var new_item = GetVE(init(), final, indexes(use), values(use), GVTitle, () => true);
+            app.builder.GetValuesExpect.Enqueue(new_item);
 
-            return () =>
-            {
-                // Arrange
-                app.builder.GetValuesExpect.Enqueue(new_item);
+            if (edit != null) bcol.Edit(edit, app.builder);
+            else bcol.Add(app.builder);
 
-                // Act
-                var ic = (input ? app.plan_commands._eat : app.plan_commands._burn);
-                if (edit != null) ic.Edit(edit, app.builder);
-                else ic.Add(app.builder);
+            new_item.finished.Task.AssertWaitResult();
+            BusyAssert(app, busies);
 
-                // Assert
-                new_item.finished.Task.AssertWaitResult();
-                BusyAssert(app, busies);
-            };
+            return final;
         }
-        
+        public static ST Itemer(Func<ST> init, ST final, String GVTitle, bool input, EntryLineVM edit, TestApp app, params V[] selecta)
+        {
+            return ItemerCommon(init, final, GVTitle,
+                (input ? app.plan_commands._eat : app.plan_commands._burn),
+                new[] {
+                    (input ? app.view.InEntries : app.view.OutEntries).QueueWaitForBusy(true, false),
+                    app.view.InTrack.QueueWaitForBusy(true, false),
+                    app.view.OutTrack.QueueWaitForBusy(true, false)
+                },
+                edit, app, selecta);
+        }
+        public static ST InfoItemer(Func<ST> init, ST final, String GVTitle, bool input, InfoLineVM edit, TestApp app, params V[] selecta)
+        {
+            return ItemerCommon(init, final, GVTitle,
+                (input ? app.plan_commands._eatinfo : app.plan_commands._burninfo),
+                new[] {
+                    (input ? app.view.InEntries : app.view.OutEntries).QueueWaitForBusy(true, false),
+                    (input ? app.view.InInfos : app.view.OutInfos).QueueWaitForBusy(true, false),
+                    app.view.InTrack.QueueWaitForBusy(true, false),
+                    app.view.OutTrack.QueueWaitForBusy(true, false)
+                }, 
+                edit, app, selecta);
+        }
     }
 }

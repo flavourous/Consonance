@@ -84,13 +84,13 @@ namespace Consonance.Test
 
                         // Set values
                         Assert.AreEqual(e.indexes.Length, e.values.Length);
-                        var vrs = current.valuerequests.Cast<TestRequest>().ToArray();
+                        Func<int,TestRequest> vrsa =i=> current.valuerequests.Cast<TestRequest>().ElementAt(i);
                         for (int i = 0; i < e.indexes.Length; i++)
                         {
                             var v = e.values[i];
-                            var r = vrs[e.indexes[i]];
+                            var r = vrsa(e.indexes[i]);
                             if (v.GetType() != r.otype)
-                                throw new InvalidOperationException(v.GetType().Name + " not compatible with " + r.otype.Name + " ( " + r.name + ")");
+                                throw new InvalidOperationException(v.GetType().Name +" not compatible with " + r.otype.Name + " ( " + r.name + ")");
                             r.ovalue = v;
                         }
                         // FIXME: is GetValues that trigger other GetValues by setting a value synchronously invoked?

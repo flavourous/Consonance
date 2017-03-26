@@ -92,7 +92,7 @@ namespace Consonance
             Guid.Parse("b44d60c0-a875-4beb-bb5e-1984cca780b2"),
             "Calorie diet", "Simple calorie-control diet with a daily target.  If enabled, weekly tracking starts from the start date of the diet.", "Diet");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
+		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods","Food", "Exercises", "Excercise", "Eaten", "Burned");
 		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public VRVConnectedValue [] instanceValueFields { get { return new[] { 
 				VRVConnectedValue.FromType (0.0, "Calorie Limit", Acc.g_calorieLimit, Acc.s_calorieLimit, f => f.DoubleRequestor),
@@ -134,8 +134,8 @@ namespace Consonance
             Guid.Parse("29ccbf0a-0676-4ccb-819a-5de593a5c0e6"), 
             "Scavenger calorie diet", "Calorie controlled diet, using periods of looser control followed by periods of stronger control.", "Diet");
 		public TrackerDetailsVM TrackerDetails { get { return _TrackerDetails; } }
-		readonly TrackerDialect _TrackerDialect = new TrackerDialect ("Eat", "Burn", "Foods", "Exercises", "Eaten", "Burned");
-		public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
+        readonly TrackerDialect _TrackerDialect = new TrackerDialect("Eat", "Burn", "Foods", "Food", "Exercises", "Excercise", "Eaten", "Burned");
+        public TrackerDialect TrackerDialect { get { return _TrackerDialect; } }
 		public VRVConnectedValue[] instanceValueFields { get { return new[] { 
 					VRVConnectedValue.FromType(0, v => (int)v[0] > 0, "Loose days",Acc.g_nLooseDays,Acc.s_nLooseDays, f=>f.IntRequestor ), 
 					VRVConnectedValue.FromType(0.0, "Calories", Acc.g_looseCalorieLimit, Acc.s_looseCalorieLimit, f=>f.DoubleRequestor ), 
