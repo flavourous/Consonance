@@ -8,6 +8,30 @@ using System.Collections.Specialized;
 
 namespace Consonance
 {
+    static class RTPExt
+    {
+        public static bool IsValid(this RecurrsOnPatternValue @this)
+        {
+            var PTR = (LibRTP.RecurrSpan)@this.PatternType;
+            int pc = 0;
+            foreach (var pt in (PTR.SplitFlags()))
+                pc++;
+            bool s1 = @this.PatternValues.Length > 1 && pc == @this.PatternValues.Length;
+            if (s1)
+            {
+                try { new RecurrsOnPattern(@this.PatternValues, PTR, null, null); }
+                catch { s1 = false; }
+            }
+            return s1;
+        }
+        public static bool IsValid(this RecurrsEveryPatternValue @this)
+        {
+                return @this.PatternType == Protocol.RecurrSpan.Day ||
+                       @this.PatternType == Protocol.RecurrSpan.Month ||
+                       @this.PatternType == Protocol.RecurrSpan.Year ||
+                       @this.PatternType == Protocol.RecurrSpan.Week;
+        }
+    }
     static class RequestStorageHelperExtensions
     {
         /// <summary>
@@ -41,7 +65,7 @@ namespace Consonance
 
 		// Varaints of repeating
 		readonly RequestStorageHelper<RecurrsEveryPatternValue> recurrEvery;
-		readonly RequestStorageHelper<RecurrsOnPatternValue> recurrOn;
+		readonly RequestStorageHelper<Protocol.RecurrsOnPatternValue> recurrOn;
 
 		public DefaultEntryRequests()
 		{
@@ -59,7 +83,7 @@ namespace Consonance
 
 			// ones
 			recurrEvery=new RequestStorageHelper<RecurrsEveryPatternValue> ("", () => new RecurrsEveryPatternValue(), ValidateRecurr);
-			recurrOn=new RequestStorageHelper<RecurrsOnPatternValue> ("", () => new IRPV(), ValidateRecurr);
+            recurrOn = new RequestStorageHelper<Protocol.RecurrsOnPatternValue>("", () => new RecurrsOnPatternValue(), this.ValidateRecurr);
 		}
 		void Validate()
 		{
@@ -76,8 +100,8 @@ namespace Consonance
 			recurrStart.request.valid = !recurrStart.request.value.HasValue || recurrEnd.request.value >= recurrStart.request.value;
 
 			// just validate both every time.
-			recurrEvery.request.valid = recurrEvery.request.value.IsValid;
-			recurrOn.request.valid = recurrOn.request.value.IsValid;
+			recurrEvery.request.valid = recurrEvery.request.value.IsValid();
+			recurrOn.request.valid = recurrOn.request.value.IsValid();
 		}
 		// consumers be like "ok done - please set the data you got on this guy please"
 		public void Set(BaseEntry entry)
@@ -171,33 +195,12 @@ namespace Consonance
                     LibRTP.RecurrSpan use = rd.units [0];
 					foreach (var d in rd.units)
 						use |= d;
-					recurrOn.request.value = new IRPV(use, rd.onIndexes);
+                    recurrOn.request.value = new RecurrsOnPatternValue((Protocol.RecurrSpan)use, rd.onIndexes);
 				}
 			}
 			rModeChanged (); //  needed because we could be on a non-initialiation call from CreationFields for example.
 		}
-        public class IRPV : RecurrsOnPatternValue
-        {
-            public IRPV() : base() { }
-            public IRPV(LibRTP.RecurrSpan pat, int[] vals) : base((Protocol.RecurrSpan)pat,vals) { }
-            public LibRTP.RecurrSpan PTR { get { return (LibRTP.RecurrSpan)PatternType; } }
-            public override bool IsValid
-            {
-                get
-                {
-                    int pc = 0;
-                    foreach (var pt in (PTR.SplitFlags()))
-                        pc++;
-                    bool s1 = PatternValues.Length > 1 && pc == PatternValues.Length;
-                    if (s1)
-                    {
-                        try { new RecurrsOnPattern(PatternValues, PTR, null, null); }
-                        catch { s1 = false; }
-                    }
-                    return s1;
-                }
-            }
-        }
+        
 		// consumers are like "hey stuff needs resetting whatever that stuff u got is"
 		public void ResetRequests()
 		{

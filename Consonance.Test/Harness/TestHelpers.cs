@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -30,6 +31,7 @@ namespace Consonance.Test
     }
     static class EBExt
     {
+        [DebuggerStepThrough]
         public static X DTest<T, X>(this Queue<T> @this, Func<T, X> test) where T : ExpectBase
         {
             Assert.IsTrue(@this.Count > 0);
@@ -140,6 +142,22 @@ namespace Consonance.Test
             };
         }
 
+        public static ST ScavInstDefault
+        {
+            get
+            {
+                return GenState(
+                    SG.Gen<int>("Loose days", 0, false),
+                    SG.Gen<double>("Calories", 0.0),
+                    SG.Gen<int>("Strict days", 0, false),
+                    SG.Gen<double>("Calories", 0.0),
+                    SG.Gen<String>("Diet Name", "", false),
+                    SG.Gen<DateTime>("Start Date", Today),
+                    SG.Gen<bool>("Tracked", true)
+                );
+            }
+        }
+
         public static ST BudInstDefault
         {
             get
@@ -180,7 +198,34 @@ namespace Consonance.Test
                 );
             }
         }
-        public static ST BudInInfoDefault
+        public static ST BudOutDefault
+        {
+            get
+            {
+                return GenState(
+                    SG.Gen<InfoLineVM>("Expenses", null),
+                    SG.Gen<double>("Amount", 0.0),
+                    SG.Gen<String>("Name", "", false),
+                    SG.Gen<DateTime>("When", DateTime.Now),
+                    SG.Gen<OptionGroupValue>("Repeat", SG.IgnoreValue)
+                );
+            }
+        }
+        public static ST BudOutInfoMode
+        {
+            get
+            {
+                return GenState(
+                    SG.Gen<InfoLineVM>("Expenses", SG.IgnoreValue),
+                    SG.Gen<double>("Quantity", 0.0),
+                    SG.Gen<double>("Amount", 0.0, true, true),
+                    SG.Gen<String>("Name", "", false),
+                    SG.Gen<DateTime>("When", DateTime.Now),
+                    SG.Gen<OptionGroupValue>("Repeat", SG.IgnoreValue)
+                );
+            }
+        }
+        public static ST BudInfoDefault
         {
             get
             {
@@ -237,6 +282,17 @@ namespace Consonance.Test
             ret.vals[3].v = v.when;
             return ret;
         }
+
+        public static OptionGroupValue ogv(int so =0)
+        {
+            return new OptionGroupValue(
+                new[] { "None", "Repeat On...", "Repeat Every..." }
+            )
+            {
+                SelectedOption = so
+            };
+        }
+
         public static ST CalOutDefault
         {
             get
@@ -246,7 +302,38 @@ namespace Consonance.Test
                     SG.Gen<double>("Calories", 0.0),
                     SG.Gen<String>("Name", "", false),
                     SG.Gen<DateTime>("When", DateTime.Now),
-                    SG.Gen<OptionGroupValue>("Repeat", SG.IgnoreValue)
+                    SG.Gen<OptionGroupValue>("Repeat", ogv())
+                );
+            }
+        }
+        public static ST CalOutRepeatEvery
+        {
+            get
+            {
+                return GenState(
+                    SG.Gen<InfoLineVM>("Exercises", null),
+                    SG.Gen<double>("Calories", 0.0),
+                    SG.Gen<String>("Name", "", false),
+                    SG.Gen<DateTime>("When", DateTime.Now),
+                    SG.Gen<OptionGroupValue>("Repeat", ogv(2)),
+                    SG.Gen<RecurrsEveryPatternValue>(String.Empty, SG.IgnoreValue),
+                    SG.Gen<DateTime?>("Repeat Since", null),
+                    SG.Gen<DateTime?>("Repeat Until", null)
+                );
+            }
+        }
+        public static ST CalOutRepeatOn
+        {
+            get
+            {
+                return GenState(
+                    SG.Gen<InfoLineVM>("Exercises", null),
+                    SG.Gen<double>("Calories", 0.0),
+                    SG.Gen<String>("Name", "", false),
+                    SG.Gen<OptionGroupValue>("Repeat", ogv(1)),
+                    SG.Gen<RecurrsOnPatternValue>(String.Empty, SG.IgnoreValue),
+                    SG.Gen<DateTime?>("Repeat Since", null),
+                    SG.Gen<DateTime?>("Repeat Until", null)
                 );
             }
         }
@@ -343,7 +430,7 @@ namespace Consonance.Test
                 Assert.AreEqual(exp.name, act.name);
                 Assert.AreEqual(exp.desc, act.desc);
                 Assert.AreEqual(TimeSpan.Zero, act.duration);
-                DeltaAssert.AreClose(exp.when, act.start);
+                Assert.IsTrue(DeltaAssert.AreClose(exp.when, act.start));
                 CollectionAssert.AreEqual(act.displayAmounts, new KVPList<string, double> { { trak, exp.value } });
             }
         }
@@ -458,6 +545,17 @@ namespace Consonance.Test
                     app.view.OutTrack.QueueWaitForBusy(true, false)
                 }, 
                 edit, app, selecta);
+        }
+        public static void AssertDayChange(TestApp app, DateTime to)
+        {
+            var busies = new[] {
+                app.view.InEntries.QueueWaitForBusy(true, false),
+                app.view.OutEntries.QueueWaitForBusy(true, false),
+                app.view.InTrack.QueueWaitForBusy(true,true,true, false),
+                app.view.OutTrack.QueueWaitForBusy(true,true,true, false)
+            };
+            app.view.ChangeDay(to);
+            BusyAssert(app, busies);
         }
     }
 }

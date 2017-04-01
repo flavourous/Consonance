@@ -325,6 +325,8 @@ namespace Consonance
         void HandleViewModelChange(IAbstractedTracker sender, DietVMToChangeEventArgs<TrackerChangeType> args)
         {
             // Always map everything cause it needs to be actioned at least!
+            // This ensures that if intances or inventions are mapped, we update those,
+            // otherwise we map only if it's related TO THE CURRENT SELECTED INSTANCE
             var ti = view.currentTrackerInstance;
             TaskMapper(args.changeType, args.toChange, 
                 args.changeType.HasFlag(TrackerChangeType.Instances) ||
@@ -424,7 +426,7 @@ namespace Consonance
             };
         }
 
-
+        // this is a bit too chatty
         void SetTracking(TrackerInstanceVM cti)
         {
             // creators
@@ -466,7 +468,7 @@ namespace Consonance
                         action |= connected;
             }
 
-            // Set Busy
+            // Set Busy, if its affecting current presentation
             List<Action> madeBusy = new List<Action>();
             if (perform_mapping)
             {
@@ -481,7 +483,8 @@ namespace Consonance
                 // run the prior to make this state true
                 var after = prior?.Invoke();
 
-                while (perform_mapping)
+                // then if its affecting the presentation, map it
+                if(perform_mapping)
                 {
                     TrackerInstanceVM cs;
                     do
@@ -499,7 +502,6 @@ namespace Consonance
 
                     // complete busies off
                     foreach (var b in madeBusy) b();
-                    perform_mapping = false;
                 }
             });
         }

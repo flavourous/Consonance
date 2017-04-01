@@ -219,7 +219,7 @@ namespace Consonance.ConsoleView
 						ons.Add(int.Parse(pv[0]));
 					}
 					mask |= uint.Parse(input[i]);
-					return new IRPV((LibRTP.RecurrSpan)mask, ons.ToArray());
+					return new RecurrsOnPatternValue((LibRTP.RecurrSpan)mask, ons.ToArray());
 				},
 				patval => {
 					var masks = new List<uint>();

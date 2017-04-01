@@ -61,7 +61,7 @@ namespace Consonance.Test
             public double delta_double = 1e-10; // should be relative to the value
             public TimeSpan delta_timespan = TimeSpan.FromMilliseconds(1000); // who knows
         }
-        public static void AreClose(Object expected, Object actual, String message = null, Config c = null)
+        public static bool AreClose(Object expected, Object actual, String message = null, Config c = null)
         {
             c = c ?? new Config();
             var e = expected; var a = actual;
@@ -80,7 +80,8 @@ namespace Consonance.Test
                 var dms = Math.Abs(((double)e - (double)a));
                 Assert.Less(dms, c.delta_double, message);
             }
-            else Assert.AreEqual(expected, actual, message);
+            else return false;
+            return true;
         }
     }
     public class SMR { public bool val, hit; }

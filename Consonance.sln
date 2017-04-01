@@ -25,6 +25,9 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\LibRTP\LibRTP\LibRTP.projitems*{1c3091eb-5350-48f8-aa8a-51e7d4656da0}*SharedItemsImports = 13
 		Presenter\Consonance.projitems*{2459c065-28a0-451f-8537-2ae6a1af57b3}*SharedItemsImports = 13
+		Presenter\Consonance.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
+		..\LibRTP\LibRTP\LibRTP.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
 		..\LibSharpHelp\LibSharpHelp.projitems*{7e0e5aeb-4591-4161-b39e-b50569c802f1}*SharedItemsImports = 13
 		Presenter\Consonance.projitems*{a5449325-6464-48a5-80aa-8e0f7f4d778d}*SharedItemsImports = 4
 		..\LibRTP\LibRTP\LibRTP.projitems*{a5449325-6464-48a5-80aa-8e0f7f4d778d}*SharedItemsImports = 4

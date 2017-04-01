@@ -44,7 +44,7 @@ namespace Consonance.Test
                         slnb.Append("ovalue: "); slnb.AppendLine(String.Join(", ", vrs.Select(s => s.ovalue)));
                         slnb.Append("type of ovalue: "); slnb.AppendLine(String.Join(", ", vrs.Select(s => s.ovalue?.GetType()?.Name ?? "null")));
                         String sln = slnb.ToString();
-                        
+
                         for (int i = 0; i < nvalrequests; i++)
                         {
                             Assert.AreEqual(valid[i], vrs[i].valid, "#" + i + ":valid" + sln);
@@ -52,9 +52,29 @@ namespace Consonance.Test
                             Assert.AreEqual(enabled[i], vrs[i].enabled, "#" + i + ":enabled" + sln);
                             Assert.AreEqual(vals[i].n, vrs[i].name, "#" + i + ":name" + sln);
                             Assert.AreEqual(vals[i].t, vrs[i].otype, "#" + i + ":type" + sln);
-                            if (vals[i].care) DeltaAssert.AreClose(vals[i].v, vrs[i].ovalue, "#" + i + ":value" + sln);
+                            if (vals[i].care)
+                                if (!DeltaAssert.AreClose(vals[i].v, vrs[i].ovalue, "#" + i + ":value" + sln))
+                                    HAssert(vals[i].v, vrs[i].ovalue);
                         }
+                    }
+                    void HAssert(object a, object b)
+                    {
+                        if (a == null && b == null) return;
+                        if (a == null || b == null) Assert.Fail();
 
+                        if (CastCall<OptionGroupValue>((x,y) =>
+                        {
+                            CollectionAssert.AreEqual(x.OptionNames, y.OptionNames);
+                            Assert.AreEqual(x.SelectedOption, y.SelectedOption);
+                        },a,b)) return;
+
+                        Assert.AreEqual(a, b);
+                    }
+                    bool CastCall<T>(Action<T,T> act, object a, object b) 
+                    {
+                        var bth = a is T && b is T;
+                        if (bth) act((T)a, (T)b);
+                        return bth;
                     }
                 }
             }
@@ -89,11 +109,10 @@ namespace Consonance.Test
                         {
                             var v = e.values[i];
                             var r = vrsa(e.indexes[i]);
-                            if (v.GetType() != r.otype)
+                            if (v != null && v.GetType() != r.otype) // null always ok(?)
                                 throw new InvalidOperationException(v.GetType().Name +" not compatible with " + r.otype.Name + " ( " + r.name + ")");
                             r.ovalue = v;
                         }
-                        // FIXME: is GetValues that trigger other GetValues by setting a value synchronously invoked?
 
                         // resulting state check
                         e.final.AssertState(current.valuerequests.Cast<TestRequest>().ToArray());

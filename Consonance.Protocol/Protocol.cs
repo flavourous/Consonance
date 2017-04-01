@@ -530,16 +530,7 @@ namespace Consonance.Protocol
         public RecurrsEveryPatternValue() : this(DateTime.Now, RecurrSpan.Day, 1)
         {
         }
-        public bool IsValid
-        {
-            get
-            {
-                return PatternType == RecurrSpan.Day ||
-                       PatternType == RecurrSpan.Month ||
-                       PatternType == RecurrSpan.Year ||
-                       PatternType == RecurrSpan.Week;
-            }
-        }
+        
 
         void ChangeProperty(Action change, [CallerMemberName]String prop = null)
         {
@@ -549,7 +540,7 @@ namespace Consonance.Protocol
 
         
     }
-    public abstract class RecurrsOnPatternValue
+    public class RecurrsOnPatternValue
     {
         public RecurrSpan PatternType;
         public int[] PatternValues;
@@ -561,9 +552,6 @@ namespace Consonance.Protocol
         public RecurrsOnPatternValue() : this(RecurrSpan.Day | RecurrSpan.Month, new[] { 1 })
         {
         }
-        public abstract bool IsValid { get; }
-        
-        
     }
     public class OptionGroupValue
     {
@@ -584,11 +572,7 @@ namespace Consonance.Protocol
         {
             SelectedOption = 0;
             OptionNames = new List<String>(options);
-        }
-        public static implicit operator int(OptionGroupValue other)
-        {
-            return other.SelectedOption;
-        }
+        }        
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();

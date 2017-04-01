@@ -55,7 +55,7 @@ namespace Consonance
                 default:
                 case ItemType.Instance: return TrackerChangeType.Instances;
                 case ItemType.Entry: return input ? TrackerChangeType.InEntries : TrackerChangeType.OutEntries;
-                case ItemType.Info: return input ? TrackerChangeType.InInfos: TrackerChangeType.OutInfos;
+                case ItemType.Info: return input ? TrackerChangeType.InInfos : TrackerChangeType.OutInfos;
             }
         }
 	
@@ -263,7 +263,7 @@ namespace Consonance
 				if ((patStart >= start ^ patEnd >= end) || (patStart >= end ^ patEnd >= start)) {
 					IRecurr patcreator = null;
 					if(!patcreators [ent.repeatType] (ent.repeatData, out patcreator))
-						continue; /* report after loop */
+						continue; /* report error after loop */
 					foreach (var rd in patcreator.GetOccurances(start,end))
 						yield return (EntryType)ent.FlyweightCloneWithDate (rd);
 				}

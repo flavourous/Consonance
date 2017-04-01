@@ -173,16 +173,7 @@ namespace Consonance.Test
         [Test]
         public void T6_MoveNextDay_Add_MoveBack()
         {
-            Func<Waiter[]> busies =()=> new[] {
-                app.view.InEntries.QueueWaitForBusy(true, false),
-                app.view.OutEntries.QueueWaitForBusy(true, false),
-                app.view.InTrack.QueueWaitForBusy(true,true,true, false),
-                app.view.OutTrack.QueueWaitForBusy(true,true,true, false)
-            };
-
-            var b1 = busies();
-            app.view.ChangeDay(app.view.day.AddDays(1));
-            BusyAssert(app, b1);
+            AssertDayChange(app, app.view.day.AddDays(1));
             Assert.AreEqual(0, app.view.InEntries.val.Count);
             Assert.AreEqual(0, app.view.OutEntries.val.Count);
 
@@ -198,9 +189,7 @@ namespace Consonance.Test
                 e
             );
 
-            var b2 = busies();
-            app.view.ChangeDay(app.view.day.AddDays(-1));
-            BusyAssert(app, b2);
+            AssertDayChange(app, app.view.day.AddDays(-1));
 
             AssertTest5();
         }

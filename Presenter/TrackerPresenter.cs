@@ -392,7 +392,7 @@ namespace Consonance
 
 		public Task AddOutInfo(IValueRequestBuilder bld)
 		{
-			return DoInfo<BurnInfoType> ("Create a" + dialect.OutputInfoSingular,OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
+			return DoInfo<BurnInfoType> ("Create a " + dialect.OutputInfoSingular,OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
 		}
 		public Task EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
