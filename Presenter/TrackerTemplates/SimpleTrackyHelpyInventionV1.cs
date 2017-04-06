@@ -160,22 +160,22 @@ namespace Consonance.Invention
     #endregion
 
     #region Generators to create the simple inventor request pages
+    public class Stringy
+    {
+        readonly String s;
+        public readonly object o;
+        public Stringy(String s, Object o)
+        {
+            this.s = s;
+            this.o = o;
+        }
+        public override string ToString()
+        {
+            return s;
+        }
+    }
     class SimpleTrackyInventionRequestPages
     {
-        class Stringy
-        {
-            readonly String s;
-            public readonly object o;
-            public Stringy(String s, Object o)
-            {
-                this.s = s;
-                this.o = o;
-            }
-            public override string ToString()
-            {
-                return s;
-            }
-        }
 
         private SimpleTrackyInventionRequestPages(GetValuesPage page, Action<SimpleTrackyHelpyInventionV1Model> set)
         {
@@ -200,7 +200,7 @@ namespace Consonance.Invention
                 mod.Description = p1vr[1].value;
                 mod.Category = p1vr[2].value;
             };
-            foreach (var vr in p1vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value);
+            foreach (var vr in p1vr) vr.ValidWhen(s=>!String.IsNullOrWhiteSpace(s));
             return new SimpleTrackyInventionRequestPages(page, set);
         }
         public static SimpleTrackyInventionRequestPages EntryDescriptionPage(IValueRequestFactory fac)
@@ -218,13 +218,13 @@ namespace Consonance.Invention
                 mod.InputEntryVerb = p2vr[0].value;
                 mod.OutputEntryVerb = p2vr[1].value;
                 mod.InputInfoPlural = p2vr[2].value;
-                mod.InputInfoPlural = p2vr[3].value;
+                mod.InputInfoSingular = p2vr[3].value;
                 mod.OutputInfoPlural = p2vr[4].value;
-                mod.OutputInfoPlural = p2vr[5].value;
+                mod.OutputInfoSingular = p2vr[5].value;
                 mod.InputInfoVerbPast = p2vr[6].value;
                 mod.OutputInfoVerbPast = p2vr[7].value;
             };
-            foreach (var vr in p2vr) vr.ValueChanged += () => vr.valid = !String.IsNullOrWhiteSpace(vr.value); ;
+            foreach (var vr in p2vr) vr.ValidWhen(s => !String.IsNullOrWhiteSpace(s));
             return new SimpleTrackyInventionRequestPages(page, set);
         }
         public static SimpleTrackyInventionRequestPages InfoQuantifiersPage(IValueRequestFactory fac, InfoFinderHelper iHelper)
@@ -241,7 +241,11 @@ namespace Consonance.Invention
             var vls = new Func<Object>[] { () => qnr.value, () => qdr.value };
 
             dvalmor.value = new MultiRequestOptionValue(new[] { qnr.request, qdr.request, }, 0);
-            var sdef = new Func<Object, double>[] { d => (double)d, d => (double)(int)d, d => ((TimeSpan)d).TotalHours };
+            var sdef = new Dictionary<InfoQuantifierTypes, Func<Object, double>>
+            {
+                { InfoQuantifierTypes.Number, d => (double)d },
+                { InfoQuantifierTypes.Duration,  d => ((TimeSpan)d).TotalHours }
+            };
             var addr = fac.ActionRequestor("Add");
 
             String[] headers = new[] { "For", "Name", "Units", "Default" };
@@ -251,7 +255,7 @@ namespace Consonance.Invention
             addr.ValueChanged += () =>
             {
                 var so = ioreq.value.SelectedOption;
-                var ot = (InfoQuantifierTypes)dvalmor.value.SelectedRequest;
+                var ot = (InfoQuantifierTypes)(dvalmor.value.SelectedRequest+1);
                 var ov = vls[dvalmor.value.SelectedRequest]();
                 megalist.value.Items.Add(new Stringy[] {
                         new Stringy(ioreq.value.OptionNames[so],so),
@@ -261,7 +265,12 @@ namespace Consonance.Invention
                     });
             };
 
-            megalist.ValueChanged += () => megalist.valid = megalist.value.Items.Count > 0;
+            Action pmv = () =>
+            {
+                megalist.valid = megalist.value.Items.Select(d=>d[0].ToString()).Distinct().Count() > 0;
+            };
+            megalist.valid = false;
+            megalist.ValueChanged += pmv;
 
             page.SetList(new ObservableCollection<object> { ioreq.request, nreq.request, dvalmor.request, addr.request, megalist.request });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
@@ -276,7 +285,7 @@ namespace Consonance.Invention
                     var qq = q as Stringy[];
                     var inout = (int)qq[0].o;
                     var name = (qq[1].o as String);
-                    var qtype = (int)qq[2].o;
+                    var qtype = (InfoQuantifierTypes)qq[2].o;
                     var qdef = qq[3].o;
                     var qd = new SimpleTrackyInfoQuantifierDescriptor { defaultvalue = sdef[qtype](qdef), Name = name, quantifier_type = (InfoQuantifierTypes)qtype };
                     qd = iHelper.Find(qd) ?? qd; // is this degenerate with another quantifier?
@@ -286,7 +295,7 @@ namespace Consonance.Invention
                 mod.qod_in.Replace(inq);
                 mod.qod_out.Replace(outq);
             };
-            megalist.value.Items.CollectionChanged += (a, b) => megalist.valid = megalist.value.Items.Count > 0;
+            megalist.value.Items.CollectionChanged += (a, b) => pmv();
             addr.valid = nreq.valid = dvalmor.valid = ioreq.valid = true; // not used - the list is...
             return new SimpleTrackyInventionRequestPages(page, set);
         }
@@ -309,7 +318,7 @@ namespace Consonance.Invention
 
             addr.ValueChanged += () =>
             {
-                var ot = (AggregateRangeType)rtreq.value.SelectedOption;
+                var ot = (AggregateRangeType)(rtreq.value.SelectedOption+1);
                 var ots = rtreq.value.OptionNames[rtreq.value.SelectedOption];
                 megalist.value.Items.Add(new Stringy[] {
                         new Stringy(nreq.value,nreq.value),
@@ -324,6 +333,7 @@ namespace Consonance.Invention
             // FIXME which one?
             megalist.ValueChanged += () => megalist.valid = megalist.value.Items.Count > 0;
             megalist.value.Items.CollectionChanged += (a, b) => megalist.valid = megalist.value.Items.Count > 0;
+            megalist.valid = false;
 
             page.SetList(new ObservableCollection<object> { nreq.request, tidreq.request, rreq.request, rtreq.request, argreq.request, peqreq.request, teqreq.request, addr.request, megalist.request });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>

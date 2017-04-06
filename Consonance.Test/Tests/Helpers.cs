@@ -77,8 +77,11 @@ namespace Consonance.Test
             }
             else if (e is double && a is double)
             {
-                var dms = Math.Abs(((double)e - (double)a));
-                Assert.Less(dms, c.delta_double, message);
+                double de = (double)e, da = (double)a;
+                var diff = Math.Abs(de - da);
+                var mag = (Math.Abs(de) + Math.Abs(da)) / 2.0;
+                var ord = diff / mag; // % wrongness aka tolerance
+                Assert.Less(ord, c.delta_double, message);
             }
             else return false;
             return true;
@@ -149,13 +152,13 @@ namespace Consonance.Test
     }
     public static class WaiterExtension
     {
-        public static bool WaitAll(this Waiter[] @this, out String message)
+        public static bool WaitAll(this Waiter[] @this, out String message, int timeout = 5000)
         {
             StringBuilder mes = new StringBuilder();
             String m;
             var res = @this.Select(w =>
             {
-                var wt = w.Wait(out m);
+                var wt = w.Wait(out m, timeout);
                 mes.AppendLine(m);
                 return wt;
             });
@@ -169,7 +172,7 @@ namespace Consonance.Test
     {
         public static T AssertWaitResult<T>(this Task<T> t, string m=null)
         {
-            Assert.IsTrue(t.Wait(5000), m);
+            Assert.IsTrue(t.Wait(10000), m);
             return t.Result;
         }
     }
@@ -185,12 +188,12 @@ namespace Consonance.Test
         {
             tsk.Add(wt);
         }
-        public bool Wait(out String failures)
+        public bool Wait(out String failures, int timeout = 5000)
         {
             bool?[] res = new bool?[tsk.Count];
             for (int i = 0; i < tsk.Count; i++)
             {
-                if (!tsk[i].Wait(5000)) res[i] = null;
+                if (!tsk[i].Wait(timeout)) res[i] = null;
                 else res[i] = tsk[i].Result;
             }
             failures = id+": " + String.Join(",",res.Select(

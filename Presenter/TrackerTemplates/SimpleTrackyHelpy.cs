@@ -17,7 +17,7 @@ namespace Consonance
     {
         double quantity { get; set; }
     }
-    public enum InfoQuantifierTypes { Number, Duration };
+    public enum InfoQuantifierTypes { Number = 1, Duration = 2 };
     [TableIdentifier(1)]
     public class SimpleTrackyInfoQuantifierDescriptor : BaseDB, IPrimaryKey
     {
@@ -364,7 +364,7 @@ namespace Consonance
                     cv = d => d.ToString("F2");
                     return VRVConnectedValue.FromTypec(dsc.defaultvalue, d => d > 0.0, dsc.Name, getQuantity, setQuantity, f => f.DoubleRequestor, d => d, d => d);
                 case InfoQuantifierTypes.Duration:
-                    cv = d => TimeSpan.FromSeconds(d).WithSuffix();
+                    cv = d => TimeSpan.FromHours(d).WithSuffix();
                     return VRVConnectedValue.FromTypec(dsc.defaultvalue, d => d.TotalHours > 0.0, dsc.Name, getQuantity, setQuantity, f => f.TimeSpanRequestor, d => d.TotalHours, d => TimeSpan.FromHours(d));
             }
         }
@@ -592,7 +592,7 @@ namespace Consonance
             var blo = new ObservableCollection<Object>();
             blo.Add(currentMeasureOption.requestStorage.CGet(factory, currentMeasureOption.quant.FindRequestorDelegate));
             blo.AddAll(directRequests.Select(d => d.Value.requestStore.CGet(factory.DoubleRequestor)));//readonly
-            currentMeasureOption.requestStorage.requestValue = currentMeasureOption.quant.valueGetter(toEdit);
+            currentMeasureOption.requestStorage.requestValue = currentMeasureOption.quant.ConvertDataToRequestValue(currentMeasureOption.quant.valueGetter(toEdit));
 			ProcessRequestsForInfo (blo, factory, info); // initially, no, we'll add none...but maybe subsequently.
 			defaulter.PushInDefaults (toEdit, blo, factory);
             BeginObserving();

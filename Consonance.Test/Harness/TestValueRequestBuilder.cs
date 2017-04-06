@@ -1,4 +1,5 @@
-﻿using Consonance.Protocol;
+﻿using Consonance.Invention;
+using Consonance.Protocol;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -54,30 +55,64 @@ namespace Consonance.Test
                             Assert.AreEqual(vals[i].t, vrs[i].otype, "#" + i + ":type" + sln);
                             if (vals[i].care)
                                 if (!DeltaAssert.AreClose(vals[i].v, vrs[i].ovalue, "#" + i + ":value" + sln))
-                                    HAssert(vals[i].v, vrs[i].ovalue);
+                                    HAssert(vals[i].v, vrs[i].ovalue, "#" + i + ":value" + sln);
                         }
                     }
-                    void HAssert(object a, object b)
+                    void HAssert(object a, object b, String m)
                     {
                         if (a == null && b == null) return;
-                        if (a == null || b == null) Assert.Fail();
+                        if (a == null || b == null) Assert.Fail(m);
 
                         if (CastCall<OptionGroupValue>((x,y) =>
                         {
-                            CollectionAssert.AreEqual(x.OptionNames, y.OptionNames);
-                            Assert.AreEqual(x.SelectedOption, y.SelectedOption);
+                            CollectionAssert.AreEqual(x.OptionNames, y.OptionNames,m);
+                            Assert.AreEqual(x.SelectedOption, y.SelectedOption,m);
                         },a,b)) return;
-
-                        Assert.AreEqual(a, b);
+                        if (CastCall<MultiRequestOptionValue>((x, y) =>
+                        {
+                            TRA(x.HiddenRequest, y.HiddenRequest, m + " !!Hiddenrequest!!");
+                            var xe = x.IValueRequestOptions.GetEnumerator();
+                            var ye = x.IValueRequestOptions.GetEnumerator();
+                            while (xe.MoveNext())
+                            {
+                                Assert.IsTrue(ye.MoveNext());
+                                TRA(xe.Current, ye.Current, m + " !!val!!");
+                            }
+                            Assert.IsFalse(ye.MoveNext());
+                            Assert.AreEqual(x.SelectedRequest, y.SelectedRequest, m);
+                        }, a, b)) return;
+                        if (CastCall<TabularDataRequestValue>((x, y) =>
+                        {
+                            CollectionAssert.AreEqual(x.Headers, y.Headers, m);
+                            Assert.AreEqual(x.Items.Count, y.Items.Count);
+                            for (int i = 0; i < x.Items.Count; i++)
+                                CollectionAssert.AreEqual(x.Items[i],
+                                    y.Items[i].Select(s=>(s as Stringy).o)
+                                );
+                        }, a, b)) return;
+                        Assert.AreEqual(a, b, m);
                     }
-                    bool CastCall<T>(Action<T,T> act, object a, object b) 
+                    void TRA(Object x, Object y, String m)
                     {
-                        var bth = a is T && b is T;
-                        if (bth) act((T)a, (T)b);
-                        return bth;
+                        if (x == null && y == null) return;
+                        if (x == null || y == null) Assert.Fail(m);
+                        var selectors = new Func<TestRequest, object>[]
+                        {
+                            a=> a.otype, a=>a.ovalue, a=>a.valid,
+                            a =>a.read_only, a=>a.name, a=>a.enabled,
+                        };
+                        foreach (var s in selectors)
+                            Assert.AreEqual(s(x as TestRequest), s(y as TestRequest), m);
                     }
+                    
                 }
             }
+        }
+        static bool CastCall<T>(Action<T, T> act, object a, object b)
+        {
+            var bth = a is T && b is T;
+            if (bth) act((T)a, (T)b);
+            return bth;
         }
         public readonly Queue<GetValuesExpected> GetValuesExpect = new Queue<GetValuesExpected>();
         public Task<bool> GetValues(IEnumerable<GetValuesPage> requestPages)
@@ -111,6 +146,20 @@ namespace Consonance.Test
                             var r = vrsa(e.indexes[i]);
                             if (v != null && v.GetType() != r.otype) // null always ok(?)
                                 throw new InvalidOperationException(v.GetType().Name +" not compatible with " + r.otype.Name + " ( " + r.name + ")");
+                            if (CastCall<MultiRequestOptionValue>((x,y) =>
+                             {
+                                if (x.HiddenRequest != null && y.HiddenRequest != null)
+                                    (x.HiddenRequest as TestRequest).ovalue = (y.HiddenRequest as TestRequest).ovalue;
+                                x.SelectedRequest = y.SelectedRequest;
+                                 var xn = x.IValueRequestOptions.GetEnumerator();
+                                 var yn = y.IValueRequestOptions.GetEnumerator();
+                                 while(xn.MoveNext())
+                                 {
+                                     if (!yn.MoveNext())
+                                         throw new InvalidOperationException("series differnt length");
+                                     (xn.Current as TestRequest).ovalue = (yn.Current as TestRequest).ovalue;
+                                 }
+                             }, r.ovalue, v)) continue;
                             r.ovalue = v;
                         }
 

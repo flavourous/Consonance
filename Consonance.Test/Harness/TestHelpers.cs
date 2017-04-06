@@ -105,15 +105,37 @@ namespace Consonance.Test
                 return @this;
             }
         }
-        public static TestValueRequestBuilder.GetValuesExpected.ExpectedPage.State GenState(params SG[] vals)
+
+        public static TabularDataRequestValue PushItems(this TabularDataRequestValue v, object[][] items)
         {
-            return new TestValueRequestBuilder.GetValuesExpected.ExpectedPage.State
+            foreach (var ia in items)
+                v.Items.Add(ia);
+            return v;
+        }
+
+        public static ST GenState(params SG[] vals)
+        {
+            return new ST
             {
                 nvalrequests = vals.Length,
                 read_only = vals.Select(v => v.read_only).ToArray(),
                 enabled = vals.Select(v => v.enabled).ToArray(),
                 valid = vals.Select(v => v.valid).ToArray(),
                 vals = vals.Select(v => v.value).ToArray()
+            };
+        }
+        public static TestValueRequestBuilder.GetValuesExpected.ExpectedPage GenExpect(String title, Func<SG[]> init, V[] selecta, SG[] final = null)
+        {
+            var use = selecta.Where(x => !x.read_only);
+            Func<IEnumerable<V>, int[]> indexes = v => v.Select(x => x.index).ToArray();
+            Func<IEnumerable<V>, object[]> values = v => v.Select(x => x.value).ToArray();
+
+            var initstate = GenState(init());
+            var finalstate = AlterState(GenState(final ?? init()), indexes(selecta), values(selecta));
+
+            return new TestValueRequestBuilder.GetValuesExpected.ExpectedPage
+            {
+                initial = initstate, final = finalstate, indexes = indexes(use), values = values(use), title = title 
             };
         }
 
@@ -126,7 +148,7 @@ namespace Consonance.Test
             }
         }
 
-        public static TestValueRequestBuilder.GetValuesExpected GetVE(TestValueRequestBuilder.GetValuesExpected.ExpectedPage.State init, TestValueRequestBuilder.GetValuesExpected.ExpectedPage.State final, int[] indexes, object[] values, String title, Func<bool> complete)
+        public static TestValueRequestBuilder.GetValuesExpected GetVE(ST init, ST final, int[] indexes, object[] values, String title, Func<bool> complete)
         {
             return new TestValueRequestBuilder.GetValuesExpected
             {
@@ -337,7 +359,7 @@ namespace Consonance.Test
                 );
             }
         }
-        public static TestValueRequestBuilder.GetValuesExpected.ExpectedPage.State AlterState(TestValueRequestBuilder.GetValuesExpected.ExpectedPage.State bs, int[] indexes, object[] values)
+        public static ST AlterState(ST bs, int[] indexes, object[] values)
         {
             for (int i = 0; i < indexes.Length; i++)
             {
@@ -387,7 +409,10 @@ namespace Consonance.Test
                 Assert.AreEqual(e.dialect.OutputInfoVerbPast, a.dialect.OutputInfoVerbPast);
                 Func<KVPList<String, double>, IEnumerable<Object>> sel =
                     d => d.SelectMany(c => new Object[] { c.Key, c.Value });
-                CollectionAssert.AreEqual(sel(e.displayAmounts), sel(a.displayAmounts));
+                Assert.AreEqual(sel(e.displayAmounts).Count(), sel(a.displayAmounts).Count());
+                foreach (var k in sel(e.displayAmounts).Zip(sel(a.displayAmounts), (x, y) => new { x = x, y = y }))
+                    if (!DeltaAssert.AreClose(k.x, k.y))
+                        Assert.AreEqual(k.x, k.y);
             }
         }
 
@@ -403,8 +428,8 @@ namespace Consonance.Test
         public class ILA
         {
             public bool is_input = true;
-            public string name, vname, qname;
-            public double value, qvalue;
+            public string name;
+            public KVPList<string, double> kvp;
         }
         public static void InfoLineAssertion(IEnumerable<InfoLineVM> vals, params ILA[] lines)
         {
@@ -415,7 +440,7 @@ namespace Consonance.Test
                 var act = eva[i];
                 var exp = lines[i];
                 Assert.AreEqual(exp.name, act.name);
-                CollectionAssert.AreEqual(act.displayAmounts, new KVPList<string, double> { { exp.vname, exp.value }, { exp.qname, exp.qvalue } });
+                CollectionAssert.AreEqual(act.displayAmounts, exp.kvp);
             }
         }
         public static void EntryLineAssertion(IEnumerable<EntryLineVM> vals, String trak, params ELA[] lines)
@@ -467,7 +492,7 @@ namespace Consonance.Test
             }
         }
 
-        public static TestInput.ChoosePlanExpected ChoosePlan(String name)
+        public static TestInput.ChoosePlanExpected ChoosePlan(String name, params ItemDescriptionVM[] extra)
         {
             var ret = new TestInput.ChoosePlanExpected
             {
@@ -478,7 +503,7 @@ namespace Consonance.Test
                     new Protocol.ItemDescriptionVM("Calorie diet", "Simple calorie-control diet with a daily target.  If enabled, weekly tracking starts from the start date of the diet.", "Diet"),
                     new Protocol.ItemDescriptionVM("Scavenger calorie diet", "Calorie controlled diet, using periods of looser control followed by periods of stronger control.", "Diet"),
                     new Protocol.ItemDescriptionVM("Finance budget", "Track spending goals and other finances.", "Finance"),
-                }
+                }.Concat(extra).ToArray()
             };
             var mt = ret.expect.Select((d, i) => new { d = d, i = i }).Where(d => d.d.name == name);
             Assert.IsTrue(mt.Count() > 0);
@@ -486,10 +511,10 @@ namespace Consonance.Test
             return ret;
         }
 
-        public static void BusyAssert(TestApp app, Waiter[] busies )
+        public static void BusyAssert(TestApp app, Waiter[] busies, int timeout = 5000)
         {
             String fm;
-            var ok = busies.WaitAll(out fm);
+            var ok = busies.WaitAll(out fm, timeout);
             if(ok) app.view.AssertNoFailsFromExtraLoads();
             Assert.IsTrue(ok, fm);
         }
@@ -504,7 +529,7 @@ namespace Consonance.Test
                 return new V { index = index, value = val, read_only = read_only };
             }
         }
-        static ST ItemerCommon<T>(Func<ST> init, ST final, String GVTitle, Bound<T> bcol, Waiter[] busies, T edit, TestApp app, params V[] selecta)
+        public static ST ItemerCommon<T>(Func<ST> init, ST final, String GVTitle, Bound<T> bcol, Waiter[] busies, T edit, TestApp app, params V[] selecta)
             where T : class
         {
             var use = selecta.Where(x => !x.read_only);
@@ -519,10 +544,11 @@ namespace Consonance.Test
             else bcol.Add(app.builder);
 
             new_item.finished.Task.AssertWaitResult();
-            BusyAssert(app, busies);
+            BusyAssert(app, busies, 10000);
 
             return final;
         }
+        
         public static ST Itemer(Func<ST> init, ST final, String GVTitle, bool input, EntryLineVM edit, TestApp app, params V[] selecta)
         {
             return ItemerCommon(init, final, GVTitle,
@@ -556,6 +582,10 @@ namespace Consonance.Test
             };
             app.view.ChangeDay(to);
             BusyAssert(app, busies);
+        }
+        public static MultiRequestOptionValue OneOV<T>(String n,T val)
+        {
+            return new MultiRequestOptionValue(new[] { new TestValueRequest<T>(n) { ovalue = val } }, 0);
         }
     }
 }

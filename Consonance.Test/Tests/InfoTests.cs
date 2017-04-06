@@ -65,11 +65,12 @@ namespace Consonance.Test.Tests
                 new ILA
                 {
                     name = "te info",
-                    vname = "Balance",
-                    qname = "Quantity",
-                    qvalue = 1,
+                    kvp = new KVPList<string, double>
+                    {
+                        { "Balance", 9912.3 },
+                        { "Quantity", 1 }
+                    },
                     is_input = true,
-                    value = 9912.3
                 });
         }
 
@@ -114,11 +115,12 @@ namespace Consonance.Test.Tests
                 iex1=new ILA
                 {
                     name = "altered nfo",
-                    vname = "Balance",
-                    qname = "Quantity",
-                    qvalue = 1,
                     is_input = true,
-                    value = 400.2
+                    kvp = new KVPList<string, double>
+                    {
+                        { "Balance", 400.2 },
+                        { "Quantity", 1 }
+                    },
                 });
 
             EntryLineAssertion(app.view.InEntries.val, "Balance",
@@ -150,11 +152,12 @@ namespace Consonance.Test.Tests
                 new ILA
                 {
                     name = "spendor",
-                    vname = "Balance",
-                    qname = "Quantity",
-                    qvalue = 1,
+                    kvp = new KVPList<string, double>
+                    {
+                        { "Balance", 9912.3 },
+                        { "Quantity", 1 }
+                    },
                     is_input = false,
-                    value = 9912.3
                 });
         }
 
@@ -193,11 +196,12 @@ namespace Consonance.Test.Tests
                 iex2= new ILA
                 {
                     name = "altered nfo x2",
-                    vname = "Balance",
-                    qname = "Quantity",
-                    qvalue = 1,
                     is_input = false,
-                    value = 800.1
+                    kvp = new KVPList<string, double>
+                    {
+                        { "Balance", 800.1 },
+                        { "Quantity", 1 }
+                    },
                 });
             EntryLineAssertion(app.view.OutEntries.val, "Balance",
                 eex2 = new ELA { is_input = false, name = "nom", desc = "2.00 of altered nfo x2", value = 2 * 800.1 });
