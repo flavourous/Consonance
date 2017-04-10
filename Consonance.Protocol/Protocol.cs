@@ -12,6 +12,19 @@ using System.Threading.Tasks;
 
 namespace Consonance.Protocol
 {
+    public interface IInputResponse
+    {
+        Task Opened { get; }
+        Task Result { get; }
+        Task Close();
+    }
+    public interface IInputResponse<T>
+    {
+        Task Opened { get; }
+        Task<T> Result { get; }
+        Task Close();
+    }
+
     // mirrors librtp
     [Flags]
     public enum RecurrSpan : uint { Day = 1, Week = 2, Month = 4, Year = 8 }; 
@@ -452,7 +465,7 @@ namespace Consonance.Protocol
     public interface IValueRequestBuilder
     {
         // get generic set of values on a page thing
-        Task<bool> GetValues(IEnumerable<GetValuesPage> requestPages);
+        IInputResponse<bool> GetValues(IEnumerable<GetValuesPage> requestPages);
 
         // VRO Factory Method
         IValueRequestFactory requestFactory { get; }

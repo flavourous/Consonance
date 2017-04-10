@@ -124,7 +124,7 @@ namespace Consonance.ConsoleView
 			#endregion
 		}
 		#region IValueRequestBuilder implementation
-		public Task<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
+		public IInputResponse<bool> GetValues (IEnumerable<GetValuesPage> requestPages)
 		{
 			var rps = new List<GetValuesPage> (requestPages);
 			TaskCompletionSource<bool> chosen = new TaskCompletionSource<bool> ();
@@ -140,7 +140,6 @@ namespace Consonance.ConsoleView
                 else
                 {
                     chosen.SetResult(true);
-                    MainClass.consolePager.Pop();
                 }
 			};
             Action doPrev = delegate {
@@ -155,7 +154,7 @@ namespace Consonance.ConsoleView
             pcp.last = doPrev;
 			MainClass.consolePager.Push (pcp);
 			doNext ();
-            return chosen.Task;
+            return new InputResponse<bool>(pcp, chosen.Task);
 		}
 
         public IValueRequestFactory requestFactory { get { return crf; } }
@@ -219,12 +218,12 @@ namespace Consonance.ConsoleView
 						ons.Add(int.Parse(pv[0]));
 					}
 					mask |= uint.Parse(input[i]);
-					return new RecurrsOnPatternValue((LibRTP.RecurrSpan)mask, ons.ToArray());
+					return new RecurrsOnPatternValue((Protocol.RecurrSpan)mask, ons.ToArray());
 				},
 				patval => {
 					var masks = new List<uint>();
-					foreach(var v in ((LibRTP.RecurrSpan)patval.PatternType).SplitFlags())
-						masks.Add((uint)v);
+					foreach(var v in ((uint)patval.PatternType).SplitAsFlags())
+						masks.Add(v);
 					
 					String exlp = "";
 					int i=0;

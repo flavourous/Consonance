@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Xamarin.Forms;
 using System.Threading.Tasks;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {

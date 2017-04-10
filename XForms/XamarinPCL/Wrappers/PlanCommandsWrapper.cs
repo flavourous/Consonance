@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {

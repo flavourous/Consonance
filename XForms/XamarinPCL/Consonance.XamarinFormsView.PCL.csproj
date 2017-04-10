@@ -133,6 +133,9 @@
     <Compile Include="XLib\IvalEntry.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="NCalc">
+      <HintPath>..\..\NCalc.dll</HintPath>
+    </Reference>
     <Reference Include="SQLite.Net">
       <HintPath>..\..\..\SQLite.Net-PCL\src\SQLite.Net\bin\Release\SQLite.Net.dll</HintPath>
     </Reference>
@@ -286,9 +289,17 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Consonance.Protocol\Consonance.Protocol.csproj">
+      <Project>{2dce92fb-dc6d-4684-9961-611d7c709c9b}</Project>
+      <Name>Consonance.Protocol</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="..\..\Presenter\Consonance.projitems" Label="Shared" />
   <Import Project="..\..\..\LibRTP\LibRTP\LibRTP.projitems" Label="Shared" />
-  <Import Project="..\..\..\LibSharpHelp\LibSharpHelp.projitems" Label="Shared" />
+  <Import Project="..\..\..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems" Label="Shared" />
+  <Import Project="..\..\..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems" Label="Shared" />
+  <Import Project="..\..\..\LibSharpHelp\LibSharpHelp.Xamarin\LibSharpHelp.Xamarin.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <Import Project="..\..\packages\Xamarin.Forms.2.1.0.6529\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets" Condition="Exists('..\..\packages\Xamarin.Forms.2.1.0.6529\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -144,7 +144,7 @@ namespace Consonance
                 g = get;
                 s = set;
             }
-            public MethodInfo GetMethod { get { return g.Method; } }
+            public MethodInfo GetMethod { get { return g.GetMethodInfo(); } }
             public Type DeclaringType { get; set; }
             public string Name { get; set; }
             public Type Type { get; set; }
@@ -275,7 +275,7 @@ namespace Consonance
             var tt = typeof(T);
             int tid = 0;
             if (router != null && router.GetTableIdentifier<T>(out tid)) return tid;
-            var tat = tt.GetCustomAttribute<TableIdentifierAttribute>(true) as TableIdentifierAttribute;
+            var tat = tt.GetTypeInfo().GetCustomAttributes<TableIdentifierAttribute>(true) as TableIdentifierAttribute;
             if (tat == null) throw new ArgumentException("TableIdentifier Attribute missing on " + tt.Name);
             return tat.id;
         }

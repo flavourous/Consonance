@@ -3,6 +3,7 @@ using System.Globalization;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
+
 namespace Consonance.XamarinFormsView.PCL
 {
 	public static class ExMethods

@@ -5,7 +5,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
              x:Class="Consonance.XamarinFormsView.PCL.ChoosePlanView">
 	<Grid>
-		<ListView x:Name="lv" IsGroupingEnabled="true" HasUnevenRows="true"  ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey}">
+		<ListView x:Name="lv" IsGroupingEnabled="true" HasUnevenRows="true"  ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey, Mode=TwoWay}">
 			<ListView.GroupHeaderTemplate>
 				<DataTemplate>
 					<ViewCell>

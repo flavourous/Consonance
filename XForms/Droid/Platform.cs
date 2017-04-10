@@ -26,6 +26,16 @@ namespace Consonance.XamarinFormsView
         {
             return File.ReadAllBytes(file);
         }
+        public bool CreateDirectory(String ifdoesntexist)
+        {
+            var di = new DirectoryInfo(ifdoesntexist);
+            if (!di.Exists)
+            {
+                di.Create();
+                return true;
+            }
+            else return false;
+        }
     }
     
     class Platform : IPlatform, ITasks

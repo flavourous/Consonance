@@ -8,6 +8,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Consonance.Protocol;
 using Xamarin.Forms;
 using XLib;
 

@@ -5,6 +5,7 @@ using LibSharpHelp;
 using System.ComponentModel;
 using LibRTP;
 using System.Globalization;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -49,7 +50,7 @@ namespace Consonance.XamarinFormsView.PCL
 			// Sorry, we've got nothing to do
 			if (reference != null)
 			switch ((String)parameter) {
-				case "type": reference.PatternType = (LibRTP.RecurrSpan)(1 << (int)value); break;
+				case "type": reference.PatternType = (Protocol.RecurrSpan)(1 << (int)value); break;
 				case "freq": 
 					int v;
 					if (int.TryParse(value as String, out v))

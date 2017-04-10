@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.ComponentModel;
 using LibSharpHelp;
 using Consonance.Invention;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -36,7 +37,7 @@ namespace Consonance.XamarinFormsView.PCL
 		public TrackerInstanceVM currentTrackerInstance 
 		{ 
 			get { return main.viewmodel.SelectedPlanItem; } 
-			set { App.platform.UIThread (() => main.viewmodel.SelectedPlanItem = value); }
+			set { App.UIThread (() => main.viewmodel.SelectedPlanItem = value); }
 		}
 		
         // passons
@@ -51,8 +52,8 @@ namespace Consonance.XamarinFormsView.PCL
 
         void SetIVM<T>(IVMList<T> list, Action<IVMList<T>> setter)
         {
-            list.Dispatcher = a => App.platform.UIThread(a);
-            App.platform.UIThread(() => setter(list));
+            list.Dispatcher = a => App.UIThread(a);
+            App.UIThread(() => setter(list));
         }
 
 		// plan commands
@@ -75,7 +76,7 @@ namespace Consonance.XamarinFormsView.PCL
         public event PropertyChangedEventHandler PropertyChanged = delegate { };
 		public void OnPropertyChanged(String property)
 		{
-            App.platform.UIThread(() => PropertyChanged(this, new PropertyChangedEventArgs(property)));
+            App.UIThread(() => PropertyChanged(this, new PropertyChangedEventArgs(property)));
 		}
         #endregion
 

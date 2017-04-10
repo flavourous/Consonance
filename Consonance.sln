@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibRTP", "..\LibRTP\LibRTP\LibRTP.shproj", "{1C3091EB-5350-48F8-AA8A-51E7D4656DA0}"
-EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibSharpHelp", "..\LibSharpHelp\LibSharpHelp.shproj", "{7E0E5AEB-4591-4161-B39E-B50569C802F1}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consonance.XamarinFormsView.UWP", "XForms\UWP\Consonance.XamarinFormsView.UWP.csproj", "{E616A8FB-5224-4D21-A716-308587AD68E7}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Consonance", "Presenter\Consonance.shproj", "{2459C065-28A0-451F-8537-2AE6A1AF57B3}"
@@ -21,20 +17,34 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consonance.Protocol", "Cons
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consonance.Test", "Consonance.Test\Consonance.Test.csproj", "{A5449325-6464-48A5-80AA-8E0F7F4D778D}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibSharpHelp.General", "..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.shproj", "{7E0E5AEB-4591-4161-B39E-B50569C802F1}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibSharpHelp.SqliteNET", "..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.shproj", "{2F743855-2F8C-40C8-90F8-8FE5AC0E7886}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibSharpHelp.Xamarin", "..\LibSharpHelp\LibSharpHelp.Xamarin\LibSharpHelp.Xamarin.shproj", "{8D05BA4B-B6DD-43A9-B8B3-8ED1A47A1CE2}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LibRTP", "..\LibRTP\LibRTP\LibRTP.shproj", "{1C3091EB-5350-48F8-AA8A-51E7D4656DA0}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\LibRTP\LibRTP\LibRTP.projitems*{1c3091eb-5350-48f8-aa8a-51e7d4656da0}*SharedItemsImports = 13
 		Presenter\Consonance.projitems*{2459c065-28a0-451f-8537-2ae6a1af57b3}*SharedItemsImports = 13
+		..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems*{2f743855-2f8c-40c8-90f8-8fe5ac0e7886}*SharedItemsImports = 13
 		Presenter\Consonance.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
 		..\LibRTP\LibRTP\LibRTP.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
-		..\LibSharpHelp\LibSharpHelp.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
-		..\LibSharpHelp\LibSharpHelp.projitems*{7e0e5aeb-4591-4161-b39e-b50569c802f1}*SharedItemsImports = 13
+		..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems*{7e0e5aeb-4591-4161-b39e-b50569c802f1}*SharedItemsImports = 13
+		..\LibSharpHelp\LibSharpHelp.Xamarin\LibSharpHelp.Xamarin.projitems*{8d05ba4b-b6dd-43a9-b8b3-8ed1a47a1ce2}*SharedItemsImports = 13
 		Presenter\Consonance.projitems*{a5449325-6464-48a5-80aa-8e0f7f4d778d}*SharedItemsImports = 4
 		..\LibRTP\LibRTP\LibRTP.projitems*{a5449325-6464-48a5-80aa-8e0f7f4d778d}*SharedItemsImports = 4
-		..\LibSharpHelp\LibSharpHelp.projitems*{a5449325-6464-48a5-80aa-8e0f7f4d778d}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems*{a5449325-6464-48a5-80aa-8e0f7f4d778d}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems*{a5449325-6464-48a5-80aa-8e0f7f4d778d}*SharedItemsImports = 4
 		Presenter\Consonance.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
 		..\LibRTP\LibRTP\LibRTP.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
-		..\LibSharpHelp\LibSharpHelp.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
+		..\LibSharpHelp\LibSharpHelp.Xamarin\LibSharpHelp.Xamarin.projitems*{ceb86e43-b9ea-4cb8-b4de-30454eb37776}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Ad-Hoc|Any CPU = Ad-Hoc|Any CPU

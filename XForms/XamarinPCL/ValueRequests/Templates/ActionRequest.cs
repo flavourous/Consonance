@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Consonance.Protocol;
+using System;
 using System.Collections.Generic;
 using Xamarin.Forms;
 

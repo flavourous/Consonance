@@ -5,10 +5,11 @@ using System.Text;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Xamarin.Forms;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {
-	public class GroupedTDVM : ObservableCollection<TrackerDetailsVM>
+	public class GroupedTDVM : ObservableCollection<ItemDescriptionVM>
 	{
 		public String category { get; set; }
 	}
@@ -16,10 +17,10 @@ namespace Consonance.XamarinFormsView.PCL
 	{
 		public ObservableCollection<GroupedTDVM> collection = new ObservableCollection<GroupedTDVM>();
 		public Dictionary<String, GroupedTDVM> reffers = new Dictionary<string, GroupedTDVM>();
-		public Dictionary<TrackerDetailsVM, int> reffers2 = new Dictionary<TrackerDetailsVM, int>();
+		public Dictionary<ItemDescriptionVM, int> reffers2 = new Dictionary<ItemDescriptionVM, int>();
         int iidx = 0;
 		public void Clear() { iidx = 0; collection.Clear (); reffers.Clear (); reffers2.Clear (); }
-		public void Add(TrackerDetailsVM vm)
+		public void Add(ItemDescriptionVM vm)
 		{
 			reffers2 [vm] = iidx++;
 			if (reffers.ContainsKey (vm.category))
@@ -42,14 +43,12 @@ namespace Consonance.XamarinFormsView.PCL
 
 		public GroupedTDVMCollection mPlanChoices = new GroupedTDVMCollection();
 		public ObservableCollection<GroupedTDVM> PlanChoices { get { return mPlanChoices.collection; } }
-		TrackerDetailsVM _choicey;
-		public TrackerDetailsVM choicey {
+		ItemDescriptionVM _choicey;
+		public ItemDescriptionVM choicey {
 			get{ return _choicey; }
 			set {
-				if(_choicey != null) _choicey.selected = false;
 				_choicey = value;
-				if(_choicey != null) _choicey.selected = true;
-				else lv.SelectedItem = null;
+				if(_choicey == null) lv.SelectedItem = null;
 			}
 		}
 		public event Action<int> chosen = delegate { };

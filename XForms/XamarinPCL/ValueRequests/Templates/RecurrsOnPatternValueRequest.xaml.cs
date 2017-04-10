@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Xamarin.Forms;
-using LibRTP;
 using System.Text;
+using Consonance.Protocol;
 using LibSharpHelp;
 using System.Diagnostics;
 
@@ -60,16 +60,16 @@ namespace Consonance.XamarinFormsView.PCL
 		}
         String GetPrefix(RecurrSpan fl)
         {
-            var f = new List<RecurrSpan>(reference.PatternType.SplitFlags());
+            var f = new List<RecurrSpan>(((uint)reference.PatternType).SplitFlags<RecurrSpan>());
             int dx = f.IndexOf(fl);
             return dx == -1 ? "" : dx == 0 ? "The" : "of the";
         }
         String GetSuffix(RecurrSpan fl)
         {
-            var f = new List<RecurrSpan>(reference.PatternType.SplitFlags());
+            var f = new List<RecurrSpan>(((uint)reference.PatternType).SplitFlags<RecurrSpan>());
             int dx = f.IndexOf(fl);
             var nst = dx == -1 || dx == f.Count - 1 ? "" : reference.PatternValues[dx].Suffix();
-            return nst + " " + fl.AsString();
+            return nst + " " + LibRTP.PublicHelpers.AsString((LibRTP.RecurrSpan)fl);
         }
         Color GetOnColor(RecurrSpan f)
         {
@@ -77,14 +77,14 @@ namespace Consonance.XamarinFormsView.PCL
         }
 		bool GetOnValue (RecurrSpan flag, bool isflag)
 		{
-			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
+			var f = new List<RecurrSpan> (((uint)reference.PatternType).SplitFlags<RecurrSpan> ());
 			var fi = f.IndexOf (flag);
 			return fi != -1 && (isflag || fi < f.Count - 1);
 		}
 		String GetValue (RecurrSpan flag)
 		{
 			String ret = " ";
-			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
+			var f = new List<RecurrSpan> (((uint)reference.PatternType).SplitFlags<RecurrSpan> ());
 			var fi = f.IndexOf (flag);
 			if(fi != -1 && fi < f.Count - 1)
 				ret = reference.PatternValues [fi].ToString();
@@ -93,14 +93,14 @@ namespace Consonance.XamarinFormsView.PCL
 		void SetValue(RecurrSpan flag, Object value)
 		{
 			if (value.ToString() == " ") value = "0";
-			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
+			var f = new List<RecurrSpan> (((uint)reference.PatternType).SplitFlags<RecurrSpan> ());
 			var fi = f.IndexOf (flag);
 			if (fi != -1 && fi < f.Count - 1)
 				int.TryParse ((String)value, out reference.PatternValues [f.IndexOf (flag)]);
 		}
 		void SetValue(RecurrSpan flag, bool value)
 		{
-			var f = new List<RecurrSpan> (reference.PatternType.SplitFlags ());
+			var f = new List<RecurrSpan> (((uint)reference.PatternType).SplitFlags<RecurrSpan> ());
 			var fi = f.IndexOf (flag);
 			if ((fi != -1) ^ value) 
 			{
@@ -114,7 +114,7 @@ namespace Consonance.XamarinFormsView.PCL
 				else reference.PatternType ^= flag;
 
                 // process values
-                var newflags = new List<RecurrSpan>(reference.PatternType.SplitFlags());
+                var newflags = new List<RecurrSpan>(((uint)reference.PatternType).SplitFlags<RecurrSpan>());
                 var newvals = new List<int>();
                 for (int i = 0; i < newflags.Count - 1; i++)
                 {

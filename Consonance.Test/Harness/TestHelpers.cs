@@ -54,6 +54,8 @@ namespace Consonance.Test
         public TestInputResponse(Action close = null) : this(default(T), close) { }
         public Task<T> Result { get; set; }
         Task IInputResponse.Result { get { return Result; } }
+
+        public Task Opened { get; } = Task.FromResult(0);
         public Task Close() => close();
     }
     public class ExpectBase

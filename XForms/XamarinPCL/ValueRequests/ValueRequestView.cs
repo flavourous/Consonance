@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Reflection;
 using Xamarin.Forms;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {

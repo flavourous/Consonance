@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Diagnostics;
 using System.Collections.Specialized;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -42,7 +43,7 @@ namespace Consonance.XamarinFormsView.PCL
         }
         void SetItems(IEnumerable newv)
         {
-            App.platform.UIThread(() =>
+            App.UIThread(() =>
             {
                 bool attempting = true;
                 List<Object> vms = new List<object>();

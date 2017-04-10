@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Linq.Expressions;
 using System.Collections.Generic;
+using Consonance.Protocol;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using Consonance;
 using Xamarin.Forms;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using LibSharpHelp;
 using System.Collections;
@@ -21,25 +24,25 @@ namespace Consonance.XamarinFormsView.PCL
             this.requestFactory = new ValueRequestFactory(srv);
         }
 
-        public ViewTask<bool> GetValues(IEnumerable<GetValuesPage> requestPages)
+        public IInputResponse<bool> GetValues(IEnumerable<GetValuesPage> requestPages)
         {
             return GetValuesImpl(requestPages, new ValueRequestView());
         }
 
-        ViewTask<bool> GetValuesImpl(IEnumerable<GetValuesPage> requestPages, ValueRequestView vrv)
+        IInputResponse<bool> GetValuesImpl(IEnumerable<GetValuesPage> requestPages, ValueRequestView vrv)
         { 
 			TaskCompletionSource<bool> tcs_all = new TaskCompletionSource<bool> ();
 			TaskCompletionSource<EventArgs> tcs_push = new TaskCompletionSource<EventArgs> ();
-			App.platform.UIThread(() => {
+			App.UIThread(() => {
                 // We're returning tasks to indicate bits in here completing, so this begininvoke is alright
                 // ...i always seem to have trouble when awaiting PushAsync :/ so im making this method not wait on any ui ops
                 // even though it should yield appropriately
 
-				// Handler for when the requests we putting in change...
-				ListChangedEventHandler leh = (s,e) =>
+                // Handler for when the requests we putting in change...
+                NotifyCollectionChangedEventHandler leh = (s,e) =>
                     // the object can be modified from other threads of course.
                     // im not putting an ordering lock...should be ok.
-                    App.platform.UIThread(() => Requests_ListChanged(vrv, s as BindingList<object>, e)).Wait();
+                    App.UIThread(() => Requests_ListChanged(vrv, s as IList<object>, e)).Wait();
 
 				// this happens when next or ok or cancel is pressed	
 				List<GetValuesPage> pages = new List<GetValuesPage>(requestPages);
@@ -48,26 +51,26 @@ namespace Consonance.XamarinFormsView.PCL
                 GetValuesPage lastPushed = null;
                 PageCompletedHandler = suc =>
                 {
+                    if (npage >= 0)
+                    {
+                        pages[npage].valuerequests_CollectionChanged -= leh;
+                        vrv.vlist.ClearRows();
+                    }
                     // Either way we need to unhook the previous page
                     if (!suc || npage + 1 >= pages.Count)
                     {
                         // We're done
                         vrv.completed -= PageCompletedHandler;
-                        if (npage >= 0)
-                        {
-                            pages[npage].valuerequests.Clear();
-                            pages[npage].valuerequestsChanegd = delegate { };
-                        }
                         tcs_all.SetResult(suc);
                     }
                     else
                     {
-                        // set up the next page.
                         npage++;
+                        // set up the next page.
                         vrv.ignorevalidity = true; // dont redbox stuff thats wrong. yet.
                         vrv.Title = pages[npage].title;
-                        (lastPushed = pages[npage]).valuerequestsChanegd = leh; 
-                        leh(pages[npage].valuerequests, new ListChangedEventArgs(ListChangedType.Reset, -1));
+                        (lastPushed = pages[npage]).valuerequests_CollectionChanged += leh;
+                        leh(pages[npage].valuerequests, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset, new List<Object>()));
 
                         // already UI thread for pagecomplete handler
                         var plr = pages[npage].valuerequests.FirstOrDefault(r=>r is IValueRequest<TabularDataRequestValue>);
@@ -84,27 +87,24 @@ namespace Consonance.XamarinFormsView.PCL
 			return new ViewTask<bool> (() => srv.nav.RemoveOrPopAsync (vrv),tcs_push.Task, tcs_all.Task);
         }
 
-		void Requests_ListChanged (ValueRequestView vrv, BindingList<Object> requests, ListChangedEventArgs e)
+		void Requests_ListChanged (ValueRequestView vrv, IList<Object> requests, NotifyCollectionChangedEventArgs e)
 		{
-			switch (e.ListChangedType) {
-			case ListChangedType.Reset:
-				vrv.vlist.ClearRows ();
-				foreach (var ob in requests)
-					vrv.vlist.AddRow ((ob as Func<ValueRequestTemplate>)());
-				break;
-			case ListChangedType.ItemAdded:
-				vrv.vlist.InsertRow (e.NewIndex, (requests [e.NewIndex] as Func<ValueRequestTemplate>)());
-				break;
-			case ListChangedType.ItemChanged:
-				// do not #care
-				break;
-			case ListChangedType.ItemDeleted:
-				vrv.vlist.RemoveRow (e.OldIndex);
-                break;
-			case ListChangedType.ItemMoved:
-				// do not #care
-				break;
-			}
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Reset:
+                    vrv.vlist.ClearRows();
+                    foreach (var ob in requests)
+                        vrv.vlist.AddRow((ob as Func<ValueRequestTemplate>)());
+                    break;
+                case NotifyCollectionChangedAction.Add:
+                    for (int i = 0; i < e.NewItems.Count; i++)
+                        vrv.vlist.InsertRow(e.NewStartingIndex + i, (e.NewItems[i] as Func<ValueRequestTemplate>)());
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    for (int i = e.OldItems.Count; i >=0; i--)
+                        vrv.vlist.RemoveRow(e.OldStartingIndex+i); 
+                    break;
+            }
 		}
 
         public IValueRequestFactory requestFactory { get; private set; }
@@ -197,7 +197,7 @@ namespace Consonance.XamarinFormsView.PCL
 		public event PropertyChangedEventHandler PropertyChanged = delegate { };
 		void OnPropertyChanged(String n) 
 		{
-            App.platform.UIThread(() =>
+            App.UIThread(() =>
             {
                 PropertyChanged(this, new PropertyChangedEventArgs(n));
                 if (n == "value")

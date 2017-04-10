@@ -9,7 +9,6 @@ namespace Consonance.XamarinFormsView.PCL
 		public IntRequest ()
 		{
 			InitializeComponent ();
-			Entry d;
 		}
 	}
 

@@ -55,9 +55,10 @@
     <Compile Include="CPlanCommands.cs" />
     <Compile Include="IConsolePager.cs" />
   </ItemGroup>
-  <Import Project="..\..\LibRTP\LibRTP\LibRTP.projitems" Label="Shared" Condition="Exists('..\..\LibRTP\LibRTP\LibRTP.projitems')" />
-  <Import Project="..\..\LibSharpHelp\LibSharpHelp.projitems" Label="Shared" Condition="Exists('..\..\LibSharpHelp\LibSharpHelp.projitems')" />
   <Import Project="..\Presenter\Consonance.projitems" Label="Shared" />
+  <Import Project="..\..\LibRTP\LibRTP\LibRTP.projitems" Label="Shared" />
+  <Import Project="..\..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems" Label="Shared" />
+  <Import Project="..\..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems" Label="Shared" />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="packages.config" />

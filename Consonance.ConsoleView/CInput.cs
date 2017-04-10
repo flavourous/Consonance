@@ -19,6 +19,8 @@ namespace Consonance.ConsoleView
             this.page = page;
             this.Result = complete;
         }
+
+        public Task Opened { get { return Task.FromResult(0); } }
         public Task Result { get; set; }
         public Task Close()
         {

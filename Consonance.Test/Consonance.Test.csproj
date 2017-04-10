@@ -17,7 +17,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;HELP_SQLITENET</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -25,7 +25,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;HELP_SQLITENET</DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -85,8 +85,9 @@
     </None>
   </ItemGroup>
   <Import Project="..\Presenter\Consonance.projitems" Label="Shared" />
+  <Import Project="..\..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems" Label="Shared" />
+  <Import Project="..\..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems" Label="Shared" />
   <Import Project="..\..\LibRTP\LibRTP\LibRTP.projitems" Label="Shared" />
-  <Import Project="..\..\LibSharpHelp\LibSharpHelp.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

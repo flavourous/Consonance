@@ -632,17 +632,6 @@ namespace Consonance
         event Action<T> select;
     }
 
-    public interface IInputResponse
-    {
-        Task Result { get; }
-        Task Close();
-    }
-    public interface IInputResponse<T> 
-    {
-        Task<T> Result { get; }
-        Task Close();
-    }
-
     public interface IUserInput
     {
         // User Input

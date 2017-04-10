@@ -7,10 +7,36 @@ using Xamarin.Forms;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.ComponentModel;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {
-	public static class Extensions
+    public class ViewTask : IInputResponse
+    {
+        readonly Func<Task> FClose;
+        public ViewTask(Task Completed) : this(() => Task.FromResult(0), Task.FromResult(0), Completed) { }
+        public ViewTask(Func<Task> Close, Task Opened, Task Completed)
+        {
+            this.Opened = Opened;
+            this.Result = Completed;
+            this.FClose = Close;
+        }
+        public Task Opened { get; private set; }
+        public Task Result { get; private set; }
+        public Task Close() => FClose();
+    }
+    public class ViewTask<T> : ViewTask, IInputResponse<T>
+    {
+        readonly Task<T> TResult;
+        public ViewTask(Task<T> Completed) : this(() => Task.FromResult(0), Task.FromResult(0), Completed) { }
+        public ViewTask(Func<Task> Close, Task Opened, Task<T> Completed) : base(Close,Opened,Completed)
+        {
+            this.TResult = Completed;
+        }
+        Task<T> IInputResponse<T>.Result { get { return TResult; } }
+    }
+
+    public static class Extensions
 	{
         /// <summary>
         /// same spec as PopAsync
@@ -40,6 +66,38 @@ namespace Consonance.XamarinFormsView.PCL
     
         public class App : Application
     {
+        class MTI
+        {
+            public Task current { get; private set; }
+            readonly Action work;
+            public MTI(Action work)
+            {
+                this.work = work;
+            }
+            [DebuggerStepThrough]
+            public void Work()
+            {
+                TaskCompletionSource<int> ti = new TaskCompletionSource<int>();
+                current = ti.Task;
+                try
+                {
+                    work();
+                    ti.SetResult(0);
+                }
+                catch(Exception e)
+                {
+                    ti.SetException(e);
+                    throw;
+                }
+            }
+        }
+        public static Task UIThread(Action work)
+        {
+            var wc = new MTI(work);
+            Device.BeginInvokeOnMainThread(wc.Work);
+            return wc.current;
+        }
+        
 		public static IValueRequestBuilder bld;
 		readonly ViewWrapper viewWrapper;
 		readonly PlanCommandsWrapper planCommandWrapper;
@@ -130,13 +188,13 @@ namespace Consonance.XamarinFormsView.PCL
         public void AttachToCommander(InventionManageView mv) { mv.icm = ic; }
         public INavigation nav { get { return nroot.Navigation; } }
         public Page root { get { return nroot; } }
-        public ViewTask<InfoLineVM> U_InfoView(bool choose, bool manage, InfoManageType mt, InfoLineVM initially_selected)
+        public IInputResponse<InfoLineVM> U_InfoView(bool choose, bool manage, InfoManageType mt, InfoLineVM initially_selected)
         {
             return u.InfoView(choose, manage, mt,
                 mt == InfoManageType.In ? v.main.viewmodel.InInfos : v.main.viewmodel.OutInfos
                 , initially_selected);
         }
-        public ViewTask<EventArgs> Invent()
+        public IInputResponse<EventArgs> Invent()
         {
             return u.ManageInvention(v.main.viewmodel.InventedPlans);
         }

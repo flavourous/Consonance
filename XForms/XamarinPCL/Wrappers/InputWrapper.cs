@@ -6,19 +6,20 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.ObjectModel;
 using Consonance.Invention;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {
 	class UserInputWrapper : IUserInput
     {
 		public static Action<String> message = delegate { };
-        public ViewTask<InfoLineVM> InfoView(bool choose, bool manage, InfoManageType mt, IObservableCollection<InfoLineVM> toManage, InfoLineVM initiallySelected)
+        public IInputResponse<InfoLineVM> InfoView(bool choose, bool manage, InfoManageType mt, IList<InfoLineVM> toManage, InfoLineVM initiallySelected)
 		{
             TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs>();
             var tt = srv.Current;
             TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
             InfoManageView iman_c = null;
-            App.platform.UIThread (() => {
+            App.UIThread (() => {
                 iman_c = new InfoManageView(choose, manage);
                 srv.AttachToCommander(iman_c, mt);
 				iman_c.Title = mt == InfoManageType.In ? tt.dialect.InputInfoPlural : tt.dialect.OutputInfoPlural;
@@ -30,11 +31,11 @@ namespace Consonance.XamarinFormsView.PCL
             return new ViewTask<InfoLineVM>(() => srv.nav.RemoveOrPopAsync(iman_c), pushed.Task, tcs.Task); // return result, or initial if it gave null (wich is null if it really was and no change)
 		}
 
-        public ViewTask<EventArgs> ManageInvention(IObservableCollection<InventedTrackerVM> toManage)
+        public IInputResponse<EventArgs> ManageInvention(IList<InventedTrackerVM> toManage)
         {
             TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs>();
             InventionManageView iman_c = null;
-            App.platform.UIThread(() => {
+            App.UIThread(() => {
                 iman_c = new InventionManageView();
                 srv.AttachToCommander(iman_c);
                 iman_c.Items = toManage;
@@ -53,29 +54,28 @@ namespace Consonance.XamarinFormsView.PCL
         }
 
 		readonly InfoFindView fv;
-		public Task<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd)
+		public IInputResponse<InfoLineVM> Choose (IFindList<InfoLineVM> ifnd)
 		{
 			TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
-            App.platform.UIThread ( async () => {
+            App.UIThread ( async () => {
 				await srv.nav.PushAsync(fv);
 				tcs.SetResult (await fv.Choose (ifnd));
 			});
-			return tcs.Task;
+            return new ViewTask<InfoLineVM>(tcs.Task);
 		}
 
-		public async Task SelectString(string title, IReadOnlyList<string> strings, int initial, Promise<int> completed)
+		public IInputResponse<String> SelectString(string title, IReadOnlyList<string> strings, int initial)
         {
-			await Task.Yield ();
 			throw new NotImplementedException();
         }
 
 		Action<int> pv_callback = delegate { };
         readonly ChoosePlanView pv = new ChoosePlanView();
-		public ViewTask<int> ChoosePlan(string title, IReadOnlyList<TrackerDetailsVM> choose_from, int initial)
+		public IInputResponse<int> ChoosePlan(string title, IReadOnlyList<ItemDescriptionVM> choose_from, int initial)
 		{
 			TaskCompletionSource<EventArgs> tcs = new TaskCompletionSource<EventArgs> ();
 			TaskCompletionSource<int> res = new TaskCompletionSource<int> ();
-            App.platform.UIThread (async () => {
+            App.UIThread (async () => {
 				// make this async, which means it can await and continue nicely
 				pv_callback = cv => {
 					pv_callback = delegate { }; // overwrite it, no double call
@@ -91,20 +91,20 @@ namespace Consonance.XamarinFormsView.PCL
 			return new ViewTask<int> (() => srv.nav.RemoveOrPopAsync (pv),tcs.Task,res.Task);
 		}
 
-		public async Task WarnConfirm(string action, Promise confirmed)
+		public IInputResponse<bool> WarnConfirm(string action)
         {
 			TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool> ();
-            App.platform.UIThread(async () => tcs.SetResult(await srv.root.DisplayAlert ("Warning", action, "OK", "Cancel")));
-			if(await tcs.Task) await confirmed ();
+            App.UIThread(async () => tcs.SetResult(await srv.root.DisplayAlert ("Warning", action, "OK", "Cancel")));
+            return new ViewTask<bool>(tcs.Task);
         }
-		public async Task Message(string msg)
+		public IInputResponse Message(string msg)
 		{
 			TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool> ();
-			App.platform.UIThread (async () => {
+			App.UIThread (async () => {
 				await srv.root.DisplayAlert ("Message", msg, "OK");
 				tcs.SetResult (false);
 			});
-			await tcs.Task;
-		}
+            return new ViewTask(tcs.Task);
+        }
     }
 }

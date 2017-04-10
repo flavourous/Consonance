@@ -12,14 +12,14 @@ namespace Consonance
     {
         public static bool IsValid(this RecurrsOnPatternValue @this)
         {
-            var PTR = (LibRTP.RecurrSpan)@this.PatternType;
+            var PTR = (uint)@this.PatternType;
             int pc = 0;
-            foreach (var pt in (PTR.SplitFlags()))
+            foreach (var pt in (PTR.SplitAsFlags()))
                 pc++;
             bool s1 = @this.PatternValues.Length > 1 && pc == @this.PatternValues.Length;
             if (s1)
             {
-                try { new RecurrsOnPattern(@this.PatternValues, PTR, null, null); }
+                try { new RecurrsOnPattern(@this.PatternValues,(LibRTP.RecurrSpan)PTR, null, null); }
                 catch { s1 = false; }
             }
             return s1;

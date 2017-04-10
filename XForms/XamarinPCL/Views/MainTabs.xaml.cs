@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using Consonance.Invention;
+using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -25,14 +26,14 @@ namespace Consonance.XamarinFormsView.PCL
             private String mOutManageName = "Manage";
             public String OutManageName { get { return mOutManageName; } set { mOutManageName = value; OnPropertyChanged("OutManageName"); } }
 
-            private IObservableCollection<EntryLineVM> inItems;
-            private IObservableCollection<EntryLineVM> outItems;
-            private IObservableCollection<InfoLineVM> inInfos;
-            private IObservableCollection<InfoLineVM> outInfos;
-            private IObservableCollection<TrackerInstanceVM> planItems;
-            private IObservableCollection<TrackerTracksVM> inTrack;
-            private IObservableCollection<TrackerTracksVM> outTrack;
-            private IObservableCollection<InventedTrackerVM> inventedPlans;
+            private IList<EntryLineVM> inItems;
+            private IList<EntryLineVM> outItems;
+            private IList<InfoLineVM> inInfos;
+            private IList<InfoLineVM> outInfos;
+            private IList<TrackerInstanceVM> planItems;
+            private IList<TrackerTracksVM> inTrack;
+            private IList<TrackerTracksVM> outTrack;
+            private IList<InventedTrackerVM> inventedPlans;
 
             // selected item
             private TrackerInstanceVM mSelectedPlanItem;
@@ -54,14 +55,14 @@ namespace Consonance.XamarinFormsView.PCL
                 }
             }
 
-            public IObservableCollection<EntryLineVM> InItems { get { return inItems; } set { inItems = value; OnPropertyChanged("InItems"); } }
-            public IObservableCollection<EntryLineVM> OutItems { get { return outItems; } set { outItems = value; OnPropertyChanged("OutItems"); } }
-            public IObservableCollection<InfoLineVM> InInfos { get { return inInfos; } set { inInfos = value; OnPropertyChanged("InInfos"); } }
-            public IObservableCollection<InfoLineVM> OutInfos { get { return outInfos; } set { outInfos = value; OnPropertyChanged("OutInfos"); } }
-            public IObservableCollection<TrackerInstanceVM> PlanItems { get { return planItems; } set { planItems = value; OnPropertyChanged("PlanItems"); } }
-            public IObservableCollection<TrackerTracksVM> InTrack { get { return inTrack; } set { inTrack = value; OnPropertyChanged("InTrack"); } }
-            public IObservableCollection<TrackerTracksVM> OutTrack { get { return outTrack; } set { outTrack = value; OnPropertyChanged("OutTrack"); } }
-            public IObservableCollection<InventedTrackerVM> InventedPlans { get { return inventedPlans; } set { inventedPlans = value; OnPropertyChanged("InventedPlans"); } }
+            public IList<EntryLineVM> InItems { get { return inItems; } set { inItems = value; OnPropertyChanged("InItems"); } }
+            public IList<EntryLineVM> OutItems { get { return outItems; } set { outItems = value; OnPropertyChanged("OutItems"); } }
+            public IList<InfoLineVM> InInfos { get { return inInfos; } set { inInfos = value; OnPropertyChanged("InInfos"); } }
+            public IList<InfoLineVM> OutInfos { get { return outInfos; } set { outInfos = value; OnPropertyChanged("OutInfos"); } }
+            public IList<TrackerInstanceVM> PlanItems { get { return planItems; } set { planItems = value; OnPropertyChanged("PlanItems"); } }
+            public IList<TrackerTracksVM> InTrack { get { return inTrack; } set { inTrack = value; OnPropertyChanged("InTrack"); } }
+            public IList<TrackerTracksVM> OutTrack { get { return outTrack; } set { outTrack = value; OnPropertyChanged("OutTrack"); } }
+            public IList<InventedTrackerVM> InventedPlans { get { return inventedPlans; } set { inventedPlans = value; OnPropertyChanged("InventedPlans"); } }
 
             public Action<TrackerInstanceVM> OnPlanSelected = delegate { };
             public event PropertyChangedEventHandler PropertyChanged = delegate { };

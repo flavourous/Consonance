@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Xamarin.Forms;
 using System.Reflection;
+using Consonance.Protocol;
 using System.Threading.Tasks;
 
 namespace Consonance.XamarinFormsView.PCL
@@ -10,7 +11,7 @@ namespace Consonance.XamarinFormsView.PCL
 	{
         public String manage_title { get; set; }
         public InfoManageType mt { get; set; }
-        public Func<InfoLineVM,ViewTask<InfoLineVM>> requestit { get; set; }
+        public Func<InfoLineVM,IInputResponse<InfoLineVM>> requestit { get; set; }
         public InfoSelectRequest()
         {
             InitializeComponent();
@@ -23,10 +24,10 @@ namespace Consonance.XamarinFormsView.PCL
 
 			var vm = BindingContext as IValueRequest<InfoLineVM>;
             var vr = requestit(vm.value);
-            await vr.Pushed;
-            var ivm = await vr.Completed;
-            vm.value = ivm == Nothingable.noth ? null : ivm;
-            await vr.Pop();
+            await vr.Opened;
+            var ivm = await vr.Result;
+            vm.value = ivm == InfoManageView.noth ? null : ivm;
+            await vr.Close();
             block_reentrancy = false;
         }
 	}

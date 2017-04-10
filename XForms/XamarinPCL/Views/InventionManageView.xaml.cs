@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 using Xamarin.Forms;
 
+using Consonance.Protocol;
+using System.Collections.ObjectModel;
+
 namespace Consonance.XamarinFormsView
 {
     public partial class InventionManageView : ContentPage
@@ -17,8 +20,8 @@ namespace Consonance.XamarinFormsView
             InitializeComponent();
         }
 
-        IObservableCollection<InventedTrackerVM> _Items;
-        public IObservableCollection<InventedTrackerVM> Items
+        IList<InventedTrackerVM> _Items;
+        public IList<InventedTrackerVM> Items
         {
             get { return _Items; }
             set

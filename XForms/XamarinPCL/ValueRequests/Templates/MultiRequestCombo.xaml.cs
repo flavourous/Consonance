@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Xamarin.Forms;
 using System.ComponentModel;
+using Consonance.Protocol;
 using LibSharpHelp;
 
 namespace Consonance.XamarinFormsView.PCL

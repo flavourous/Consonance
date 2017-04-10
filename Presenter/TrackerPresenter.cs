@@ -221,7 +221,7 @@ namespace Consonance
 		{
             TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
             var pages = new List<GetValuesPage>(modelHandler.model.CreationPages(instanceBuilder.requestFactory));
-            instanceBuilder.GetValues(pages).ContinueWith(t =>
+            instanceBuilder.GetValues(pages).Result.ContinueWith(t =>
             {
                 if (t.Result) modelHandler.StartNewTracker();
                 tev.SetResult(new EventArgs());
@@ -232,7 +232,7 @@ namespace Consonance
 		{
             TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
 			var pages = new List<GetValuesPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory));
-            instanceBuilder.GetValues(pages).ContinueWith(t=>
+            instanceBuilder.GetValues(pages).Result.ContinueWith(t=>
             {
 				if (t.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
                 tev.SetResult(new EventArgs());
@@ -324,7 +324,7 @@ namespace Consonance
 
             TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
             var pages = new List<GetValuesPage>(modelHandler.model.CreationPages(instanceBuilder.requestFactory));
-            getValues.GetValues(new[] { requests }).ContinueWith(t =>
+            getValues.GetValues(new[] { requests }).Result.ContinueWith(t =>
             {
 				if (t.Result) editit ();
 				infoRequest.ValueChanged -= checkFields;
@@ -380,7 +380,7 @@ namespace Consonance
 			if (editing) creator.FillRequestData (toEdit, builder.requestFactory);
 
             TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
-            builder.GetValues (new[]{ gvp }).ContinueWith(result => {
+            builder.GetValues (new[]{ gvp }).Result.ContinueWith(result => {
 				if (result.Result) {
 					if (editing) handler.Edit (toEdit);
 					else handler.Add ();

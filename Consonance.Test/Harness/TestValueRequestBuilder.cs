@@ -115,10 +115,10 @@ namespace Consonance.Test
             return bth;
         }
         public readonly Queue<GetValuesExpected> GetValuesExpect = new Queue<GetValuesExpected>();
-        public Task<bool> GetValues(IEnumerable<GetValuesPage> requestPages)
+        public IInputResponse<bool> GetValues(IEnumerable<GetValuesPage> requestPages)
         {
             // must be true
-            return GetValuesExpect.DTest(exp =>
+            var tasky = GetValuesExpect.DTest(exp =>
             {
                 bool c;
                 using (var rps = requestPages.GetEnumerator())
@@ -170,6 +170,7 @@ namespace Consonance.Test
                 }
                 return Task.FromResult(c);
             });
+            return new TestInputResponse<bool>(tasky.Result);
         }
     }
     interface TestRequest

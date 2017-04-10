@@ -276,7 +276,6 @@ namespace Consonance.Invention
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
             {
                 // get quantifiers
-                int i = 0;
                 List<SimpleTrackyInfoQuantifierDescriptor>
                     inq = new List<SimpleTrackyInfoQuantifierDescriptor>(),
                     outq = new List<SimpleTrackyInfoQuantifierDescriptor>();
@@ -568,9 +567,9 @@ namespace Consonance.Invention
             var page5 = SimpleTrackyInventionRequestPages.EntryInfoEquations(build.requestFactory);
 
             var vt = build.GetValues(new[] { page1.page, page2.page, page3.page, page4.page, page5.page });
-            return vt.ContinueWith(t =>
+            return vt.Result.ContinueWith(t =>
             {
-                if (vt.Result)
+                if (t.Result)
                 {
                     ViewModelsToChange(
                         this,
@@ -604,7 +603,7 @@ namespace Consonance.Invention
             var page1 = SimpleTrackyInventionRequestPages.TrackerDescriptionPage(build.requestFactory);
             var page2 = SimpleTrackyInventionRequestPages.EntryDescriptionPage(build.requestFactory);
             var vt = build.GetValues(new[] { page1.page, page2.page });
-            return vt.ContinueWith(rt => {
+            return vt.Result.ContinueWith(rt => {
                 if (rt.Result)
                 {
                     ViewModelsToChange(
