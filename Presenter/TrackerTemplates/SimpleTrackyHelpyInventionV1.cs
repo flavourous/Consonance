@@ -558,7 +558,7 @@ namespace Consonance.Invention
                 ).Result.ContinueWith(t => { if (t.Result) PlatformGlobal.Run(Removal); }); 
             else Removal(); // otherwise, just go for it.
         }
-        public Task StartNewTracker() // instances() handles registration
+        public IInputResponse StartNewTracker() // instances() handles registration
         {
             var page1 = SimpleTrackyInventionRequestPages.TrackerDescriptionPage(build.requestFactory);
             var page2 = SimpleTrackyInventionRequestPages.EntryDescriptionPage(build.requestFactory);
@@ -567,7 +567,7 @@ namespace Consonance.Invention
             var page5 = SimpleTrackyInventionRequestPages.EntryInfoEquations(build.requestFactory);
 
             var vt = build.GetValues(new[] { page1.page, page2.page, page3.page, page4.page, page5.page });
-            return vt.Result.ContinueWith(t =>
+            return vt.ContinueWith(t =>
             {
                 if (t.Result)
                 {
@@ -596,14 +596,14 @@ namespace Consonance.Invention
                 }
             });
         }
-        public Task EditTracker(InventedTrackerVM dvm)
+        public IInputResponse EditTracker(InventedTrackerVM dvm)
         {
             var mod = dvm.originator as SimpleTrackyHelpyInventionV1Model;
             // these are safe to change
             var page1 = SimpleTrackyInventionRequestPages.TrackerDescriptionPage(build.requestFactory);
             var page2 = SimpleTrackyInventionRequestPages.EntryDescriptionPage(build.requestFactory);
             var vt = build.GetValues(new[] { page1.page, page2.page });
-            return vt.Result.ContinueWith(rt => {
+            return vt.ContinueWith(rt => {
                 if (rt.Result)
                 {
                     ViewModelsToChange(

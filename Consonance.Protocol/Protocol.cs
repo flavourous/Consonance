@@ -12,17 +12,54 @@ using System.Threading.Tasks;
 
 namespace Consonance.Protocol
 {
+    public static class IInputResponseExtensions
+    {
+        class irp : IInputResponse
+        {
+            public irp(IInputResponse other)
+            {
+                Opened = other.Opened;
+                mResult = other.Result;
+                fClose = other.Close;
+            }
+            public Task Opened { get; }
+            public Task mResult;
+            public Task Result { get { return mResult; } }
+            public Func<Task> fClose { get; }
+            public Task Close() => fClose();
+        }
+        class irp<T> : irp, IInputResponse<T>
+        {
+            new public Task<T> mResult;
+            Task<T> IInputResponse<T>.Result { get { return mResult; } }
+            public irp(IInputResponse<T> other) : base(other)
+            {
+                mResult = other.Result;
+            }
+        }
+        public static IInputResponse ContinueWith(this IInputResponse @this, Action<Task> t)
+        {
+            return new irp(@this) { mResult = @this.Result.ContinueWith(t) };
+        }
+        public static IInputResponse ContinueWith<T>(this IInputResponse<T> @this, Action<Task<T>> t)
+        {
+            return new irp(@this) { mResult = @this.Result.ContinueWith(t) };
+        }
+        public static IInputResponse<T> ContinueWith<T>(this IInputResponse<T> @this, Func<Task<T>,T> t)
+        {
+            return new irp<T>(@this) { mResult = @this.Result.ContinueWith<T>(t) };
+        }
+    }
+
     public interface IInputResponse
     {
         Task Opened { get; }
         Task Result { get; }
         Task Close();
     }
-    public interface IInputResponse<T>
+    public interface IInputResponse<T> : IInputResponse
     {
-        Task Opened { get; }
-        Task<T> Result { get; }
-        Task Close();
+        new Task<T> Result { get; }
     }
 
     // mirrors librtp

@@ -4,6 +4,9 @@
              xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
              x:Class="Consonance.XamarinFormsView.PCL.ChoosePlanView">
+  <ContentPage.ToolbarItems>
+		<ToolbarItem Text="Ok" Command="{Binding okCommand}" />
+	</ContentPage.ToolbarItems>
 	<Grid>
 		<ListView x:Name="lv" IsGroupingEnabled="true" HasUnevenRows="true"  ItemsSource="{Binding PlanChoices, Mode=OneWay}" SelectedItem="{Binding choicey, Mode=TwoWay}">
 			<ListView.GroupHeaderTemplate>
@@ -26,8 +29,7 @@
 								<RowDefinition Height="auto"/>
 							</Grid.RowDefinitions>
 							<Label Text="{Binding name}" FontSize="16" HorizontalOptions="Fill" VerticalOptions="Start" />
-							<l:TextSizedButton Grid.Column="1" Clicked="DoChoose" IsVisible="{Binding selected}" HorizontalOptions="Center" VerticalOptions="Start" Text="Choose" />
-							<Label IsVisible="{Binding selected}" Text="{Binding description}" HorizontalOptions="Fill" VerticalOptions="Start" Grid.Row="1" Grid.ColumnSpan="2" />
+							<Label Text="{Binding description}" HorizontalOptions="Fill" VerticalOptions="Start" Grid.Row="1" Grid.ColumnSpan="2" />
 						</Grid>
 					</ViewCell>
 				</DataTemplate>

@@ -35,10 +35,13 @@ namespace Consonance.XamarinFormsView.PCL
 	}
 	public partial class ChoosePlanView : ContentPage
 	{
+        public Command okCommand { get; private set; }
 		public ChoosePlanView ()
 		{
 			InitializeComponent ();
+            this.okCommand = new Command(DoChoose, CanChoose);
             BindingContext = this;
+
 		}
 
 		public GroupedTDVMCollection mPlanChoices = new GroupedTDVMCollection();
@@ -48,10 +51,12 @@ namespace Consonance.XamarinFormsView.PCL
 			get{ return _choicey; }
 			set {
 				_choicey = value;
+                okCommand.ChangeCanExecute();
 				if(_choicey == null) lv.SelectedItem = null;
 			}
 		}
 		public event Action<int> chosen = delegate { };
-		public void DoChoose(Object s, EventArgs e) { chosen(mPlanChoices.reffers2[choicey]); }
+		public void DoChoose() { chosen(mPlanChoices.reffers2[choicey]); }
+        public bool CanChoose() { return choicey != null; }
 	}
 }
