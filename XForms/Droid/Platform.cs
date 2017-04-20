@@ -69,32 +69,88 @@ namespace Consonance.XamarinFormsView
         public void Attach(Action<String, Action> showError)
         {
             this.showError = showError;
+
+#if DEBUG
+            TaskScheduler.UnobservedTaskException += (a, b) =>
+            {
+                showError(b.Exception.ToString(), Android.App.Application.Context.MainLooper.QuitSafely); // maye?
+            };
+#endif
         }
         #region ITasks implementation
         public Task RunTask(Func<Task> asyncMethod)
-        { return FailHandler(Task.Run(asyncMethod)); }
+        {
+            return Task.Run(async () => 
+            {
+                try
+                {
+                    await asyncMethod();
+                }
+                catch(Exception e)
+                {
+                    Device.BeginInvokeOnMainThread(() => 
+                    {
+                        throw e;
+                    });
+                    throw e;
+                }
+            });
+        }
         public Task RunTask(Action syncMethod)
-        { return FailHandler(Task.Run(syncMethod)); }
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    syncMethod();
+                }
+                catch (Exception e)
+                {
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        throw e;
+                    });
+                    throw e;
+                }
+            });
+        }
         public Task<T> RunTask<T>(Func<Task<T>> asyncMethod)
-        { return FailHandler(Task.Run(asyncMethod)) as Task<T>; }
+        {
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    return await asyncMethod();
+                }
+                catch (Exception e)
+                {
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        throw e;
+                    });
+                    throw e;
+                }
+            });
+        }
         public Task<T> RunTask<T>(Func<T> syncMethod)
-        { return FailHandler(Task.Run(syncMethod)) as Task<T>; }
-        Task FailHandler(Task t)
         {
-            t.ContinueWith(Failed, TaskContinuationOptions.OnlyOnFaulted);
-            return t;
+            return Task.Run(() =>
+            {
+                try
+                {
+                    return syncMethod();
+                }
+                catch (Exception e)
+                {
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        throw e;
+                    });
+                    throw e;
+                }
+            });
         }
-        void Failed(Task t)
-        {
-            HandleException(t.Exception.InnerException);
-        }
-        void HandleException(Exception h)
-        {
-            Debug.WriteLine(h);
-            //UIThread (() => showError (h.ToString (), () => { throw h; }));
-            Device.BeginInvokeOnMainThread(() => { throw h; });
-            throw h;
-        }
+        
 
         public bool CreateDirectory(string ifdoesntexist)
         {

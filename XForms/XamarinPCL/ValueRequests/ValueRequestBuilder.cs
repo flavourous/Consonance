@@ -70,7 +70,7 @@ namespace Consonance.XamarinFormsView.PCL
                         vrv.ignorevalidity = true; // dont redbox stuff thats wrong. yet.
                         vrv.Title = pages[npage].title;
                         (lastPushed = pages[npage]).valuerequests_CollectionChanged += leh;
-                        leh(pages[npage].valuerequests, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset, new List<Object>()));
+                        Requests_ListChanged(vrv, pages[npage].valuerequests, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
 
                         // already UI thread for pagecomplete handler
                         var plr = pages[npage].valuerequests.FirstOrDefault(r=>r is IValueRequest<TabularDataRequestValue>);

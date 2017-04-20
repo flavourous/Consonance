@@ -208,8 +208,10 @@ namespace Consonance
                 chooseViewTask.Result.ContinueWith(async index =>
                 {
                     var addViewTask = inventors[index.Result].inventor.StartNewTracker();
-                    await addViewTask;
+                    await addViewTask.Opened;
                     await chooseViewTask.Close();
+                    await addViewTask.Result;
+                    await addViewTask.Close();
                 });
             }
         }
@@ -252,8 +254,10 @@ namespace Consonance
             var chooseViewTask = input.ChoosePlan("Select Tracker Type", dietnames, -1);
             chooseViewTask.Result.ContinueWith(async index => {
                 var addViewTask = saveDiets[index.Result].StartNewTracker();
-                await addViewTask;
+                await addViewTask.Opened;
                 await chooseViewTask.Close();
+                await addViewTask.Result;
+                await addViewTask.Close();
             });
         }
         void View_editdietinstance(TrackerInstanceVM obj)
@@ -484,7 +488,7 @@ namespace Consonance
                 var after = prior?.Invoke();
 
                 // then if its affecting the presentation, map it
-                if(perform_mapping)
+                if (perform_mapping)
                 {
                     TrackerInstanceVM cs;
                     do
@@ -497,9 +501,13 @@ namespace Consonance
                             taskMap[(TrackerChangeType)flag](cs);
                     } while (!OriginatorVM.OriginatorEquals(cs, view.currentTrackerInstance));
 
-                    // run anything to be done after mapping completed.
-                    after?.Invoke();
+                }
 
+                // run anything to be done after mapping completed.
+                after?.Invoke();
+
+                if (perform_mapping)
+                {
                     // complete busies off
                     foreach (var b in madeBusy) b();
                 }

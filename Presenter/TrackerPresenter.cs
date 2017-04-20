@@ -15,9 +15,9 @@ namespace Consonance
     interface IViewModelHandler<T>
     {
         IEnumerable<T> Instances();
-        Task StartNewTracker();
+        IInputResponse StartNewTracker();
         void RemoveTracker(T dvm, bool warn = true);
-        Task EditTracker(T dvm);
+        IInputResponse EditTracker(T dvm);
     }
 
     interface IViewModelObserver<T,S,C> : IViewModelHandler<T>
@@ -37,19 +37,19 @@ namespace Consonance
 		IEnumerable<InfoLineVM> OutInfos (bool onlycomplete);
 		IFindList<InfoLineVM> InFinder {get;}
 		IFindList<InfoLineVM> OutFinder {get;}
-		// entry ones
-		Task AddIn (TrackerInstanceVM diet, IValueRequestBuilder bld);
+        // entry ones
+        IInputResponse AddIn (TrackerInstanceVM diet, IValueRequestBuilder bld);
 		void RemoveIn (EntryLineVM evm);
-		Task EditIn (EntryLineVM evm, IValueRequestBuilder bld);
-		Task AddInInfo (IValueRequestBuilder bld);
+        IInputResponse EditIn (EntryLineVM evm, IValueRequestBuilder bld);
+        IInputResponse AddInInfo (IValueRequestBuilder bld);
 		void RemoveInInfo (InfoLineVM ivm);
-		Task EditInInfo (InfoLineVM ivm, IValueRequestBuilder bld);
-		Task AddOut (TrackerInstanceVM diet, IValueRequestBuilder bld);
+        IInputResponse EditInInfo (InfoLineVM ivm, IValueRequestBuilder bld);
+        IInputResponse AddOut (TrackerInstanceVM diet, IValueRequestBuilder bld);
 		void RemoveOut (EntryLineVM evm);
-		Task EditOut (EntryLineVM evm, IValueRequestBuilder bld);
-		Task AddOutInfo (IValueRequestBuilder bld);
+        IInputResponse EditOut (EntryLineVM evm, IValueRequestBuilder bld);
+        IInputResponse AddOutInfo (IValueRequestBuilder bld);
 		void RemoveOutInfo (InfoLineVM ivm);
-		Task EditOutInfo (InfoLineVM ivm, IValueRequestBuilder bld);
+        IInputResponse EditOutInfo (InfoLineVM ivm, IValueRequestBuilder bld);
 	}
     [Flags]
 	enum TrackerChangeType {
@@ -217,27 +217,21 @@ namespace Consonance
 				yield return vm;
 			}
 		}
-		public Task StartNewTracker()
+		public IInputResponse StartNewTracker()
 		{
-            TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
             var pages = new List<GetValuesPage>(modelHandler.model.CreationPages(instanceBuilder.requestFactory));
-            instanceBuilder.GetValues(pages).Result.ContinueWith(t =>
+            return instanceBuilder.GetValues(pages).ContinueWith(t =>
             {
                 if (t.Result) modelHandler.StartNewTracker();
-                tev.SetResult(new EventArgs());
             });
-            return tev.Task;
         }
-		public Task EditTracker (TrackerInstanceVM dvm)
+		public IInputResponse EditTracker (TrackerInstanceVM dvm)
 		{
-            TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
 			var pages = new List<GetValuesPage> (modelHandler.model.EditPages (dvm.originator as DietInstType, instanceBuilder.requestFactory));
-            instanceBuilder.GetValues(pages).Result.ContinueWith(t=>
+            return instanceBuilder.GetValues(pages).ContinueWith(t=>
             {
 				if (t.Result) modelHandler.EditTracker (dvm.originator as DietInstType);
-                tev.SetResult(new EventArgs());
             });
-            return tev.Task;
 		}
 		public void RemoveTracker (TrackerInstanceVM dvm, bool warn = true)
 		{
@@ -245,23 +239,23 @@ namespace Consonance
 			int ct = 0;
             if ((ct = modelHandler.outhandler.Count(diet) + modelHandler.inhandler.Count(diet)) > 0 && warn)
                 getInput.WarnConfirm("That instance still has " + ct + " entries, they will be removed if you continue.")
-                    .Result.ContinueWith(t =>
+                    .ContinueWith(t =>
                     {
                         if (t.Result) PlatformGlobal.Run(() => modelHandler.RemoveTracker(diet));
                     });
             else modelHandler.RemoveTracker(diet);
 		}
 
-		public Task AddIn(TrackerInstanceVM to, IValueRequestBuilder bld)
+		public IInputResponse AddIn(TrackerInstanceVM to, IValueRequestBuilder bld)
 		{
 			return Full<EatType,EatInfoType> (to.originator as DietInstType, modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation, bld);
 		}
-		public Task AddOut(TrackerInstanceVM to, IValueRequestBuilder bld)
+		public IInputResponse AddOut(TrackerInstanceVM to, IValueRequestBuilder bld)
 		{
 			return Full<BurnType,BurnInfoType> (to.originator as DietInstType, modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld);
 		}
 
-		Task Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
+		IInputResponse Full<T,I>(DietInstType diet, IEntryCreation<T,I> creator, 
 			EntryHandler<DietInstType,T,I> handler, bool true_if_in,
 			Func<I,InfoLineVM> rep, IValueRequestBuilder getValues, T editing = null) 
 				where T : BaseEntry, new()
@@ -322,16 +316,12 @@ namespace Consonance
 			infoRequest.ValueChanged += checkFields;
 
 
-            TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
             var pages = new List<GetValuesPage>(modelHandler.model.CreationPages(instanceBuilder.requestFactory));
-            getValues.GetValues(new[] { requests }).Result.ContinueWith(t =>
+            return getValues.GetValues(new[] { requests }).ContinueWith(t =>
             {
 				if (t.Result) editit ();
 				infoRequest.ValueChanged -= checkFields;
-                tev.SetResult(new EventArgs());
             });
-            
-            return tev.Task;
 		}
 
 		public void RemoveIn (EntryLineVM toRemove)
@@ -349,20 +339,20 @@ namespace Consonance
 			return dis.Count() == 0 ? null : dis.First();
 		}
 
-		public Task EditIn (EntryLineVM ed,IValueRequestBuilder bld) {
+		public IInputResponse EditIn (EntryLineVM ed,IValueRequestBuilder bld) {
 			var eat = ed.originator as EatType;
 			return Full<EatType,EatInfoType> (getit(eat), modelHandler.model.increator, modelHandler.inhandler, true, presenter.GetRepresentation,bld,eat);
 		}
-		public Task EditOut (EntryLineVM ed,IValueRequestBuilder bld) {
+		public IInputResponse EditOut (EntryLineVM ed,IValueRequestBuilder bld) {
 			var burn = ed.originator as BurnType;
 			return Full<BurnType,BurnInfoType> (getit(burn), modelHandler.model.outcreator, modelHandler.outhandler, false, presenter.GetRepresentation, bld,burn);
 		}
 
-		public Task AddInInfo(IValueRequestBuilder bld)
+		public IInputResponse AddInInfo(IValueRequestBuilder bld)
 		{
 			return DoInfo<EatInfoType> ("Create a " + dialect.InputInfoSingular,InFinder, modelHandler.model.increator, modelHandler.inhandler, bld);
 		}
-		public Task EditInInfo(InfoLineVM ivm, IValueRequestBuilder bld)
+		public IInputResponse EditInInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
 			return DoInfo<EatInfoType> ("Edit " + dialect.InputInfoSingular ,InFinder, modelHandler.model.increator, modelHandler.inhandler, bld, ivm.originator as EatInfoType);
 		}
@@ -371,7 +361,7 @@ namespace Consonance
 			modelHandler.inhandler.Remove (ivm.originator as EatInfoType);
 		}
 
-		Task DoInfo<I>(String title,IFindList<InfoLineVM> finder, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
+		IInputResponse DoInfo<I>(String title,IFindList<InfoLineVM> finder, IInfoCreation<I> creator, IInfoHandler<I> handler, IValueRequestBuilder builder, I toEdit = null)  where I : BaseInfo, new()
 		{
 			bool editing = toEdit != null;
 			var vros = editing ? creator.InfoFields (builder.requestFactory) : new ValueRequestFactory_FinderAdapter<I> (finder, creator, builder.requestFactory, getInput).GetRequestObjects ();
@@ -379,22 +369,19 @@ namespace Consonance
 			gvp.SetList (vros);
 			if (editing) creator.FillRequestData (toEdit, builder.requestFactory);
 
-            TaskCompletionSource<EventArgs> tev = new TaskCompletionSource<EventArgs>();
-            builder.GetValues (new[]{ gvp }).Result.ContinueWith(result => {
+            return builder.GetValues (new[]{ gvp }).ContinueWith(result => {
 				if (result.Result) {
 					if (editing) handler.Edit (toEdit);
 					else handler.Add ();
 				}
-                tev.SetResult(new EventArgs());
 			});
-            return tev.Task;
 		}
 
-		public Task AddOutInfo(IValueRequestBuilder bld)
+		public IInputResponse AddOutInfo(IValueRequestBuilder bld)
 		{
 			return DoInfo<BurnInfoType> ("Create a " + dialect.OutputInfoSingular,OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld);
 		}
-		public Task EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
+		public IInputResponse EditOutInfo(InfoLineVM ivm, IValueRequestBuilder bld)
 		{
 			return DoInfo<BurnInfoType> ("Edit " + dialect.OutputInfoSingular, OutFinder, modelHandler.model.outcreator, modelHandler.outhandler, bld, ivm.originator as BurnInfoType);
 		}
