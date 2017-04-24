@@ -611,6 +611,7 @@ namespace Consonance
     }
     public interface ITasks
     {
+        long CurrentThreadID { get; }
         Task RunTask(Func<Task> asyncMethod);
         Task RunTask(Action syncMethod);
         Task<T> RunTask<T>(Func<Task<T>> asyncMethod);

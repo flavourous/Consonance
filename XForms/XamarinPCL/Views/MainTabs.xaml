@@ -1,5 +1,12 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<TabbedPage Title="Consonance" xmlns="http://xamarin.com/schemas/2014/forms" xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.MainTabs">
+<TabbedPage 
+    Title="Consonance" 
+    xmlns="http://xamarin.com/schemas/2014/forms" 
+    xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" 
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+    x:Class="Consonance.XamarinFormsView.PCL.MainTabs"
+    NavigationPage.HasNavigationBar="True"
+    >
 	<ContentPage Title="{Binding InTabName}">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddInClick" />

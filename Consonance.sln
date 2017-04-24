@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consonance.XamarinFormsView.UWP", "XForms\UWP\Consonance.XamarinFormsView.UWP.csproj", "{E616A8FB-5224-4D21-A716-308587AD68E7}"
 EndProject
@@ -30,10 +30,6 @@ Global
 		..\LibRTP\LibRTP\LibRTP.projitems*{1c3091eb-5350-48f8-aa8a-51e7d4656da0}*SharedItemsImports = 13
 		Presenter\Consonance.projitems*{2459c065-28a0-451f-8537-2ae6a1af57b3}*SharedItemsImports = 13
 		..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems*{2f743855-2f8c-40c8-90f8-8fe5ac0e7886}*SharedItemsImports = 13
-		Presenter\Consonance.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
-		..\LibRTP\LibRTP\LibRTP.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
-		..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
-		..\LibSharpHelp\LibSharpHelp.SqliteNET\LibSharpHelp.SqliteNET.projitems*{581d0f9a-ada5-41d0-b049-2cab1f1bf0fe}*SharedItemsImports = 4
 		..\LibSharpHelp\LibSharpHelp.General\LibSharpHelp.General.projitems*{7e0e5aeb-4591-4161-b39e-b50569c802f1}*SharedItemsImports = 13
 		..\LibSharpHelp\LibSharpHelp.Xamarin\LibSharpHelp.Xamarin.projitems*{8d05ba4b-b6dd-43a9-b8b3-8ed1a47a1ce2}*SharedItemsImports = 13
 		Presenter\Consonance.projitems*{a5449325-6464-48a5-80aa-8e0f7f4d778d}*SharedItemsImports = 4

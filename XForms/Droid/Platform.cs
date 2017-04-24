@@ -78,6 +78,7 @@ namespace Consonance.XamarinFormsView
 #endif
         }
         #region ITasks implementation
+        public long CurrentThreadID { get { return Thread.CurrentThread.ManagedThreadId; } }
         public Task RunTask(Func<Task> asyncMethod)
         {
             return Task.Run(async () => 

@@ -10,7 +10,6 @@ using System.ComponentModel;
 using Consonance.Protocol;
 using LibSharpHelp;
 using System.Threading;
-using Java.Lang;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -41,50 +40,68 @@ namespace Consonance.XamarinFormsView.PCL
 
     public static class Extensions
 	{
+        static object mutex = new object();
         /// <summary>
         /// same spec as PopAsync
         /// </summary>
         /// <param name="page"></param>
         /// <returns></returns>
-        public static async Task RemoveOrPopAsync(this INavigation me, Page page)
+        public static Task RemoveOrPopAsync(this INavigation me, Page page)
         {
-            TaskCompletionSource<EventArgs> tea = new TaskCompletionSource<EventArgs>();
-            Device.BeginInvokeOnMainThread(() =>
+            
+            var tea = new TaskCompletionSource<EventArgs>();
+            Task moreAwait = Task.FromResult(0);
+            // Dont trust
+            Action work = () =>
             {
-                if (me.NavigationStack.Contains(page))
+                // not even a litle
+                lock (mutex)
                 {
-                    if (me.NavigationStack[me.NavigationStack.Count - 1] == page)
+                    // multi-context thread? idk, probabbly sgi.
+                    if (me.NavigationStack.Contains(page))
                     {
-                        Debug.WriteLine("Navigation Extension: Popping {0}", page);
-                        me.PopAsync().ContinueWith(t => tea.SetResult(new EventArgs()));
+                        if (me.NavigationStack[me.NavigationStack.Count - 1] == page)
+                        {
+                            Debug.WriteLine("Navigation Extension: Popping {0}", page.Title);
+                            me.PopAsync().ContinueWith(d=>
+                            {
+                                if (d.IsFaulted) tea.SetException(d.Exception);
+                                else tea.SetResult(new EventArgs());
+                            });
+                        }
+                        else
+                        {
+                            Debug.WriteLine("Navigation Extension: Removing {0}", page.Title);
+                            me.RemovePage(page);
+                            tea.SetResult(new EventArgs());
+                        }
+                        Debug.WriteLine("Navigation Extension: Ok, done.");
                     }
-                    else
-                    {
-                        Debug.WriteLine("Navigation Extension: Removing {0}", page);
-                        me.RemovePage(page);
-                        tea.SetResult(new EventArgs());
-                    }
-                    Debug.WriteLine("Navigation Extension: Ok, done.");
                 }
-            });
-            await tea.Task;
+            };
+            Device.BeginInvokeOnMainThread(work);
+            return tea.Task;
         }
 	}
 
     
         public class App : Application
     {
-        static long mt = 0;
         public static Task UIThread(Action work)
         {
-            var wc = new TaskWrappedAction(work);
-            if (mt != Thread.CurrentThread().Id)
-                Device.BeginInvokeOnMainThread(wc.Work);
-            else wc.Work();
-            return wc.current;
+            var tea = new TaskCompletionSource<EventArgs>();
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                try { work(); }
+                catch(Exception e) { tea.SetException(e); }
+                tea.TrySetResult(new EventArgs());
+            });
+            return tea.Task;
         }
+
         
-		public static IValueRequestBuilder bld;
+
+        public static IValueRequestBuilder bld;
 		readonly ViewWrapper viewWrapper;
 		readonly PlanCommandsWrapper planCommandWrapper;
 		readonly ValueRequestBuilder defaultBuilder;
@@ -92,14 +109,8 @@ namespace Consonance.XamarinFormsView.PCL
         public static IPlatform platform { get; private set; }
 		public Task Presentation(IPlatform plat)
 		{
-			plat.Attach ((err, a) => ErrorDialog.Show (err, MainPage.Navigation, a));
+            plat.Attach ((err, a) => App.UIThread ErrorDialog.Show (err, MainPage.Navigation, a));
             App.platform = plat;
-
-            Task.Run(() =>
-            {
-                throw new System.Exception();
-            }); // unobserved exception
-
 			return Presenter.PresentTo(viewWrapper, plat, userInputWrapper, planCommandWrapper, defaultBuilder);
 		}
 
@@ -123,7 +134,6 @@ namespace Consonance.XamarinFormsView.PCL
 
         public App()
         {
-            mt = Thread.CurrentThread().Id;
             // some pages.
             var main = new MainTabs();
             var navigator = new NavigationPage(main);

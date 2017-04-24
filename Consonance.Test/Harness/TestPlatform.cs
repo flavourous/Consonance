@@ -7,6 +7,7 @@ using SQLite.Net.Interop;
 using SQLite.Net.Platform.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 
 namespace Consonance.Test
 {
@@ -38,6 +39,7 @@ namespace Consonance.Test
         public ISQLitePlatform sqlite { get; } = new SQLitePlatformGeneric();
         class TestTaskOps : ITasks
         {
+            public long CurrentThreadID { get { return Thread.CurrentThread.ManagedThreadId; } }
             Task FromAction(Action a) { a(); return Task.FromResult(true); }
             public Task RunTask(Action syncMethod) => FromAction(syncMethod);
             public Task RunTask(Func<Task> asyncMethod) => FromAction(asyncMethod().Wait);
