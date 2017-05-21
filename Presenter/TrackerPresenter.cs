@@ -320,7 +320,6 @@ namespace Consonance
 			infoRequest.ValueChanged += checkFields;
             last = infoRequest.value;
 
-            // Fire off the get values time.
             return getValues.GetValues(new[] { requests }).ContinueWith(t =>
             {
 				if (t.Result) editit ();

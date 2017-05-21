@@ -79,34 +79,110 @@ namespace Consonance.XamarinFormsView
         }
         public Task RunTask(Func<Task> asyncMethod)
         {
+<<<<<<< HEAD
             return Task.Run(async () => 
             {
                 try { await asyncMethod(); }
                 catch (Exception e) { EHandle(e); throw; }
             });
         }
+=======
+            this.showError = showError;
+
+#if DEBUG
+            TaskScheduler.UnobservedTaskException += (a, b) =>
+            {
+                showError(b.Exception.ToString(), Android.App.Application.Context.MainLooper.QuitSafely); // maye?
+            };
+#endif
+        }
+        #region ITasks implementation
+        public Task RunTask(Func<Task> asyncMethod)
+        {
+            return Task.Run(async () => 
+            {
+                try
+                {
+                    await asyncMethod();
+                }
+                catch(Exception e)
+                {
+                    Device.BeginInvokeOnMainThread(() => 
+                    {
+                        throw e;
+                    });
+                    throw e;
+                }
+            });
+        }
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
         public Task RunTask(Action syncMethod)
         {
             return Task.Run(() =>
             {
+<<<<<<< HEAD
                 try { syncMethod(); }
                 catch (Exception e) { EHandle(e); throw; }
+=======
+                try
+                {
+                    syncMethod();
+                }
+                catch (Exception e)
+                {
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        throw e;
+                    });
+                    throw e;
+                }
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
             });
         }
         public Task<T> RunTask<T>(Func<Task<T>> asyncMethod)
         {
             return Task.Run(async () =>
             {
+<<<<<<< HEAD
                 try { return await asyncMethod(); }
                 catch (Exception e) { EHandle(e); throw; }
+=======
+                try
+                {
+                    return await asyncMethod();
+                }
+                catch (Exception e)
+                {
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        throw e;
+                    });
+                    throw e;
+                }
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
             });
         }
         public Task<T> RunTask<T>(Func<T> syncMethod)
         {
             return Task.Run(() =>
             {
+<<<<<<< HEAD
                 try { return syncMethod(); }
                 catch (Exception e) { EHandle(e); throw; }
+=======
+                try
+                {
+                    return syncMethod();
+                }
+                catch (Exception e)
+                {
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        throw e;
+                    });
+                    throw e;
+                }
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
             });
         }
         

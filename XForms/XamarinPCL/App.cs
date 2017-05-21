@@ -10,6 +10,10 @@ using System.ComponentModel;
 using Consonance.Protocol;
 using LibSharpHelp;
 using System.Threading;
+<<<<<<< HEAD
+=======
+using Java.Lang;
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -47,15 +51,21 @@ namespace Consonance.XamarinFormsView.PCL
         /// <returns></returns>
         public static Task RemoveOrPopAsync(this INavigation me, Page page)
         {
+<<<<<<< HEAD
             var tea = new TaskCompletionSource<EventArgs>();
             Task moreAwait = Task.FromResult(0);
             // Dont trust
             Action work = () =>
+=======
+            TaskCompletionSource<EventArgs> tea = new TaskCompletionSource<EventArgs>();
+            Device.BeginInvokeOnMainThread(() =>
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
             {
                 if (me.NavigationStack.Contains(page))
                 {
                     if (me.NavigationStack[me.NavigationStack.Count - 1] == page)
                     {
+<<<<<<< HEAD
                         Debug.WriteLine("Navigation Extension: Popping {0}", page.Title);
                         me.PopAsync().ContinueWith(d =>
                         {
@@ -66,21 +76,35 @@ namespace Consonance.XamarinFormsView.PCL
                     else
                     {
                         Debug.WriteLine("Navigation Extension: Removing {0}", page.Title);
+=======
+                        Debug.WriteLine("Navigation Extension: Popping {0}", page);
+                        me.PopAsync().ContinueWith(t => tea.SetResult(new EventArgs()));
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Navigation Extension: Removing {0}", page);
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
                         me.RemovePage(page);
                         tea.SetResult(new EventArgs());
                     }
                     Debug.WriteLine("Navigation Extension: Ok, done.");
                 }
+<<<<<<< HEAD
                 else tea.SetResult(new EventArgs()); // just let it return ok, it might have been popped by back button or sth.
             };
             App.UIThread(work, false).Wait(); // this is ok sync and async.
             return tea.Task;
+=======
+            });
+            await tea.Task;
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
         }
 	}
 
     
     public class App : Application
     {
+<<<<<<< HEAD
         public static AppColors Colors = new AppColors();
         public class AppColors
         {
@@ -103,6 +127,16 @@ namespace Consonance.XamarinFormsView.PCL
             if (platform.TaskOps.IsMainContext) wrapw();
             else Device.BeginInvokeOnMainThread(wrapw);
             return tea.Task;
+=======
+        static long mt = 0;
+        public static Task UIThread(Action work)
+        {
+            var wc = new TaskWrappedAction(work);
+            if (mt != Thread.CurrentThread().Id)
+                Device.BeginInvokeOnMainThread(wc.Work);
+            else wc.Work();
+            return wc.current;
+>>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
         }
 
         public static IValueRequestBuilder bld;
@@ -115,6 +149,12 @@ namespace Consonance.XamarinFormsView.PCL
 		{
             plat.Attach((err, a) => App.UIThread(() => ErrorDialog.Show(err, MainPage.Navigation, a)));
             App.platform = plat;
+
+            Task.Run(() =>
+            {
+                throw new System.Exception();
+            }); // unobserved exception
+
 			return Presenter.PresentTo(viewWrapper, plat, userInputWrapper, planCommandWrapper, defaultBuilder);
 		}
 
@@ -138,6 +178,7 @@ namespace Consonance.XamarinFormsView.PCL
 
         public App()
         {
+            mt = Thread.CurrentThread().Id;
             // some pages.
             var main = new MainTabs();
             var navigator = new NavigationPage(main);
