@@ -44,8 +44,8 @@ namespace Consonance.XamarinFormsView.PCL
         private void TextSizedButton_MeasureInvalidated(object sender, EventArgs e)
         {
             var sr = l.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity);
-            rd.Height = sr.Request.Height + 5;
-            cd.Width = sr.Request.Width + 20;
+            rd.Height = sr.Request.Height + 15;
+            cd.Width = sr.Request.Width + 30;
         }
     }
 }

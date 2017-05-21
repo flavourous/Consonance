@@ -40,7 +40,6 @@ namespace Consonance.XamarinFormsView.PCL
 
     public static class Extensions
 	{
-        static object mutex = new object();
         /// <summary>
         /// same spec as PopAsync
         /// </summary>
@@ -48,58 +47,63 @@ namespace Consonance.XamarinFormsView.PCL
         /// <returns></returns>
         public static Task RemoveOrPopAsync(this INavigation me, Page page)
         {
-            
             var tea = new TaskCompletionSource<EventArgs>();
             Task moreAwait = Task.FromResult(0);
             // Dont trust
             Action work = () =>
             {
-                // not even a litle
-                lock (mutex)
+                if (me.NavigationStack.Contains(page))
                 {
-                    // multi-context thread? idk, probabbly sgi.
-                    if (me.NavigationStack.Contains(page))
+                    if (me.NavigationStack[me.NavigationStack.Count - 1] == page)
                     {
-                        if (me.NavigationStack[me.NavigationStack.Count - 1] == page)
+                        Debug.WriteLine("Navigation Extension: Popping {0}", page.Title);
+                        me.PopAsync().ContinueWith(d =>
                         {
-                            Debug.WriteLine("Navigation Extension: Popping {0}", page.Title);
-                            me.PopAsync().ContinueWith(d=>
-                            {
-                                if (d.IsFaulted) tea.SetException(d.Exception);
-                                else tea.SetResult(new EventArgs());
-                            });
-                        }
-                        else
-                        {
-                            Debug.WriteLine("Navigation Extension: Removing {0}", page.Title);
-                            me.RemovePage(page);
-                            tea.SetResult(new EventArgs());
-                        }
-                        Debug.WriteLine("Navigation Extension: Ok, done.");
+                            if (d.IsFaulted) tea.SetException(d.Exception);
+                            else tea.SetResult(new EventArgs());
+                        });
                     }
+                    else
+                    {
+                        Debug.WriteLine("Navigation Extension: Removing {0}", page.Title);
+                        me.RemovePage(page);
+                        tea.SetResult(new EventArgs());
+                    }
+                    Debug.WriteLine("Navigation Extension: Ok, done.");
                 }
+                else tea.SetResult(new EventArgs()); // just let it return ok, it might have been popped by back button or sth.
             };
-            Device.BeginInvokeOnMainThread(work);
+            App.UIThread(work, false).Wait(); // this is ok sync and async.
             return tea.Task;
         }
 	}
 
     
-        public class App : Application
+    public class App : Application
     {
-        public static Task UIThread(Action work)
+        public static AppColors Colors = new AppColors();
+        public class AppColors
         {
-            var tea = new TaskCompletionSource<EventArgs>();
-            Device.BeginInvokeOnMainThread(() =>
-            {
-                try { work(); }
-                catch(Exception e) { tea.SetException(e); }
-                tea.TrySetResult(new EventArgs());
-            });
-            return tea.Task;
+            public Color Accent = new Color(1.0, 0.1, 1.0, 0.0);
         }
 
-        
+        public static Task UIThread(Action work, bool raise = true)
+        {
+            var tea = new TaskCompletionSource<EventArgs>();
+            Action wrapw = () =>
+            {
+                if (raise) work();
+                else
+                {
+                    try { work(); }
+                    catch (Exception e) { tea.SetException(e); }
+                }
+                tea.TrySetResult(new EventArgs());
+            };
+            if (platform.TaskOps.IsMainContext) wrapw();
+            else Device.BeginInvokeOnMainThread(wrapw);
+            return tea.Task;
+        }
 
         public static IValueRequestBuilder bld;
 		readonly ViewWrapper viewWrapper;
@@ -109,7 +113,7 @@ namespace Consonance.XamarinFormsView.PCL
         public static IPlatform platform { get; private set; }
 		public Task Presentation(IPlatform plat)
 		{
-            plat.Attach ((err, a) => App.UIThread ErrorDialog.Show (err, MainPage.Navigation, a));
+            plat.Attach((err, a) => App.UIThread(() => ErrorDialog.Show(err, MainPage.Navigation, a)));
             App.platform = plat;
 			return Presenter.PresentTo(viewWrapper, plat, userInputWrapper, planCommandWrapper, defaultBuilder);
 		}

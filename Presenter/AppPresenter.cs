@@ -66,10 +66,23 @@ namespace Consonance
 
         public void VerifyDiet(Action<IAbstractedTracker, TrackerInstanceVM> acty, String load = null)
         {
+            VerifyDiet((a, b) => { acty(a, b); return null; });
+        }
+            public void VerifyDiet(Func<IAbstractedTracker, TrackerInstanceVM, IInputResponse> acty, String load = null)
+        {
             var cd = getCurrent();
             if (cd == null) // ping the view about being stupid.
                 input.Message("You need to create a tracker before you can do that");
-            else acty(cd.sender as IAbstractedTracker, cd); // dont thread here, just route. DAL will thread.
+            else
+            {
+                var ir = acty(cd.sender as IAbstractedTracker, cd); // dont thread here, just route. DAL will thread.
+                if (ir == null) return;
+                ir.Opened.ContinueWith(async t =>
+                {
+                    await ir.Result;
+                    await ir.Close();
+                });
+            }
         }
     }
 
@@ -195,11 +208,20 @@ namespace Consonance
         }
         private void Invention_edit(InventedTrackerVM obj)
         {
-            (obj.sender as IViewModelHandler<InventedTrackerVM>).EditTracker(obj);
+            var et = (obj.sender as IViewModelHandler<InventedTrackerVM>).EditTracker(obj);
+            et.Result.ContinueWith(async t => await et.Close());
         }
         private void Invention_add()
         {
-            if (inventors.Count == 1) inventors[0].inventor.StartNewTracker();
+            if (inventors.Count == 1)
+            {
+                var addViewTask = inventors[0].inventor.StartNewTracker();
+                addViewTask.Opened.ContinueWith(async t =>
+                {
+                    await addViewTask.Result;
+                    await addViewTask.Close();
+                });
+            }
             else
             {
                 // or choose.
@@ -262,7 +284,8 @@ namespace Consonance
         }
         void View_editdietinstance(TrackerInstanceVM obj)
         {
-            (obj.sender as IAbstractedTracker).EditTracker(obj);
+            var et = (obj.sender as IAbstractedTracker).EditTracker(obj);
+            et.Result.ContinueWith(async t => await et.Close());
         }
         void Handleremovedietinstance(TrackerInstanceVM obj)
         {
@@ -399,7 +422,7 @@ namespace Consonance
                         // change current tracker if either old one is no more, or, we didnt have one selected.
                         var ai = tracker_instances.Where(i => OriginatorVM.OriginatorEquals(i, ti));
                         if (ai.Count() == 0) View_trackerinstanceselected(view.currentTrackerInstance = tracker_instances.Count > 0 ? tracker_instances[0] : null);
-                        else view.currentTrackerInstance =ai.First(); // could be updated
+                        else view.currentTrackerInstance = ai.First(); // could be updated
                     }
                 },
                 {TrackerChangeType.InEntries,ti=>
@@ -547,13 +570,17 @@ namespace Consonance
             OnPropertyChanged(new PropertyChangedEventArgs("busy"));
         }
 
+        object SetLock = new object();
         public void SetItems(IEnumerable<T> items)
         {
-            SuspendNotifications();
-            Clear();
-            foreach (var i in items ?? new T[0])
-                Add(i);
-            ResumeNotifications();
+            lock (SetLock)
+            {
+                SuspendNotifications();
+                Clear();
+                foreach (var i in items ?? new T[0])
+                    Add(i);
+                ResumeNotifications();
+            }
         }
     }
 
@@ -611,7 +638,7 @@ namespace Consonance
     }
     public interface ITasks
     {
-        long CurrentThreadID { get; }
+        bool IsMainContext { get; }
         Task RunTask(Func<Task> asyncMethod);
         Task RunTask(Action syncMethod);
         Task<T> RunTask<T>(Func<Task<T>> asyncMethod);

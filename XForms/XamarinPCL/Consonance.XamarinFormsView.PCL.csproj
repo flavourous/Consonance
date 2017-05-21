@@ -35,6 +35,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Test|AnyCPU'">
+    <OutputPath>bin\Test\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
     <Compile Include="Extensions.cs" />
@@ -131,6 +134,7 @@
     <Compile Include="XLib\EquallyDistributedLayout.cs" />
     <Compile Include="XLib\GridView.cs" />
     <Compile Include="XLib\IvalEntry.cs" />
+    <Compile Include="XLib\StringDoubleConverter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="NCalc">

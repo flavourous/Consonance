@@ -50,6 +50,7 @@ namespace Consonance.XamarinFormsView.PCL
                 else psel.SelectedIndex = -1;
             }
         }
+        // selected index changed
         void SIC(object sender, EventArgs args)
 		{
 			if (brent) return;

@@ -8,10 +8,11 @@
 	<ContentView.Resources>
 		<ResourceDictionary>
 			<l:XorParam x:Key="convert_xor"/>
-		</ResourceDictionary>
+            <xlib:StringDoubleConverter x:Key="convert_ns"/>
+        </ResourceDictionary>
 	</ContentView.Resources>
 	<Grid>
-		<xlib:IvalEntry Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=true}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" Keyboard="Numeric"/>
+		<xlib:IvalEntry Text="{Binding value, Converter={StaticResource convert_ns}}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=true}" VerticalOptions="Center" HorizontalOptions="FillAndExpand" Keyboard="Numeric" />
 		<Label Text="{Binding value}" IsVisible="{Binding read_only, Converter={StaticResource convert_xor}, ConverterParameter=false}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 	</Grid>
 </ContentView>

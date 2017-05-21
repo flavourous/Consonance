@@ -130,7 +130,7 @@ namespace Consonance.XamarinFormsView.PCL
                 Children =
                 {
                     GenerateRow(header_items.ToArray()),
-                    new BoxView { HeightRequest = 1, HorizontalOptions = LayoutOptions.FillAndExpand, BackgroundColor = Color.Accent }
+                    new BoxView { HeightRequest = 1, HorizontalOptions = LayoutOptions.FillAndExpand, BackgroundColor = App.Colors.Accent }
                 },
                 Orientation = StackOrientation.Vertical,
                 Spacing = 0

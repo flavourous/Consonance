@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using Xamarin.Forms;
-using System.Reflection;
-using Consonance.Protocol;
+﻿using Consonance.Protocol;
+using System;
 using System.Threading.Tasks;
+using Xamarin.Forms;
 
 namespace Consonance.XamarinFormsView.PCL
 {
-	public partial class InfoSelectRequest : ContentView
+    public partial class InfoSelectRequest : ContentView
 	{
         public String manage_title { get; set; }
         public InfoManageType mt { get; set; }
@@ -17,18 +15,20 @@ namespace Consonance.XamarinFormsView.PCL
             InitializeComponent();
         }
         bool block_reentrancy = false;
-		public async void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
+		public void OnChoose(object sender, EventArgs nooopse) // it's an event handler...async void has to be
 		{
             if (block_reentrancy) return;
             block_reentrancy = true;
-
-			var vm = BindingContext as IValueRequest<InfoLineVM>;
+            RunChoose().ContinueWith(t => block_reentrancy = false);
+        }
+        async Task RunChoose()
+        {
+            var vm = BindingContext as IValueRequest<InfoLineVM>;
             var vr = requestit(vm.value);
             await vr.Opened;
             var ivm = await vr.Result;
             vm.value = ivm == InfoManageView.noth ? null : ivm;
             await vr.Close();
-            block_reentrancy = false;
         }
 	}
 	class InfoSelectRequestConverter : IValueConverter

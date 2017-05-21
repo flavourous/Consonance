@@ -201,6 +201,11 @@ namespace Consonance.Invention
                 mod.Category = p1vr[2].value;
             };
             foreach (var vr in p1vr) vr.ValidWhen(s=>!String.IsNullOrWhiteSpace(s));
+#if DEBUG && !TEST
+            p1vr[0].value = "Test tracker type";
+            p1vr[1].value = "This is a default fill to help with testing";
+            p1vr[2].value = "Test";
+#endif
             return new SimpleTrackyInventionRequestPages(page, set);
         }
         public static SimpleTrackyInventionRequestPages EntryDescriptionPage(IValueRequestFactory fac)
@@ -225,6 +230,16 @@ namespace Consonance.Invention
                 mod.OutputInfoVerbPast = p2vr[7].value;
             };
             foreach (var vr in p2vr) vr.ValidWhen(s => !String.IsNullOrWhiteSpace(s));
+#if DEBUG && !TEST
+            p2vr[0].value = "Glaze";
+            p2vr[1].value = "Graze";
+            p2vr[2].value = "Glasses";
+            p2vr[3].value = "Glass";
+            p2vr[4].value = "Grasses";
+            p2vr[5].value = "Grass";
+            p2vr[6].value = "Glassed";
+            p2vr[7].value = "Grassed";
+#endif
             return new SimpleTrackyInventionRequestPages(page, set);
         }
         public static SimpleTrackyInventionRequestPages InfoQuantifiersPage(IValueRequestFactory fac, InfoFinderHelper iHelper)
@@ -252,7 +267,7 @@ namespace Consonance.Invention
             var megalist = fac.GenerateTableRequest();
             megalist.value = new TabularDataRequestValue(headers);
 
-            addr.ValueChanged += () =>
+            Action add = () =>
             {
                 var so = ioreq.value.SelectedOption;
                 var ot = (InfoQuantifierTypes)(dvalmor.value.SelectedRequest+1);
@@ -264,6 +279,7 @@ namespace Consonance.Invention
                         new Stringy(ov.ToString(),ov)
                     });
             };
+            addr.ValueChanged += add;
 
             Action pmv = () =>
             {
@@ -296,6 +312,18 @@ namespace Consonance.Invention
             };
             megalist.value.Items.CollectionChanged += (a, b) => pmv();
             addr.valid = nreq.valid = dvalmor.valid = ioreq.valid = true; // not used - the list is...
+
+#if DEBUG && !TEST
+            ioreq.value.SelectedOption = 0;
+            nreq.value = "ml";
+            qnr.value = 15;
+            add();
+            ioreq.value.SelectedOption = 1;
+            nreq.value = "g";
+            qnr.value = 50;
+            add();
+#endif
+
             return new SimpleTrackyInventionRequestPages(page, set);
         }
         public static SimpleTrackyInventionRequestPages TargetDesciptorsPage(IValueRequestFactory fac)
@@ -315,7 +343,7 @@ namespace Consonance.Invention
             var megalist = fac.GenerateTableRequest();
             megalist.value = new TabularDataRequestValue(headers);
 
-            addr.ValueChanged += () =>
+            Action add = () =>
             {
                 var ot = (AggregateRangeType)(rtreq.value.SelectedOption+1);
                 var ots = rtreq.value.OptionNames[rtreq.value.SelectedOption];
@@ -328,6 +356,7 @@ namespace Consonance.Invention
                         new Stringy(teqreq.value,teqreq.value),
                     });
             };
+            addr.ValueChanged += add;
 
             // FIXME which one?
             megalist.ValueChanged += () => megalist.valid = megalist.value.Items.Count > 0;
@@ -377,6 +406,17 @@ namespace Consonance.Invention
             rreq.ValueChanged += ValidateEquations;
             peqreq.ValueChanged += ValidateEquations;
             teqreq.ValueChanged += ValidateEquations;
+
+#if DEBUG && !TEST
+            nreq.value = "Grok";
+            tidreq.value = "gk";
+            argreq.value = "gdx";
+            rreq.value = "1";
+            peqreq.value = "1";
+            teqreq.value = "3+gdx*gdx*2+gdx*5";
+            add();
+#endif
+
             return new SimpleTrackyInventionRequestPages(page, set);
         }
         public static SimpleTrackyInventionRequestPages EntryInfoEquations(IValueRequestFactory fac)
@@ -391,6 +431,7 @@ namespace Consonance.Invention
             var tidreq = fac.StringRequestor("TargetID");
             var ereq = fac.StringRequestor("Equation");
             var ioreq = fac.OptionGroupRequestor("For");
+
             var nams = new[] { "Input", "Output" };
             ioreq.value = new OptionGroupValue(nams);
             var addr = fac.ActionRequestor("Add");
@@ -399,14 +440,15 @@ namespace Consonance.Invention
             var megalist = fac.GenerateTableRequest();
             megalist.value = new TabularDataRequestValue(headers);
 
-            addr.ValueChanged += () =>
+            Action add = () =>
             {
                 var inout = ioreq.value.SelectedOption;
                 var s1 = new Stringy(tidreq.value, tidreq.value);
                 var s2 = new Stringy(nams[inout], inout);
                 var s3 = new Stringy(ereq.value, ereq.value);
-                megalist.value.Items.Add(new Stringy[] {s1,s2,s3});
+                megalist.value.Items.Add(new Stringy[] { s1, s2, s3 });
             };
+            addr.ValueChanged += add; 
             
             page.SetList(new ObservableCollection<object> { iargreq.request, oargreq.request, tidreq.request, ioreq.request, ereq.request, addr.request, megalist.request });
             Action<SimpleTrackyHelpyInventionV1Model> set = mod =>
@@ -448,12 +490,24 @@ namespace Consonance.Invention
             megalist.ValueChanged += ValidateEquations;
             megalist.value.Items.CollectionChanged += (a, b) => ValidateEquations();
 
+#if DEBUG && !TEST
+            tidreq.value = "gk";
+            iargreq.value = "gin";
+            oargreq.value = "got";
+            ioreq.value.SelectedOption = 0; // in
+            ereq.value = "gin*2+5";
+            add();
+            ioreq.value.SelectedOption = 1;//out
+            ereq.value = "got*2 - 17.2";
+            add();
+#endif
+
             return new SimpleTrackyInventionRequestPages(page, set);
         }
     }
-    #endregion
+#endregion
 
-    #region Simple inventor, instanced once, creates descriptors and trackers based on them, managing thier lifetime
+#region Simple inventor, instanced once, creates descriptors and trackers based on them, managing thier lifetime
     class SimpleTrackyHelpyInventionV1 : IViewModelObserver<InventedTrackerVM, SimpleTrackyHelpyInventionV1, EventArgs>
         // FIXME combines presentation and modelling since it's simple
     {
@@ -489,7 +543,7 @@ namespace Consonance.Invention
 
         // Here we pass viewmodels about invented trackers - the view can display and command them in a managing view
         // it still gets "select tracker" creating new from the main registry.
-        #region helpy appresenter, notify viewmodels, commands to edit/add/remove
+#region helpy appresenter, notify viewmodels, commands to edit/add/remove
         // REMEMBER - dont do any actions - fire this TOCHANGED with a prior to complete the change. Presenter handles it.
         public event DietVMChangeEventHandler<SimpleTrackyHelpyInventionV1, EventArgs> ViewModelsToChange = delegate { };
 
@@ -503,8 +557,8 @@ namespace Consonance.Invention
             // Get Models - calls to this dude are by unwritten contract on worker threads.
             foreach (var it in conn.Get<SimpleTrackyHelpyInventionV1Model>())
             {
-                var vm = Present(it);
-                if (!registered.ContainsKey(vm))
+                var vm = Present(it); // This sets originator for the comparison on the next line
+                if (!registered.Any(v=>OriginatorVM.OriginatorEquals(vm,v.Key))) 
                 {
                     var pp = registered[vm] = SimpleTrackyHelperCreator.Create(it, seq);
                     pp.state = pres.AddDietPair(pp, build, conn);
@@ -518,7 +572,7 @@ namespace Consonance.Invention
         public void RemoveTracker(InventedTrackerVM dvm, bool warn = true) // dereigster
         {
             // Get some info
-            var handler = registered[dvm];
+            var handler = registered.Where(d=>OriginatorVM.OriginatorEquals(dvm,d.Key)).First().Value;
             int nTrackers = 0, nTotalEntries =0, nTotalInfos=0;
             handler.state.dal.CountAll(out nTrackers, out nTotalEntries, out nTotalInfos);
 
@@ -623,14 +677,14 @@ namespace Consonance.Invention
                 }
             });
         }
-        #endregion
+#endregion
 
         InventedTrackerVM Present(SimpleTrackyHelpyInventionV1Model model)
         {
             return new InventedTrackerVM() { originator = model, name = model.Name, description = model.Description };
         }
     }
-    #endregion
+#endregion
 
 
     static class SimpleTrackyHelperCreator

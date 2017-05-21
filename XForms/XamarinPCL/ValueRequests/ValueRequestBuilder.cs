@@ -118,35 +118,35 @@ namespace Consonance.XamarinFormsView.PCL
             this.srv = srv;
         }
 
-		#region IValueRequestFactory implementation
-		public IValueRequest<string> StringRequestor (string name) { return RequestCreator<String, StringRequest> (name); }
+        #region IValueRequestFactory implementation
+        public IValueRequest<string> StringRequestor(string name) { return RequestCreator<String, StringRequest>(name, true, () => new StringRequest()); }
 		public IValueRequest<InfoLineVM> InfoLineVMRequestor (string name, InfoManageType mt)
         {
-            return RequestCreator<InfoLineVM, InfoSelectRequest>(name, true, isr =>
+            return RequestCreator<InfoLineVM, InfoSelectRequest>(name, true, () => new InfoSelectRequest
             {
-                isr.requestit = ivm => srv.U_InfoView(true, true, mt, ivm);
+                requestit = ivm => srv.U_InfoView(true, true, mt, ivm)
             });
         }
-		public IValueRequest<DateTime> DateTimeRequestor (string name) { return RequestCreator<DateTime, DateTimeRequest> (name); }
-        public IValueRequest<DateTime> DateRequestor(string name) { return RequestCreator<DateTime, DateRequest>(name); }
-        public IValueRequest<DateTime?> nDateRequestor(string name) { return RequestCreator<DateTime?, nDateRequest>(name); }
-        public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return RequestCreator<TimeSpan, TimeSpanRequest> (name); }
-        public IValueRequest<double> DoubleRequestor (string name) { return RequestCreator<double, DoubleRequest> (name); }
-        public IValueRequest<bool> BoolRequestor (string name) { return RequestCreator<bool, BoolRequest> (name); }
-		public IValueRequest<EventArgs> ActionRequestor (string name) { return RequestCreator<EventArgs, ActionRequest> (name, false); }
-		public IValueRequest<Barcode> BarcodeRequestor (string name) { return RequestCreator<Barcode, BarcodeRequest> (name); }
-		public IValueRequest<int> IntRequestor (string name){ return RequestCreator<int, IntRequest> (name); }
-		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return RequestCreator<OptionGroupValue, OptionGroupValueRequest> (name); }
-		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name); }
-		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name); }
-        public IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name) { return RequestCreator<MultiRequestOptionValue, MultiRequestCombo>(name); }
-        public IValueRequest<TabularDataRequestValue> GenerateTableRequest() { return RequestCreator<TabularDataRequestValue, ContentView>(null, false, delegate { }); }
+		public IValueRequest<DateTime> DateTimeRequestor (string name) { return RequestCreator<DateTime, DateTimeRequest> (name,true, ()=>new DateTimeRequest()); }
+        public IValueRequest<DateTime> DateRequestor(string name) { return RequestCreator<DateTime, DateRequest>(name,true, ()=>new DateRequest()); }
+        public IValueRequest<DateTime?> nDateRequestor(string name) { return RequestCreator<DateTime?, nDateRequest>(name,true, ()=>new nDateRequest()); }
+        public IValueRequest<TimeSpan> TimeSpanRequestor (string name) { return RequestCreator<TimeSpan, TimeSpanRequest> (name,true, ()=>new TimeSpanRequest()); }
+        public IValueRequest<double> DoubleRequestor (string name) { return RequestCreator<double, DoubleRequest> (name,true, ()=>new DoubleRequest()); }
+        public IValueRequest<bool> BoolRequestor (string name) { return RequestCreator<bool, BoolRequest> (name,true, ()=>new BoolRequest()); }
+		public IValueRequest<EventArgs> ActionRequestor (string name) { return RequestCreator<EventArgs, ActionRequest> (name, false, ()=>new ActionRequest()); }
+		public IValueRequest<Barcode> BarcodeRequestor (string name) { return RequestCreator<Barcode, BarcodeRequest> (name,true, ()=>new BarcodeRequest()); }
+		public IValueRequest<int> IntRequestor (string name){ return RequestCreator<int, IntRequest> (name,true, ()=>new IntRequest()); }
+		public IValueRequest<OptionGroupValue> OptionGroupRequestor (string name){ return RequestCreator<OptionGroupValue, OptionGroupValueRequest> (name,true, ()=>new OptionGroupValueRequest()); }
+		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name,true, ()=>new RecurrsEveryPatternValueRequest()); }
+		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name,true, ()=>new RecurrsOnPatternValueRequest()); }
+        public IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name) { return RequestCreator<MultiRequestOptionValue, MultiRequestCombo>(name,true, ()=>new MultiRequestCombo()); }
+        public IValueRequest<TabularDataRequestValue> GenerateTableRequest() { return RequestCreator<TabularDataRequestValue, ContentView>(null, false, ()=>new ContentView()); }
 
         #endregion
 
-        IValueRequest<T> RequestCreator<T, V>(String name, bool showName = true, Action<V> init = null) where V : View, new()
+        IValueRequest<T> RequestCreator<T, V>(String name, bool showName, Func<V> creator) where V : View
 		{
-            return new ValueRequestVM<T, V>(name, showName, init);
+            return new ValueRequestVM<T, V>(name, showName, creator);
 		}
     }
 		
@@ -159,16 +159,16 @@ namespace Consonance.XamarinFormsView.PCL
         void ClearPropChanged();
         void RaiseValueChanged();
     }
-	class ValueRequestVM<T,V> : IValueRequest<T>, IValueRequestVM where V : View, new()
+	class ValueRequestVM<T,V> : IValueRequest<T>, IValueRequestVM where V : View
 	{
 		public bool showName { get; private set; }
 		public String name { get; set; }
-        readonly Action<V> init;
-		public ValueRequestVM(String name, bool showName, Action<V> init)
+        readonly Func<V> creator;
+		public ValueRequestVM(String name, bool showName, Func<V> creator)
 		{
 			this.name=name;
 			this.showName = showName && name != null;
-            this.init = init;
+            this.creator = creator;
 		}
 
 		#region IValueRequest implementation
@@ -182,13 +182,7 @@ namespace Consonance.XamarinFormsView.PCL
         {
             get
             {
-                return new Func<ValueRequestTemplate>(() =>
-                {
-                    var v = new V();
-                    var ret = new ValueRequestTemplate(v) { BindingContext = this };
-                    init?.Invoke(v);
-                    return ret;
-                });
+                return new Func<ValueRequestTemplate>(() => new ValueRequestTemplate(creator()) { BindingContext = this });
             }
         }
 

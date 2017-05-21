@@ -18,6 +18,7 @@ namespace Consonance.XamarinFormsView
         public InventionManageView()
         {
             InitializeComponent();
+            BindingContext = this;
         }
 
         IList<InventedTrackerVM> _Items;

@@ -8,6 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Xamarin.Forms;
+using System.Runtime.CompilerServices;
+using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -76,6 +79,8 @@ namespace Consonance.XamarinFormsView.PCL
             }
         }
 
+
+
         public BusyList()
         {
             var ts = new TaskCompletionSource<Task>();
@@ -83,5 +88,8 @@ namespace Consonance.XamarinFormsView.PCL
             lastAnim = ts.Task;
             InitializeComponent();
         }
+
+        
     }
+    
 }

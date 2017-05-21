@@ -8,6 +8,8 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using Consonance.Invention;
 using Consonance.Protocol;
+using LibSharpHelp;
+using System.Linq;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -42,16 +44,15 @@ namespace Consonance.XamarinFormsView.PCL
                 get { return mSelectedPlanItem; }
                 set
                 {
-                    Debug.WriteLine("view selecting tracker");
-                    if (value == mSelectedPlanItem) return; // block reentrency
-                    var use = PlanItems.Contains(value) ? value : null;
+                    // This is simply so that the list can fire "onchanged"
+                    Debug.WriteLine("selecting tracker");
                     InTabName = value?.dialect?.InputEntryVerb ?? "In";
                     OutTabName = value?.dialect?.OutputEntryVerb ?? "Out";
                     InManageName = value?.dialect?.InputInfoPlural ?? "Manage";
                     OutManageName = value?.dialect?.OutputInfoPlural ?? "Manage";
-                    mSelectedPlanItem = use;
-                    OnPlanSelected(use);
-                    Debug.WriteLine("view finsihed selecting tracker");
+                    mSelectedPlanItem = value;
+                    OnPlanSelected(mSelectedPlanItem);
+                    Debug.WriteLine("finsihed selecting tracker");
                 }
             }
 
@@ -59,7 +60,7 @@ namespace Consonance.XamarinFormsView.PCL
             public IList<EntryLineVM> OutItems { get { return outItems; } set { outItems = value; OnPropertyChanged("OutItems"); } }
             public IList<InfoLineVM> InInfos { get { return inInfos; } set { inInfos = value; OnPropertyChanged("InInfos"); } }
             public IList<InfoLineVM> OutInfos { get { return outInfos; } set { outInfos = value; OnPropertyChanged("OutInfos"); } }
-            public IList<TrackerInstanceVM> PlanItems { get { return planItems; } set { planItems = value; OnPropertyChanged("PlanItems"); } }
+            public IList<TrackerInstanceVM> PlanItems { get { return planItems; } set { planItems = value; value.LogHook("PlanItems") ; OnPropertyChanged("PlanItems"); } }
             public IList<TrackerTracksVM> InTrack { get { return inTrack; } set { inTrack = value; OnPropertyChanged("InTrack"); } }
             public IList<TrackerTracksVM> OutTrack { get { return outTrack; } set { outTrack = value; OnPropertyChanged("OutTrack"); } }
             public IList<InventedTrackerVM> InventedPlans { get { return inventedPlans; } set { inventedPlans = value; OnPropertyChanged("InventedPlans"); } }
@@ -81,7 +82,6 @@ namespace Consonance.XamarinFormsView.PCL
         }
 		public Object daypagerContext { set { daypagerIn.BindingContext = daypagerOut.BindingContext = daypagerPlan.BindingContext = value; } }
 
-
         void OnPlanSelected(TrackerInstanceVM use)
         {
             PlanList.SelectedItem = use;
@@ -89,7 +89,10 @@ namespace Consonance.XamarinFormsView.PCL
         }
 
         public event Action manageInvention = delegate { };
-        void ManageInvention(Object sender, EventArgs args) { manageInvention(); }
+        void ManageInvention(Object sender, EventArgs args)
+        {
+            manageInvention(); 
+        }
 
         //////////////
         // Commands //

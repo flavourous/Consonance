@@ -11,8 +11,8 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public class VStacker : ContentView
 	{
-        public static Color amnt { get { var rt = Color.Accent; return Color.FromRgba(rt.R / 2, rt.G / 2, rt.B / 2, .5); } }
-        public static Color xtra { get { var rt = Color.Accent; return Color.FromRgba(rt.R  / 5, rt.G / 5, rt.B / 5, .5); } }
+        public static Color amnt { get { var rt = App.Colors.Accent; return Color.FromRgba(rt.R / 2, rt.G / 2, rt.B / 2, .5); } }
+        public static Color xtra { get { var rt = App.Colors.Accent; return Color.FromRgba(rt.R  / 5, rt.G / 5, rt.B / 5, .5); } }
         readonly StackLayout ms;
 		public delegate View Creator(Object val);
 		readonly Creator c;
@@ -97,7 +97,7 @@ namespace Consonance.XamarinFormsView.PCL
                     th,
                     new BoxView
                     {
-                        BackgroundColor = Color.Accent,
+                        BackgroundColor = App.Colors.Accent,
                         HeightRequest = 2,
                         HorizontalOptions = LayoutOptions.FillAndExpand,
                     },
@@ -149,7 +149,7 @@ namespace Consonance.XamarinFormsView.PCL
                     tl,
                     new BoxView
                     {
-                        BackgroundColor = Color.Accent,
+                        BackgroundColor = App.Colors.Accent,
                         HeightRequest =1,
                         HorizontalOptions = LayoutOptions.FillAndExpand,
                     },
@@ -180,7 +180,7 @@ namespace Consonance.XamarinFormsView.PCL
                 };
             }
             static double bw = 2.0;
-            
+
             public static View GenerateView(Object tio)
             {
                 TrackingInfoVM ti = tio as TrackingInfoVM;
@@ -190,8 +190,8 @@ namespace Consonance.XamarinFormsView.PCL
                 // I can't make bindings for constraints work! But setters do! I was using a converter - and that was firing, but the constraint was not being evaluated!!!
                 //rl.BindingContext = bio;
                 rl.Children.Add(Bar(Color.Transparent, amnt), Constraint.Constant(0), Constraint.Constant(bw), Constraint.RelativeToParent(p=>p.Width*bio.amount), Constraint.RelativeToParent(p => p.Height - bw*2));
-                rlc.Add(Bar(Color.Accent, Color.Transparent).Rel(bio.target, 0, bio.extras, 1));
-                rlc.Add(Bar(Color.Accent, Color.Transparent).Rel(0, 0, bio.target + bio.extras, 1));
+                rlc.Add(Bar(App.Colors.Accent, Color.Transparent).Rel(bio.target, 0, bio.extras, 1));
+                rlc.Add(Bar(App.Colors.Accent, Color.Transparent).Rel(0, 0, bio.target + bio.extras, 1));
                 var tl = new Label
                 {
                     Text = String.Format(

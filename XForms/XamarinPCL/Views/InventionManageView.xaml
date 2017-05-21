@@ -6,7 +6,7 @@
   <ContentPage.ToolbarItems>
     <ToolbarItem Text="Add" Clicked="OnItemAdd" x:Name="AddToolbarItem"/>
   </ContentPage.ToolbarItems>
-  <ListView Grid.ColumnSpan="2" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem, Mode=TwoWay}" x:Name="infoList"  HasUnevenRows="true" >
+  <ListView Grid.ColumnSpan="2" ItemsSource="{Binding Items}" SelectedItem="{Binding selectedItem, Mode=TwoWay}" x:Name="infoList"  HasUnevenRows="true" >
     <ListView.ItemTemplate>
       <DataTemplate x:Key="dt_manage">
         <ViewCell>
@@ -16,7 +16,7 @@
           </ViewCell.ContextActions>
           <StackLayout Orientation="Horizontal">
             <Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
-            <Label Text="{Binding description}" FontSize="10" HorizontalOptions="StartAndExpand"/>
+            <Label Margin="5,0,0,0" Text="{Binding description}" FontSize="10" HorizontalOptions="StartAndExpand" VerticalOptions="Center"/>
           </StackLayout>
         </ViewCell>
       </DataTemplate>

@@ -39,7 +39,7 @@ namespace Consonance.Test
         public ISQLitePlatform sqlite { get; } = new SQLitePlatformGeneric();
         class TestTaskOps : ITasks
         {
-            public long CurrentThreadID { get { return Thread.CurrentThread.ManagedThreadId; } }
+            public bool IsMainContext => true;
             Task FromAction(Action a) { a(); return Task.FromResult(true); }
             public Task RunTask(Action syncMethod) => FromAction(syncMethod);
             public Task RunTask(Func<Task> asyncMethod) => FromAction(asyncMethod().Wait);

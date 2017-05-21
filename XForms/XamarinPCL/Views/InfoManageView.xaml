@@ -6,7 +6,7 @@
     <ResourceDictionary>
       <DataTemplate x:Key="dt_none">
         <ViewCell>
-          <l:InfoLineVM_Row Chooseable="False"/>
+          <l:InfoLineVM_Row />
         </ViewCell>
       </DataTemplate>
       <DataTemplate x:Key="dt_manage">
@@ -15,12 +15,12 @@
             <MenuItem Clicked="OnItemEdit" Text="Edit" />
             <MenuItem Clicked="OnItemDelete" Text="Delete" />
           </ViewCell.ContextActions>
-          <l:InfoLineVM_Row Chooseable="False" Chosen="OnChoose"/>
+          <l:InfoLineVM_Row/>
         </ViewCell>
       </DataTemplate>
       <DataTemplate x:Key="dt_choose">
         <ViewCell>
-          <l:InfoLineVM_Row Chooseable="True"/>
+          <l:InfoLineVM_Row />
         </ViewCell>
       </DataTemplate>
       <DataTemplate x:Key="dt_both">
@@ -29,13 +29,14 @@
             <MenuItem Clicked="OnItemEdit" Text="Edit" />
             <MenuItem Clicked="OnItemDelete" Text="Delete" />
           </ViewCell.ContextActions>
-          <l:InfoLineVM_Row Chooseable="True" Chosen="OnChoose"/>
+          <l:InfoLineVM_Row />
         </ViewCell>
       </DataTemplate>
     </ResourceDictionary>
   </ContentPage.Resources>
   <ContentPage.ToolbarItems>
     <ToolbarItem Text="Add" Clicked="OnItemAdd" x:Name="AddToolbarItem"/>
+    <ToolbarItem Command="{Binding ChooseCommand}" Text="Ok" x:Name="ChooseToolbarItem" />
   </ContentPage.ToolbarItems>
-  <ListView Grid.ColumnSpan="2" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding selectedItem, Mode=TwoWay}" x:Name="infoList"  HasUnevenRows="true" />
+  <ListView Grid.ColumnSpan="2" ItemsSource="{Binding Items}" SelectedItem="{Binding selectedItem, Mode=TwoWay}" x:Name="infoList"  HasUnevenRows="true" />
 </ContentPage>

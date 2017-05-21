@@ -289,6 +289,7 @@ namespace Consonance.Protocol
     }
     public class OriginatorVM
     {
+        // Don't be tempted to do clever == and hashcode
         public static bool OriginatorEquals(OriginatorVM first, OriginatorVM second)
         {
             if (first == null && second == null)
@@ -301,14 +302,6 @@ namespace Consonance.Protocol
                 return (fo as BaseDB).id == (so as BaseDB).id;
             else
                 return Object.Equals(fo, so);
-        }
-        public override bool Equals(object obj)
-        {
-            return OriginatorEquals(obj as OriginatorVM, this);
-        }
-        public override int GetHashCode()
-        {
-            return originator is BaseDB ? (originator as BaseDB).id.GetHashCode() : originator.GetHashCode();
         }
         // Dear views, do not modify this object, or I will kill you.
         public Object sender;

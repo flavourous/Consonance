@@ -14,6 +14,7 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public partial class InfoManageView : ContentPage
 	{
+        public Command ChooseCommand { get; private set; }
 		private InfoLineVM mselectedItem;
 		public InfoLineVM selectedItem {
 			get { return mselectedItem; }
@@ -22,19 +23,20 @@ namespace Consonance.XamarinFormsView.PCL
                 foreach (var it in Items) // subvert reference comparison
                     if (OriginatorVM.OriginatorEquals(it, val))
                         mselectedItem = it;
+                ChooseCommand.ChangeCanExecute();
 				OnPropertyChanged ("selectedItem");
 			}
 		}
 		public InfoLineVM initiallySelectedItem { get; set; }
 
         public static InfoLineVM noth = new InfoLineVM { name = "Nothing" };
-        TaggedObservableCollection<InfoLineVM> _Items;
+        IList<InfoLineVM> _Items;
 		public IList<InfoLineVM> Items
 		{
 			get { return _Items; }
 			set {
-				_Items = new TaggedObservableCollection<InfoLineVM>(noth, value);
-				OnPropertyChanged ("Items");
+                _Items = choice ? new TaggedObservableCollection<InfoLineVM>(noth, value) : value;
+                OnPropertyChanged ("Items");
 			}
 		}
 		protected override void OnPropertyChanged ([CallerMemberName] string propertyName = null)
@@ -43,11 +45,21 @@ namespace Consonance.XamarinFormsView.PCL
 				base.OnPropertyChanged (propertyName)
 			);
 		}
-		public TaskCompletionSource<InfoLineVM> completedTask;
+        // Fixme: generalize into ViewTask IInputResponse as an option
+        public class ctr
+        {
+            public InfoLineVM vm;
+            public bool popping;
+        }
+        bool choice = false;
+		public TaskCompletionSource<ctr> completedTask;
 		public InfoManageView (bool choice, bool manage)
 		{
 			InitializeComponent ();
+            ChooseCommand = new Command(OnChoose, () => selectedItem != null);
 			BindingContext = this;
+            this.choice = choice;
+
 
             // menuitems and actual itemtemplate
             String res = "dt_none";
@@ -58,19 +70,31 @@ namespace Consonance.XamarinFormsView.PCL
 
             // add button
             if (!manage) ToolbarItems.Remove(AddToolbarItem);
+            if (!choice)
+            {
+                ToolbarItems.Remove(ChooseToolbarItem);
+                infoList.ItemSelected += InfoList_ItemSelected;
+                infoList.RemoveBinding(ListView.SelectedItemProperty);
+            }
         }
-		protected override bool OnBackButtonPressed ()
-		{
-			completedTask.SetResult (initiallySelectedItem); // signals no selection change
-			return base.OnBackButtonPressed ();
-		}
+
+        private void InfoList_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+        {
+            infoList.SelectedItem = null;
+        }
+
+        protected override void OnDisappearing()
+        {
+            if(!completed) completedTask.SetResult (new ctr { vm = initiallySelectedItem, popping = true }); // signals no selection change
+            completed = true;
+            base.OnDisappearing();
+        }
 
         bool completed = false;
-		async void OnChoose(Object s, EventArgs e) 
+		void OnChoose() 
 		{
             if (completed) return; completed = true;
-			await Navigation.PopAsync (); // pop furst AVOID BUG?
-			completedTask.SetResult (selectedItem == noth ? null : selectedItem); 
+			completedTask.SetResult(new ctr { vm = selectedItem == noth ? null : selectedItem, popping = false }); 
 		}
 
 		// info hooks

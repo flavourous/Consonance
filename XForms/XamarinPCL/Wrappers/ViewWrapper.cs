@@ -52,7 +52,7 @@ namespace Consonance.XamarinFormsView.PCL
 
         void SetIVM<T>(IVMList<T> list, Action<IVMList<T>> setter)
         {
-            list.Dispatcher = a => App.UIThread(a);
+            list.Dispatcher = a => App.UIThread(a); 
             App.UIThread(() => setter(list));
         }
 

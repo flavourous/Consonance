@@ -78,7 +78,7 @@ namespace Consonance
             var maindbpath = Path.Combine(datapath, "Consonance.db");
             //platform.filesystem.Delete(maindbpath);
             //byte[] file = platform.filesystem.ReadFile(maindbpath);
-            cconn = new SQLiteConnection(platform.sqlite, maindbpath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex);
+            cconn = new SQLiteConnection(platform.sqlite, maindbpath, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex, false);
         }
         SqliteDal() { } // Inner.
 
@@ -246,7 +246,7 @@ namespace Consonance
             var tt = typeof(T);
             int tid = 0;
             if (router != null && router.GetTableIdentifier<T>(out tid)) return tid;
-            var tat = tt.GetTypeInfo().GetCustomAttributes<TableIdentifierAttribute>(true) as TableIdentifierAttribute;
+            var tat = tt.GetTypeInfo().GetCustomAttribute<TableIdentifierAttribute>(true) as TableIdentifierAttribute;
             if (tat == null) throw new ArgumentException("TableIdentifier Attribute missing on " + tt.Name);
             return tat.id;
         }
@@ -255,11 +255,15 @@ namespace Consonance
             where T : class, IPrimaryKey
             where F : class, IPrimaryKey
         {
-            using (Sync.WriteLock())
-            {
-                cconn.CreateTable(GetTableMap<F>());
-                cconn.CreateTable(GetTableMap<T>());
-            }
+            // Lockrecursion can happen here because ORM triggers constructors that want to initialize an ikeyto
+            // so we check if tables exist.
+            TableMapping fm = GetTableMap<F>(), tm = GetTableMap<T>();
+            if(cconn.GetTableInfo(fm.TableName).Count == 0)
+                using (Sync.WriteLock())
+                    cconn.CreateTable(fm);
+            if (cconn.GetTableInfo(tm.TableName).Count == 0)
+                using (Sync.WriteLock())
+                    cconn.CreateTable(tm);
             var f_cid = FindFMid<F>();
             var t_cid = FindFMid<T>();
             return new SqliteKeyToProxy<F, T>(from_this, f_cid, from_pid, t_cid, cconn, GetTableMap<T>(), GetTableMap<F>(), Sync);

@@ -17,7 +17,7 @@ namespace Consonance.XamarinFormsView.PCL
 		{
             TaskCompletionSource<EventArgs> pushed = new TaskCompletionSource<EventArgs>();
             var tt = srv.Current;
-            TaskCompletionSource<InfoLineVM> tcs = new TaskCompletionSource<InfoLineVM> ();
+            var tcs = new TaskCompletionSource<InfoManageView.ctr>();
             InfoManageView iman_c = null;
             App.UIThread (() => {
                 iman_c = new InfoManageView(choose, manage);
@@ -28,7 +28,12 @@ namespace Consonance.XamarinFormsView.PCL
 				iman_c.completedTask = tcs;
                 srv.nav.PushAsync(iman_c).ContinueWith(t => pushed.SetResult(new EventArgs()));
 			});
-            return new ViewTask<InfoLineVM>(() => srv.nav.RemoveOrPopAsync(iman_c), pushed.Task, tcs.Task); // return result, or initial if it gave null (wich is null if it really was and no change)
+            return new ViewTask<InfoLineVM>(() =>
+            {
+                if (tcs.Task.IsCompleted && tcs.Task.Result.popping)
+                    return Task.FromResult(true); // dont do it!
+                return srv.nav.RemoveOrPopAsync(iman_c);
+            }, pushed.Task, tcs.Task.ContinueWith(t=>t.Result.vm)); // return result, or initial if it gave null (wich is null if it really was and no change)
 		}
 
         public IInputResponse<EventArgs> ManageInvention(IList<InventedTrackerVM> toManage)

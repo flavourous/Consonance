@@ -268,7 +268,6 @@ namespace Consonance
 			String info_plural = true_if_in ? presenter.dialect.InputInfoPlural : presenter.dialect.OutputInfoPlural;
             var infoRequest = getValues.requestFactory.InfoLineVMRequestor(info_plural, true_if_in ? InfoManageType.In : InfoManageType.Out);
 			infoRequest.valid = true; // always true
-			
 			InfoLineVM sinfo = null;
 			if(editing != null && editing.infoinstanceid.HasValue)
 			{
@@ -276,7 +275,6 @@ namespace Consonance
 				sinfo = rep (imod);
 				sinfo.originator = imod; // dont forget to set this this time...
 			}
-
             infoRequest.value = sinfo;
 		
 			// Set up for editing
@@ -302,21 +300,27 @@ namespace Consonance
 				}
 			};
 
-			// binfy
+			// Get the page ready
 			String entryVerb = true_if_in ? presenter.dialect.InputEntryVerb : presenter.dialect.OutputEntryVerb;
 			var requests = new GetValuesPage (entryVerb);
-			requests.valuerequests.Add (infoRequest.request);
 
+            // Initialise and keep requests up to date
+            InfoLineVM last = new InfoLineVM { name = "Dummy" };
 			Action checkFields = () => {
+                // break out before we get flds again
+                if (last == infoRequest.value) return;
+                last = infoRequest.value;
+
+                // Refresh requests
 				var nrq = flds();
 				nrq.Insert (0, infoRequest.request);
 				requests.SetList(nrq);
 			};
 			checkFields ();
 			infoRequest.ValueChanged += checkFields;
+            last = infoRequest.value;
 
-
-            var pages = new List<GetValuesPage>(modelHandler.model.CreationPages(instanceBuilder.requestFactory));
+            // Fire off the get values time.
             return getValues.GetValues(new[] { requests }).ContinueWith(t =>
             {
 				if (t.Result) editit ();

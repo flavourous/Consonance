@@ -50,7 +50,7 @@ namespace Consonance.Test.Tests
 
         [Order(1)]
         [Test]
-        public void T1_CreateNewInvention()
+        public void T01_CreateNewInvention()
         {
             var v = app.view;
 
@@ -242,7 +242,7 @@ namespace Consonance.Test.Tests
             Assert.AreEqual("G", model.InputInfoVerbPast);
             Assert.AreEqual("H", model.OutputInfoVerbPast);
 
-            Assert.AreNotEqual(model.uid, null);
+            Assert.AreNotEqual(gg=model.uid, null);
 
             Assert.AreEqual(1, model.qod_in.Get().Count());
             Qassert(model.qod_in.Get().First(), "Nominator", 20.0, InfoQuantifierTypes.Number);
@@ -284,9 +284,111 @@ namespace Consonance.Test.Tests
             Assert.AreEqual(q1.quantifier_type, t);
             Assert.AreEqual(q1.defaultvalue, dv);
         }
-        double a, b, c;
+        Guid gg;
         [Test, Order(2)]
-        public void T2_CreateTrackerFromInvention()
+        public void T02_EditInvention()
+        {
+            var v = app.view;
+            var namePage = GenExpect(
+                "What's it called?",
+                () => new[]
+                {
+                    SG.Gen<String>("Name", null, false),
+                    SG.Gen<String>("Description", null, false),
+                    SG.Gen<String>("Category", null, false)
+                },
+                new[]
+                {
+                    V.C(0,"test_invention-ed"),
+                    V.C(1,"it tests stuff-ed"),
+                    V.C(2,"Test-ed"),
+                }
+            );
+            var dialectPage = GenExpect(
+                "How are entries called?",
+                () => new[]
+                {
+                    SG.Gen<String>("InputEntryVerb", null, false),
+                    SG.Gen<String>("OutputEntryVerb", null, false),
+                    SG.Gen<String>("InputInfoPlural", null, false),
+                    SG.Gen<String>("InputInfoSingular", null, false),
+                    SG.Gen<String>("OutputInfoPlural", null, false),
+                    SG.Gen<String>("OutputInfoSingular", null, false),
+                    SG.Gen<String>("InputInfoVerbPast", null, false),
+                    SG.Gen<String>("OutputInfoVerbPast", null, false)
+                },
+                new[]
+                {
+                    V.C(0,"A-ed"),V.C(1,"B-ed"),V.C(2,"C-ed"),V.C(3,"D-ed"),
+                    V.C(4,"E-ed"),V.C(5,"F-ed"),V.C(6,"G-ed"),V.C(7,"H-ed")
+                }
+            );
+
+            var ivae = new TestValueRequestBuilder.GetValuesExpected
+            {
+                page_actions = new[] { namePage, dialectPage },
+                complete = () => true
+            };
+            app.builder.GetValuesExpect.Enqueue(ivae);
+            var busies = new Waiter[]
+            {
+                v.Inventions.QueueWaitForBusy(true, false),
+            };
+
+            var v1 = app.view.Inventions.val.First();
+            v._invention.Edit(v1);
+            
+            ivae.finished.Task.Wait();
+            BusyAssert(app, busies, 10000);
+
+            v1 = app.view.Inventions.val.First();
+            Assert.AreEqual(1, app.view.Inventions.val.Count);
+            Assert.AreEqual("test_invention-ed", v1.name);
+            Assert.AreEqual("it tests stuff-ed", v1.description);
+            Assert.IsInstanceOf<SimpleTrackyHelpyInventionV1>(v1.sender);
+            Assert.IsInstanceOf<SimpleTrackyHelpyInventionV1Model>(v1.originator);
+
+            var model = v1.originator as SimpleTrackyHelpyInventionV1Model;
+
+            Assert.AreEqual("test_invention-ed", model.Name);
+            Assert.AreEqual("it tests stuff-ed", model.Description);
+            Assert.AreEqual("Test-ed", model.Category);
+
+            Assert.AreEqual("A-ed", model.InputEntryVerb);
+            Assert.AreEqual("B-ed", model.OutputEntryVerb);
+            Assert.AreEqual("C-ed", model.InputInfoPlural);
+            Assert.AreEqual("D-ed", model.InputInfoSingular);
+            Assert.AreEqual("E-ed", model.OutputInfoPlural);
+            Assert.AreEqual("F-ed", model.OutputInfoSingular);
+            Assert.AreEqual("G-ed", model.InputInfoVerbPast);
+            Assert.AreEqual("H-ed", model.OutputInfoVerbPast);
+
+            Assert.AreEqual(model.uid, gg);
+        }
+        [Test, Order(3)]
+        public void T03_RemoveInvention_AndResetTo1()
+        {
+            var v = app.view;
+            var v1 = app.view.Inventions.val.First();
+            var busies = new Waiter[] // it triggers instance changed stuff
+            {
+                v.OutInfos.QueueWaitForBusy(true,true,true,false),
+                v.OutEntries.QueueWaitForBusy(true,true,true,false),
+                v.OutTrack.QueueWaitForBusy(true,true,true,true,true,true,true,false),
+                v.InInfos.QueueWaitForBusy(true,true,true,false),
+                v.InEntries.QueueWaitForBusy(true,true,true,false),
+                v.InTrack.QueueWaitForBusy(true,true,true,true,true,true,true,false),
+                v.Instances.QueueWaitForBusy(true,false),
+                v.Inventions.QueueWaitForBusy(true, false),
+            };
+            v._invention.Remove(v1);
+            BusyAssert(app, busies, 10000);
+            Assert.AreEqual(0, app.view.Inventions.val.Count);
+            T01_CreateNewInvention(); // reset
+        }
+        double a, b, c;
+        [Test, Order(4)]
+        public void T04_CreateTrackerFromInvention()
         {
             var choose = ChoosePlan("test_invention", new ItemDescriptionVM("test_invention", "it tests stuff", "Test"));
             app.input.ChoosePlanExpect.Enqueue(choose);
@@ -337,8 +439,8 @@ namespace Consonance.Test.Tests
                 SG.Gen<OptionGroupValue>("Repeat", SG.IgnoreValue)
             );
 
-        [Test, Order(3)]
-        public void T3_Add_Quick_InInstances_AssertStuffs()
+        [Test, Order(5)]
+        public void T05_Add_Quick_InInstances_AssertStuffs()
         {
 
             Func<String, double, ELA> adder = (n, v) =>
@@ -364,8 +466,8 @@ namespace Consonance.Test.Tests
             );
         }
 
-        [Test, Order(4)]
-        public void T4_Delete_Cause_Effort()
+        [Test, Order(6)]
+        public void T06_Delete_Cause_Effort()
         {
             Action del1 = () =>
             {
@@ -388,8 +490,8 @@ namespace Consonance.Test.Tests
         }
 
         double i1, i2, o1, o2, o3;
-        [Test, Order(5)]
-        public void T5_Add_InInfo()
+        [Test, Order(7)]
+        public void T07_Add_InInfo()
         {
             Func<ST> init = () => GenState(
                     SG.Gen<String>("Name", ""),
@@ -415,8 +517,8 @@ namespace Consonance.Test.Tests
             });
         }
 
-        [Test, Order(6)]
-        public void T6_Add_OutInfo()
+        [Test, Order(8)]
+        public void T08_Add_OutInfo()
         {
             Func<ST> init = () => GenState(
                     SG.Gen<String>("Name", ""),
@@ -455,8 +557,8 @@ namespace Consonance.Test.Tests
 
 
         double am7;
-        [Test, Order(7)]
-        public void T7_AddInEntry()
+        [Test, Order(9)]
+        public void T09_AddInEntry()
         {
             var un = 10.0;
             var f = un / 100.0;
@@ -497,8 +599,8 @@ namespace Consonance.Test.Tests
             SG.Gen<OptionGroupValue>("Repeat", SG.IgnoreValue)
          );
 
-        [Test, Order(8)]
-        public void T8_AddOutEntry()
+        [Test, Order(10)]
+        public void T10_AddOutEntry()
         {
             var un = TimeSpan.FromHours(6.0);
             var f = 3.0;

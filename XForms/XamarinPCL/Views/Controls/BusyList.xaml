@@ -5,7 +5,7 @@
              x:Name="main_cv" 
              >
   <Grid>
-    <ListView 
+    <ListView x:Name="bl"
       HasUnevenRows="{Binding HasUnevenRows, Source={x:Reference main_cv}}" 
       SelectedItem="{Binding SelectedItem, Source={x:Reference main_cv}, Mode=TwoWay}" 
       ItemsSource="{Binding ItemsSource, Source={x:Reference main_cv}}"

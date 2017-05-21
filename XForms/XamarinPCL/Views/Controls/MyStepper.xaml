@@ -26,6 +26,6 @@
 		</Grid.ColumnDefinitions>
     <l:TextSizedButton Grid.Column="0" x:Name="prev" HorizontalOptions="Center" VerticalOptions="Center" Clicked="OnPrev" Text="-"/>
 		<Label Grid.Column="1" VerticalOptions="Center" x:Name="displayLabel"/>
-    <l:TextSizedButton Grid.Column="2" x:Name="next" HorizontalOptions="Center" VerticalOptions="Center" Clicked="OnNext" Text="+"/>
+    <Button Grid.Column="2" x:Name="next" HorizontalOptions="Center" VerticalOptions="Center" Clicked="OnNext" Text="+"/>
 	</Grid>
 </ContentView>

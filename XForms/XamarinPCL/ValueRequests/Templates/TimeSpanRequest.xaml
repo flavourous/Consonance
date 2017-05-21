@@ -1,18 +1,15 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ContentView xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL"
              xmlns:xlib="clr-namespace:XLib;assembly=Consonance.XamarinFormsView.PCL"
-             xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="Consonance.XamarinFormsView.PCL.TimeSpanRequest">
+             xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+             x:Class="Consonance.XamarinFormsView.PCL.TimeSpanRequest"
+             x:Name="vTimeSpanRequest">
 	<StackLayout Orientation="Horizontal">
-		<StackLayout.Resources>
-			<ResourceDictionary>
-				<l:TimeSpanValueConverter_Stateful x:Key="tsrConverter"/>
-			</ResourceDictionary>
-		</StackLayout.Resources>
-		<xlib:IvalEntry Keyboard="Numeric" Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=h}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
+        <xlib:IvalEntry Keyboard="Numeric" Text="{Binding Hours, Mode=TwoWay, Source={x:Reference vTimeSpanRequest}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 		<Label Text="h" VerticalOptions="Center"/>
-		<xlib:IvalEntry Keyboard="Numeric" Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=m}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
+        <xlib:IvalEntry Keyboard="Numeric" Text="{Binding Minutes, Mode=TwoWay, Source={x:Reference vTimeSpanRequest}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 		<Label Text="m" VerticalOptions="Center"/>
-		<xlib:IvalEntry Keyboard="Numeric" Text="{Binding value, Converter={StaticResource tsrConverter}, ConverterParameter=s}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
+        <xlib:IvalEntry Keyboard="Numeric" Text="{Binding Seconds, Mode=TwoWay, Source={x:Reference vTimeSpanRequest}" VerticalOptions="Center" HorizontalOptions="FillAndExpand"/>
 		<Label Text="s" VerticalOptions="Center"/>
 	</StackLayout>
 </ContentView>

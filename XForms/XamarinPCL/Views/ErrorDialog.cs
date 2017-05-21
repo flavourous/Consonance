@@ -33,5 +33,3 @@ namespace Consonance.XamarinFormsView.PCL
 		}
 	}
 }
-
-

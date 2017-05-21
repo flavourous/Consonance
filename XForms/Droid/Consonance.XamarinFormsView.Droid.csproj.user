@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <SelectedDevice>Samsung GT-N7105</SelectedDevice>
+    <SelectedDevice>innotek GmbH VirtualBox</SelectedDevice>
     <ProjectView>ProjectFiles</ProjectView>
-    <DefaultDevice>VisualStudio_android-23_arm_phone</DefaultDevice>
+    <DefaultDevice>VisualStudio_android-23_x86_tablet</DefaultDevice>
   </PropertyGroup>
 </Project>

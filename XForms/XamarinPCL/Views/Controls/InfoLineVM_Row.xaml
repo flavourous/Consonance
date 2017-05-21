@@ -3,12 +3,10 @@
 	<ContentView.Resources>
 		<ResourceDictionary>
 			<l:KVPListConverter x:Key="klc"/>
-			<l:WithChoosableConverter x:Key="withChooseable"/>
 		</ResourceDictionary>
 	</ContentView.Resources>
 	<StackLayout Orientation="Horizontal">
 		<Label Text="{Binding name}" HorizontalOptions="StartAndExpand"/>
 		<Label LineBreakMode="WordWrap" Text="{Binding displayAmounts, Converter={StaticResource klc}}" HorizontalOptions="FillAndExpand" VerticalOptions="Center"/>
-		<l:TextSizedButton Clicked="OnChosen" Text="Choose" IsVisible="{Binding selected, Converter={StaticResource withChooseable}}" HorizontalOptions="End" x:Name="gg"/>
 	</StackLayout>
 </ContentView>

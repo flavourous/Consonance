@@ -23,7 +23,7 @@ namespace Consonance.Test
 
         [Order(0)]
         [Test]
-        public void T0_InitialState()
+        public void T00_InitialState()
         {
             var v = app.view;
             var busies = new[]
@@ -111,7 +111,7 @@ namespace Consonance.Test
         {
             if (pea.PropertyName == "busy")
             {
-                Debug.WriteLine("{0} is {1}", id, val.busy);
+                Debug.WriteLine("(TEST) {0} is {1}", id, val.busy);
                 BusyChanged(val.busy);
             }
         }

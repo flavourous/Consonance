@@ -6,7 +6,6 @@ using LibSharpHelp;
 using LibRTP;
 using System.Diagnostics;
 using System.Linq;
-using static Consonance.Presenter;
 using Consonance.Protocol;
 using System.Collections.ObjectModel;
 
@@ -346,10 +345,11 @@ namespace Consonance
         {
             var moc = new MeasureOptionsContainer { desc = q };
             moc.quant = FromEntry(q, out moc.displayConversion);
-            moc.requestStorage = moc.quant.CreateHelper(
-                () => moc.requestStorage.requestValid =
-                moc.quant.ValidateHelper(new[] { moc.requestStorage }));
-            moc.requestStorage.requestChanged += Validator;
+            moc.requestStorage = moc.quant.CreateHelper(() =>
+                {
+                    moc.requestStorage.requestValid = moc.quant.ValidateHelper(new[] { moc.requestStorage });
+                     Validator();
+                });
             return moc;
         }
 
@@ -633,16 +633,15 @@ namespace Consonance
         MeasureOptionsContainer hiddenQuant;
 		public void FillRequestData (I item, IValueRequestFactory factory)
 		{
-            // going to do edit
-            var usedquant = ihelper.FindMO(item.quantifierID);
-
             // this is -1 if not option on this traker
             var qi = measureOptionContainers.FindIndex(u => u.desc.id == item.quantifierID);
+            var usedquant = qi == -1 ? null : measureOptionContainers[qi]; // otherwise we goota use the one we already cgetted
 
             // need hdden request? -1?
             Object hr = null;
             if (qi == -1)
             {
+                usedquant = ihelper.FindMO(item.quantifierID);
                 hiddenQuant = usedquant;
                 hr = usedquant.requestStorage.CGet(factory, usedquant.quant.FindRequestorDelegate);
             }
