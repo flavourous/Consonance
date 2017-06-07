@@ -6,6 +6,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Collections.Specialized;
 using Consonance.Protocol;
+using System.Runtime.CompilerServices;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -70,41 +71,16 @@ namespace Consonance.XamarinFormsView.PCL
     }
 	public class TTView : VStacker
 	{
-        TextSizedButton b;
+        public bool Expanded { get => (bool)GetValue(ExpandedProperty); set => SetValue(ExpandedProperty, value); }
+        public static readonly BindableProperty ExpandedProperty = BindableProperty.Create("Expanded", typeof(bool), typeof(TTView), false);
+
         StackLayout oc;
 		public TTView() : base(Generator)
         {
             IsVisible = false;
             Spacing = 3;
             oc = Content as StackLayout;
-            var th = new Frame
-            {
-                Padding = new Thickness(0),
-                Content = b = new TextSizedButton()
-                {
-                    VerticalOptions = LayoutOptions.Start,
-                    HorizontalOptions = LayoutOptions.End,
-                },
-                VerticalOptions = LayoutOptions.Start
-            };
-            b.Clicked += Cb_Clicked;
-            Content = new StackLayout
-            {
-                Spacing = 0.0,
-                Orientation = StackOrientation.Vertical,
-                Children =
-                {
-                    th,
-                    new BoxView
-                    {
-                        BackgroundColor = App.Colors.Accent,
-                        HeightRequest = 2,
-                        HorizontalOptions = LayoutOptions.FillAndExpand,
-                    },
-                    new ScrollView { Content = oc, VerticalOptions = LayoutOptions.Fill }
-                },
-                VerticalOptions = LayoutOptions.Fill
-            };
+            Content = new ScrollView { Content = oc, VerticalOptions = LayoutOptions.Fill };
             ItemsChanged += TTView_ItemsChanged;
         }
 
@@ -117,16 +93,17 @@ namespace Consonance.XamarinFormsView.PCL
             foreach (var i in Items) { v = true; break; }
             IsVisible = v;
         }
-        private void Cb_Clicked(object sender, EventArgs e)
+        protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            expanded = !expanded;
-            ProcExp();
+            base.OnPropertyChanged(propertyName);
+            if (propertyName == "Expanded") ProcExp();
         }
         void ProcExp()
         {
-            b.Text = expanded ? "Less" : "More";
-            for (int i = 1; i < oc.Children.Count; i++)
-                oc.Children[i].IsVisible = expanded;
+            if (!expanded) Content = oc.Children.FirstOrDefault();
+            else Content = oc;
+            //for (int i = 1; i < oc.Children.Count; i++)
+            //    oc.Children[i].IsVisible = expanded;
         }
 
         static View Generator(Object vmo)
@@ -149,12 +126,13 @@ namespace Consonance.XamarinFormsView.PCL
                     tl,
                     new BoxView
                     {
-                        BackgroundColor = App.Colors.Accent,
+                        BackgroundColor = tl.TextColor,
                         HeightRequest =1,
                         HorizontalOptions = LayoutOptions.FillAndExpand,
                     },
                     new TTViewItem
                     {
+                        Spacing = 2,
                         Padding = new Thickness(0,2,0,0),
                         Items = vm.tracks,
                         VerticalOptions = LayoutOptions.Start,
@@ -166,7 +144,7 @@ namespace Consonance.XamarinFormsView.PCL
 	}
 	public class TTViewItem : VStacker
 	{
-		public TTViewItem () : base(BarInfo.GenerateView) { Spacing = 2; }
+		public TTViewItem () : base(BarInfo.GenerateView) { }
         class BarInfo
         {
             static View Bar(Color f, Color b)

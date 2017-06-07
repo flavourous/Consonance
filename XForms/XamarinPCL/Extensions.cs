@@ -8,7 +8,7 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public static class ExMethods
 	{
-		public static T OnCol<T>(this T ret, int col, int span = 1) where T : View
+        public static T OnCol<T>(this T ret, int col, int span = 1) where T : View
 		{
 			ret.SetValue (Grid.ColumnProperty, col);
             if (span > 1) ret.SetValue(Grid.ColumnSpanProperty, span);

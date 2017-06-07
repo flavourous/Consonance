@@ -71,11 +71,6 @@ namespace Consonance.XamarinFormsView.PCL
                         vrv.Title = pages[npage].title;
                         (lastPushed = pages[npage]).valuerequests_CollectionChanged += leh;
                         Requests_ListChanged(vrv, pages[npage].valuerequests, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-
-                        // already UI thread for pagecomplete handler
-                        var plr = pages[npage].valuerequests.FirstOrDefault(r=>r is IValueRequest<TabularDataRequestValue>);
-                        if (plr != null) vrv.ListyMode(plr as IValueRequest<TabularDataRequestValue>);
-                        else vrv.NormalMode();
                     }
                 };
 				vrv.completed = PageCompletedHandler;
@@ -140,8 +135,7 @@ namespace Consonance.XamarinFormsView.PCL
 		public IValueRequest<RecurrsEveryPatternValue> RecurrEveryRequestor (string name){ return RequestCreator<RecurrsEveryPatternValue, RecurrsEveryPatternValueRequest> (name,true, ()=>new RecurrsEveryPatternValueRequest()); }
 		public IValueRequest<RecurrsOnPatternValue> RecurrOnRequestor (string name){ return RequestCreator<RecurrsOnPatternValue, RecurrsOnPatternValueRequest> (name,true, ()=>new RecurrsOnPatternValueRequest()); }
         public IValueRequest<MultiRequestOptionValue> IValueRequestOptionGroupRequestor(String name) { return RequestCreator<MultiRequestOptionValue, MultiRequestCombo>(name,true, ()=>new MultiRequestCombo()); }
-        public IValueRequest<TabularDataRequestValue> GenerateTableRequest() { return RequestCreator<TabularDataRequestValue, ContentView>(null, false, ()=>new ContentView()); }
-
+        public IValueRequest<TabularDataRequestValue> GenerateTableRequest() { return RequestCreator<TabularDataRequestValue, TabularDataRequest>(null, false, () => new TabularDataRequest()); }
         #endregion
 
         IValueRequest<T> RequestCreator<T, V>(String name, bool showName, Func<V> creator) where V : View

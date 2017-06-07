@@ -4,90 +4,89 @@
     xmlns="http://xamarin.com/schemas/2014/forms" 
     xmlns:l="clr-namespace:Consonance.XamarinFormsView.PCL;assembly=Consonance.XamarinFormsView.PCL" 
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+    xmlns:xlib="clr-namespace:XLib"
+    xmlns:s="clr-namespace:ScnViewGestures.Plugin.Forms;assembly=ScnViewGestures"
     x:Class="Consonance.XamarinFormsView.PCL.MainTabs"
+    x:Name="main_tabs"
     NavigationPage.HasNavigationBar="True"
     >
+    <TabbedPage.Resources>
+        <ResourceDictionary>
+            <l:DebugBinding x:Key="db"/>
+            <ControlTemplate x:Key="main_pane">
+                <xlib:ViewGesturesMagic SwipeLeft="ListSwipeLeft" SwipeRight="ListSwipeRight" BindingContext="{TemplateBinding BindingContext}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        <l:BusyList ItemsSource="{Binding Items}" HasUnevenRows="true" IsLoading="{Binding Items.busy}" 
+                                SelectedItem="{Binding SelectedItem, Mode=TwoWay}" x:Name="main_bl">
+                            <l:BusyList.ItemTemplate>
+                                <DataTemplate>
+                                    <ViewCell>
+                                        <ViewCell.ContextActions>
+                                            <MenuItem Command="{Binding BindingContext.ItemEdit, Source={x:Reference main_bl}}" CommandParameter="{Binding}" Text="Edit" />
+                                            <MenuItem Command="{Binding BindingContext.ItemDelete, Source={x:Reference main_bl}}" CommandParameter="{Binding}" Text="Delete" />
+                                        </ViewCell.ContextActions>
+                                        <l:EntryLineVM_Row />
+                                    </ViewCell>
+                                </DataTemplate>
+                            </l:BusyList.ItemTemplate>
+                        </l:BusyList>
+                        <ContentPresenter Grid.Row="1"/>
+                    </Grid>
+                </xlib:ViewGesturesMagic>
+            </ControlTemplate>
+            <ControlTemplate x:Key="bottom_pane">
+                <Grid BindingContext="{TemplateBinding BindingContext}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Text="{Binding Day, StringFormat='{0:ddd dd MM yyyy}'}"/>
+                    <ContentPresenter Grid.Column="2"/>
+                </Grid>
+            </ControlTemplate>
+            <ControlTemplate x:Key="track_first">
+                <Grid>
+                    <Grid.BindingContext>
+                        <l:FirstTrack Tracks="{TemplateBinding BindingContext}"/>
+                    </Grid.BindingContext>
+                    <l:TTViewItem BindingContext="{Binding FirstTrackFirstItem}"/>
+                </Grid>
+            </ControlTemplate>
+        </ResourceDictionary>
+    </TabbedPage.Resources>
 	<ContentPage Title="{Binding InTabName}">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddInClick" />
 			<ToolbarItem Text="{Binding InManageName}" Clicked="InInfoManageClick" />
 		</ContentPage.ToolbarItems>
-		<Grid>
-			<Grid.RowDefinitions>
-				<RowDefinition Height="*" />
-				<RowDefinition Height="auto" />
-				<RowDefinition Height="auto" />
-			</Grid.RowDefinitions>
-			<l:BusyList ItemsSource="{Binding InItems}" HasUnevenRows="true" IsLoading="{Binding InItems.busy}">
-				<l:BusyList.ItemTemplate>
-					<DataTemplate>
-						<ViewCell>
-							<ViewCell.ContextActions>
-								<MenuItem Clicked="OnInItemEdit" Text="Edit" />
-								<MenuItem Clicked="OnInItemDelete" Text="Delete" />
-							</ViewCell.ContextActions>
-							<l:EntryLineVM_Row />
-						</ViewCell>
-					</DataTemplate>
-				</l:BusyList.ItemTemplate>
-			</l:BusyList>
-			<l:TTView Grid.Row="1" Items="{Binding InTrack}" />
-			<l:DayPagerView Grid.Row="2" x:Name="daypagerIn" />
-		</Grid>
-	</ContentPage>
+        <ContentView ControlTemplate="{StaticResource main_pane}" BindingContext="{Binding InModel}">
+            <ContentView ControlTemplate="{StaticResource bottom_pane}" BindingContext="{Binding BindingContext, Source={x:Reference main_tabs}}" >
+                <ContentView ControlTemplate="{StaticResource track_first}" BindingContext="{Binding InTrack}"/>
+            </ContentView>
+        </ContentView>
+    </ContentPage>
 	<ContentPage Title="{Binding OutTabName}">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddOutClick" />
 			<ToolbarItem Text="{Binding OutManageName}" Clicked="OutInfoManageClick" />
 		</ContentPage.ToolbarItems>
-		<Grid>
-			<Grid.RowDefinitions>
-				<RowDefinition Height="*" />
-				<RowDefinition Height="auto" />
-				<RowDefinition Height="auto" />
-			</Grid.RowDefinitions>
-			<l:BusyList ItemsSource="{Binding OutItems}" HasUnevenRows="true" IsLoading="{Binding OutItems.busy}">
-				<l:BusyList.ItemTemplate>
-					<DataTemplate>
-						<ViewCell>
-							<ViewCell.ContextActions>
-								<MenuItem Clicked="OnOutItemEdit" Text="Edit" />
-								<MenuItem Clicked="OnOutItemDelete" Text="Delete" />
-							</ViewCell.ContextActions>
-							<l:EntryLineVM_Row />
-						</ViewCell>
-					</DataTemplate>
-				</l:BusyList.ItemTemplate>
-			</l:BusyList>
-			<l:TTView Grid.Row="1" Items="{Binding OutTrack}" />
-			<l:DayPagerView Grid.Row="2" x:Name="daypagerOut" />
-		</Grid>
-	</ContentPage>
+        <ContentView ControlTemplate="{StaticResource main_pane}" BindingContext="{Binding OutModel}">
+            <ContentView ControlTemplate="{StaticResource bottom_pane}" BindingContext="{Binding BindingContext, Source={x:Reference main_tabs}}" >
+                <l:TTView Items="{Binding OutTrack}" />
+            </ContentView>
+        </ContentView>
+    </ContentPage>
 	<ContentPage Title="Plan">
 		<ContentPage.ToolbarItems>
 			<ToolbarItem Text="Add" Clicked="AddPlanClick" />
 			<ToolbarItem Text="Invent" Clicked="ManageInvention"/>
 		</ContentPage.ToolbarItems>
-		<Grid>
-			<Grid.RowDefinitions>
-				<RowDefinition Height="*" />
-				<RowDefinition Height="auto" />
-			</Grid.RowDefinitions>
-			<l:BusyList HasUnevenRows="true" SelectedItem="{Binding SelectedPlanItem, Mode=OneWayToSource}" 
-                  x:Name="PlanList" ItemsSource="{Binding PlanItems}"  IsLoading="{Binding PlanItems.busy}">
-				<l:BusyList.ItemTemplate>
-					<DataTemplate>
-						<ViewCell>
-							<ViewCell.ContextActions>
-								<MenuItem Clicked="OnPlanItemEdit" Text="Edit" />
-								<MenuItem Clicked="OnPlanItemDelete" Text="Delete" />
-							</ViewCell.ContextActions>
-							<l:TrackerInstanceVM_Row />
-						</ViewCell>
-					</DataTemplate>
-				</l:BusyList.ItemTemplate>
-			</l:BusyList>
-			<l:DayPagerView Grid.Row="1" x:Name="daypagerPlan" />
-		</Grid>
+        <ContentView ControlTemplate="{StaticResource main_pane}" BindingContext="{Binding PlanModel}">
+            <ContentView ControlTemplate="{StaticResource bottom_pane}" BindingContext="{Binding BindingContext, Source={x:Reference main_tabs}}" />
+        </ContentView>
 	</ContentPage>
 </TabbedPage>

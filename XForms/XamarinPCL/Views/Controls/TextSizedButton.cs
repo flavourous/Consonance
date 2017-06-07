@@ -18,6 +18,7 @@ namespace Consonance.XamarinFormsView.PCL
         {
             l = new Label { HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center };
             b = new Button();
+            b.SetBinding(Button.CommandProperty, new Binding("Command", source: this));
             Content = new Grid
             {
                 Children = { b, l },
@@ -26,7 +27,8 @@ namespace Consonance.XamarinFormsView.PCL
             };
             MeasureInvalidated += TextSizedButton_MeasureInvalidated;
         }
-
+        public Command Command { get => (Command)GetValue(CommandProperty); set => SetValue(CommandProperty, value); }
+        public static readonly BindableProperty CommandProperty = BindableProperty.Create("Comand", typeof(Command), typeof(TextSizedButton));
         public String Text { get { return (String)GetValue(TextProperty); } set { SetValue(TextProperty, value); } }
         public static readonly BindableProperty TextProperty = BindableProperty.Create("Text", typeof(String), typeof(TextSizedButton), null, BindingMode.OneWay, null, TextChanged);
         public static void TextChanged(BindableObject obj, Object oldValue, Object newValue)

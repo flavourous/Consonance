@@ -12,7 +12,7 @@ using Consonance.Protocol;
 
 namespace Consonance.XamarinFormsView.PCL
 {
-	class ViewWrapper : IView, ICollectionEditorSelectableLooseCommands<TrackerInstanceVM>, INotifyPropertyChanged
+	class ViewWrapper : IView, ICollectionEditorSelectableLooseCommands<TrackerInstanceVM>
     {
 		static int? mainID;
 		public readonly MainTabs main;
@@ -22,11 +22,17 @@ namespace Consonance.XamarinFormsView.PCL
 			mainID = Task.CurrentId;
             this.main = main;
             this.srv = srv;
-			main.daypagerContext = this;
             main.InInfoManage += () => InfoView(InfoManageType.In);
 			main.OutInfoManage += () => InfoView(InfoManageType.Out);
             main.manageInvention += () => srv.Invent();
+            main.ShiftDay += Main_ForwardsDay;
         }
+
+        private void Main_ForwardsDay(int obj)
+        {
+            ChangeDay(day.AddDays(obj));
+        }
+
         void InfoView(InfoManageType mt)
         {
             if(currentTrackerInstance == null)
@@ -43,11 +49,11 @@ namespace Consonance.XamarinFormsView.PCL
         // passons
         public void SetEatTrack(IVMList<TrackerTracksVM> others) { SetIVM(others,v => main.viewmodel.InTrack = v); }
         public void SetBurnTrack(IVMList<TrackerTracksVM> others) { SetIVM(others,v => main.viewmodel.OutTrack = v); }
-        public void SetEatLines(IVMList<EntryLineVM> lineitems) { SetIVM(lineitems,v => main.viewmodel.InItems = v); }
-        public void SetBurnLines(IVMList<EntryLineVM> lineitems) { SetIVM(lineitems, v => main.viewmodel.OutItems = v); }
+        public void SetEatLines(IVMList<EntryLineVM> lineitems) { SetIVM(lineitems,v => main.viewmodel.InModel.Items = v); }
+        public void SetBurnLines(IVMList<EntryLineVM> lineitems) { SetIVM(lineitems, v => main.viewmodel.OutModel.Items = v); }
         public void SetEatInfos(IVMList<InfoLineVM> lineInfos) { SetIVM(lineInfos,v => main.viewmodel.InInfos = v); }
         public void SetBurnInfos(IVMList<InfoLineVM> lineInfos) { SetIVM(lineInfos, v => main.viewmodel.OutInfos = v); }
-        public void SetInstances(IVMList<TrackerInstanceVM> instanceitems) { SetIVM(instanceitems, v => main.viewmodel.PlanItems = v); }
+        public void SetInstances(IVMList<TrackerInstanceVM> instanceitems) { SetIVM(instanceitems, v => main.viewmodel.PlanModel.Items = v); }
         public void SetInventions(IVMList<InventedTrackerVM> items) { SetIVM(items, v => main.viewmodel.InventedPlans = v); }
 
         void SetIVM<T>(IVMList<T> list, Action<IVMList<T>> setter)
@@ -66,19 +72,10 @@ namespace Consonance.XamarinFormsView.PCL
         // dayyys
         public void ChangeDay(DateTime day) { changeday(day); }
 		public event Action<DateTime> changeday = delegate { };
-		private DateTime mday;
-		public DateTime day { get { return mday; } set { mday = value; OnPropertyChanged ("day"); } }
+		public DateTime day { get => main.viewmodel.Day;  set => main.viewmodel.Day = value;  }
 
         // invention, is add/edit/remove on another screen soooo let it be set??
         public ICollectionEditorLooseCommands<InventedTrackerVM> invention { get; set; }
-
-        #region INotifyPropertyChanged implementation
-        public event PropertyChangedEventHandler PropertyChanged = delegate { };
-		public void OnPropertyChanged(String property)
-		{
-            App.UIThread(() => PropertyChanged(this, new PropertyChangedEventArgs(property)));
-		}
-        #endregion
 
     }
 }

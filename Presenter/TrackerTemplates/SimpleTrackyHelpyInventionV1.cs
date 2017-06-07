@@ -74,6 +74,26 @@ namespace Consonance.Invention
      *  - Hooks each invented descriptor to AppPresenter as Trackers
      */
 
+    class Singley<T>
+    {
+        bool iscreated;
+        T created;
+        Func<T> creator;
+        public Singley(Func<T> creator)
+        {
+            this.creator = creator;
+            iscreated = false;
+        }
+        public T Get()
+        {
+            if (!iscreated)
+            {
+                created = creator();
+                iscreated = true;
+            }
+            return created;
+        }
+    }
 
     #region Tracker descriptor created by the simple inventor
     [TableIdentifier(4)]
@@ -82,11 +102,12 @@ namespace Consonance.Invention
         public static IDAL GDal;
         public SimpleTrackyHelpyInventionV1Model()
         {
-            qod_in = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this, 1);
-            qod_out = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this, 2);
-            targets = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingTargetDescriptor>(this, 3);
-            inequations = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingEquationDescriptor>(this,4);
-            outequations = GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingEquationDescriptor>(this, 5);
+            // These must be lazy, because they create tables inside a Query returning thier type otjerwise
+            _qod_in = new Singley<IKeyTo<SimpleTrackyInfoQuantifierDescriptor>>(() => GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this, 1));
+            _qod_out = new Singley<IKeyTo<SimpleTrackyInfoQuantifierDescriptor>>(() => GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyInfoQuantifierDescriptor>(this, 2));
+            _targets = new Singley<IKeyTo<SimpleTrackyTrackingTargetDescriptor>>(() => GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingTargetDescriptor>(this, 3));
+            _inequations = new Singley<IKeyTo<SimpleTrackyTrackingEquationDescriptor>>(() => GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingEquationDescriptor>(this, 4));
+            _outequations = new Singley<IKeyTo<SimpleTrackyTrackingEquationDescriptor>>(() => GDal.CreateOneToMany<SimpleTrackyHelpyInventionV1Model, SimpleTrackyTrackingEquationDescriptor>(this, 5));
         }
 
         // helper
@@ -103,15 +124,19 @@ namespace Consonance.Invention
             }
         }
 
-        // Quantifier types foriegn relationship
-        public IKeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_in, qod_out;
-        
+        readonly Singley<IKeyTo<SimpleTrackyInfoQuantifierDescriptor>> _qod_in, _qod_out;
+        [Ignore] public IKeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_in { get { return _qod_in.Get(); } }
+        [Ignore] public IKeyTo<SimpleTrackyInfoQuantifierDescriptor> qod_out { get { return _qod_out.Get(); } }
+
         // targets!
-        public IKeyTo<SimpleTrackyTrackingTargetDescriptor> targets;
+        readonly Singley<IKeyTo<SimpleTrackyTrackingTargetDescriptor>> _targets;
+        [Ignore] public IKeyTo<SimpleTrackyTrackingTargetDescriptor> targets { get { return _targets.Get(); } }
         public String target_args { get; set; } // comma seperated, used by targets equations.
 
         // Entries
-        public IKeyTo<SimpleTrackyTrackingEquationDescriptor> inequations, outequations;
+        readonly Singley<IKeyTo<SimpleTrackyTrackingEquationDescriptor>> _inequations, _outequations;
+        [Ignore] public IKeyTo<SimpleTrackyTrackingEquationDescriptor> inequations { get { return _inequations.Get(); } }
+        [Ignore] public IKeyTo<SimpleTrackyTrackingEquationDescriptor> outequations { get { return _outequations.Get(); } }
         public String in_equations_args { get; set; }
         public String out_equations_args { get; set; }
 
@@ -189,7 +214,7 @@ namespace Consonance.Invention
 
         public static SimpleTrackyInventionRequestPages TrackerDescriptionPage(IValueRequestFactory fac)
         {
-            var page = new GetValuesPage("What's it called?");
+            var page = new GetValuesPage("Invent: Name");
             var p1vr = (from s in new[] { "Name", "Description", "Category" }
                         select fac.StringRequestor(s)).ToArray();
             page.SetList(new ObservableCollection<object>((from p in p1vr select p.request).ToList()));
@@ -210,7 +235,7 @@ namespace Consonance.Invention
         }
         public static SimpleTrackyInventionRequestPages EntryDescriptionPage(IValueRequestFactory fac)
         {
-            var page = new GetValuesPage("How are entries called?");
+            var page = new GetValuesPage("Invent: Verbs & Nouns");
             var p2vr = (from s in new[] {
                         "InputEntryVerb","OutputEntryVerb",
                         "InputInfoPlural","InputInfoSingular",
@@ -244,7 +269,7 @@ namespace Consonance.Invention
         }
         public static SimpleTrackyInventionRequestPages InfoQuantifiersPage(IValueRequestFactory fac, InfoFinderHelper iHelper)
         {
-            var page = new GetValuesPage("How can infos be quantified?");
+            var page = new GetValuesPage("Invent: Measurments");
             var ioreq = fac.OptionGroupRequestor("For");
             ioreq.value = new OptionGroupValue(new[] { "Input", "Output" });
             var nreq = fac.StringRequestor("Name");
@@ -328,7 +353,7 @@ namespace Consonance.Invention
         }
         public static SimpleTrackyInventionRequestPages TargetDesciptorsPage(IValueRequestFactory fac)
         {
-            var page = new GetValuesPage("What targets should be calculated?");
+            var page = new GetValuesPage("Invent: Target Equations");
             var nreq = fac.StringRequestor("Name");
             var tidreq = fac.StringRequestor("TargetID");
             var argreq = fac.StringRequestor("Equation arguments");
@@ -421,7 +446,7 @@ namespace Consonance.Invention
         }
         public static SimpleTrackyInventionRequestPages EntryInfoEquations(IValueRequestFactory fac)
         {
-            var page = new GetValuesPage("What are the equations for entries?");
+            var page = new GetValuesPage("Invent: Entry Equations");
 
             // Overall
             var iargreq = fac.StringRequestor("In Equation arguments");

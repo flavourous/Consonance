@@ -20,23 +20,6 @@ namespace Consonance.XamarinFormsView.PCL
             App.RegisterPoppedCallback(this, () => Completed(false));
             Content = new ScrollView { Content = vlist = new ValueRequestList() };
         }
-        ValueRequestLister rl;
-        public void ListyMode(IValueRequest<TabularDataRequestValue> listy) 
-        {
-            vlist.vlm.ListenForValid(listy as INotifyPropertyChanged);
-            var lv = new ListView { HasUnevenRows = true };
-            rl = new ValueRequestLister(lv, listy) { UseHeader = vlist };
-            Content = lv;
-        }
-        public void NormalMode()
-        {
-            if (rl != null)
-            {
-                vlist.vlm.RemoveListen(rl.td as INotifyPropertyChanged);
-                Content = new ScrollView { Content = vlist };
-                rl = null;
-            }
-        }
 
         void Completed(bool suc)
         {

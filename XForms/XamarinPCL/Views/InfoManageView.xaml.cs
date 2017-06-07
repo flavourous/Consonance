@@ -60,6 +60,7 @@ namespace Consonance.XamarinFormsView.PCL
 			BindingContext = this;
             this.choice = choice;
 
+            App.RegisterPoppedCallback(this, OnClosed);
 
             // menuitems and actual itemtemplate
             String res = "dt_none";
@@ -67,6 +68,8 @@ namespace Consonance.XamarinFormsView.PCL
             else if (choice) res = "dt_choose";
             else if (manage) res = "dt_manage";
 			infoList.ItemTemplate = Resources [res] as DataTemplate;
+
+                
 
             // add button
             if (!manage) ToolbarItems.Remove(AddToolbarItem);
@@ -83,11 +86,10 @@ namespace Consonance.XamarinFormsView.PCL
             infoList.SelectedItem = null;
         }
 
-        protected override void OnDisappearing()
+        void OnClosed()
         {
-            if(!completed) completedTask.SetResult (new ctr { vm = initiallySelectedItem, popping = true }); // signals no selection change
+            if (!completed) completedTask.SetResult(new ctr { vm = initiallySelectedItem, popping = true }); // signals no selection change
             completed = true;
-            base.OnDisappearing();
         }
 
         bool completed = false;

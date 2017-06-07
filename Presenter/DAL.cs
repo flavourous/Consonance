@@ -219,14 +219,13 @@ namespace Consonance
                     value_command = tq.CompileExpr(exp_value.Body, query_args_output),
                     where_command = new TableQuery<T>.CompileResult { Value = null, CommandText = "" }; 
                 if (where != null) where_command = tq.CompileExpr(where.Body, query_args_output); // add more args
-                var update_command = cconn.CreateCommand(
-                    String.Format("UPDATE {0} SET {1} = {2} WHERE {3}",
+                var update_string = String.Format("UPDATE \"{0}\" SET {1} = {2} WHERE {3}",
                         tq.Table.TableName,
                         selector_command.CommandText,
                         value_command.CommandText,
-                        where_command.CommandText),
-                    query_args_output.ToArray()
-                );
+                        where_command.CommandText);
+                Debug.WriteLine(update_string + "\r\n -- with -- \r\n" + String.Join(", ", query_args_output));
+                var update_command = cconn.CreateCommand(update_string, query_args_output.ToArray());
                 return update_command.ExecuteNonQuery();
             }
         }

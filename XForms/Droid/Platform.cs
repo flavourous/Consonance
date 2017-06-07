@@ -40,6 +40,24 @@ namespace Consonance.XamarinFormsView
         }
     }
     
+    static class PlatformExtensions
+    {
+        public static Task<T> ObserveFaults<T>(this Task<T> t)
+        {
+            t.ObserveFaults();
+            return t;
+        }
+
+        public static Task ObserveFaults(this Task t)
+        {
+            t.ContinueWith(k =>
+            {
+                Console.WriteLine(k.Exception.ToString());
+                Device.BeginInvokeOnMainThread(() => t.Wait());
+            }, TaskContinuationOptions.OnlyOnFaulted);
+            return t;
+        }
+    }
     class Platform : IPlatform, ITasks
     {
         public Platform()
@@ -50,141 +68,25 @@ namespace Consonance.XamarinFormsView
         public MethodInfo GetMethodInfo(Type t, String m) { return t.GetMethod(m); }
         readonly FileSystem FF = new FileSystem();
         public IFSOps filesystem { get { return FF; } }
-        static int uiThread;
         Action<String, Action> showError = (ex, a) => a();
         public void Attach(Action<String, Action> showError)
         {
             this.showError = showError;
 
-#if DEBUG
-            TaskScheduler.UnobservedTaskException += (a, b) =>
-            {
-                showError(b.Exception.ToString(), Android.App.Application.Context.MainLooper.QuitSafely); // maye?
-            };
-#endif
+            // not sure where to put error dialog...maybe dont bother...
+//#if DEBUG
+//            TaskScheduler.UnobservedTaskException += (a, b) =>
+//            {
+//                showError(b.Exception.ToString(), Android.App.Application.Context.MainLooper.QuitSafely); // maye?
+//            };
+//#endif
         }
-        #region ITasks implementation
+#region ITasks implementation
         public long CurrentThreadID { get { return Thread.CurrentThread.ManagedThreadId; } }
-        void EHandle(Exception e)
-        {
-#if !DEBUG
-            //ensure app dies
-            Device.BeginInvokeOnMainThread(() =>
-            {
-                throw e;
-            });
-#else
-            Debugger.Break();
-#endif
-        }
-        public Task RunTask(Func<Task> asyncMethod)
-        {
-<<<<<<< HEAD
-            return Task.Run(async () => 
-            {
-                try { await asyncMethod(); }
-                catch (Exception e) { EHandle(e); throw; }
-            });
-        }
-=======
-            this.showError = showError;
-
-#if DEBUG
-            TaskScheduler.UnobservedTaskException += (a, b) =>
-            {
-                showError(b.Exception.ToString(), Android.App.Application.Context.MainLooper.QuitSafely); // maye?
-            };
-#endif
-        }
-        #region ITasks implementation
-        public Task RunTask(Func<Task> asyncMethod)
-        {
-            return Task.Run(async () => 
-            {
-                try
-                {
-                    await asyncMethod();
-                }
-                catch(Exception e)
-                {
-                    Device.BeginInvokeOnMainThread(() => 
-                    {
-                        throw e;
-                    });
-                    throw e;
-                }
-            });
-        }
->>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
-        public Task RunTask(Action syncMethod)
-        {
-            return Task.Run(() =>
-            {
-<<<<<<< HEAD
-                try { syncMethod(); }
-                catch (Exception e) { EHandle(e); throw; }
-=======
-                try
-                {
-                    syncMethod();
-                }
-                catch (Exception e)
-                {
-                    Device.BeginInvokeOnMainThread(() =>
-                    {
-                        throw e;
-                    });
-                    throw e;
-                }
->>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
-            });
-        }
-        public Task<T> RunTask<T>(Func<Task<T>> asyncMethod)
-        {
-            return Task.Run(async () =>
-            {
-<<<<<<< HEAD
-                try { return await asyncMethod(); }
-                catch (Exception e) { EHandle(e); throw; }
-=======
-                try
-                {
-                    return await asyncMethod();
-                }
-                catch (Exception e)
-                {
-                    Device.BeginInvokeOnMainThread(() =>
-                    {
-                        throw e;
-                    });
-                    throw e;
-                }
->>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
-            });
-        }
-        public Task<T> RunTask<T>(Func<T> syncMethod)
-        {
-            return Task.Run(() =>
-            {
-<<<<<<< HEAD
-                try { return syncMethod(); }
-                catch (Exception e) { EHandle(e); throw; }
-=======
-                try
-                {
-                    return syncMethod();
-                }
-                catch (Exception e)
-                {
-                    Device.BeginInvokeOnMainThread(() =>
-                    {
-                        throw e;
-                    });
-                    throw e;
-                }
->>>>>>> baeed89160356abd6161f28471c12ee957f4e6c1
-            });
-        }
+        public Task RunTask(Func<Task> asyncMethod) => Task.Run(asyncMethod).ObserveFaults();
+        public Task RunTask(Action syncMethod) => Task.Run(syncMethod).ObserveFaults();
+        public Task<T> RunTask<T>(Func<Task<T>> asyncMethod) => Task.Run(asyncMethod).ObserveFaults();
+        public Task<T> RunTask<T>(Func<T> syncMethod) => Task.Run(syncMethod).ObserveFaults();
         
 
         public bool CreateDirectory(string ifdoesntexist)

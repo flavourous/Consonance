@@ -1,6 +1,7 @@
 ﻿using LibSharpHelp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -67,8 +68,6 @@ namespace XLib
             possibly_invalidated[index[sender as View]] = true;
         }
 
-        
-
         Dictionary<ColumnDefinition, bool> possibly_invalidated = new Dictionary<ColumnDefinition, bool>();
         public void LayoutPass(bool totallyInvalidate = false)
         {
@@ -88,7 +87,8 @@ namespace XLib
                     {
                         if (!valid_desired_widths[v].HasValue)
                         {
-                            double nv = v.GetSizeRequest(double.PositiveInfinity, double.PositiveInfinity).Request.Width;
+                            double nv = v.Measure(double.PositiveInfinity, double.PositiveInfinity).Request.Width;
+                            Debug.WriteLine("nv is {0}", nv);
                             biggest_new = Math.Max(biggest_new, nv);
                             if (nv > 0) valid_desired_widths[v] = nv;
                             else failures[pi] = true;
@@ -119,18 +119,18 @@ namespace XLib
                 columns.Both(desired, setcol);
             else
             {
-                double min = avail / columns.Count;
-                double share = (from d in desired select Math.Min(min, d)).Sum();
-                avail -= share;
-                destot -= share;
-                columns.Both(desired, (col, des) => {
-                    if (des <= min) setcol(col, des);
-                    else
-                    {
-                        double weight = (des - min) / destot;
-                        setcol(col, weight * avail + min);
-                    }
-                });
+                var minimum = (from l in columns select Math.Max(20.0,valid_desired_widths[reverse_index[l].First()] ?? 0.0)).ToArray();
+                double mintot = minimum.Sum();
+                var toShare = avail - mintot;
+                var dtam = 1.0/(destot - mintot);
+                var erg = double.IsNaN(dtam) || double.IsInfinity(dtam);
+                for (int i = 0; i < columns.Count; i++)
+                {
+                    var col = columns[i]; var des = desired[i]; var min = minimum[i];
+                    if (destot == 0) setcol(col, 0.0);
+                    double weight = erg ? 1.0/columns.Count : (des - min) / (destot-mintot);
+                    setcol(col, weight * toShare + min);
+                }
             }
         }
 
