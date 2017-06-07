@@ -53,7 +53,7 @@ namespace Consonance.Test
 
             TrackerLineAssertion(app.view.Instances.val, new TLA("testyD", "", Today, true,
                 new TrackerDialect("Eat", "Burn", "Foods", "Food", "Exercises", "Exercise", "Eaten", "Burned"),
-                new KVPList<string, double> { { "calories per day", 123.0 } }));
+                new KVPList<string, double> { { "daily calories", 123.0 } }));
         }
 
         [Order(2)]

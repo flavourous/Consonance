@@ -752,10 +752,10 @@ namespace Consonance
 			foreach (var target in GetTargets(entry)) {
                 if (!target.Shown) continue;
 				if (target.DayPattern.Length == 1)
-					kl.Add (target.TargetID + " per " + TimeSpan.FromDays (target.DayPattern [0]).WithSuffix (), target.DayTargets [0]);
+					kl.Add (TimeSpan.FromDays (target.DayPattern [0]).WithPrefix () + " " + target.TargetID, target.DayTargets [0]);
 				else
 					for (int i = 0; i < target.DayPattern.Length; i++)
-						kl.Add (target.TargetID + " for " + TimeSpan.FromDays (target.DayPattern [i]).WithSuffix (true), target.DayTargets [i]);	
+						kl.Add (TimeSpan.FromDays (target.DayPattern [i]).WithPrefix (true) + " " +target.TargetID, target.DayTargets [i]);	
 			}
 			return new TrackerInstanceVM(
 				dialect,
@@ -811,7 +811,7 @@ namespace Consonance
                 else
                 {
                     int fac = dtt == AggregateRangeType.DaysEitherSide ?  2 : 1;
-                    yret.targetValueName = targets[ti].TargetName + " per " + TimeSpan.FromDays(dtr*fac + fac - 1).WithSuffix();
+                    yret.targetValueName = TimeSpan.FromDays(dtr * fac + fac - 1).WithPrefix() + " " + targets[ti].TargetName;
                 }
                 yret.inValuesName = dialect.InputInfoVerbPast;
                 yret.outValuesName = dialect.OutputInfoVerbPast;

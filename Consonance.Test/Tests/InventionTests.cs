@@ -428,7 +428,7 @@ namespace Consonance.Test.Tests
 
             TrackerLineAssertion(app.view.Instances.val, new TLA("testyD", "", Today, true,
                 new TrackerDialect("A", "B", "C", "D", "E", "F", "G", "H"),
-                new KVPList<string, double> { { "TG per day", 355.08 } }));
+                new KVPList<string, double> { { "daily TG", 355.08 } }));
         }
 
         Func<ST> TInvInDefault =()=> GenState(
@@ -461,7 +461,7 @@ namespace Consonance.Test.Tests
             var ttm = app.view.InTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "test_invention", tm, "G", "H",
-                new ELA { name = "testTarget per day", value = 12 + a * 2 - c * b },
+                new ELA { name = "daily testTarget", value = 12 + a * 2 - c * b },
                 es.ToArray()
             );
         }
@@ -576,7 +576,7 @@ namespace Consonance.Test.Tests
             var ttm = app.view.InTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "test_invention", tm, "G", "H",
-                new ELA { name = "testTarget per day", value = 12 + a * 2 - c * b },
+                new ELA { name = "daily testTarget", value = 12 + a * 2 - c * b },
                 new ELA { name = "infoed_in", is_input = true, value = am7 }
             );
         }
@@ -618,7 +618,7 @@ namespace Consonance.Test.Tests
             var ttm = app.view.OutTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "test_invention", tm, "G", "H",
-                new ELA { name = "testTarget per day", value = 12 + a * 2 - c * b },
+                new ELA { name = "daily testTarget", value = 12 + a * 2 - c * b },
                 new ELA { name = "infoed_in", is_input = true, value = am7 },
                 new ELA { name = "infoed_out", is_input = false, value = amt }
             );

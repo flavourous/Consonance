@@ -17,57 +17,7 @@ using System.Collections.Specialized;
 
 namespace Consonance.XamarinFormsView.PCL
 {
-    class FirstTrack : BindableObject
-    {
-        public FirstTrack()
-        {
-            PropertyChanged += FirstTrack_PropertyChanged;
-        }
 
-        INotifyCollectionChanged previous = null;
-        private void FirstTrack_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == TracksProperty.PropertyName)
-            {
-                if (previous != null) previous.CollectionChanged -= Previous_CollectionChanged;
-                previous = Tracks as INotifyCollectionChanged;
-                if (previous != null) previous.CollectionChanged += Previous_CollectionChanged;
-                LookForFirst();
-            }
-        }
-
-        private void Previous_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) => LookForFirst();
-        void LookForFirst()
-        {
-            Debug.WriteLine("(Tracks) Stage 1");
-            if (Tracks == null || Tracks.Count() == 0) return;
-            Debug.WriteLine("(Tracks) Stage 2");
-            var track = Tracks.First().tracks;
-            if (track == null || track.Count() == 0) return;
-            var t = track.Take(1); // give enumerable...
-            Debug.WriteLine("(Tracks) Stage 3 - " + t);
-            FirstTrackFirstItem = t;
-        }
-
-        public IEnumerable<TrackingInfoVM> FirstTrackFirstItem { get => GetValue(FirstTrackFirstItemProperty) as IEnumerable<TrackingInfoVM>; set => SetValue(FirstTrackFirstItemProperty, value); }
-        public static BindableProperty FirstTrackFirstItemProperty = BindableProperty.Create("FirstTrackFirstItem", typeof(IEnumerable<TrackingInfoVM>), typeof(FirstTrack));
-
-        public IEnumerable<TrackerTracksVM> Tracks { get => GetValue(TracksProperty) as IEnumerable<TrackerTracksVM>; set => SetValue(TracksProperty, value); }
-        public static BindableProperty TracksProperty = BindableProperty.Create("Tracks", typeof(IEnumerable<TrackerTracksVM>), typeof(FirstTrack));
-    }
-    class DebugBinding : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            Debug.WriteLine("(DebugBinding) "+parameter+"=" + value?.ToString() ?? "null");
-            return value;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
     public partial class MainTabs : TabbedPage
     {
         public class MTVMItems<T> : BindableObject where T : class

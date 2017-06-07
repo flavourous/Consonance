@@ -52,7 +52,7 @@ namespace Consonance.Test.Tests
 
             TrackerLineAssertion(app.view.Instances.val, new TLA("testyD", "", Today, true,
                 new TrackerDialect("Earn", "Spend", "Incomes", "Income", "Expenses", "Expense", "Earned", "Spent"),
-                new KVPList<string, double> { { "balance per day", 1923.0 } }));
+                new KVPList<string, double> { { "daily balance", 1923.0 } }));
         }
 
         V[] cw;
@@ -93,7 +93,7 @@ namespace Consonance.Test.Tests
             var ttm = app.view.InTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "Finance budget", tm, "Earned", "Spent",
-                new ELA { name = "Balance per day", value = 1923.0 },
+                new ELA { name = "daily Balance", value = 1923.0 },
                 new ELA { name = "te", is_input = true, value = 2 * 9912.3 }
             );
 
@@ -129,7 +129,7 @@ namespace Consonance.Test.Tests
             var ttm = app.view.InTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "Finance budget", tm, "Earned", "Spent",
-                new ELA { name = "Balance per day", value = 1923.0 },
+                new ELA { name = "daily Balance", value = 1923.0 },
                 tex1 =new ELA { name = "te", is_input = true, value = 2 * 400.2  }
             );
 
@@ -177,7 +177,7 @@ namespace Consonance.Test.Tests
             var ttm = app.view.OutTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "Finance budget", tm, "Earned", "Spent",
-                new ELA { name = "Balance per day", value = 1923.0 },
+                new ELA { name = "daily Balance", value = 1923.0 },
                 tex1, new ELA { name = "nom", is_input = false, value = 2 * 9912.3 }
             );
 
@@ -209,7 +209,7 @@ namespace Consonance.Test.Tests
             var ttm = app.view.OutTrack.val;
             TrackerTracksAssertion(
                 ttm, "testyD", "Finance budget", tm, "Earned", "Spent",
-                new ELA { name = "Balance per day", value = 1923.0 },
+                new ELA { name = "daily Balance", value = 1923.0 },
                 tex1, tex2 = new ELA { name = "nom", is_input = false, value = 2 * 800.1 }
             );
         }
@@ -234,7 +234,7 @@ namespace Consonance.Test.Tests
             var ttm = app.view.OutTrack.val;
             TrackerTracksAssertion( // samey
                 ttm, "testyD", "Finance budget", tm, "Earned", "Spent",
-                new ELA { name = "Balance per day", value = 1923.0 },
+                new ELA { name = "daily Balance", value = 1923.0 },
                 tex1, tex2
             );
 

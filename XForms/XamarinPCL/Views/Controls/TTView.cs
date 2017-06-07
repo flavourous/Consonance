@@ -12,8 +12,6 @@ namespace Consonance.XamarinFormsView.PCL
 {
 	public class VStacker : ContentView
 	{
-        public static Color amnt { get { var rt = App.Colors.Accent; return Color.FromRgba(rt.R / 2, rt.G / 2, rt.B / 2, .5); } }
-        public static Color xtra { get { var rt = App.Colors.Accent; return Color.FromRgba(rt.R  / 5, rt.G / 5, rt.B / 5, .5); } }
         readonly StackLayout ms;
 		public delegate View Creator(Object val);
 		readonly Creator c;
@@ -159,6 +157,26 @@ namespace Consonance.XamarinFormsView.PCL
             }
             static double bw = 2.0;
 
+            static View Txt(String txt, Color? f=null, Color? b = null)
+            {
+                var lab = new Label { Text = txt };
+                if (f.HasValue) lab.TextColor = f.Value;
+                if (b.HasValue) lab.BackgroundColor = b.Value;
+                lab.FontSize *= 0.85;
+                return new Frame
+                {
+                    IsClippedToBounds = true,
+                    Padding = new Thickness(5, 0, 0, 1),
+                    VerticalOptions = LayoutOptions.Center,
+                    Content = lab                    
+                };
+            }
+
+            Color Flip(Color c)
+            {
+                return new Color(1.0 - c.R, 1.0 - c.G, 1.0 - c.B, c.A);
+            }
+
             public static View GenerateView(Object tio)
             {
                 TrackingInfoVM ti = tio as TrackingInfoVM;
@@ -167,29 +185,24 @@ namespace Consonance.XamarinFormsView.PCL
                 var rlc = rl.Children as ICollection<View>;
                 // I can't make bindings for constraints work! But setters do! I was using a converter - and that was firing, but the constraint was not being evaluated!!!
                 //rl.BindingContext = bio;
-                rl.Children.Add(Bar(Color.Transparent, amnt), Constraint.Constant(0), Constraint.Constant(bw), Constraint.RelativeToParent(p=>p.Width*bio.amount), Constraint.RelativeToParent(p => p.Height - bw*2));
-                rlc.Add(Bar(App.Colors.Accent, Color.Transparent).Rel(bio.target, 0, bio.extras, 1));
-                rlc.Add(Bar(App.Colors.Accent, Color.Transparent).Rel(0, 0, bio.target + bio.extras, 1));
-                var tl = new Label
-                {
-                    Text = String.Format(
+                var txt = String.Format(
                         "{0}: {1} / {3} + {4}",
-                        ti.targetValueName, bio.InAmount, ti.inValuesName.ToLower(), 
+                        ti.targetValueName, bio.InAmount, ti.inValuesName.ToLower(),
                         bio.TargetAmount, bio.OutAmount, ti.outValuesName.ToLower()
-                        ),
-                };
-                tl.FontSize *= 0.85;
+                        );
+
+                var fgLabel = Txt(txt);
+                View filled = Bar(Color.Transparent, (Color)Label.TextProperty.DefaultValue);
+                rl.Children.Add(filled, Constraint.Constant(0), Constraint.Constant(0), Constraint.RelativeToParent(p=>p.Width*bio.amount), Constraint.RelativeToParent(p => p.Height));
+                rlc.Add(Bar(Color.Blue, Color.Transparent).Rel(bio.target, 0, bio.extras, 1));
+                rlc.Add(Bar(Color.Blue, Color.Transparent).Rel(0, 0, bio.target + bio.extras, 1));
+
                 return new Grid
                 {
                     Children =
                     {
                         rl,
-                        new Frame
-                        {
-                            Content = tl,
-                            Padding = new Thickness(5,0,0,1),
-                            VerticalOptions = LayoutOptions.Center
-                        }
+                        fgLabel,
                     }
                 };
             }

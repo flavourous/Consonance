@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using Consonance.Protocol;
+using System.Collections.Specialized;
+using LibSharpHelp;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -167,6 +169,74 @@ namespace Consonance.XamarinFormsView.PCL
                 return (bool)value ? yes : no;
             return null;
         }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class FirstTrackConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is IEnumerable<TrackerTracksVM> v)
+                return new FirstTrack(v);
+            return null;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+        class FirstTrack : BindableObject
+        {
+            readonly IEnumerable<TrackerTracksVM> Tracks;
+            public FirstTrack(IEnumerable<TrackerTracksVM> Tracks)
+            {
+                if (Tracks is INotifyCollectionChanged previous)
+                {
+                    previous.CollectionChanged += Previous_CollectionChanged;
+                    this.Tracks = Tracks;
+                    LookForFirst();
+                }
+            }
+
+            private void Previous_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) => LookForFirst();
+            void LookForFirst()
+            {
+                if (Tracks == null || Tracks.Count() == 0) return;
+                var track = Tracks.First().tracks;
+                if (track == null || track.Count() == 0) return;
+                var t = track.Take(1); // give enumerable...
+                FirstTrackFirstItem = t;
+            }
+
+            public IEnumerable<TrackingInfoVM> FirstTrackFirstItem { get => GetValue(FirstTrackFirstItemProperty) as IEnumerable<TrackingInfoVM>; set => SetValue(FirstTrackFirstItemProperty, value); }
+            public static BindableProperty FirstTrackFirstItemProperty = BindableProperty.Create("FirstTrackFirstItem", typeof(IEnumerable<TrackingInfoVM>), typeof(FirstTrack));
+        }
+    }
+    
+    class DebugBinding : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            Debug.WriteLine("(DebugBinding) " + parameter + "=" + value?.ToString() ?? "null");
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    class DateStringConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value is DateTime d ? String.Format("{0:ddd} {1} {0:MMM yyyy}", d, d.Day.WithSuffix()) : null;
+        }
+
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
