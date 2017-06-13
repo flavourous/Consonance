@@ -12,6 +12,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using LibSharpHelp;
 using System.Collections;
+using LibRTP;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -113,6 +114,8 @@ namespace Consonance.XamarinFormsView.PCL
             this.srv = srv;
         }
 
+        
+
         #region IValueRequestFactory implementation
         public IValueRequest<string> StringRequestor(string name) { return RequestCreator<String, StringRequest>(name, true, () => new StringRequest()); }
 		public IValueRequest<InfoLineVM> InfoLineVMRequestor (string name, InfoManageType mt)
@@ -138,9 +141,9 @@ namespace Consonance.XamarinFormsView.PCL
         public IValueRequest<TabularDataRequestValue> GenerateTableRequest() { return RequestCreator<TabularDataRequestValue, TabularDataRequest>(null, false, () => new TabularDataRequest()); }
         #endregion
 
-        IValueRequest<T> RequestCreator<T, V>(String name, bool showName, Func<V> creator) where V : View
+        IValueRequest<T> RequestCreator<T, V>(String name, bool showName, Func<V> creator, T def = default(T)) where V : View
 		{
-            return new ValueRequestVM<T, V>(name, showName, creator);
+            return new ValueRequestVM<T, V>(name, showName, creator);            
 		}
     }
 		

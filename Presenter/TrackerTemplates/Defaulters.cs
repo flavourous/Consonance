@@ -71,7 +71,15 @@ namespace Consonance
 		{
 			// name etc
 			name = new RequestStorageHelper<string> ("Name",()=>"",Validate);
-			when = new RequestStorageHelper<DateTime>("When",()=>DateTime.Now,Validate);
+            when = new RequestStorageHelper<DateTime>("When", () =>
+             {
+
+                 var vdy = Presenter.singleton?.view?.day ?? DateTime.Now.StartOfDay();
+                 var now = DateTime.Now;
+                 var tdy = now.StartOfDay();
+                 if (tdy == vdy) return now;
+                 else return vdy.AddHours((now - tdy).TotalHours);
+             }, Validate);
 		
 			// recurrance
 			Func<OptionGroupValue> ogv = () => new OptionGroupValue (new[] { "None", "Repeat On...", "Repeat Every..." });
@@ -123,7 +131,7 @@ namespace Consonance
 			// no reset here...for entries...event registration clearing is automatic though.
 			var nr = name.CGet (fac.StringRequestor);
 			var wr = when.CGet (fac.DateTimeRequestor);
-
+                
 			// set up recurrance stuff....off by default, so lets add the repeat mode button
 			var rMode = recurranceMode.CGet(fac.OptionGroupRequestor);
 

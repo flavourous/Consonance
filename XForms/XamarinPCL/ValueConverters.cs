@@ -191,7 +191,6 @@ namespace Consonance.XamarinFormsView.PCL
 
         class FirstTrack : BindableObject
         {
-            readonly IEnumerable<TrackerTracksVM> Tracks;
             public FirstTrack(IEnumerable<TrackerTracksVM> Tracks)
             {
                 if (Tracks is INotifyCollectionChanged previous)
@@ -212,8 +211,11 @@ namespace Consonance.XamarinFormsView.PCL
                 FirstTrackFirstItem = t;
             }
 
+            public IEnumerable<TrackerTracksVM> Tracks { get => GetValue(TracksProperty) as IEnumerable<TrackerTracksVM>; set => SetValue(TracksProperty, value); }
+            public static readonly BindableProperty TracksProperty = BindableProperty.Create("Tracks", typeof(IEnumerable<TrackerTracksVM>), typeof(FirstTrack));
+
             public IEnumerable<TrackingInfoVM> FirstTrackFirstItem { get => GetValue(FirstTrackFirstItemProperty) as IEnumerable<TrackingInfoVM>; set => SetValue(FirstTrackFirstItemProperty, value); }
-            public static BindableProperty FirstTrackFirstItemProperty = BindableProperty.Create("FirstTrackFirstItem", typeof(IEnumerable<TrackingInfoVM>), typeof(FirstTrack));
+            public static readonly BindableProperty FirstTrackFirstItemProperty = BindableProperty.Create("FirstTrackFirstItem", typeof(IEnumerable<TrackingInfoVM>), typeof(FirstTrack));
         }
     }
     
@@ -234,7 +236,7 @@ namespace Consonance.XamarinFormsView.PCL
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value is DateTime d ? String.Format("{0:ddd} {1} {0:MMM yyyy}", d, d.Day.WithSuffix()) : null;
+            return value is DateTime d ? String.Format("{0:ddd}, {1} {0:MMM yyyy}", d, d.Day.WithSuffix()) : null;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

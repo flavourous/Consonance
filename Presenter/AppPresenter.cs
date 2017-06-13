@@ -104,14 +104,11 @@ namespace Consonance
 
         #region initialisation of app presentation
         // Singleton logic - lazily created
-        static Presenter singleton;
+        public static Presenter singleton;
         //public static Presenter Singleton { get { return singleton ?? (singleton = new Presenter()); } }
         public static async Task PresentTo(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)
         {
             PlatformGlobal.platform = platform;
-
-
-
             singleton = new Presenter();
             await singleton.PresentToImpl(view, platform, input, commands, defBuilder);
         }
@@ -128,7 +125,7 @@ namespace Consonance
         Serv services;
 
         // present app logic domain to this view.
-        IView view;
+        public IView view;
         IUserInput input;
         PlanCommandManager pcm_refholder;
         Task PresentToImpl(IView view, IPlatform platform, IUserInput input, IPlanCommands commands, IValueRequestBuilder defBuilder)

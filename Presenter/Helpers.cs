@@ -94,23 +94,23 @@ namespace Consonance
 			name = requestName;
 			request = new DummyValueRequest<V> { value = defaultValue() };
 		}
-		public void Reset()
+        public void Reset()
 		{
 			request.ClearListeners ();
 			request.ValueChanged += validate;
 			request.value = defaultValue ();
 			validate ();
 		}
-		// will return cached instance if possible, but will do defaulting if specified and will
-		// always call ClearListeners, so that old registrations to the changed event are no longer called.
-		public Object CGet(Func<String,IValueRequest<V>> creator)
+        // will return cached instance if possible, but will do defaulting if specified and will
+        // always call ClearListeners, so that old registrations to the changed event are no longer called.
+        public Object CGet(Func<String,IValueRequest<V>> creator)
 		{
 			// Here, we'd not yet had a factory - but we remember what was done in the dummy.
 			if (request is DummyValueRequest<V>) {
 				var dum = request as DummyValueRequest<V>;
 				request = creator (name);
 				request.valid = dum.valid;
-				request.value = dum.value;
+                request.value = dum.value;
 				request.read_only = dum.read_only;
 				request.enabled = dum.enabled;
 			}

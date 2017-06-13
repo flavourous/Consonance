@@ -96,15 +96,11 @@ namespace Consonance.Test.Tests
                 new ELA { name = "daily Balance", value = 1923.0 },
                 new ELA { name = "te", is_input = true, value = 2 * 9912.3 }
             );
-
         }
-
         
         [Test, Order(4)]
         public void T4_EditInfo_CheckDependencies()
         {
-
-
             var vml = app.view.InInfos.val[0];
             Func<ST> ns=  ()=> AlterState(BudInfoDefault, cw.Select(s => s.index).ToArray(), cw.Select(s => s.value).ToArray());
             InfoItemer(ns, null, "Edit Income", true, vml, app,

@@ -7,6 +7,8 @@ using System.Diagnostics;
 using System.Collections.Specialized;
 using Consonance.Protocol;
 using System.Runtime.CompilerServices;
+using ScnViewGestures.Plugin.Forms;
+using XLib;
 
 namespace Consonance.XamarinFormsView.PCL
 {
@@ -76,32 +78,17 @@ namespace Consonance.XamarinFormsView.PCL
 		public TTView() : base(Generator)
         {
             IsVisible = false;
-            Spacing = 3;
+            Spacing = 5;
             oc = Content as StackLayout;
             Content = new ScrollView { Content = oc, VerticalOptions = LayoutOptions.Fill };
             ItemsChanged += TTView_ItemsChanged;
         }
 
-        bool expanded = false;
         private void TTView_ItemsChanged()
         {
-            expanded = false;
-            ProcExp();
             bool v = false;
             foreach (var i in Items) { v = true; break; }
             IsVisible = v;
-        }
-        protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            base.OnPropertyChanged(propertyName);
-            if (propertyName == "Expanded") ProcExp();
-        }
-        void ProcExp()
-        {
-            if (!expanded) Content = oc.Children.FirstOrDefault();
-            else Content = oc;
-            //for (int i = 1; i < oc.Children.Count; i++)
-            //    oc.Children[i].IsVisible = expanded;
         }
 
         static View Generator(Object vmo)
@@ -111,70 +98,99 @@ namespace Consonance.XamarinFormsView.PCL
 
             var tl = new Label
             {
-                Text = vm.instanceName + " - " + vm.modelName,
+                Text = vm.instanceName,
                 VerticalOptions = LayoutOptions.End,
+                HorizontalOptions = LayoutOptions.Start
+            };
+            var tl2 = new Label
+            {
+                Text = vm.modelName,
+                VerticalOptions = LayoutOptions.End,
+                HorizontalOptions = LayoutOptions.End
+            };
+            var ti = new TTViewItem
+            {
+                Spacing = 2,
+                Padding = new Thickness(0, 2, 0, 0),
+                Items = vm.tracks,
+                VerticalOptions = LayoutOptions.Start,
                 HorizontalOptions = LayoutOptions.FillAndExpand
             };
-            tl.FontSize *= 0.8;
-            return new StackLayout
+            return new Grid
             {
-                Spacing = 0,
-                Children =
-                {                    
-                    tl,
-                    new BoxView
-                    {
-                        BackgroundColor = tl.TextColor,
-                        HeightRequest =1,
-                        HorizontalOptions = LayoutOptions.FillAndExpand,
-                    },
-                    new TTViewItem
-                    {
-                        Spacing = 2,
-                        Padding = new Thickness(0,2,0,0),
-                        Items = vm.tracks,
-                        VerticalOptions = LayoutOptions.Start,
-                        HorizontalOptions = LayoutOptions.FillAndExpand
-                    }
+                Padding=  new Thickness(0),
+                RowSpacing = 0,
+                ColumnSpacing = 0,
+                RowDefinitions =
+                {
+                    new RowDefinition(),
+                    new RowDefinition()
                 },
-			};
+                Children = { tl, tl2, ti.OnRow(1,1) },
+            };
 		}
 	}
-	public class TTViewItem : VStacker
+
+    [ContentProperty("RealContent")]
+    public class TTViewLauncher : ContentView
+    {
+        public View RealContent { get => (View)GetValue(RealContentProperty); set => SetValue(RealContentProperty, value); }
+        public static readonly BindableProperty RealContentProperty = BindableProperty.Create("RealContent", typeof(View), typeof(TTViewLauncher));
+
+        public TTViewLauncher()
+        {
+            var vg = new ContentView { InputTransparent = true };
+            vg.SetBinding(ContentProperty, new Binding("RealContent", source: this));
+            var cb = new BoxView
+            {
+                WidthRequest = 1,
+                HeightRequest = 1,
+                BackgroundColor = Color.Transparent,
+                HorizontalOptions = LayoutOptions.FillAndExpand,
+                VerticalOptions = LayoutOptions.FillAndExpand,
+            };
+            cb.GestureRecognizers.Add(new TapGestureRecognizer { Command = new Command(VT) });
+            Content = new Grid
+            {                
+                Children = { vg, cb },
+            };
+        }
+
+        private void VT()
+        {
+            var tv = new TTView();
+            tv.SetBinding(TTView.ItemsProperty, new Binding("Tracks"));
+            var cv = new ScrollView { Margin = new Thickness(10), Content = tv };
+            cv.SetBinding(BindingContextProperty, new Binding("BindingContext", source: this));
+            Navigation.PushAsync(new ContentPage
+            {
+                Title = "Details",
+                Content = cv
+            });
+        }
+    }
+
+
+    public class TTViewItem : VStacker
 	{
 		public TTViewItem () : base(BarInfo.GenerateView) { }
         class BarInfo
         {
-            static View Bar(Color f, Color b)
+            static View Txt(String txt, Color f)
             {
-                return new Button
+                var lab = new Label
                 {
-                    InputTransparent = true,
-                    BorderWidth = bw,
-                    BackgroundColor = b,
-                    BorderColor = f,
+                    Text = txt,
                 };
-            }
-            static double bw = 2.0;
-
-            static View Txt(String txt, Color? f=null, Color? b = null)
-            {
-                var lab = new Label { Text = txt };
-                if (f.HasValue) lab.TextColor = f.Value;
-                if (b.HasValue) lab.BackgroundColor = b.Value;
+                lab.TextColor = f;
                 lab.FontSize *= 0.85;
-                return new Frame
+                return new ContentView
                 {
-                    IsClippedToBounds = true,
+                    IsClippedToBounds = false,
                     Padding = new Thickness(5, 0, 0, 1),
                     VerticalOptions = LayoutOptions.Center,
                     Content = lab                    
                 };
-            }
-
-            Color Flip(Color c)
-            {
-                return new Color(1.0 - c.R, 1.0 - c.G, 1.0 - c.B, c.A);
             }
 
             public static View GenerateView(Object tio)
@@ -191,21 +207,129 @@ namespace Consonance.XamarinFormsView.PCL
                         bio.TargetAmount, bio.OutAmount, ti.outValuesName.ToLower()
                         );
 
-                var fgLabel = Txt(txt);
-                View filled = Bar(Color.Transparent, (Color)Label.TextProperty.DefaultValue);
-                rl.Children.Add(filled, Constraint.Constant(0), Constraint.Constant(0), Constraint.RelativeToParent(p=>p.Width*bio.amount), Constraint.RelativeToParent(p => p.Height));
-                rlc.Add(Bar(Color.Blue, Color.Transparent).Rel(bio.target, 0, bio.extras, 1));
-                rlc.Add(Bar(Color.Blue, Color.Transparent).Rel(0, 0, bio.target + bio.extras, 1));
-
+                var fgLabel = Txt(txt, Color.Default);
                 return new Grid
                 {
                     Children =
                     {
-                        rl,
-                        fgLabel,
+                        GridBar(bio, Color.FromRgba(1, 1, 1, .1),Color.FromRgba(1, 1, 1, .2),Color.FromRgba(1, .3, .3, .1)),
+                        fgLabel
                     }
                 };
             }
+            static ColumnDefinition StarCol(double frac)
+            {
+                return new ColumnDefinition { Width = new GridLength(frac, frac > 0 ? GridUnitType.Star : GridUnitType.Absolute) };
+            }
+            static View GridBar(BarInfo bin, Color bg, Color fg, Color bad)
+            {
+                var ret = new Grid
+                {
+                    HeightRequest=0,
+                    Padding = new Thickness(0),
+                    ColumnSpacing = 0,
+                    RowSpacing = 0,
+                    RowDefinitions =
+                    {
+                        new RowDefinition { Height=1 },
+                        new RowDefinition { Height=GridLength.Star },
+                        new RowDefinition { Height=1 },
+                    },
+                };
+                
+                // First Vertical
+                ret.ColumnDefinitions.Add(new ColumnDefinition { Width = 1 });
+                ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(1, 1).OnCol(0, 1));
+
+                Debug.WriteLine("{0},{1},{2}", bin.amount, bin.target, bin.extras);
+
+                // The fill is either one or two columns
+                if(bin.amount < bin.target)
+                {
+                    // |-------   |
+                    //  amount^   ^target
+
+                    // fill (amount)
+                    ret.ColumnDefinitions.Add(StarCol(bin.amount));
+                    ret.Children.Add(new BoxView { BackgroundColor = bg }.OnRow(1, 1).OnCol(1, 1));
+
+                    // gap (target)
+                    ret.ColumnDefinitions.Add(StarCol(bin.target - bin.amount));
+
+                    // vertical (target marker)
+                    ret.ColumnDefinitions.Add(new ColumnDefinition { Width = 1 });
+                    ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(0, 3).OnCol(3, 1));
+                       
+                    if (bin.extras > 0)
+                    {
+                        // |-------   |       |
+                        //  amount^   ^target ^extras+target
+
+                        // gap (extras)
+                        ret.ColumnDefinitions.Add(StarCol(bin.extras));
+
+                        // vertical (end marker)
+                        ret.ColumnDefinitions.Add(new ColumnDefinition { Width = 1 });
+                        ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(1, 1).OnCol(5, 1));
+                    }
+                }
+                else if(bin.amount < bin.target+bin.extras)
+                {
+                    // |--------|---       |
+                    //    target^  ^amount ^extras+target
+
+                    ret.ColumnDefinitions.Add(StarCol(bin.target));
+                    ret.ColumnDefinitions.Add(new ColumnDefinition { Width = 1 });
+                    ret.ColumnDefinitions.Add(StarCol(bin.amount - bin.target));
+                    ret.ColumnDefinitions.Add(StarCol(bin.amount - bin.target + bin.extras));
+                    ret.ColumnDefinitions.Add(new ColumnDefinition { Width = 1 });
+
+                    // fill (amount)
+                    ret.Children.Add(new BoxView { BackgroundColor = bg }.OnRow(0, 3).OnCol(1, 3));
+
+                    // vertical (target marker)
+                    ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(1, 1).OnCol(2, 1));
+
+                    // vertical (end)
+                    ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(1, 1).OnCol(5, 1));
+                }
+                else // bin.amount > bin.target + bin.extras
+                {
+                    var hex = bin.extras > 0;
+                    // |--------|-------------
+                    //    target^            ^amount
+                    ret.ColumnDefinitions.Add(StarCol(bin.target));
+                    ret.ColumnDefinitions.Add(new ColumnDefinition { Width = 1 });
+                    if (hex)
+                    {
+                        // |--------|------|--------------------
+                        //    target^      ^extras+target      ^amount
+                        ret.ColumnDefinitions.Add(StarCol(bin.extras));
+                        ret.ColumnDefinitions.Add(new ColumnDefinition { Width = 1 });
+                    }
+                    ret.ColumnDefinitions.Add(StarCol(bin.amount-bin.target-bin.extras));
+
+                    // fill (amount)
+                    ret.Children.Add(new BoxView { BackgroundColor = bg }.OnRow(0, 3).OnCol(1, hex ? 4 : 2));
+                    ret.Children.Add(new BoxView { BackgroundColor = bad }.OnRow(0, 3).OnCol(hex ? 5 : 3, 1));
+
+                    // vertical (target marker)
+                    ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(0, 3).OnCol(2, 1));
+
+                    if (hex)
+                    {
+                        // vertical (extra marker)
+                        ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(1, 1).OnCol(4, 1));
+                    }
+                }
+
+                // horizontals
+                ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(0, 1).OnCol(0, ret.ColumnDefinitions.Count - 1));
+                ret.Children.Add(new BoxView { BackgroundColor = fg }.OnRow(2, 1).OnCol(0, ret.ColumnDefinitions.Count - 1));
+
+                return ret;
+            }
+
             private BarInfo(TrackingInfoVM ti)
             {
                 AmountName = ti.targetValueName;
@@ -228,7 +352,6 @@ namespace Consonance.XamarinFormsView.PCL
                     target = 1;
                     extras = amount = 0;
                 }
-
             }
             public String AmountName { get; private set; }
             public double InAmount { get; private set; }
@@ -241,5 +364,3 @@ namespace Consonance.XamarinFormsView.PCL
         }
 	}
 }
-
-

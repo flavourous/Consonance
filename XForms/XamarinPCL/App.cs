@@ -187,7 +187,6 @@ namespace Consonance.XamarinFormsView.PCL
             this.c = c;
             this.ic = ic;
         }
-
         public IAbstractedTracker Current { get { return v.currentTrackerInstance?.sender as IAbstractedTracker; } }
         public IValueRequestBuilder DefaultBuilder { get { return def_b; } }
         public IValueRequestBuilder CreateNewBuilder() { return new ValueRequestBuilder(this); }
